@@ -1,26 +1,48 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useShop } from '../../store';
-import { Calendar, Clock, LogOut, CheckCircle, XCircle, AlertCircle, Settings, X, Loader2, Trash2, Plus, RefreshCw, Wallet, TrendingUp, BarChart3 } from 'lucide-react';
+import { Calendar, Clock, LogOut, CheckCircle, XCircle, AlertCircle, Settings, X, Loader2, Trash2, Plus, RefreshCw, Wallet, TrendingUp, BarChart3, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
 import { useToast } from '../ui/ToastContext';
 import { WorkSchedule, DaySchedule, Professional } from '../../types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell, ReferenceLine } from 'recharts';
 
 // Tooltip customizado para o gráfico
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+        const data = payload[0].payload;
         return (
-            <div className="bg-slate-900 border border-slate-700 p-3 rounded-lg shadow-xl text-xs">
-                <p className="text-slate-400 font-bold mb-1">{label}</p>
-                {payload.map((entry: any, index: number) => (
-                    <div key={index} className="flex items-center gap-2 mb-1">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></div>
-                        <span className="text-slate-300 capitalize">{entry.name === 'completed' ? 'Finalizados' : 'Agendados'}:</span>
-                        <span className="text-white font-bold">{entry.value}</span>
+            <div className="bg-slate-900 border border-slate-700 p-3 rounded-lg shadow-xl text-xs z-50">
+                <p className="text-slate-400 font-bold mb-2 text-center border-b border-slate-700 pb-1">{label}</p>
+                
+                {data.completed > 0 && (
+                    <div className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <span className="text-slate-300">Finalizados:</span>
+                        <span className="text-white font-bold">{data.completed}</span>
                     </div>
-                ))}
-                {payload[0].payload.commission > 0 && (
-                    <div className="mt-2 pt-2 border-t border-slate-700 text-green-400 font-bold">
-                        Comissão: R$ {payload[0].payload.commission.toFixed(2)}
+                )}
+                
+                {data.scheduled > 0 && (
+                    <div className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 rounded-full bg-orange-500"></div>
+                        <span className="text-slate-300">Agendados:</span>
+                        <span className="text-white font-bold">{data.scheduled}</span>
+                    </div>
+                )}
+
+                {(data.commission > 0 || data.potentialCommission > 0) && (
+                    <div className="mt-2 pt-2 border-t border-slate-700">
+                        {data.commission > 0 && (
+                            <div className="flex justify-between gap-4 text-green-400">
+                                <span>Ganho:</span>
+                                <span className="font-bold">R$ {data.commission.toFixed(2)}</span>
+                            </div>
+                        )}
+                        {data.potentialCommission > 0 && (
+                            <div className="flex justify-between gap-4 text-orange-400">
+                                <span>Previsto:</span>
+                                <span className="font-bold">R$ {data.potentialCommission.toFixed(2)}</span>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
@@ -50,6 +72,19 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
     const [blockStart, setBlockStart] = useState('08:00');
     const [blockEnd, setBlockEnd] = useState('18:00');
     const [blockReason, setBlockReason] = useState('Folga / Médico');
+
+    // States do Gráfico (Filtro de Data)
+    // Default: Hoje - 3 dias até Hoje + 10 dias (Duas semanas de visão)
+    const [chartStart, setChartStart] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() - 3);
+        return d.toISOString().split('T')[0];
+    });
+    const [chartEnd, setChartEnd] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 10);
+        return d.toISOString().split('T')[0];
+    });
 
     // Inicializar schedule quando abrir o modal
     const openConfig = () => {
@@ -142,6 +177,31 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
         }
     };
 
+    // Helper para atalhos de data do gráfico
+    const setChartPreset = (type: 'thisWeek' | 'nextWeek' | 'month') => {
+        const today = new Date();
+        let start = new Date(today);
+        let end = new Date(today);
+
+        if (type === 'thisWeek') {
+            const day = today.getDay(); // 0 (Sun) - 6 (Sat)
+            const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1); 
+            start.setDate(diffToMonday);
+            end.setDate(start.getDate() + 6);
+        } else if (type === 'nextWeek') {
+             const day = today.getDay();
+             const diffToNextMonday = today.getDate() - day + (day === 0 ? 1 : 8);
+             start.setDate(diffToNextMonday);
+             end.setDate(start.getDate() + 6);
+        } else if (type === 'month') {
+            start = new Date(today.getFullYear(), today.getMonth(), 1);
+            end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        }
+
+        setChartStart(start.toISOString().split('T')[0]);
+        setChartEnd(end.toISOString().split('T')[0]);
+    };
+
     // 2. Filtrar agendamentos DESTE barbeiro
     const myAppointments = useMemo(() => {
         if (!currentPro) return [];
@@ -169,40 +229,62 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
     
     const commissionRate = currentPro?.commissionPercentage ?? 50;
 
-    // Valores
+    // Valores Cards
     const realizedGross = todaysCompleted.reduce((acc, curr) => acc + curr.totalValue, 0);
     const realizedEarnings = realizedGross * (commissionRate / 100);
 
     const projectedGross = todaysWorkload.reduce((acc, curr) => acc + curr.totalValue, 0);
     const projectedEarnings = projectedGross * (commissionRate / 100);
 
-    // 4. Preparar dados para o Gráfico (Últimos 7 dias)
+    // 4. Preparar dados para o Gráfico (Intervalo Dinâmico)
     const chartData = useMemo(() => {
         if (!currentPro) return [];
         
         const data = [];
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date();
-            d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0];
-            const displayDate = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); // DD/MM
+        const start = new Date(chartStart + 'T00:00:00');
+        const end = new Date(chartEnd + 'T23:59:59');
+        const loop = new Date(start);
+
+        // Segurança para evitar loop infinito se datas forem inválidas
+        if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return [];
+
+        // Limite de 60 dias para não quebrar a UI
+        const diffTime = Math.abs(end.getTime() - start.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+        if(diffDays > 60) {
+            end.setDate(start.getDate() + 60);
+        }
+
+        while (loop <= end) {
+            const dateStr = loop.toISOString().split('T')[0];
+            const displayDate = loop.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); // DD/MM
+            const isToday = dateStr === todayStr;
 
             const dayAppts = myAppointments.filter(a => a.date === dateStr);
             const completed = dayAppts.filter(a => a.status === 'completed');
+            // Agendados considera 'scheduled' e 'confirmed'
             const scheduled = dayAppts.filter(a => ['scheduled', 'confirmed'].includes(a.status));
             
             const dailyRevenue = completed.reduce((acc, curr) => acc + curr.totalValue, 0);
+            const potentialRevenue = scheduled.reduce((acc, curr) => acc + curr.totalValue, 0);
+            
             const dailyCommission = dailyRevenue * (commissionRate / 100);
+            const potentialCommission = potentialRevenue * (commissionRate / 100);
 
             data.push({
                 name: displayDate,
+                date: dateStr,
+                isToday: isToday,
                 completed: completed.length,
                 scheduled: scheduled.length,
-                commission: dailyCommission
+                commission: dailyCommission,
+                potentialCommission: potentialCommission
             });
+
+            loop.setDate(loop.getDate() + 1);
         }
         return data;
-    }, [myAppointments, currentPro, commissionRate]);
+    }, [myAppointments, currentPro, commissionRate, chartStart, chartEnd, todayStr]);
 
     const STATUS_COLORS: Record<string, string> = {
         scheduled: 'border-blue-500 text-blue-400',
@@ -363,7 +445,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
 
             <div className="max-w-4xl mx-auto p-4 space-y-6">
                 
-                {/* Cards de Resumo */}
+                {/* Cards de Resumo Hoje */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col justify-between relative overflow-hidden">
                         <div className="absolute top-0 right-0 p-2 opacity-10">
@@ -384,25 +466,41 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                         </div>
                         <div>
                             <div className="flex items-center gap-1 mb-1">
-                                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Minha Comissão</p>
+                                <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Comissão Hoje</p>
                                 <span className="text-[10px] bg-slate-700 px-1.5 rounded text-slate-300">{commissionRate}%</span>
                             </div>
                             <p className="text-3xl font-bold text-green-400">R$ {realizedEarnings.toFixed(2)}</p>
                         </div>
                         <div className="mt-2 text-[10px] text-slate-500 flex items-center gap-1">
                             <TrendingUp size={12} />
-                            Potencial: R$ {projectedEarnings.toFixed(2)}
+                            Potencial do dia: R$ {projectedEarnings.toFixed(2)}
                         </div>
                     </div>
                 </div>
 
-                {/* GRÁFICO DE DESEMPENHO SEMANAL */}
+                {/* GRÁFICO DE DESEMPENHO E AGENDA FUTURA */}
                 <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                    <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
-                        <BarChart3 size={18} className="text-orange-500"/> Desempenho (7 Dias)
-                    </h2>
+                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
+                        <h2 className="font-bold text-lg flex items-center gap-2">
+                            <BarChart3 size={18} className="text-orange-500"/> Volume & Previsão
+                        </h2>
+                        
+                        {/* Controles de Filtro */}
+                        <div className="flex flex-col sm:flex-row gap-2">
+                             <div className="flex bg-slate-900 rounded-lg p-1 border border-slate-700">
+                                <button onClick={() => setChartPreset('thisWeek')} className="px-3 py-1 text-xs text-slate-300 hover:bg-slate-800 hover:text-white rounded transition-colors">Semana</button>
+                                <button onClick={() => setChartPreset('nextWeek')} className="px-3 py-1 text-xs text-slate-300 hover:bg-slate-800 hover:text-white rounded transition-colors">Próxima</button>
+                                <button onClick={() => setChartPreset('month')} className="px-3 py-1 text-xs text-slate-300 hover:bg-slate-800 hover:text-white rounded transition-colors">Mês</button>
+                            </div>
+                            <div className="flex items-center gap-2 bg-slate-900 rounded-lg p-1 border border-slate-700">
+                                <input type="date" value={chartStart} onChange={e => setChartStart(e.target.value)} className="bg-transparent border-none text-xs text-slate-300 w-24 focus:outline-none"/>
+                                <span className="text-slate-600">-</span>
+                                <input type="date" value={chartEnd} onChange={e => setChartEnd(e.target.value)} className="bg-transparent border-none text-xs text-slate-300 w-24 focus:outline-none"/>
+                            </div>
+                        </div>
+                    </div>
                     
-                    <div className="h-48 w-full">
+                    <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
@@ -412,6 +510,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                     fontSize={10} 
                                     tickLine={false} 
                                     axisLine={false}
+                                    interval="preserveStartEnd"
                                 />
                                 <YAxis 
                                     stroke="#94a3b8" 
@@ -421,7 +520,10 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                     allowDecimals={false}
                                 />
                                 <Tooltip content={<CustomTooltip />} cursor={{fill: '#334155', opacity: 0.2}} />
-                                <Legend wrapperStyle={{ fontSize: '10px' }} />
+                                <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
+                                {/* Linha de Referência para HOJE */}
+                                <ReferenceLine x={new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} stroke="rgba(249, 115, 22, 0.5)" strokeDasharray="3 3" label={{ position: 'top', value: 'Hoje', fill: '#f97316', fontSize: 10 }} />
+                                
                                 <Bar name="Finalizados" dataKey="completed" stackId="a" fill="#22c55e" radius={[0, 0, 4, 4]} />
                                 <Bar name="Agendados" dataKey="scheduled" stackId="a" fill={settings.primaryColor || "#f97316"} radius={[4, 4, 0, 0]} />
                             </BarChart>
