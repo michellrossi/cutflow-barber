@@ -1,8 +1,33 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useShop } from '../../store';
-import { Calendar, Clock, LogOut, CheckCircle, XCircle, AlertCircle, Settings, X, Loader2, Trash2, Plus, RefreshCw, Wallet, TrendingUp } from 'lucide-react';
+import { Calendar, Clock, LogOut, CheckCircle, XCircle, AlertCircle, Settings, X, Loader2, Trash2, Plus, RefreshCw, Wallet, TrendingUp, BarChart3 } from 'lucide-react';
 import { useToast } from '../ui/ToastContext';
 import { WorkSchedule, DaySchedule, Professional } from '../../types';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell } from 'recharts';
+
+// Tooltip customizado para o gráfico
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-slate-900 border border-slate-700 p-3 rounded-lg shadow-xl text-xs">
+                <p className="text-slate-400 font-bold mb-1">{label}</p>
+                {payload.map((entry: any, index: number) => (
+                    <div key={index} className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }}></div>
+                        <span className="text-slate-300 capitalize">{entry.name === 'completed' ? 'Finalizados' : 'Agendados'}:</span>
+                        <span className="text-white font-bold">{entry.value}</span>
+                    </div>
+                ))}
+                {payload[0].payload.commission > 0 && (
+                    <div className="mt-2 pt-2 border-t border-slate-700 text-green-400 font-bold">
+                        Comissão: R$ {payload[0].payload.commission.toFixed(2)}
+                    </div>
+                )}
+            </div>
+        );
+    }
+    return null;
+};
 
 export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
     const { appointments, professionals, session, updateAppointmentStatus, settings, updateProfessional, blockedSlots, addBlockedSlot, removeBlockedSlot, refresh } = useShop();
@@ -131,9 +156,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
     }, [appointments, currentPro]);
 
     // 3. Calcular ganhos (Baseado na Comissão)
-    // FIX: Usar data local para evitar problemas de fuso horário
     const today = new Date();
-    // Ajusta o timezone offset para garantir que a string YYYY-MM-DD seja do dia local
     const offset = today.getTimezoneOffset();
     const todayLocal = new Date(today.getTime() - (offset * 60 * 1000));
     const todayStr = todayLocal.toISOString().split('T')[0];
@@ -152,6 +175,34 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
 
     const projectedGross = todaysWorkload.reduce((acc, curr) => acc + curr.totalValue, 0);
     const projectedEarnings = projectedGross * (commissionRate / 100);
+
+    // 4. Preparar dados para o Gráfico (Últimos 7 dias)
+    const chartData = useMemo(() => {
+        if (!currentPro) return [];
+        
+        const data = [];
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            const displayDate = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }); // DD/MM
+
+            const dayAppts = myAppointments.filter(a => a.date === dateStr);
+            const completed = dayAppts.filter(a => a.status === 'completed');
+            const scheduled = dayAppts.filter(a => ['scheduled', 'confirmed'].includes(a.status));
+            
+            const dailyRevenue = completed.reduce((acc, curr) => acc + curr.totalValue, 0);
+            const dailyCommission = dailyRevenue * (commissionRate / 100);
+
+            data.push({
+                name: displayDate,
+                completed: completed.length,
+                scheduled: scheduled.length,
+                commission: dailyCommission
+            });
+        }
+        return data;
+    }, [myAppointments, currentPro, commissionRate]);
 
     const STATUS_COLORS: Record<string, string> = {
         scheduled: 'border-blue-500 text-blue-400',
@@ -342,6 +393,39 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                             <TrendingUp size={12} />
                             Potencial: R$ {projectedEarnings.toFixed(2)}
                         </div>
+                    </div>
+                </div>
+
+                {/* GRÁFICO DE DESEMPENHO SEMANAL */}
+                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                    <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+                        <BarChart3 size={18} className="text-orange-500"/> Desempenho (7 Dias)
+                    </h2>
+                    
+                    <div className="h-48 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
+                                <XAxis 
+                                    dataKey="name" 
+                                    stroke="#94a3b8" 
+                                    fontSize={10} 
+                                    tickLine={false} 
+                                    axisLine={false}
+                                />
+                                <YAxis 
+                                    stroke="#94a3b8" 
+                                    fontSize={10} 
+                                    tickLine={false} 
+                                    axisLine={false} 
+                                    allowDecimals={false}
+                                />
+                                <Tooltip content={<CustomTooltip />} cursor={{fill: '#334155', opacity: 0.2}} />
+                                <Legend wrapperStyle={{ fontSize: '10px' }} />
+                                <Bar name="Finalizados" dataKey="completed" stackId="a" fill="#22c55e" radius={[0, 0, 4, 4]} />
+                                <Bar name="Agendados" dataKey="scheduled" stackId="a" fill={settings.primaryColor || "#f97316"} radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </div>
                 </div>
 
