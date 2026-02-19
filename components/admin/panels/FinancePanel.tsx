@@ -1,6 +1,6 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useShop } from '../../../store';
-import { DollarSign, TrendingUp, Users, Calendar, Award, ArrowUpRight, PieChart, Wallet, Filter, Loader2, RefreshCw, Download } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Calendar, Award, ArrowUpRight, PieChart, Wallet, Filter, Loader2, RefreshCw, Download, ChevronRight } from 'lucide-react';
 import { Appointment } from '../../../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useToast } from '../../ui/ToastContext';
@@ -27,35 +27,38 @@ export const FinancePanel: React.FC = () => {
     // Filtros de Data
     const [startDate, setStartDate] = useState(() => {
         const d = new Date();
-        d.setDate(d.getDate() - 30);
+        d.setDate(d.getDate() - 29); // Últimos 30 dias (incluindo hoje)
         return d.toISOString().split('T')[0];
     });
     const [endDate, setEndDate] = useState(() => new Date().toISOString().split('T')[0]);
+    const [activePreset, setActivePreset] = useState<string>('30days');
     
     // Estado local para relatório
     const [reportAppointments, setReportAppointments] = useState<Appointment[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
     // Carregar dados quando as datas mudam
-    const loadReport = async () => {
+    const loadReport = useCallback(async () => {
         setIsLoading(true);
         const data = await fetchFinancialReport(startDate, endDate);
         setReportAppointments(data);
         setIsLoading(false);
-    };
+    }, [startDate, endDate, fetchFinancialReport]);
 
-    // Carregar na montagem inicial
+    // Efeito para recarregar automaticamente quando as datas mudam
     useEffect(() => {
         loadReport();
-    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [loadReport]); 
 
     // Atalhos de Data
     const setPreset = (type: '30days' | 'thisMonth' | 'lastMonth' | 'semester') => {
         const end = new Date();
         const start = new Date();
         
+        setActivePreset(type);
+
         if (type === '30days') {
-            start.setDate(end.getDate() - 30);
+            start.setDate(end.getDate() - 29);
         } else if (type === 'thisMonth') {
             start.setDate(1);
         } else if (type === 'lastMonth') {
@@ -68,6 +71,12 @@ export const FinancePanel: React.FC = () => {
 
         setStartDate(start.toISOString().split('T')[0]);
         setEndDate(end.toISOString().split('T')[0]);
+    };
+
+    const handleDateChange = (type: 'start' | 'end', value: string) => {
+        setActivePreset('custom');
+        if (type === 'start') setStartDate(value);
+        else setEndDate(value);
     };
 
     // Função de Exportação para CSV
@@ -125,7 +134,7 @@ export const FinancePanel: React.FC = () => {
 
     // Processamento de Dados Financeiros
     const stats = useMemo(() => {
-        // 1. Filtrar apenas finalizados
+        // 1. Filtrar apenas finalizados para KPI financeiro real
         const completed = reportAppointments.filter(a => a.status === 'completed');
         
         // 2. Totais Gerais
@@ -205,66 +214,75 @@ export const FinancePanel: React.FC = () => {
                     <h2 className="text-2xl font-bold text-white">Controle Financeiro</h2>
                     <p className="text-slate-400">Visão geral de faturamento e desempenho.</p>
                 </div>
+                
+                <button 
+                    onClick={handleExport}
+                    disabled={isLoading || reportAppointments.length === 0}
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-900/20"
+                >
+                    <Download size={18} />
+                    Exportar Relatório
+                </button>
             </div>
 
-            {/* BARRA DE FILTROS */}
-            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col lg:flex-row gap-4 justify-between items-center">
+            {/* BARRA DE FILTROS MODERNA */}
+            <div className="bg-slate-800 p-1.5 rounded-xl border border-slate-700 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-xl">
                 
-                {/* Atalhos */}
-                <div className="flex gap-2 overflow-x-auto w-full lg:w-auto pb-2 lg:pb-0 hide-scrollbar">
-                    <button onClick={() => setPreset('30days')} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-white font-medium whitespace-nowrap transition-colors">Últimos 30 dias</button>
-                    <button onClick={() => setPreset('thisMonth')} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-white font-medium whitespace-nowrap transition-colors">Este Mês</button>
-                    <button onClick={() => setPreset('lastMonth')} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-white font-medium whitespace-nowrap transition-colors">Mês Passado</button>
-                    <button onClick={() => setPreset('semester')} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-white font-medium whitespace-nowrap transition-colors">Semestre</button>
+                {/* Abas de Atalho */}
+                <div className="flex bg-slate-900/50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto hide-scrollbar">
+                    {[
+                        { id: '30days', label: '30 Dias' },
+                        { id: 'thisMonth', label: 'Este Mês' },
+                        { id: 'lastMonth', label: 'Mês Passado' },
+                        { id: 'semester', label: 'Semestre' }
+                    ].map((preset) => (
+                        <button
+                            key={preset.id}
+                            onClick={() => setPreset(preset.id as any)}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
+                                activePreset === preset.id 
+                                ? 'bg-slate-700 text-white shadow-sm' 
+                                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                            }`}
+                        >
+                            {preset.label}
+                        </button>
+                    ))}
                 </div>
 
-                {/* Seletores Manuais e Exportação */}
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-                    <div className="flex items-center gap-2 bg-slate-900 rounded-lg p-1 border border-slate-700 w-full sm:w-auto">
-                        <Calendar size={14} className="text-slate-500 ml-2" />
+                {/* Seletor de Datas Unificado */}
+                <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-900 px-3 py-2 rounded-lg border border-slate-700 focus-within:border-orange-500/50 transition-colors">
+                    <Calendar size={16} className="text-slate-500 shrink-0" />
+                    <div className="flex items-center gap-2 flex-1">
                         <input 
                             type="date" 
                             value={startDate} 
-                            onChange={e => setStartDate(e.target.value)}
-                            className="bg-transparent border-none text-slate-300 text-sm focus:outline-none py-1.5 px-2 w-full sm:w-auto"
+                            onChange={e => handleDateChange('start', e.target.value)}
+                            className="bg-transparent border-none text-slate-300 text-sm focus:outline-none w-full cursor-pointer font-sans"
                         />
-                        <span className="text-slate-600">-</span>
+                        <span className="text-slate-600 font-medium">até</span>
                         <input 
                             type="date" 
                             value={endDate} 
-                            onChange={e => setEndDate(e.target.value)}
-                            className="bg-transparent border-none text-slate-300 text-sm focus:outline-none py-1.5 px-2 w-full sm:w-auto"
+                            onChange={e => handleDateChange('end', e.target.value)}
+                            className="bg-transparent border-none text-slate-300 text-sm focus:outline-none w-full cursor-pointer font-sans"
                         />
                     </div>
-                    
-                    <button 
-                        onClick={loadReport}
-                        disabled={isLoading}
-                        className="w-full sm:w-auto px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                        title="Atualizar Filtros"
-                    >
-                        {isLoading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-                        <span className="sm:hidden">Filtrar</span>
-                    </button>
-
-                    <button 
-                        onClick={handleExport}
-                        disabled={isLoading || reportAppointments.length === 0}
-                        className="w-full sm:w-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Baixar Planilha Excel/CSV"
-                    >
-                        <Download size={16} />
-                        Exportar
-                    </button>
                 </div>
             </div>
 
             {/* LOADING STATE OVERLAY */}
-            <div className={`transition-opacity duration-300 ${isLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+            <div className={`transition-opacity duration-300 relative ${isLoading ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                {isLoading && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                        <Loader2 className="animate-spin text-orange-500" size={32} />
+                    </div>
+                )}
+
                 {/* KPI Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     {/* Faturamento Total */}
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 relative overflow-hidden group">
+                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 relative overflow-hidden group hover:border-slate-600 transition-colors">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500 border border-blue-500/20">
                                 <DollarSign size={20} />
@@ -277,7 +295,7 @@ export const FinancePanel: React.FC = () => {
                     </div>
 
                     {/* Lucro da Loja (Owner Share) */}
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 relative overflow-hidden group">
+                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 relative overflow-hidden group hover:border-slate-600 transition-colors">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-green-500/10 rounded-lg text-green-500 border border-green-500/20">
                                 <Wallet size={20} />
@@ -290,7 +308,7 @@ export const FinancePanel: React.FC = () => {
                     </div>
 
                     {/* Comissões a Pagar */}
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 relative overflow-hidden group">
+                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 relative overflow-hidden group hover:border-slate-600 transition-colors">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-orange-500/10 rounded-lg text-orange-500 border border-orange-500/20">
                                 <PieChart size={20} />
@@ -303,7 +321,7 @@ export const FinancePanel: React.FC = () => {
                     </div>
 
                     {/* Ticket Médio */}
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 relative overflow-hidden group">
+                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 relative overflow-hidden group hover:border-slate-600 transition-colors">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-purple-500/10 rounded-lg text-purple-500 border border-purple-500/20">
                                 <Award size={20} />
@@ -320,35 +338,41 @@ export const FinancePanel: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     
                     {/* Gráfico de Evolução Diária */}
-                    <div className="lg:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col">
+                    <div className="lg:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col min-h-[400px]">
                         <h3 className="text-lg font-bold text-white mb-6">Evolução do Faturamento</h3>
                         
                         {stats.chartData.length === 0 ? (
-                            <div className="flex-1 flex items-center justify-center text-slate-500 h-64">
-                                Sem dados financeiros para o período.
+                            <div className="flex-1 flex flex-col items-center justify-center text-slate-500 h-64 border border-dashed border-slate-700 rounded-xl bg-slate-800/50">
+                                <TrendingUp size={32} className="mb-2 opacity-50"/>
+                                <p>Sem dados financeiros para o período.</p>
                             </div>
                         ) : (
-                            <div className="w-full h-64">
+                            <div className="flex-1 w-full min-h-0">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={stats.chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} vertical={false} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
                                         <XAxis 
                                             dataKey="displayDate" 
-                                            stroke="#94a3b8" 
+                                            stroke="#64748b" 
                                             fontSize={12} 
                                             tickLine={false} 
                                             axisLine={false}
                                             dy={10}
+                                            minTickGap={20}
                                         />
                                         <YAxis 
-                                            stroke="#94a3b8" 
+                                            stroke="#64748b" 
                                             fontSize={12} 
                                             tickLine={false} 
                                             axisLine={false}
                                             tickFormatter={(value) => `R$${value}`}
+                                            width={60}
                                         />
-                                        <Tooltip content={<CustomTooltip />} cursor={{fill: '#334155', opacity: 0.2}} />
-                                        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                        <Tooltip 
+                                            content={<CustomTooltip />} 
+                                            cursor={{fill: '#334155', opacity: 0.2}} 
+                                        />
+                                        <Bar dataKey="value" radius={[4, 4, 0, 0]} animationDuration={1000}>
                                             {stats.chartData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={settings.primaryColor || '#f97316'} />
                                             ))}
@@ -360,30 +384,33 @@ export const FinancePanel: React.FC = () => {
                     </div>
 
                     {/* Ranking de Profissionais */}
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col">
-                        <h3 className="text-lg font-bold text-white mb-4">Top Profissionais</h3>
-                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4 max-h-[300px]">
+                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col h-full max-h-[400px]">
+                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <Award size={18} className="text-yellow-500"/>
+                            Top Profissionais
+                        </h3>
+                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
                             {stats.sortedPros.length === 0 ? (
-                                <p className="text-slate-500 text-sm">Nenhum dado disponível.</p>
+                                <p className="text-slate-500 text-sm text-center py-10">Nenhum dado disponível.</p>
                             ) : (
                                 stats.sortedPros.map((pro, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-700/50 last:border-0 last:pb-0">
-                                        <div className="relative">
-                                            <img src={pro.photo || 'https://via.placeholder.com/40'} alt={pro.name} className="w-10 h-10 rounded-full object-cover border border-slate-600" />
+                                    <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-700/50 last:border-0 last:pb-0 group">
+                                        <div className="relative shrink-0">
+                                            <img src={pro.photo || 'https://via.placeholder.com/40'} alt={pro.name} className="w-10 h-10 rounded-full object-cover border border-slate-600 group-hover:border-slate-400 transition-colors" />
                                             {idx < 3 && (
-                                                <div className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold text-white ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : 'bg-orange-700'}`}>
+                                                <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : 'bg-orange-700'}`}>
                                                     {idx + 1}
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="flex-1">
+                                        <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-center mb-1">
-                                                <span className="text-sm font-medium text-white truncate max-w-[120px]">{pro.name}</span>
+                                                <span className="text-sm font-medium text-white truncate">{pro.name}</span>
                                                 <span className="text-sm font-bold text-green-400">R$ {pro.value.toFixed(0)}</span>
                                             </div>
                                             <div className="w-full bg-slate-700 rounded-full h-1.5 overflow-hidden">
                                                 <div 
-                                                    className="bg-green-500 h-full rounded-full" 
+                                                    className="bg-green-500 h-full rounded-full transition-all duration-1000" 
                                                     style={{ width: `${(pro.value / (stats.totalRevenue || 1)) * 100}%` }}
                                                 ></div>
                                             </div>

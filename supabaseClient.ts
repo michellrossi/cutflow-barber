@@ -1,12 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Augment system types to include Vite env variables without 'vite/client' dependency
+// Augment Vite's ImportMetaEnv interface to include our specific variables.
+// This merges with the existing ImportMetaEnv defined by vite/client.
 declare global {
-  interface ImportMeta {
-    env: {
-      VITE_SUPABASE_URL: string;
-      VITE_SUPABASE_ANON_KEY: string;
-    };
+  interface ImportMetaEnv {
+    VITE_SUPABASE_URL: string;
+    VITE_SUPABASE_ANON_KEY: string;
   }
 }
 
