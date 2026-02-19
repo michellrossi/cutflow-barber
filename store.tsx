@@ -43,6 +43,9 @@ interface ShopContextType extends ShopState {
   removeBlockedSlot: (id: string) => MutationResult;
 
   updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
+  
+  // New Report Method
+  fetchFinancialReport: (startDate: string, endDate: string) => Promise<Appointment[]>;
 }
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -877,6 +880,25 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const fetchFinancialReport = async (startDate: string, endDate: string): Promise<Appointment[]> => {
+    try {
+        const shopId = ensureShopId();
+        const { data, error } = await supabase
+            .from('appointments')
+            .select('*')
+            .eq('shop_id', shopId)
+            .gte('date', startDate)
+            .lte('date', endDate)
+            .order('date', { ascending: true });
+            
+        if (error) throw error;
+        return data.map(mapAppointment);
+    } catch (e) {
+        console.error(e);
+        return [];
+    }
+  };
+
   return (
     <ShopContext.Provider value={{
       ...state,
@@ -894,6 +916,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateAppointmentStatus,
       addBlockedSlot, removeBlockedSlot,
       updateSettings,
+      fetchFinancialReport,
       refresh: () => fetchData(state.shop?.id)
     }}>
       {children}
