@@ -43,6 +43,9 @@ interface ShopContextType extends ShopState {
   removeBlockedSlot: (id: string) => MutationResult;
 
   updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
+  
+  // New Report Method
+  fetchFinancialReport: (startDate: string, endDate: string) => Promise<Appointment[]>;
 }
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -140,7 +143,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       type: data.type,
       value: data.value,
       usageCount: data.usage_count,
-      active: data.active
+      active: data.active,
+      maxUses: data.max_uses
   });
 
   const mapAppointment = (data: any): Appointment => ({
@@ -193,9 +197,28 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { status: 'active', days };
   };
 
-  // --- Core Fetch Logic ---
+  // --- Helper to reload ONLY appointments (Lighter than fetchData) ---
+  const reloadAppointments = async (shopId: string) => {
+      const pastDate = new Date();
+      pastDate.setDate(pastDate.getDate() - 30);
+      const dateLimitStr = pastDate.toISOString().split('T')[0];
+      
+      const { data: appts } = await supabase
+            .from('appointments')
+            .select('*')
+            .eq('shop_id', shopId)
+            .gte('date', dateLimitStr)
+            .order('date', { ascending: false })
+            .order('time', { ascending: false });
+      
+      if (appts) {
+          const mapped = appts.map(mapAppointment);
+          setState(prev => ({ ...prev, appointments: mapped }));
+      }
+  };
+
+  // --- Core Fetch Logic (Heavy - Use sparingly) ---
   const fetchData = async (targetShopId?: string) => {
-    // Only set loading on initial fetch or full refresh, not background updates
     if (!state.shop) setLoading(true);
     
     try {
@@ -360,8 +383,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 filter: `shop_id=eq.${state.shop.id}`
             },
             () => {
-                // Re-fetch data on any appointment change
-                fetchData(state.shop?.id);
+                // Ao receber atualização via socket, atualizamos apenas a lista de agendamentos
+                // Isso garante que se outro usuário mexer, a tela atualiza, 
+                // mas evita recarregar serviços/barbeiros desnecessariamente.
+                reloadAppointments(state.shop!.id);
             }
         )
         .subscribe();
@@ -496,20 +521,25 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return state.shop.id;
   };
 
-  // --- ACTIONS WITH OPTIMIZED FETCH ---
+  // --- OPTIMIZED ACTIONS (LOCAL STATE UPDATES) ---
 
   const addService = async (service: Omit<Service, 'id' | 'shopId'>): MutationResult => {
     try {
         const shopId = ensureShopId();
-        const { error } = await supabase.from('services').insert({ 
+        const { data, error } = await supabase.from('services').insert({ 
           ...service, 
           name: sanitize(service.name),
           description: sanitize(service.description),
           category: sanitize(service.category),
           shop_id: shopId 
-        });
+        }).select().single();
+        
         if (error) throw error;
-        await fetchData(shopId);
+        
+        // Optimistic Update
+        const newService = mapService(data);
+        setState(prev => ({ ...prev, services: [...prev.services, newService] }));
+        
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -518,7 +548,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updateService = async (id: string, updated: Partial<Service>): MutationResult => {
     try {
-        const shopId = ensureShopId(); // Capture ID
+        const shopId = ensureShopId(); // Just for validation
         const payload: any = {};
         if (updated.name) payload.name = sanitize(updated.name);
         if (updated.description) payload.description = sanitize(updated.description);
@@ -526,9 +556,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.duration !== undefined) payload.duration = updated.duration;
         if (updated.category) payload.category = sanitize(updated.category);
 
-        const { error } = await supabase.from('services').update(payload).eq('id', id);
+        const { data, error } = await supabase.from('services').update(payload).eq('id', id).select().single();
         if (error) throw error;
-        await fetchData(shopId); // Pass explicit ID
+        
+        // Optimistic Update
+        const updatedService = mapService(data);
+        setState(prev => ({
+            ...prev,
+            services: prev.services.map(s => s.id === id ? updatedService : s)
+        }));
+
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -540,7 +577,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const shopId = ensureShopId();
         const { error } = await supabase.from('services').delete().eq('id', id);
         if (error) throw error;
-        await fetchData(shopId);
+        
+        // Optimistic Update
+        setState(prev => ({ ...prev, services: prev.services.filter(s => s.id !== id) }));
+        
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -550,7 +590,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const addProfessional = async (pro: Omit<Professional, 'id' | 'shopId'>): MutationResult => {
     try {
         const shopId = ensureShopId();
-        const { error } = await supabase.from('professionals').insert({
+        const { data, error } = await supabase.from('professionals').insert({
             shop_id: shopId,
             name: sanitize(pro.name),
             role: sanitize(pro.role),
@@ -558,9 +598,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             work_schedule: pro.workSchedule || DEFAULT_SCHEDULE,
             email: pro.email ? sanitize(pro.email) : null,
             commission_percentage: pro.commissionPercentage ?? 50
-        });
+        }).select().single();
+        
         if (error) throw error;
-        await fetchData(shopId);
+
+        // Optimistic Update
+        const newPro = mapProfessional(data);
+        setState(prev => ({ ...prev, professionals: [...prev.professionals, newPro] }));
+
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -578,9 +623,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.email !== undefined) payload.email = updated.email ? sanitize(updated.email) : null;
         if (updated.commissionPercentage !== undefined) payload.commission_percentage = updated.commissionPercentage;
 
-        const { error } = await supabase.from('professionals').update(payload).eq('id', id);
+        const { data, error } = await supabase.from('professionals').update(payload).eq('id', id).select().single();
         if (error) throw error;
-        await fetchData(shopId);
+
+        // Optimistic Update
+        const updatedPro = mapProfessional(data);
+        setState(prev => ({
+            ...prev,
+            professionals: prev.professionals.map(p => p.id === id ? updatedPro : p)
+        }));
+
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -592,7 +644,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const shopId = ensureShopId();
         const { error } = await supabase.from('professionals').delete().eq('id', id);
         if (error) throw error;
-        await fetchData(shopId);
+
+        // Optimistic Update
+        setState(prev => ({ ...prev, professionals: prev.professionals.filter(p => p.id !== id) }));
+
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -602,16 +657,22 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const addCoupon = async (coupon: Omit<Coupon, 'id' | 'usageCount' | 'shopId'>): MutationResult => {
     try {
         const shopId = ensureShopId();
-        const { error } = await supabase.from('coupons').insert({
+        const { data, error } = await supabase.from('coupons').insert({
             shop_id: shopId,
             code: sanitize(coupon.code).toUpperCase(),
             type: coupon.type,
             value: coupon.value,
             usage_count: 0,
-            active: coupon.active
-        });
+            active: coupon.active,
+            max_uses: coupon.maxUses
+        }).select().single();
+        
         if (error) throw error;
-        await fetchData(shopId);
+
+        // Optimistic Update
+        const newCoupon = mapCoupon(data);
+        setState(prev => ({ ...prev, coupons: [...prev.coupons, newCoupon] }));
+
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -626,10 +687,18 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.type) payload.type = updated.type;
         if (updated.value) payload.value = updated.value;
         if (updated.active !== undefined) payload.active = updated.active;
+        if (updated.maxUses !== undefined) payload.max_uses = updated.maxUses;
 
-        const { error } = await supabase.from('coupons').update(payload).eq('id', id);
+        const { data, error } = await supabase.from('coupons').update(payload).eq('id', id).select().single();
         if (error) throw error;
-        await fetchData(shopId);
+
+        // Optimistic Update
+        const updatedCoupon = mapCoupon(data);
+        setState(prev => ({
+            ...prev,
+            coupons: prev.coupons.map(c => c.id === id ? updatedCoupon : c)
+        }));
+
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -641,7 +710,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const shopId = ensureShopId();
         const { error } = await supabase.from('coupons').delete().eq('id', id);
         if (error) throw error;
-        await fetchData(shopId);
+
+        // Optimistic Update
+        setState(prev => ({ ...prev, coupons: prev.coupons.filter(c => c.id !== id) }));
+
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -667,7 +739,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         });
 
         if (error) throw error;
-        await fetchData(shopId);
+        
+        // Como o RPC pode envolver validações complexas e triggers,
+        // aqui fazemos um fetch leve apenas dos agendamentos para garantir consistência.
+        await reloadAppointments(shopId);
+        
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -680,7 +756,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const cleanClientName = sanitize(apt.clientName);
           const cleanClientPhone = sanitize(apt.clientPhone);
 
-          const { error } = await supabase.from('appointments').insert({
+          const { data, error } = await supabase.from('appointments').insert({
               shop_id: shopId,
               client_name: cleanClientName,
               client_phone: cleanClientPhone,
@@ -691,10 +767,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               total_value: apt.totalValue,
               coupon_code: null,
               status: apt.status || 'confirmed'
-          });
+          }).select().single();
 
           if (error) throw error;
-          await fetchData(shopId);
+          
+          // Optimistic Update
+          const newApt = mapAppointment(data);
+          // Adicionar no topo da lista (assumindo ordenação por data, mas para feedback imediato o topo é bom)
+          // Em um reload real, a ordenação será corrigida pelo banco.
+          setState(prev => ({ ...prev, appointments: [newApt, ...prev.appointments] }));
+
           return { success: true };
       } catch (e: any) {
           return { success: false, error: e.message };
@@ -704,9 +786,23 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const updateAppointmentStatus = async (id: string, status: string): MutationResult => {
     try {
         const shopId = ensureShopId();
+        
+        // Optimistic Update
+        setState(prev => ({
+            ...prev,
+            appointments: prev.appointments.map(a => 
+                a.id === id ? { ...a, status: status as any } : a
+            )
+        }));
+
         const { error } = await supabase.from('appointments').update({ status }).eq('id', id);
-        if (error) throw error;
-        await fetchData(shopId);
+        
+        if (error) {
+            // Rollback on error
+            await reloadAppointments(shopId); 
+            throw error;
+        }
+
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -716,16 +812,21 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const addBlockedSlot = async (block: Omit<BlockedSlot, 'id' | 'shopId'>): MutationResult => {
     try {
         const shopId = ensureShopId();
-        const { error } = await supabase.from('blocked_slots').insert({
+        const { data, error } = await supabase.from('blocked_slots').insert({
             shop_id: shopId,
             professional_id: block.professionalId,
             date: block.date,
             start_time: block.startTime,
             end_time: block.endTime,
             reason: sanitize(block.reason || '')
-        });
+        }).select().single();
+
         if (error) throw error;
-        await fetchData(shopId);
+        
+        // Optimistic Update
+        const newBlock = mapBlockedSlot(data);
+        setState(prev => ({ ...prev, blockedSlots: [...prev.blockedSlots, newBlock] }));
+
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -737,7 +838,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const shopId = ensureShopId();
         const { error } = await supabase.from('blocked_slots').delete().eq('id', id);
         if (error) throw error;
-        await fetchData(shopId);
+        
+        // Optimistic Update
+        setState(prev => ({ ...prev, blockedSlots: prev.blockedSlots.filter(b => b.id !== id) }));
+
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
@@ -747,7 +851,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const updateSettings = async (updated: Partial<ShopSettings>): MutationResult => {
     try {
         const shopId = ensureShopId();
-        const { data } = await supabase.from('settings').select('id').eq('shop_id', shopId).single();
+        const { data: current } = await supabase.from('settings').select('id').eq('shop_id', shopId).single();
         
         const payload: any = {};
         if (updated.name) payload.name = sanitize(updated.name);
@@ -756,17 +860,42 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.secondaryColor) payload.secondary_color = sanitize(updated.secondaryColor);
 
         let error;
-        if (data && data.id) {
-            ({ error } = await supabase.from('settings').update(payload).eq('id', data.id));
+        let newData;
+
+        if (current && current.id) {
+            ({ data: newData, error } = await supabase.from('settings').update(payload).eq('id', current.id).select().single());
         } else {
-            ({ error } = await supabase.from('settings').insert({ ...payload, shop_id: shopId }));
+            ({ data: newData, error } = await supabase.from('settings').insert({ ...payload, shop_id: shopId }).select().single());
         }
         
         if (error) throw error;
-        await fetchData(shopId);
+
+        // Optimistic Update
+        const newSettings = mapSettings(newData);
+        setState(prev => ({ ...prev, settings: newSettings }));
+        
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
+    }
+  };
+
+  const fetchFinancialReport = async (startDate: string, endDate: string): Promise<Appointment[]> => {
+    try {
+        const shopId = ensureShopId();
+        const { data, error } = await supabase
+            .from('appointments')
+            .select('*')
+            .eq('shop_id', shopId)
+            .gte('date', startDate)
+            .lte('date', endDate)
+            .order('date', { ascending: true });
+            
+        if (error) throw error;
+        return data.map(mapAppointment);
+    } catch (e) {
+        console.error(e);
+        return [];
     }
   };
 
@@ -787,6 +916,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateAppointmentStatus,
       addBlockedSlot, removeBlockedSlot,
       updateSettings,
+      fetchFinancialReport,
       refresh: () => fetchData(state.shop?.id)
     }}>
       {children}

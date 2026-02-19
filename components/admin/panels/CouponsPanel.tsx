@@ -16,15 +16,17 @@ export const CouponsPanel: React.FC = () => {
     const [formData, setFormData] = useState<{
         code: string;
         value: string;
-        type: 'percentage' | 'fixed'
-    }>({ code: '', value: '', type: 'percentage' });
+        type: 'percentage' | 'fixed';
+        maxUses: string;
+    }>({ code: '', value: '', type: 'percentage', maxUses: '' });
 
     const handleEdit = (coupon: Coupon) => {
         setEditingId(coupon.id);
         setFormData({
             code: coupon.code,
             value: coupon.value.toString(),
-            type: coupon.type
+            type: coupon.type,
+            maxUses: coupon.maxUses ? coupon.maxUses.toString() : ''
         });
         setIsFormOpen(true);
     };
@@ -48,7 +50,8 @@ export const CouponsPanel: React.FC = () => {
             code: formData.code.toUpperCase(),
             value: Number(formData.value),
             type: formData.type,
-            active: true
+            active: true,
+            maxUses: formData.maxUses ? parseInt(formData.maxUses) : null
         };
 
         let result;
@@ -64,7 +67,7 @@ export const CouponsPanel: React.FC = () => {
             showToast(editingId ? 'Cupom atualizado!' : 'Cupom criado!');
             setIsFormOpen(false);
             setEditingId(null);
-            setFormData({ code: '', value: '', type: 'percentage' });
+            setFormData({ code: '', value: '', type: 'percentage', maxUses: '' });
         } else {
             showToast(result.error || 'Erro ao salvar.', 'error');
         }
@@ -84,7 +87,7 @@ export const CouponsPanel: React.FC = () => {
 
             <div className="flex justify-between mb-8">
                 <p className="text-slate-400">Gerencie cupons de desconto.</p>
-                <button onClick={() => { setIsFormOpen(true); setEditingId(null); setFormData({ code: '', value: '', type: 'percentage' }); }} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium hover:opacity-90" style={{ backgroundColor: settings.primaryColor }}>
+                <button onClick={() => { setIsFormOpen(true); setEditingId(null); setFormData({ code: '', value: '', type: 'percentage', maxUses: '' }); }} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium hover:opacity-90" style={{ backgroundColor: settings.primaryColor }}>
                     <Plus size={18} /> Criar Cupom
                 </button>
             </div>
@@ -94,21 +97,32 @@ export const CouponsPanel: React.FC = () => {
                  <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 animate-scale-up relative w-full max-w-2xl">
                      <button onClick={() => setIsFormOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={20}/></button>
                      <h3 className="text-lg font-bold mb-4">{editingId ? 'Editar Cupom' : 'Novo Cupom'}</h3>
-                     <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 items-end">
-                        <div className="flex-1 w-full">
+                     <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-4 items-end flex-wrap">
+                        <div className="flex-1 min-w-[200px]">
                             <label className="block text-sm text-slate-400 mb-1">Código</label>
                             <input required value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none uppercase" placeholder="Ex: VERAO10" />
                         </div>
-                        <div className="w-full md:w-40">
+                        <div className="w-full md:w-32">
                              <label className="block text-sm text-slate-400 mb-1">Tipo</label>
                              <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as any})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none">
                                 <option value="percentage">Porcentagem (%)</option>
                                 <option value="fixed">Fixo (R$)</option>
                              </select>
                         </div>
-                        <div className="w-full md:w-32">
+                        <div className="w-full md:w-24">
                             <label className="block text-sm text-slate-400 mb-1">Valor</label>
                             <input required type="number" value={formData.value} onChange={e => setFormData({...formData, value: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none" />
+                        </div>
+                         <div className="w-full md:w-32">
+                            <label className="block text-sm text-slate-400 mb-1">Limite de Uso</label>
+                            <input 
+                                type="number" 
+                                min="0"
+                                value={formData.maxUses} 
+                                onChange={e => setFormData({...formData, maxUses: e.target.value})} 
+                                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none" 
+                                placeholder="Ilimitado"
+                            />
                         </div>
                         <button type="submit" className="w-full md:w-auto px-6 py-3 rounded-lg text-white font-medium flex items-center justify-center gap-2" style={{ backgroundColor: settings.primaryColor }} disabled={isSaving}>
                             {isSaving && <Loader2 size={16} className="animate-spin" />}
@@ -134,7 +148,7 @@ export const CouponsPanel: React.FC = () => {
                             <span className="text-sm text-slate-400 font-normal ml-2">de desconto</span>
                         </div>
                         <div className="flex items-center justify-between text-sm text-slate-400 mb-6">
-                            <span>Usado {coupon.usageCount}x</span>
+                            <span>Usado {coupon.usageCount} {coupon.maxUses ? `/ ${coupon.maxUses}` : ''}</span>
                             <span className={`px-2 py-0.5 rounded-full text-xs border ${coupon.active ? 'border-green-500/30 text-green-500 bg-green-500/10' : 'border-red-500/30 text-red-500'}`}>
                                 {coupon.active ? 'Ativo' : 'Inativo'}
                             </span>
