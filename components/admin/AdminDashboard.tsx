@@ -1,0 +1,167 @@
+
+import React, { useState, useEffect } from 'react';
+import { useShop } from '../../store';
+import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock } from 'lucide-react';
+import { TeamPanel } from './panels/TeamPanel';
+import { ServicesPanel } from './panels/ServicesPanel';
+import { CouponsPanel } from './panels/CouponsPanel';
+import { DesignPanel } from './panels/DesignPanel';
+import { AppointmentsPanel } from './panels/AppointmentsPanel';
+import { FinancePanel } from './panels/FinancePanel';
+import { PaywallScreen } from '../billing/PaywallScreen';
+import { PaymentModal } from '../billing/PaymentModal';
+
+type AdminTab = 'team' | 'services' | 'coupons' | 'design' | 'appointments' | 'finance';
+
+export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () => void }> = ({ onLogout, onViewClient }) => {
+  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
+      const saved = localStorage.getItem('adminActiveTab');
+      return (saved as AdminTab) || 'team';
+  });
+  
+  const { settings, trialStatus, daysRemaining } = useShop();
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  useEffect(() => {
+      localStorage.setItem('adminActiveTab', activeTab);
+  }, [activeTab]);
+
+  // --- 1. PAYWALL CHECK ---
+  if (trialStatus === 'expired') {
+      return <PaywallScreen />;
+  }
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'team': return <TeamPanel />;
+      case 'services': return <ServicesPanel />;
+      case 'coupons': return <CouponsPanel />;
+      case 'design': return <DesignPanel />;
+      case 'appointments': return <AppointmentsPanel />;
+      case 'finance': return <FinancePanel />;
+      default: return <TeamPanel />;
+    }
+  };
+
+  const getTabLabel = (tab: AdminTab) => {
+      switch(tab) {
+          case 'team': return 'Gerenciar Equipe';
+          case 'services': return 'Gerenciar Serviços';
+          case 'coupons': return 'Gerenciar Cupons';
+          case 'design': return 'Design & Aparência';
+          case 'appointments': return 'Vendas & Agenda';
+          case 'finance': return 'Financeiro';
+      }
+  }
+
+  return (
+    <div className="flex h-screen bg-slate-900 text-slate-100 overflow-hidden flex-col md:flex-row">
+      
+      <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
+
+      {/* Sidebar */}
+      <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col hidden md:flex">
+        <div className="p-6 flex items-center gap-3 border-b border-slate-800">
+          <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold overflow-hidden" style={{ backgroundColor: settings.primaryColor }}>
+             {settings.logoUrl ? <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover" /> : <Scissors size={18} />}
+          </div>
+          <span className="font-bold text-xl tracking-tight truncate">{settings.name}</span>
+        </div>
+        
+        <nav className="flex-1 p-4 space-y-2">
+          <SidebarItem icon={<Users size={20} />} label="Equipe" active={activeTab === 'team'} onClick={() => setActiveTab('team')} />
+          <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => setActiveTab('services')} />
+          <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => setActiveTab('coupons')} />
+          <SidebarItem icon={<Palette size={20} />} label="Design" active={activeTab === 'design'} onClick={() => setActiveTab('design')} />
+          <SidebarItem icon={<CalendarCheck size={20} />} label="Agendamentos" active={activeTab === 'appointments'} onClick={() => setActiveTab('appointments')} />
+          <SidebarItem icon={<DollarSign size={20} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />
+          
+          <div className="pt-4 mt-2">
+              <div className="h-px bg-slate-800 mb-4 mx-2"></div>
+              <button 
+                  onClick={onViewClient}
+                  className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-slate-400 hover:bg-slate-900 hover:text-white transition-colors group"
+              >
+                  <Smartphone size={20} className="group-hover:text-orange-500 transition-colors" />
+                  <span className="flex-1 text-left">Agenda Digital</span>
+                  <ExternalLink size={14} className="opacity-50" />
+              </button>
+          </div>
+        </nav>
+
+        <div className="p-4 border-t border-slate-800">
+          <button onClick={onLogout} className="flex items-center gap-3 px-4 py-3 w-full text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+            <LogOut size={20} />
+            <span>Sair / Home</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 flex flex-col overflow-hidden relative">
+        
+        {/* --- 2. TRIAL BANNER --- */}
+        {trialStatus === 'active' && (
+            <div className={`w-full px-4 py-2 flex items-center justify-between shadow-md z-20 ${daysRemaining <= 3 ? 'bg-red-600 text-white' : 'bg-amber-500 text-slate-900'}`}>
+                <div className="flex items-center gap-2 text-sm font-bold">
+                    {daysRemaining <= 3 ? <AlertTriangle size={18} /> : <Lock size={18} />}
+                    <span>
+                        Você está no período de teste gratuito. {daysRemaining} {daysRemaining === 1 ? 'dia restante' : 'dias restantes'}.
+                    </span>
+                </div>
+                <button 
+                    onClick={() => setIsPaymentModalOpen(true)}
+                    className="bg-white text-slate-900 px-4 py-1 rounded text-xs font-bold hover:bg-slate-100 transition-colors uppercase tracking-wide"
+                >
+                    Assinar Agora
+                </button>
+            </div>
+        )}
+
+        <header className="h-16 bg-slate-900 border-b border-slate-800 flex items-center px-4 md:px-8 justify-between shrink-0">
+             <h2 className="text-xl md:text-2xl font-bold">{getTabLabel(activeTab)}</h2>
+             <div className="flex items-center gap-4">
+                <button 
+                    onClick={onViewClient}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 text-sm font-medium transition-colors md:hidden"
+                >
+                    <ExternalLink size={16}/> Ver Agenda
+                </button>
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">A</div>
+                    <span className="text-sm text-slate-300 hidden md:inline">Admin</span>
+                </div>
+             </div>
+        </header>
+        
+        {/* Mobile Nav (Simple) */}
+        <div className="md:hidden bg-slate-950 p-2 flex overflow-x-auto gap-2 border-b border-slate-800 shrink-0">
+            <button onClick={() => setActiveTab('team')} className={`px-3 py-1 rounded text-sm ${activeTab === 'team' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Equipe</button>
+            <button onClick={() => setActiveTab('appointments')} className={`px-3 py-1 rounded text-sm ${activeTab === 'appointments' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Agenda</button>
+            <button onClick={() => setActiveTab('finance')} className={`px-3 py-1 rounded text-sm ${activeTab === 'finance' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Financeiro</button>
+            <button onClick={() => setActiveTab('services')} className={`px-3 py-1 rounded text-sm ${activeTab === 'services' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Serviços</button>
+            <button onClick={() => setActiveTab('coupons')} className={`px-3 py-1 rounded text-sm ${activeTab === 'coupons' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Cupons</button>
+             <button onClick={() => setActiveTab('design')} className={`px-3 py-1 rounded text-sm ${activeTab === 'design' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Design</button>
+        </div>
+
+        <div className="flex-1 overflow-auto p-4 md:p-8">
+          {renderContent()}
+        </div>
+      </main>
+    </div>
+  );
+};
+
+const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void }> = ({ icon, label, active, onClick }) => {
+    const { settings } = useShop();
+    return (
+        <button 
+            onClick={onClick}
+            className={`flex items-center gap-3 px-4 py-3 w-full rounded-lg transition-all duration-200 ${active ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+            style={active ? { borderLeft: `4px solid ${settings.primaryColor}` } : {}}
+        >
+            <span className={active ? `text-[${settings.primaryColor}]` : ''} style={{ color: active ? settings.primaryColor : 'inherit' }}>{icon}</span>
+            <span>{label}</span>
+        </button>
+    );
+}
