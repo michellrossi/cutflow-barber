@@ -2,6 +2,22 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { DollarSign, TrendingUp, Users, Calendar, Award, ArrowUpRight, PieChart, Wallet, Filter, Loader2, RefreshCw } from 'lucide-react';
 import { Appointment } from '../../../types';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+
+// Custom Tooltip para o Recharts
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-slate-900 border border-slate-700 p-3 rounded-lg shadow-xl">
+                <p className="text-slate-400 text-xs mb-1 font-bold">{label}</p>
+                <p className="text-orange-500 font-bold text-sm">
+                    R$ {payload[0].value.toFixed(2)}
+                </p>
+            </div>
+        );
+    }
+    return null;
+};
 
 export const FinancePanel: React.FC = () => {
     const { professionals, fetchFinancialReport, settings } = useShop();
@@ -100,9 +116,6 @@ export const FinancePanel: React.FC = () => {
             value: revenueByDate[date]
         }));
 
-        // Calcular altura das barras (normalização)
-        const maxValue = Math.max(...chartData.map(d => d.value), 1); // Evitar div por zero
-
         // 4. Ranking de Profissionais
         const proRanking: Record<string, { name: string, value: number, count: number, photo: string }> = {};
         
@@ -130,7 +143,6 @@ export const FinancePanel: React.FC = () => {
             totalCount,
             avgTicket,
             chartData,
-            maxValue,
             sortedPros
         };
 
@@ -254,29 +266,33 @@ export const FinancePanel: React.FC = () => {
                                 Sem dados financeiros para o período.
                             </div>
                         ) : (
-                            <div className="flex items-end justify-between gap-2 h-64 w-full border-b border-slate-700 pb-2 overflow-x-auto">
-                                {stats.chartData.map((data, idx) => {
-                                    const heightPercentage = (data.value / stats.maxValue) * 100;
-                                    return (
-                                        <div key={idx} className="flex flex-col items-center justify-end h-full gap-2 min-w-[30px] flex-1 group relative">
-                                            {/* Tooltip */}
-                                            <div className="absolute -top-8 opacity-0 group-hover:opacity-100 bg-slate-900 border border-slate-600 text-white text-xs py-1 px-2 rounded pointer-events-none transition-opacity whitespace-nowrap z-10">
-                                                R$ {data.value.toFixed(2)}
-                                            </div>
-                                            
-                                            {/* Bar */}
-                                            <div 
-                                                className="w-full max-w-[40px] bg-gradient-to-t from-orange-600 to-orange-400 rounded-t-sm hover:brightness-110 transition-all cursor-pointer relative"
-                                                style={{ height: `${heightPercentage}%`, minHeight: '4px', opacity: 0.9 }}
-                                            ></div>
-                                            
-                                            {/* Label */}
-                                            <span className="text-[10px] text-slate-500 font-medium -rotate-45 lg:rotate-0 whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">
-                                                {data.displayDate}
-                                            </span>
-                                        </div>
-                                    );
-                                })}
+                            <div className="w-full h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={stats.chartData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.5} vertical={false} />
+                                        <XAxis 
+                                            dataKey="displayDate" 
+                                            stroke="#94a3b8" 
+                                            fontSize={12} 
+                                            tickLine={false} 
+                                            axisLine={false}
+                                            dy={10}
+                                        />
+                                        <YAxis 
+                                            stroke="#94a3b8" 
+                                            fontSize={12} 
+                                            tickLine={false} 
+                                            axisLine={false}
+                                            tickFormatter={(value) => `R$${value}`}
+                                        />
+                                        <Tooltip content={<CustomTooltip />} cursor={{fill: '#334155', opacity: 0.2}} />
+                                        <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                                            {stats.chartData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={settings.primaryColor || '#f97316'} />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
+                                </ResponsiveContainer>
                             </div>
                         )}
                     </div>
