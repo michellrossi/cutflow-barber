@@ -7,9 +7,18 @@ export const AppointmentsPanel: React.FC = () => {
     const { appointments, professionals, services, updateAppointmentStatus, createManualAppointment, settings } = useShop();
     const { showToast } = useToast();
 
-    // Filtros
+    // Filtros de Status e Busca
     const [statusFilter, setStatusFilter] = useState<string>('all');
     const [searchTerm, setSearchTerm] = useState('');
+
+    // Filtros de Data (Design Financeiro)
+    const [startDate, setStartDate] = useState(() => new Date().toISOString().split('T')[0]); // Default: Hoje
+    const [endDate, setEndDate] = useState(() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 7); // Default: +7 dias
+        return d.toISOString().split('T')[0];
+    });
+    const [activePreset, setActivePreset] = useState<string>('week');
 
     // Modal de Novo Agendamento
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -26,14 +35,52 @@ export const AppointmentsPanel: React.FC = () => {
         status: 'confirmed'
     });
 
+    // --- Lógica de Filtros de Data ---
+    const setPreset = (type: 'today' | 'tomorrow' | 'week' | 'month' | 'all') => {
+        const today = new Date();
+        const start = new Date(today);
+        const end = new Date(today);
+        
+        setActivePreset(type);
+
+        if (type === 'today') {
+            // Start e End são hoje
+        } else if (type === 'tomorrow') {
+            start.setDate(today.getDate() + 1);
+            end.setDate(today.getDate() + 1);
+        } else if (type === 'week') {
+            // Próximos 7 dias
+            end.setDate(today.getDate() + 7);
+        } else if (type === 'month') {
+            start.setDate(1); // Primeiro dia deste mês
+            end.setMonth(end.getMonth() + 1);
+            end.setDate(0); // Último dia deste mês
+        } else if (type === 'all') {
+            // Um intervalo bem grande para pegar tudo (limitado pela query do Supabase que pega 30 dias passados + futuros)
+            start.setFullYear(2023);
+            end.setFullYear(2030);
+        }
+
+        setStartDate(start.toISOString().split('T')[0]);
+        setEndDate(end.toISOString().split('T')[0]);
+    };
+
+    const handleDateChange = (type: 'start' | 'end', value: string) => {
+        setActivePreset('custom');
+        if (type === 'start') setStartDate(value);
+        else setEndDate(value);
+    };
+
     const filteredAppointments = useMemo(() => {
         return appointments.filter(apt => {
             const matchesStatus = statusFilter === 'all' || apt.status === statusFilter;
             const matchesSearch = apt.clientName.toLowerCase().includes(searchTerm.toLowerCase()) || 
                                   apt.clientPhone.includes(searchTerm);
-            return matchesStatus && matchesSearch;
+            const matchesDate = apt.date >= startDate && apt.date <= endDate;
+
+            return matchesStatus && matchesSearch && matchesDate;
         });
-    }, [appointments, statusFilter, searchTerm]);
+    }, [appointments, statusFilter, searchTerm, startDate, endDate]);
 
     const getProName = (id: string | null) => {
         if (!id) return 'Sem preferência';
@@ -114,7 +161,7 @@ export const AppointmentsPanel: React.FC = () => {
     };
 
     return (
-        <div className="relative">
+        <div className="relative pb-20">
             {/* Modal de Novo Agendamento Manual */}
             {isModalOpen && (
                 <div 
@@ -220,9 +267,9 @@ export const AppointmentsPanel: React.FC = () => {
                 </div>
             )}
 
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            {/* Cabeçalho Simplificado */}
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                  <div>
-                    <h2 className="text-2xl font-bold text-white">Vendas & Agenda</h2>
                     <p className="text-slate-400">Gerencie sua agenda e registre atendimentos manuais.</p>
                  </div>
                  <button 
@@ -234,11 +281,57 @@ export const AppointmentsPanel: React.FC = () => {
                  </button>
             </div>
 
-            {/* Barra de Ferramentas: Filtros e Busca */}
-            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-6 flex flex-col md:flex-row gap-4 justify-between">
+            {/* BARRA DE FILTROS DE DATA (Design Financeiro) */}
+            <div className="bg-slate-800 p-1.5 rounded-xl border border-slate-700 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-xl mb-4">
+                {/* Abas de Atalho */}
+                <div className="flex bg-slate-900/50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto hide-scrollbar">
+                    {[
+                        { id: 'today', label: 'Hoje' },
+                        { id: 'tomorrow', label: 'Amanhã' },
+                        { id: 'week', label: 'Esta Semana' },
+                        { id: 'month', label: 'Este Mês' },
+                        { id: 'all', label: 'Todos' }
+                    ].map((preset) => (
+                        <button
+                            key={preset.id}
+                            onClick={() => setPreset(preset.id as any)}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
+                                activePreset === preset.id 
+                                ? 'bg-slate-700 text-white shadow-sm' 
+                                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                            }`}
+                        >
+                            {preset.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Seletor de Datas Unificado */}
+                <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-900 px-3 py-2 rounded-lg border border-slate-700 focus-within:border-orange-500/50 transition-colors">
+                    <Calendar size={16} className="text-slate-500 shrink-0" />
+                    <div className="flex items-center gap-2 flex-1">
+                        <input 
+                            type="date" 
+                            value={startDate} 
+                            onChange={e => handleDateChange('start', e.target.value)}
+                            className="bg-transparent border-none text-slate-300 text-sm focus:outline-none w-full cursor-pointer font-sans"
+                        />
+                        <span className="text-slate-600 font-medium">até</span>
+                        <input 
+                            type="date" 
+                            value={endDate} 
+                            onChange={e => handleDateChange('end', e.target.value)}
+                            className="bg-transparent border-none text-slate-300 text-sm focus:outline-none w-full cursor-pointer font-sans"
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* BARRA DE FILTROS DE STATUS E BUSCA */}
+            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
                 
                 {/* Filtros de Status */}
-                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+                <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar w-full md:w-auto">
                     {[
                         { id: 'all', label: 'Todos' },
                         { id: 'scheduled', label: 'Agendados' },
@@ -351,7 +444,7 @@ export const AppointmentsPanel: React.FC = () => {
                                 <tr>
                                     <td colSpan={6} className="p-12 text-center text-slate-500 flex flex-col items-center justify-center">
                                         <Filter size={32} className="mb-2 opacity-20"/>
-                                        <p>Nenhum agendamento encontrado com os filtros atuais.</p>
+                                        <p>Nenhum agendamento encontrado para este período ou filtro.</p>
                                     </td>
                                 </tr>
                             )}
