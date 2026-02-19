@@ -59,6 +59,7 @@ export interface Coupon {
   value: number;
   usageCount: number;
   active: boolean;
+  maxUses: number | null; // [NOVO] Limite de uso
 }
 
 export interface Appointment {

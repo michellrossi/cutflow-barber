@@ -140,7 +140,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       type: data.type,
       value: data.value,
       usageCount: data.usage_count,
-      active: data.active
+      active: data.active,
+      maxUses: data.max_uses
   });
 
   const mapAppointment = (data: any): Appointment => ({
@@ -659,7 +660,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             type: coupon.type,
             value: coupon.value,
             usage_count: 0,
-            active: coupon.active
+            active: coupon.active,
+            max_uses: coupon.maxUses
         }).select().single();
         
         if (error) throw error;
@@ -682,6 +684,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.type) payload.type = updated.type;
         if (updated.value) payload.value = updated.value;
         if (updated.active !== undefined) payload.active = updated.active;
+        if (updated.maxUses !== undefined) payload.max_uses = updated.maxUses;
 
         const { data, error } = await supabase.from('coupons').update(payload).eq('id', id).select().single();
         if (error) throw error;

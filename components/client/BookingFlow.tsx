@@ -36,7 +36,15 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     
     const handleApplyCoupon = () => {
         const coupon = coupons.find(c => c.code === couponCode.toUpperCase() && c.active);
+        
         if (coupon) {
+            if (coupon.maxUses && coupon.usageCount >= coupon.maxUses) {
+                alert('Este cupom atingiu o limite máximo de usos.');
+                setDiscountAmount(0);
+                setAppliedCoupon(null);
+                return;
+            }
+
             let discount = 0;
             if (coupon.type === 'percentage') {
                 discount = subtotal * (coupon.value / 100);
