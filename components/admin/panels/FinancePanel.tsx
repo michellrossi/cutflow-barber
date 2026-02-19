@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useShop } from '../../../store';
-import { DollarSign, TrendingUp, Users, Calendar, Award, ArrowUpRight, PieChart, Wallet, Filter, Loader2, RefreshCw } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Calendar, Award, ArrowUpRight, PieChart, Wallet, Filter, Loader2, RefreshCw, Download } from 'lucide-react';
 import { Appointment } from '../../../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { useToast } from '../../ui/ToastContext';
 
 // Custom Tooltip para o Recharts
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -21,6 +22,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export const FinancePanel: React.FC = () => {
     const { professionals, fetchFinancialReport, settings } = useShop();
+    const { showToast } = useToast();
     
     // Filtros de Data
     const [startDate, setStartDate] = useState(() => {
@@ -66,11 +68,59 @@ export const FinancePanel: React.FC = () => {
 
         setStartDate(start.toISOString().split('T')[0]);
         setEndDate(end.toISOString().split('T')[0]);
-        // Trigger load via effect or manual call? 
-        // Better manual call in next render or simple useEffect dependency on dates
-        // But useEffect on dates might cause double fetch on manual inputs. 
-        // Let's rely on the user clicking "Filtrar" for manual inputs, 
-        // but for presets we trigger load immediately after state update (handled by effect if we added deps, but let's do manual trigger for control)
+    };
+
+    // Função de Exportação para CSV
+    const handleExport = () => {
+        if (reportAppointments.length === 0) {
+            showToast('Não há dados para exportar neste período.', 'info');
+            return;
+        }
+
+        // Cabeçalho do CSV
+        const headers = ['Data', 'Hora', 'Cliente', 'Telefone', 'Profissional', 'Status', 'Valor Bruto (R$)', 'Comissao (R$)', 'Lucro Loja (R$)'];
+        
+        // Linhas
+        const rows = reportAppointments.map(app => {
+            const pro = professionals.find(p => p.id === app.professionalId);
+            const rate = pro?.commissionPercentage ?? 50;
+            
+            // Cálculos (apenas se finalizado conta como receita real, mas exportamos tudo para conferencia)
+            const commission = app.totalValue * (rate / 100);
+            const profit = app.totalValue - commission;
+            
+            // Formatar Data
+            const dateStr = new Date(app.date + 'T12:00:00').toLocaleDateString('pt-BR');
+
+            // Formatar valores para padrão PT-BR no Excel (vírgula decimal)
+            const valStr = app.totalValue.toFixed(2).replace('.', ',');
+            const commStr = commission.toFixed(2).replace('.', ',');
+            const profStr = profit.toFixed(2).replace('.', ',');
+
+            return [
+                dateStr,
+                app.time,
+                `"${app.clientName}"`, // Aspas para evitar quebra se tiver vírgula no nome
+                `"${app.clientPhone}"`,
+                `"${pro ? pro.name : 'N/A'}"`,
+                app.status === 'completed' ? 'Finalizado' : app.status,
+                valStr,
+                commStr,
+                profStr
+            ].join(';'); // Ponto e vírgula é melhor para Excel em PT-BR
+        });
+
+        const csvContent = '\uFEFF' + [headers.join(';'), ...rows].join('\n'); // \uFEFF adiciona BOM para acentos funcionarem
+        
+        // Criar Blob e Download
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `relatorio_cutflow_${startDate}_${endDate}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     };
 
     // Processamento de Dados Financeiros
@@ -168,7 +218,7 @@ export const FinancePanel: React.FC = () => {
                     <button onClick={() => setPreset('semester')} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs text-white font-medium whitespace-nowrap transition-colors">Semestre</button>
                 </div>
 
-                {/* Seletores Manuais */}
+                {/* Seletores Manuais e Exportação */}
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
                     <div className="flex items-center gap-2 bg-slate-900 rounded-lg p-1 border border-slate-700 w-full sm:w-auto">
                         <Calendar size={14} className="text-slate-500 ml-2" />
@@ -186,13 +236,25 @@ export const FinancePanel: React.FC = () => {
                             className="bg-transparent border-none text-slate-300 text-sm focus:outline-none py-1.5 px-2 w-full sm:w-auto"
                         />
                     </div>
+                    
                     <button 
                         onClick={loadReport}
                         disabled={isLoading}
-                        className="w-full sm:w-auto px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                        className="w-full sm:w-auto px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                        title="Atualizar Filtros"
                     >
                         {isLoading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-                        Filtrar
+                        <span className="sm:hidden">Filtrar</span>
+                    </button>
+
+                    <button 
+                        onClick={handleExport}
+                        disabled={isLoading || reportAppointments.length === 0}
+                        className="w-full sm:w-auto px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Baixar Planilha Excel/CSV"
+                    >
+                        <Download size={16} />
+                        Exportar
                     </button>
                 </div>
             </div>
