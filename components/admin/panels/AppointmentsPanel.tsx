@@ -341,16 +341,16 @@ export const AppointmentsPanel: React.FC = () => {
                         { id: 'noshow', label: 'Faltas' }
                     ].map(status => (
                         <button
-                            key={status.id}
-                            onClick={() => setStatusFilter(status.id)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border ${
-                                statusFilter === status.id 
-                                ? `bg-slate-700 text-white border-slate-500` 
-                                : 'bg-transparent text-slate-400 border-slate-700 hover:border-slate-600 hover:text-slate-300'
-                            }`}
-                        >
-                            {status.label}
-                        </button>
+        key={status.id}
+        onClick={() => setStatusFilter(status.id)}
+        className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap border ${
+            statusFilter === status.id 
+            ? 'bg-slate-700 text-white border-slate-500 shadow-sm' 
+            : 'bg-transparent text-slate-400 border-transparent hover:text-white hover:bg-slate-800'
+        }`}
+    >
+        {status.label}
+    </button>
                     ))}
                 </div>
 
