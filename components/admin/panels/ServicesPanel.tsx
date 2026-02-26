@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useShop } from '../../../store';
 import { Service } from '../../../types';
 import { ConfirmationModal } from '../../ui/ConfirmationModal';
-import { Plus, Edit2, Trash2, CalendarCheck, Loader2, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, CalendarCheck, Loader2, X, Clock } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 
 export const ServicesPanel: React.FC = () => {
