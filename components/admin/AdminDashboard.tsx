@@ -1,17 +1,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
-import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock } from 'lucide-react';
+import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle } from 'lucide-react';
 import { TeamPanel } from './panels/TeamPanel';
 import { ServicesPanel } from './panels/ServicesPanel';
 import { CouponsPanel } from './panels/CouponsPanel';
-import { DesignPanel } from './panels/DesignPanel';
 import { AppointmentsPanel } from './panels/AppointmentsPanel';
 import { FinancePanel } from './panels/FinancePanel';
+import { ClientsPanel } from './panels/ClientsPanel';
+import { SettingsPanel } from './panels/SettingsPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
 import { PaymentModal } from '../billing/PaymentModal';
 
-type AdminTab = 'team' | 'services' | 'coupons' | 'design' | 'appointments' | 'finance';
+type AdminTab = 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings';
 
 export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () => void }> = ({ onLogout, onViewClient }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>(() => {
@@ -36,9 +37,10 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'team': return <TeamPanel />;
       case 'services': return <ServicesPanel />;
       case 'coupons': return <CouponsPanel />;
-      case 'design': return <DesignPanel />;
       case 'appointments': return <AppointmentsPanel />;
       case 'finance': return <FinancePanel />;
+      case 'clients': return <ClientsPanel />;
+      case 'settings': return <SettingsPanel />;
       default: return <TeamPanel />;
     }
   };
@@ -48,9 +50,10 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'team': return 'Gerenciar Equipe';
           case 'services': return 'Gerenciar Serviços';
           case 'coupons': return 'Gerenciar Cupons';
-          case 'design': return 'Design & Aparência';
           case 'appointments': return 'Vendas & Agenda';
           case 'finance': return 'Financeiro';
+          case 'clients': return 'Gestão de Clientes';
+          case 'settings': return 'Configurações';
       }
   }
 
@@ -72,9 +75,10 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           <SidebarItem icon={<Users size={20} />} label="Equipe" active={activeTab === 'team'} onClick={() => setActiveTab('team')} />
           <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => setActiveTab('services')} />
           <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => setActiveTab('coupons')} />
-          <SidebarItem icon={<Palette size={20} />} label="Design" active={activeTab === 'design'} onClick={() => setActiveTab('design')} />
           <SidebarItem icon={<CalendarCheck size={20} />} label="Agendamentos" active={activeTab === 'appointments'} onClick={() => setActiveTab('appointments')} />
+          <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
           <SidebarItem icon={<DollarSign size={20} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />
+          <SidebarItem icon={<Settings size={20} />} label="Configurações" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
           
           <div className="pt-4 mt-2">
               <div className="h-px bg-slate-800 mb-4 mx-2"></div>
@@ -138,10 +142,11 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
         <div className="md:hidden bg-slate-950 p-2 flex overflow-x-auto gap-2 border-b border-slate-800 shrink-0">
             <button onClick={() => setActiveTab('team')} className={`px-3 py-1 rounded text-sm ${activeTab === 'team' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Equipe</button>
             <button onClick={() => setActiveTab('appointments')} className={`px-3 py-1 rounded text-sm ${activeTab === 'appointments' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Agenda</button>
+            <button onClick={() => setActiveTab('clients')} className={`px-3 py-1 rounded text-sm ${activeTab === 'clients' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Clientes</button>
             <button onClick={() => setActiveTab('finance')} className={`px-3 py-1 rounded text-sm ${activeTab === 'finance' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Financeiro</button>
             <button onClick={() => setActiveTab('services')} className={`px-3 py-1 rounded text-sm ${activeTab === 'services' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Serviços</button>
             <button onClick={() => setActiveTab('coupons')} className={`px-3 py-1 rounded text-sm ${activeTab === 'coupons' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Cupons</button>
-             <button onClick={() => setActiveTab('design')} className={`px-3 py-1 rounded text-sm ${activeTab === 'design' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Design</button>
+             <button onClick={() => setActiveTab('settings')} className={`px-3 py-1 rounded text-sm ${activeTab === 'settings' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Configurações</button>
         </div>
 
         <div className="flex-1 overflow-auto p-4 md:p-8">

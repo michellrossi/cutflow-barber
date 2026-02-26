@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useShop } from '../../../store';
 import { DollarSign, TrendingUp, Users, Calendar, Award, ArrowUpRight, PieChart, Wallet, Filter, Loader2, RefreshCw, Download, ChevronRight } from 'lucide-react';
 import { Appointment } from '../../../types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend } from 'recharts';
 import { useToast } from '../../ui/ToastContext';
 
 // Custom Tooltip para o Recharts
@@ -195,6 +195,26 @@ export const FinancePanel: React.FC = () => {
 
         const sortedPros = Object.values(proRanking).sort((a, b) => b.value - a.value);
 
+        // 5. Payment Methods
+        const paymentMethods: Record<string, number> = {
+            pix: 0,
+            credit: 0,
+            cash: 0,
+            unknown: 0
+        };
+
+        completed.forEach(app => {
+            const method = app.paymentMethod || 'unknown';
+            paymentMethods[method] += app.totalValue;
+        });
+
+        const paymentMethodData = [
+            { name: 'PIX', value: paymentMethods.pix, color: '#10b981' }, // green-500
+            { name: 'Cartão de Crédito', value: paymentMethods.credit, color: '#3b82f6' }, // blue-500
+            { name: 'Dinheiro', value: paymentMethods.cash, color: '#f59e0b' }, // amber-500
+            { name: 'Não Informado', value: paymentMethods.unknown, color: '#64748b' } // slate-500
+        ].filter(item => item.value > 0);
+
         return {
             totalRevenue,
             totalCommission,
@@ -202,7 +222,8 @@ export const FinancePanel: React.FC = () => {
             totalCount,
             avgTicket,
             chartData,
-            sortedPros
+            sortedPros,
+            paymentMethodData
         };
 
     }, [reportAppointments, professionals]);
@@ -335,7 +356,7 @@ export const FinancePanel: React.FC = () => {
                 </div>
 
                 {/* Gráfico de Barras e Ranking */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     
                     {/* Gráfico de Evolução Diária */}
                     <div className="lg:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col min-h-[400px]">
@@ -396,7 +417,7 @@ export const FinancePanel: React.FC = () => {
                                 stats.sortedPros.map((pro, idx) => (
                                     <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-700/50 last:border-0 last:pb-0 group">
                                         <div className="relative shrink-0">
-                                            <img src={pro.photo || 'https://via.placeholder.com/40'} alt={pro.name} className="w-10 h-10 rounded-full object-cover border border-slate-600 group-hover:border-slate-400 transition-colors" />
+                                            <img src={pro.photo || 'https://via.placeholder.com/40'} alt={pro.name} className="w-10 h-10 rounded-full object-cover border border-slate-600 group-hover:border-slate-400 transition-colors" referrerPolicy="no-referrer" />
                                             {idx < 3 && (
                                                 <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : 'bg-orange-700'}`}>
                                                     {idx + 1}
@@ -422,6 +443,45 @@ export const FinancePanel: React.FC = () => {
                                 ))
                             )}
                         </div>
+                    </div>
+                </div>
+
+                {/* Gráfico de Formas de Pagamento */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-1 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col min-h-[300px]">
+                        <h3 className="text-lg font-bold text-white mb-6">Formas de Pagamento</h3>
+                        {stats.paymentMethodData.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center text-slate-500 h-full border border-dashed border-slate-700 rounded-xl bg-slate-800/50">
+                                <PieChart size={32} className="mb-2 opacity-50"/>
+                                <p>Sem dados financeiros.</p>
+                            </div>
+                        ) : (
+                            <div className="flex-1 w-full min-h-0 relative">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RechartsPieChart>
+                                        <Pie
+                                            data={stats.paymentMethodData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                        >
+                                            {stats.paymentMethodData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip 
+                                            formatter={(value: number) => `R$ ${value.toFixed(2)}`}
+                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem' }}
+                                            itemStyle={{ color: '#f97316', fontWeight: 'bold' }}
+                                        />
+                                        <Legend verticalAlign="bottom" height={36} />
+                                    </RechartsPieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

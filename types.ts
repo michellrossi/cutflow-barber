@@ -11,6 +11,17 @@ export interface Shop {
   paymentConfirmedAt?: string;
 }
 
+export interface Client {
+  id: string;
+  shopId: string;
+  name: string;
+  phone: string;
+  email?: string;
+  avatarUrl?: string;
+  notes?: string;
+  createdAt: string;
+}
+
 export interface Service {
   id: string;
   shopId: string;
@@ -65,8 +76,9 @@ export interface Coupon {
 export interface Appointment {
   id: string;
   shopId: string;
-  clientName: string;
-  clientPhone: string;
+  clientId?: string; // Referência ao cliente (novo)
+  clientName: string; // Mantido para compatibilidade ou agendamentos rápidos
+  clientPhone: string; // Mantido para compatibilidade
   serviceIds: string[];
   professionalId: string | null;
   date: string; // YYYY-MM-DD
@@ -75,6 +87,7 @@ export interface Appointment {
   couponCode?: string;
   createdAt: string;
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'noshow';
+  paymentMethod?: 'pix' | 'credit' | 'cash';
 }
 
 export interface ShopSettings {
@@ -102,6 +115,7 @@ export interface ShopState {
   professionals: Professional[];
   coupons: Coupon[];
   appointments: Appointment[];
+  clients: Client[]; // Nova lista de clientes
   blockedSlots: BlockedSlot[];
   settings: ShopSettings;
   // [NOVO] Estado derivado do trial

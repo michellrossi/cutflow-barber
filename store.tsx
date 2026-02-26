@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot } from './types';
+import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client } from './types';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import DOMPurify from 'dompurify';
@@ -38,9 +38,13 @@ interface ShopContextType extends ShopState {
   addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
   createManualAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
   updateAppointmentStatus: (id: string, status: string) => MutationResult;
+  updateAppointmentPaymentMethod: (id: string, paymentMethod: string) => MutationResult;
   
   addBlockedSlot: (block: Omit<BlockedSlot, 'id' | 'shopId'>) => MutationResult;
   removeBlockedSlot: (id: string) => MutationResult;
+
+  addClient: (client: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
+  updateClient: (id: string, client: Partial<Client>) => MutationResult;
 
   updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
   
@@ -74,6 +78,7 @@ const INITIAL_STATE: ShopState = {
   professionals: [],
   coupons: [],
   appointments: [],
+  clients: [],
   blockedSlots: [],
   trialStatus: 'active',
   daysRemaining: 14
@@ -265,12 +270,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Executa queries de configurações e dados estáticos em paralelo
-        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes] = await Promise.all([
+        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes] = await Promise.all([
             supabase.from('settings').select('*').eq('shop_id', shopId).single(),
             supabase.from('services').select('*').eq('shop_id', shopId),
             supabase.from('professionals').select('*').eq('shop_id', shopId),
             supabase.from('coupons').select('*').eq('shop_id', shopId),
-            supabase.from('blocked_slots').select('*').eq('shop_id', shopId)
+            supabase.from('blocked_slots').select('*').eq('shop_id', shopId),
+            supabase.from('clients').select('*').eq('shop_id', shopId)
         ]);
 
         // OTIMIZAÇÃO: Carregar apenas agendamentos recentes e futuros
@@ -291,6 +297,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (appts) appointmentsData = appts.map(mapAppointment);
 
         const mappedProfessionals = (prosRes.data || []).map(mapProfessional);
+        const mappedClients = (clientsRes.data || []).map((c: any) => ({
+            id: c.id,
+            shopId: c.shop_id,
+            name: c.name,
+            phone: c.phone,
+            email: c.email,
+            avatarUrl: c.avatar_url,
+            notes: c.notes,
+            createdAt: c.created_at
+        }));
 
         // --- LÓGICA DE ROLES ---
         if (currentSession?.user) {
@@ -329,6 +345,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             professionals: mappedProfessionals,
             coupons: (couponsRes.data || []).map(mapCoupon),
             appointments: appointmentsData,
+            clients: mappedClients,
             blockedSlots: (blocksRes.data || []).map(mapBlockedSlot),
             trialStatus: trialInfo.status,
             daysRemaining: trialInfo.days
@@ -809,6 +826,88 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const updateAppointmentPaymentMethod = async (id: string, paymentMethod: string): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        
+        // Optimistic Update
+        setState(prev => ({
+            ...prev,
+            appointments: prev.appointments.map(a => 
+                a.id === id ? { ...a, paymentMethod: paymentMethod as any } : a
+            )
+        }));
+
+        const { error } = await supabase.from('appointments').update({ payment_method: paymentMethod }).eq('id', id);
+        
+        if (error) {
+            // Rollback on error
+            await reloadAppointments(shopId); 
+            throw error;
+        }
+
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const addClient = async (client: Omit<Client, 'id' | 'createdAt' | 'shopId'>): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { data, error } = await supabase.from('clients').insert({
+            shop_id: shopId,
+            name: client.name,
+            phone: client.phone,
+            email: client.email,
+            avatar_url: client.avatarUrl,
+            notes: client.notes
+        }).select().single();
+
+        if (error) throw error;
+        
+        setState(prev => ({
+            ...prev,
+            clients: [...prev.clients, {
+                id: data.id,
+                shopId: data.shop_id,
+                name: data.name,
+                phone: data.phone,
+                email: data.email,
+                avatarUrl: data.avatar_url,
+                notes: data.notes,
+                createdAt: data.created_at
+            }]
+        }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const updateClient = async (id: string, client: Partial<Client>): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const updateData: any = {};
+        if (client.name !== undefined) updateData.name = client.name;
+        if (client.phone !== undefined) updateData.phone = client.phone;
+        if (client.email !== undefined) updateData.email = client.email;
+        if (client.avatarUrl !== undefined) updateData.avatar_url = client.avatarUrl;
+        if (client.notes !== undefined) updateData.notes = client.notes;
+
+        const { error } = await supabase.from('clients').update(updateData).eq('id', id).eq('shop_id', shopId);
+        if (error) throw error;
+
+        setState(prev => ({
+            ...prev,
+            clients: prev.clients.map(c => c.id === id ? { ...c, ...client } : c)
+        }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
   const addBlockedSlot = async (block: Omit<BlockedSlot, 'id' | 'shopId'>): MutationResult => {
     try {
         const shopId = ensureShopId();
@@ -914,6 +1013,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addAppointment,
       createManualAppointment,
       updateAppointmentStatus,
+      updateAppointmentPaymentMethod,
+      addClient, updateClient,
       addBlockedSlot, removeBlockedSlot,
       updateSettings,
       fetchFinancialReport,

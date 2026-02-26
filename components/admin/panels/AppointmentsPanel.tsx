@@ -4,7 +4,7 @@ import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader
 import { useToast } from '../../ui/ToastContext';
 
 export const AppointmentsPanel: React.FC = () => {
-    const { appointments, professionals, services, updateAppointmentStatus, createManualAppointment, settings } = useShop();
+    const { appointments, professionals, services, updateAppointmentStatus, updateAppointmentPaymentMethod, createManualAppointment, settings } = useShop();
     const { showToast } = useToast();
 
     // Filtros de Status e Busca
@@ -32,7 +32,8 @@ export const AppointmentsPanel: React.FC = () => {
         professionalId: '',
         date: new Date().toISOString().split('T')[0],
         time: '12:00',
-        status: 'confirmed'
+        status: 'confirmed',
+        paymentMethod: 'pix'
     });
 
     // --- Lógica de Filtros de Data ---
@@ -123,7 +124,8 @@ export const AppointmentsPanel: React.FC = () => {
             date: formData.date,
             time: formData.time,
             totalValue: calculateTotal(),
-            status: formData.status as 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'noshow'
+            status: formData.status as 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'noshow',
+            paymentMethod: formData.status === 'completed' ? formData.paymentMethod as any : undefined
         });
         setIsSaving(false);
 
@@ -137,7 +139,8 @@ export const AppointmentsPanel: React.FC = () => {
                 professionalId: '',
                 date: new Date().toISOString().split('T')[0],
                 time: '12:00',
-                status: 'confirmed'
+                status: 'confirmed',
+                paymentMethod: 'pix'
             });
         } else {
             showToast(error || 'Erro ao criar agendamento.', 'error');
@@ -253,6 +256,16 @@ export const AppointmentsPanel: React.FC = () => {
                                         <option value="noshow">Não Compareceu</option>
                                     </select>
                                 </div>
+                                {formData.status === 'completed' && (
+                                    <div className="flex-1 w-full">
+                                        <label className="block text-sm text-slate-400 mb-1">Forma de Pagamento</label>
+                                        <select value={formData.paymentMethod} onChange={e => setFormData({...formData, paymentMethod: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500">
+                                            <option value="pix">PIX</option>
+                                            <option value="credit">Cartão de Crédito</option>
+                                            <option value="cash">Dinheiro</option>
+                                        </select>
+                                    </div>
+                                )}
                                 <div className="text-right">
                                     <p className="text-sm text-slate-400">Total Estimado</p>
                                     <p className="text-2xl font-bold" style={{ color: settings.primaryColor }}>R$ {calculateTotal().toFixed(2)}</p>
@@ -341,16 +354,16 @@ export const AppointmentsPanel: React.FC = () => {
                         { id: 'noshow', label: 'Faltas' }
                     ].map(status => (
                         <button
-        key={status.id}
-        onClick={() => setStatusFilter(status.id)}
-        className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap border ${
-            statusFilter === status.id 
-            ? 'bg-slate-700 text-white border-slate-500 shadow-sm' 
-            : 'bg-transparent text-slate-400 border-transparent hover:text-white hover:bg-slate-800'
-        }`}
-    >
-        {status.label}
-    </button>
+                            key={status.id}
+                            onClick={() => setStatusFilter(status.id)}
+                            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border ${
+                                statusFilter === status.id 
+                                ? `bg-slate-700 text-white border-slate-500` 
+                                : 'bg-transparent text-slate-400 border-slate-700 hover:border-slate-600 hover:text-slate-300'
+                            }`}
+                        >
+                            {status.label}
+                        </button>
                     ))}
                 </div>
 
@@ -377,6 +390,7 @@ export const AppointmentsPanel: React.FC = () => {
                                 <th className="p-4 font-medium">Cliente</th>
                                 <th className="p-4 font-medium">Serviços / Profissional</th>
                                 <th className="p-4 font-medium text-right">Valor</th>
+                                <th className="p-4 font-medium text-right">Pagamento</th>
                                 <th className="p-4 font-medium text-right">Ações</th>
                             </tr>
                         </thead>
@@ -422,9 +436,29 @@ export const AppointmentsPanel: React.FC = () => {
                                         R$ {apt.totalValue.toFixed(2)}
                                     </td>
                                     <td className="p-4 text-right">
+                                        {apt.status === 'completed' ? (
+                                            <select 
+                                                value={apt.paymentMethod || 'pix'}
+                                                onChange={(e) => updateAppointmentPaymentMethod(apt.id, e.target.value)}
+                                                className="bg-slate-900 border border-slate-600 text-slate-300 text-xs rounded p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-800"
+                                            >
+                                                <option value="pix">PIX</option>
+                                                <option value="credit">Cartão</option>
+                                                <option value="cash">Dinheiro</option>
+                                            </select>
+                                        ) : (
+                                            <span className="text-slate-500 text-xs">-</span>
+                                        )}
+                                    </td>
+                                    <td className="p-4 text-right">
                                         <select 
                                             value={apt.status}
-                                            onChange={(e) => updateAppointmentStatus(apt.id, e.target.value)}
+                                            onChange={(e) => {
+                                                updateAppointmentStatus(apt.id, e.target.value);
+                                                if (e.target.value === 'completed' && !apt.paymentMethod) {
+                                                    updateAppointmentPaymentMethod(apt.id, 'pix'); // Default to PIX when completing
+                                                }
+                                            }}
                                             className="bg-slate-900 border border-slate-600 text-slate-300 text-xs rounded p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-800"
                                         >
                                             <option value="scheduled">Agendado</option>
