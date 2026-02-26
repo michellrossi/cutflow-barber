@@ -378,7 +378,7 @@ export const TeamPanel: React.FC = () => {
                 {/* Add New Card */}
                 <button 
                     onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setCommission('50'); setPhoto(null); }}
-                    className="bg-transparent rounded-2xl border-2 border-dashed border-slate-700 hover:border-slate-500 hover:bg-slate-800/30 transition-all flex flex-col items-center justify-center text-center w-full max-w-[190px] min-h-[310px] group"
+                    className="bg-transparent rounded-2xl border-2 border-dashed border-[#27272a] hover:border-[#3f3f46] hover:bg-[#18181b]/50 transition-all flex flex-col items-center justify-center text-center min-h-[320px] group"
                 >
                     <div className="w-12 h-12 rounded-full bg-[#27272a] group-hover:bg-[#3f3f46] flex items-center justify-center mb-4 transition-colors">
                         <UserPlus size={20} className="text-zinc-400 group-hover:text-zinc-300" />
