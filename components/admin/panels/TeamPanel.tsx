@@ -327,11 +327,11 @@ export const TeamPanel: React.FC = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
                 {professionals.map(pro => {
                     const isMaster = pro.role.toLowerCase().includes('master');
                     return (
-                        <div key={pro.id} className="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all w-full max-w-[200px] mx-auto">
+                        <div key={pro.id} className="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all w-full max-w-[190px] shadow-lg">
                             {/* Top Half: Photo */}
                             <div className="relative h-56 w-full overflow-hidden">
                                 <img 
@@ -378,7 +378,7 @@ export const TeamPanel: React.FC = () => {
                 {/* Add New Card */}
                 <button 
                     onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setCommission('50'); setPhoto(null); }}
-                    className="bg-transparent rounded-2xl border-2 border-dashed border-[#27272a] hover:border-[#3f3f46] hover:bg-[#18181b]/50 transition-all flex flex-col items-center justify-center text-center min-h-[320px] group"
+                    className="bg-transparent rounded-2xl border-2 border-dashed border-slate-700 hover:border-slate-500 hover:bg-slate-800/30 transition-all flex flex-col items-center justify-center text-center w-full max-w-[190px] min-h-[310px] group"
                 >
                     <div className="w-12 h-12 rounded-full bg-[#27272a] group-hover:bg-[#3f3f46] flex items-center justify-center mb-4 transition-colors">
                         <UserPlus size={20} className="text-zinc-400 group-hover:text-zinc-300" />

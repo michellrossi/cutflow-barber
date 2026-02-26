@@ -217,9 +217,9 @@ export const ServicesPanel: React.FC = () => {
                             <span className="w-1.5 h-6 rounded-full bg-orange-500 block"></span>
                             {category}
                         </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3">
                             {(items as Service[]).map(service => (
-                                <div key={service.id} className="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all w-full max-w-[180px] mx-auto min-h-[240px]">
+                                <div key={service.id} className="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all w-full max-w-[160px] min-h-[240px]">
                                     {/* Top Area: Duration Badge */}
                                     <div className="h-20 w-full bg-slate-900/40 flex items-center justify-center relative">
                                         <div className="absolute top-2 right-2 bg-slate-900/60 text-orange-400 text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
