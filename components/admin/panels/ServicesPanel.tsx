@@ -210,27 +210,55 @@ export const ServicesPanel: React.FC = () => {
                  </div>
             )}
 
-            <div className="space-y-8">
+            <div className="space-y-12">
                 {Object.entries(groupedServices).map(([category, items]) => (
                     <div key={category}>
-                        <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                            <span className="w-2 h-8 rounded bg-orange-500 block"></span>
+                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
+                            <span className="w-1.5 h-6 rounded-full bg-orange-500 block"></span>
                             {category}
                         </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                             {(items as Service[]).map(service => (
-                                <div key={service.id} className="bg-slate-800 rounded-xl p-6 border border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div>
-                                        <h3 className="font-bold text-lg">{service.name}</h3>
-                                        <p className="text-slate-400 text-sm">{service.description}</p>
-                                        <div className="flex items-center gap-4 mt-2">
-                                            <span className="text-orange-500 font-bold" style={{ color: settings.primaryColor }}>R$ {service.price.toFixed(2)}</span>
-                                            <span className="text-slate-500 text-sm flex items-center gap-1"><CalendarCheck size={12}/> {service.duration} min</span>
+                                <div key={service.id} className="bg-[#18181b] rounded-2xl border border-[#27272a] flex flex-col overflow-hidden group hover:border-[#3f3f46] transition-all">
+                                    {/* Top Area: Duration Badge */}
+                                    <div className="h-24 w-full bg-[#1c1c1f] flex items-center justify-center relative">
+                                        <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-md text-yellow-500 text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 border border-white/5">
+                                            <Clock size={12}/>
+                                            {service.duration} min
                                         </div>
+                                        <CalendarCheck size={32} className="text-zinc-700 group-hover:text-zinc-500 transition-colors" />
                                     </div>
-                                    <div className="flex gap-3">
-                                         <button type="button" onClick={() => handleEdit(service)} className="px-4 py-2 bg-slate-700 rounded-lg text-slate-300 hover:bg-slate-600 flex items-center gap-2 text-sm"><Edit2 size={14}/> Editar</button>
-                                         <button type="button" onClick={() => setDeleteId(service.id)} className="px-4 py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-500/20 flex items-center gap-2 text-sm"><Trash2 size={14}/> Remover</button>
+
+                                    {/* Bottom Area: Info */}
+                                    <div className="p-5 flex flex-col flex-1">
+                                        <div className="mb-4">
+                                            <h3 className="font-bold text-zinc-100 text-lg leading-tight mb-1">{service.name}</h3>
+                                            <p className="text-xs text-zinc-500 line-clamp-2 min-h-[32px]">{service.description}</p>
+                                        </div>
+
+                                        <div className="mt-auto">
+                                            <p className="text-2xl font-bold text-yellow-500 mb-4">
+                                                R$ {service.price.toFixed(2)}
+                                            </p>
+
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => handleEdit(service)} 
+                                                    className="flex-1 py-2.5 bg-[#27272a] rounded-xl text-zinc-300 hover:bg-[#3f3f46] hover:text-white flex items-center justify-center gap-2 text-xs font-medium transition-colors"
+                                                >
+                                                    <Edit2 size={14}/> Editar
+                                                </button>
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setDeleteId(service.id)} 
+                                                    className="w-10 h-10 shrink-0 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 flex items-center justify-center transition-colors"
+                                                    title="Remover Serviço"
+                                                >
+                                                    <Trash2 size={14}/>
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             ))}

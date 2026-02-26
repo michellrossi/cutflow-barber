@@ -331,51 +331,63 @@ export const TeamPanel: React.FC = () => {
                 {professionals.map(pro => {
                     const isMaster = pro.role.toLowerCase().includes('master');
                     return (
-                        <div key={pro.id} className="bg-[#18181b] rounded-2xl p-6 border border-[#27272a] flex flex-col items-center text-center relative">
-                            {/* Profile Image */}
-                            <div className="relative">
-                                <img src={pro.photoUrl} alt={pro.name} className="w-20 h-20 rounded-full object-cover border-2 border-[#27272a]" referrerPolicy="no-referrer" />
+                        <div key={pro.id} className="bg-[#18181b] rounded-2xl border border-[#27272a] flex flex-col overflow-hidden group hover:border-[#3f3f46] transition-all">
+                            {/* Top Half: Photo */}
+                            <div className="relative h-48 w-full overflow-hidden">
+                                <img 
+                                    src={pro.photoUrl} 
+                                    alt={pro.name} 
+                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                                    referrerPolicy="no-referrer" 
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#18181b] to-transparent opacity-60" />
+                                
                                 {isMaster && (
-                                    <div className="absolute bottom-0 right-0 w-5 h-5 bg-yellow-500 rounded-full border-2 border-[#18181b] flex items-center justify-center">
-                                        <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                    <div className="absolute top-3 right-3 bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                                         </svg>
+                                        MASTER
                                     </div>
                                 )}
                             </div>
                             
-                            {/* Info */}
-                            <h3 className="font-bold text-zinc-100 text-lg mt-4">{pro.name}</h3>
-                            <p className={`text-[10px] font-bold tracking-wider uppercase mt-1 ${isMaster ? 'text-yellow-500' : 'text-zinc-400'}`}>
-                                {pro.role}
-                            </p>
-                            <p className="text-xs text-zinc-500 mt-3 mb-6">{pro.email || 'Sem email cadastrado'}</p>
-                            
-                            {/* Actions */}
-                            <div className="w-full flex gap-2 mt-auto">
-                                <button 
-                                    type="button" 
-                                    onClick={() => handleEdit(pro)} 
-                                    className="flex-1 py-2.5 bg-[#27272a] rounded-xl text-zinc-300 hover:bg-[#3f3f46] hover:text-white flex items-center justify-center gap-2 text-sm font-medium transition-colors"
-                                >
-                                    <Edit2 size={14}/> Editar
-                                </button>
-                                <button 
-                                    type="button" 
-                                    onClick={() => { setSelectedProForBlock(pro); setIsBlockModalOpen(true); }} 
-                                    className="w-10 h-10 shrink-0 bg-[#27272a] rounded-xl text-zinc-300 hover:bg-[#3f3f46] hover:text-white flex items-center justify-center transition-colors"
-                                    title="Gerenciar Bloqueios"
-                                >
-                                    <Clock size={14}/>
-                                </button>
-                                <button 
-                                    type="button" 
-                                    onClick={() => setDeleteId(pro.id)} 
-                                    className="w-10 h-10 shrink-0 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 flex items-center justify-center transition-colors"
-                                    title="Excluir Profissional"
-                                >
-                                    <Trash2 size={14}/>
-                                </button>
+                            {/* Bottom Half: Info */}
+                            <div className="p-5 flex flex-col flex-1">
+                                <div className="mb-4">
+                                    <h3 className="font-bold text-zinc-100 text-lg leading-tight">{pro.name}</h3>
+                                    <p className={`text-[10px] font-bold tracking-wider uppercase mt-1 ${isMaster ? 'text-yellow-500' : 'text-zinc-400'}`}>
+                                        {pro.role}
+                                    </p>
+                                    <p className="text-xs text-zinc-500 mt-2 truncate">{pro.email || 'Sem email cadastrado'}</p>
+                                </div>
+                                
+                                {/* Actions */}
+                                <div className="mt-auto flex gap-2">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => handleEdit(pro)} 
+                                        className="flex-1 py-2 bg-[#27272a] rounded-xl text-zinc-300 hover:bg-[#3f3f46] hover:text-white flex items-center justify-center gap-2 text-xs font-medium transition-colors"
+                                    >
+                                        <Edit2 size={14}/> Editar
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => { setSelectedProForBlock(pro); setIsBlockModalOpen(true); }} 
+                                        className="w-9 h-9 shrink-0 bg-[#27272a] rounded-xl text-zinc-300 hover:bg-[#3f3f46] hover:text-white flex items-center justify-center transition-colors"
+                                        title="Gerenciar Bloqueios"
+                                    >
+                                        <Clock size={14}/>
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setDeleteId(pro.id)} 
+                                        className="w-9 h-9 shrink-0 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 flex items-center justify-center transition-colors"
+                                        title="Excluir Profissional"
+                                    >
+                                        <Trash2 size={14}/>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     );
@@ -384,7 +396,7 @@ export const TeamPanel: React.FC = () => {
                 {/* Add New Card */}
                 <button 
                     onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setCommission('50'); setPhoto(null); }}
-                    className="bg-transparent rounded-2xl p-6 border-2 border-dashed border-[#27272a] hover:border-[#3f3f46] hover:bg-[#18181b]/50 transition-all flex flex-col items-center justify-center text-center min-h-[280px] group"
+                    className="bg-transparent rounded-2xl border-2 border-dashed border-[#27272a] hover:border-[#3f3f46] hover:bg-[#18181b]/50 transition-all flex flex-col items-center justify-center text-center min-h-[320px] group"
                 >
                     <div className="w-12 h-12 rounded-full bg-[#27272a] group-hover:bg-[#3f3f46] flex items-center justify-center mb-4 transition-colors">
                         <UserPlus size={20} className="text-zinc-400 group-hover:text-zinc-300" />
