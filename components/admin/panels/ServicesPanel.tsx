@@ -217,46 +217,35 @@ export const ServicesPanel: React.FC = () => {
                             <span className="w-1.5 h-6 rounded-full bg-orange-500 block"></span>
                             {category}
                         </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6">
                             {(items as Service[]).map(service => (
-                                <div key={service.id} className="bg-[#18181b] rounded-2xl border border-[#27272a] flex flex-col overflow-hidden group hover:border-[#3f3f46] transition-all">
+                                <div key={service.id} className="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all w-full max-w-[180px] mx-auto min-h-[240px]">
                                     {/* Top Area: Duration Badge */}
-                                    <div className="h-24 w-full bg-[#1c1c1f] flex items-center justify-center relative">
-                                        <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-md text-yellow-500 text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 border border-white/5">
-                                            <Clock size={12}/>
+                                    <div className="h-20 w-full bg-slate-900/40 flex items-center justify-center relative">
+                                        <div className="absolute top-2 right-2 bg-slate-900/60 text-orange-400 text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
+            <Clock size={10}/>
                                             {service.duration} min
                                         </div>
-                                        <CalendarCheck size={32} className="text-zinc-700 group-hover:text-zinc-500 transition-colors" />
-                                    </div>
+                                        <CalendarCheck size={24} className="text-slate-600 group-hover:text-orange-500/50 transition-colors" />
+    </div>
 
                                     {/* Bottom Area: Info */}
-                                    <div className="p-5 flex flex-col flex-1">
-                                        <div className="mb-4">
-                                            <h3 className="font-bold text-zinc-100 text-lg leading-tight mb-1">{service.name}</h3>
-                                            <p className="text-xs text-zinc-500 line-clamp-2 min-h-[32px]">{service.description}</p>
-                                        </div>
+                                    <div className="p-4 flex flex-col flex-1 text-center">
+        <h3 className="font-bold text-white text-sm leading-tight mb-1 truncate">{service.name}</h3>
+        <p className="text-[10px] text-slate-500 line-clamp-2 mb-3 h-8">{service.description}</p>
 
-                                        <div className="mt-auto">
-                                            <p className="text-2xl font-bold text-yellow-500 mb-4">
-                                                R$ {service.price.toFixed(2)}
-                                            </p>
+        <div className="mt-auto">
+            <p className="text-lg font-bold text-orange-500 mb-3">
+                R$ {service.price.toFixed(2)}
+            </p>
 
-                                            <div className="flex gap-2">
-                                                <button 
-                                                    type="button" 
-                                                    onClick={() => handleEdit(service)} 
-                                                    className="flex-1 py-2.5 bg-[#27272a] rounded-xl text-zinc-300 hover:bg-[#3f3f46] hover:text-white flex items-center justify-center gap-2 text-xs font-medium transition-colors"
-                                                >
-                                                    <Edit2 size={14}/> Editar
-                                                </button>
-                                                <button 
-                                                    type="button" 
-                                                    onClick={() => setDeleteId(service.id)} 
-                                                    className="w-10 h-10 shrink-0 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 flex items-center justify-center transition-colors"
-                                                    title="Remover Serviço"
-                                                >
-                                                    <Trash2 size={14}/>
-                                                </button>
+            <div className="flex gap-2">
+                <button onClick={() => handleEdit(service)} className="flex-1 py-1.5 bg-slate-700 rounded-lg text-slate-300 hover:text-white text-[10px] font-medium transition-colors">
+                    Editar
+                </button>
+                <button onClick={() => setDeleteId(service.id)} className="px-2 py-1.5 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors">
+                    <Trash2 size={14}/>
+                </button>
                                             </div>
                                         </div>
                                     </div>

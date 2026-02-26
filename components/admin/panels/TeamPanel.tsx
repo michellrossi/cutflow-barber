@@ -331,62 +331,44 @@ export const TeamPanel: React.FC = () => {
                 {professionals.map(pro => {
                     const isMaster = pro.role.toLowerCase().includes('master');
                     return (
-                        <div key={pro.id} className="bg-[#18181b] rounded-2xl border border-[#27272a] flex flex-col overflow-hidden group hover:border-[#3f3f46] transition-all">
+                        <div key={pro.id} className="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all w-full max-w-[200px] mx-auto">
                             {/* Top Half: Photo */}
-                            <div className="relative h-48 w-full overflow-hidden">
+                            <div className="relative h-56 w-full overflow-hidden">
                                 <img 
                                     src={pro.photoUrl} 
                                     alt={pro.name} 
                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
                                     referrerPolicy="no-referrer" 
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#18181b] to-transparent opacity-60" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
                                 
                                 {isMaster && (
-                                    <div className="absolute top-3 right-3 bg-yellow-500 text-black text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1 shadow-lg">
-                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                                        </svg>
-                                        MASTER
+            <div className="absolute top-2 right-2 bg-yellow-500 text-black text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg">
+                MASTER
                                     </div>
                                 )}
                             </div>
                             
                             {/* Bottom Half: Info */}
-                            <div className="p-5 flex flex-col flex-1">
-                                <div className="mb-4">
-                                    <h3 className="font-bold text-zinc-100 text-lg leading-tight">{pro.name}</h3>
-                                    <p className={`text-[10px] font-bold tracking-wider uppercase mt-1 ${isMaster ? 'text-yellow-500' : 'text-zinc-400'}`}>
-                                        {pro.role}
-                                    </p>
-                                    <p className="text-xs text-zinc-500 mt-2 truncate">{pro.email || 'Sem email cadastrado'}</p>
-                                </div>
+                            <div className="p-3 flex flex-col flex-1">
+        <div className="mb-3 text-center">
+            <h3 className="font-bold text-white text-sm leading-tight truncate">{pro.name}</h3>
+            <p className="text-[9px] font-bold tracking-wider uppercase text-orange-500 mt-1">
+                {pro.role}
+            </p>
+        </div>
                                 
                                 {/* Actions */}
-                                <div className="mt-auto flex gap-2">
-                                    <button 
-                                        type="button" 
-                                        onClick={() => handleEdit(pro)} 
-                                        className="flex-1 py-2 bg-[#27272a] rounded-xl text-zinc-300 hover:bg-[#3f3f46] hover:text-white flex items-center justify-center gap-2 text-xs font-medium transition-colors"
-                                    >
-                                        <Edit2 size={14}/> Editar
-                                    </button>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => { setSelectedProForBlock(pro); setIsBlockModalOpen(true); }} 
-                                        className="w-9 h-9 shrink-0 bg-[#27272a] rounded-xl text-zinc-300 hover:bg-[#3f3f46] hover:text-white flex items-center justify-center transition-colors"
-                                        title="Gerenciar Bloqueios"
-                                    >
-                                        <Clock size={14}/>
-                                    </button>
-                                    <button 
-                                        type="button" 
-                                        onClick={() => setDeleteId(pro.id)} 
-                                        className="w-9 h-9 shrink-0 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 flex items-center justify-center transition-colors"
-                                        title="Excluir Profissional"
-                                    >
-                                        <Trash2 size={14}/>
-                                    </button>
+                                <div className="mt-auto flex gap-1.5 justify-center">
+            <button onClick={() => handleEdit(pro)} className="p-2 bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors">
+                <Edit2 size={14}/>
+            </button>
+            <button onClick={() => { setSelectedProForBlock(pro); setIsBlockModalOpen(true); }} className="p-2 bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors">
+                <Clock size={14}/>
+            </button>
+            <button onClick={() => setDeleteId(pro.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors">
+                <Trash2 size={14}/>
+            </button>
                                 </div>
                             </div>
                         </div>
