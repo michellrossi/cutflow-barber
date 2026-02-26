@@ -3,7 +3,7 @@ import { useShop } from '../../../store';
 import { supabase } from '../../../supabaseClient';
 import { Professional, WorkSchedule, DaySchedule } from '../../../types';
 import { ConfirmationModal } from '../../ui/ConfirmationModal';
-import { Plus, Trash2, Edit2, Upload, Loader2, Clock, X } from 'lucide-react';
+import { Plus, Trash2, Edit2, Upload, Loader2, Clock, X, UserPlus } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 
 const DEFAULT_DAY: DaySchedule = { start: '09:00', end: '19:00', lunchStart: '12:00', lunchEnd: '13:00', active: true };
@@ -327,26 +327,71 @@ export const TeamPanel: React.FC = () => {
                 </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {professionals.map(pro => (
-                    <div key={pro.id} className="bg-slate-800 rounded-xl p-6 border border-slate-700 hover:border-slate-600 transition-colors flex flex-col items-center text-center">
-                        <img src={pro.photoUrl} alt={pro.name} className="w-24 h-24 rounded-full object-cover mb-4 border-2 border-slate-600" />
-                        <h3 className="font-bold text-lg">{pro.name}</h3>
-                        <p className="text-slate-400 text-sm">{pro.role}</p>
-                        <p className="text-xs text-orange-500 mt-1 font-bold">Comissão: {pro.commissionPercentage ?? 50}%</p>
-                        {pro.email && <p className="text-xs text-blue-400 mt-1 mb-2">{pro.email}</p>}
-                        
-                        <div className="w-full mt-4 space-y-2">
-                            <button type="button" onClick={() => { setSelectedProForBlock(pro); setIsBlockModalOpen(true); }} className="w-full py-2 bg-slate-700 rounded-lg text-slate-300 hover:bg-slate-600 flex items-center justify-center gap-2 text-sm">
-                                <Clock size={14}/> Bloqueios
-                            </button>
-                            <div className="flex gap-2">
-                                <button type="button" onClick={() => handleEdit(pro)} className="flex-1 py-2 bg-slate-700 rounded-lg text-slate-300 hover:bg-slate-600 flex items-center justify-center gap-2 text-sm"><Edit2 size={14}/> Editar</button>
-                                <button type="button" onClick={() => setDeleteId(pro.id)} className="flex-1 py-2 bg-red-500/10 text-red-500 border border-red-500/20 rounded-lg hover:bg-red-500/20 flex items-center justify-center gap-2 text-sm"><Trash2 size={14}/> Excluir</button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {professionals.map(pro => {
+                    const isMaster = pro.role.toLowerCase().includes('master');
+                    return (
+                        <div key={pro.id} className="bg-[#18181b] rounded-2xl p-6 border border-[#27272a] flex flex-col items-center text-center relative">
+                            {/* Profile Image */}
+                            <div className="relative">
+                                <img src={pro.photoUrl} alt={pro.name} className="w-20 h-20 rounded-full object-cover border-2 border-[#27272a]" referrerPolicy="no-referrer" />
+                                {isMaster && (
+                                    <div className="absolute bottom-0 right-0 w-5 h-5 bg-yellow-500 rounded-full border-2 border-[#18181b] flex items-center justify-center">
+                                        <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            {/* Info */}
+                            <h3 className="font-bold text-zinc-100 text-lg mt-4">{pro.name}</h3>
+                            <p className={`text-[10px] font-bold tracking-wider uppercase mt-1 ${isMaster ? 'text-yellow-500' : 'text-zinc-400'}`}>
+                                {pro.role}
+                            </p>
+                            <p className="text-xs text-zinc-500 mt-3 mb-6">{pro.email || 'Sem email cadastrado'}</p>
+                            
+                            {/* Actions */}
+                            <div className="w-full flex gap-2 mt-auto">
+                                <button 
+                                    type="button" 
+                                    onClick={() => handleEdit(pro)} 
+                                    className="flex-1 py-2.5 bg-[#27272a] rounded-xl text-zinc-300 hover:bg-[#3f3f46] hover:text-white flex items-center justify-center gap-2 text-sm font-medium transition-colors"
+                                >
+                                    <Edit2 size={14}/> Editar
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={() => { setSelectedProForBlock(pro); setIsBlockModalOpen(true); }} 
+                                    className="w-10 h-10 shrink-0 bg-[#27272a] rounded-xl text-zinc-300 hover:bg-[#3f3f46] hover:text-white flex items-center justify-center transition-colors"
+                                    title="Gerenciar Bloqueios"
+                                >
+                                    <Clock size={14}/>
+                                </button>
+                                <button 
+                                    type="button" 
+                                    onClick={() => setDeleteId(pro.id)} 
+                                    className="w-10 h-10 shrink-0 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500/20 flex items-center justify-center transition-colors"
+                                    title="Excluir Profissional"
+                                >
+                                    <Trash2 size={14}/>
+                                </button>
                             </div>
                         </div>
+                    );
+                })}
+
+                {/* Add New Card */}
+                <button 
+                    onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setCommission('50'); setPhoto(null); }}
+                    className="bg-transparent rounded-2xl p-6 border-2 border-dashed border-[#27272a] hover:border-[#3f3f46] hover:bg-[#18181b]/50 transition-all flex flex-col items-center justify-center text-center min-h-[280px] group"
+                >
+                    <div className="w-12 h-12 rounded-full bg-[#27272a] group-hover:bg-[#3f3f46] flex items-center justify-center mb-4 transition-colors">
+                        <UserPlus size={20} className="text-zinc-400 group-hover:text-zinc-300" />
                     </div>
-                ))}
+                    <h3 className="font-medium text-blue-400/80 group-hover:text-blue-400 mb-2 transition-colors">Novo Profissional</h3>
+                    <p className="text-xs text-zinc-500 max-w-[140px]">Adicione mais membros para sua equipe</p>
+                </button>
             </div>
         </div>
     );
