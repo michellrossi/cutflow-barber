@@ -239,7 +239,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // 1. Tenta encontrar a loja onde o usuário é DONO
             if (userId) {
-                const { data: shopData } = await supabase.from('shops').select('*').eq('owner_id', userId).single();
+                const { data: shopData } = await supabase.from('shops').select('*').eq('owner_id', userId).maybeSingle();
                 if (shopData) {
                     shopId = shopData.id;
                     currentShopData = mapShop(shopData);
@@ -250,7 +250,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (!shopId && userEmail) {
                  const { data: proData } = await supabase.from('professionals').select('shop_id').eq('email', userEmail).single();
                  if (proData) {
-                     const { data: shopData } = await supabase.from('shops').select('*').eq('id', proData.shop_id).single();
+                     const { data: shopData } = await supabase.from('shops').select('*').eq('id', proData.shop_id).maybeSingle();
                      if (shopData) {
                         shopId = shopData.id;
                         currentShopData = mapShop(shopData);
