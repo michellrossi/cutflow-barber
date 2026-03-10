@@ -240,6 +240,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               email: c.email,
               avatarUrl: c.avatar_url,
               notes: c.notes,
+              totalSpent: c.total_spent || 0,
               createdAt: c.created_at
           }));
           setState(prev => ({ ...prev, clients: mapped }));
@@ -347,6 +348,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             email: c.email,
             avatarUrl: c.avatar_url,
             notes: c.notes,
+            totalSpent: c.total_spent || 0,
             createdAt: c.created_at
         }));
 
@@ -947,6 +949,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 email: data.email,
                 avatarUrl: data.avatar_url,
                 notes: data.notes,
+                totalSpent: data.total_spent || 0,
                 createdAt: data.created_at
             }]
         }));

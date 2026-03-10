@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useShop } from '../../../store';
 import { DollarSign, TrendingUp, Users, Calendar, Award, ArrowUpRight, PieChart, Wallet, Filter, Loader2, RefreshCw, Download, ChevronRight } from 'lucide-react';
 import { Appointment } from '../../../types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend, LineChart, Line } from 'recharts';
 import { useToast } from '../../ui/ToastContext';
 
 // Custom Tooltip para o Recharts
@@ -215,6 +215,21 @@ export const FinancePanel: React.FC = () => {
             { name: 'Não Informado', value: paymentMethods.unknown, color: '#64748b' } // slate-500
         ].filter(item => item.value > 0);
 
+        // 6. Service Profitability
+        const serviceRevenue: Record<string, number> = {};
+        completed.forEach(app => {
+            app.serviceIds.forEach(sid => {
+                const service = services.find(s => s.id === sid);
+                const name = service ? service.name : 'Serviço Deletado';
+                serviceRevenue[name] = (serviceRevenue[name] || 0) + (service ? service.price : 0);
+            });
+        });
+
+        const serviceData = Object.entries(serviceRevenue)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 8); // Top 8 services
+
         return {
             totalRevenue,
             totalCommission,
@@ -223,10 +238,11 @@ export const FinancePanel: React.FC = () => {
             avgTicket,
             chartData,
             sortedPros,
-            paymentMethodData
+            paymentMethodData,
+            serviceData
         };
 
-    }, [reportAppointments, professionals]);
+    }, [reportAppointments, professionals, services]);
 
     return (
         <div className="space-y-6 animate-fade-in pb-20">
@@ -446,7 +462,7 @@ export const FinancePanel: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Gráfico de Formas de Pagamento */}
+                {/* Gráfico de Formas de Pagamento e Serviços */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div className="lg:col-span-1 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col min-h-[300px]">
                         <h3 className="text-lg font-bold text-white mb-6">Formas de Pagamento</h3>
@@ -479,6 +495,54 @@ export const FinancePanel: React.FC = () => {
                                         />
                                         <Legend verticalAlign="bottom" height={36} />
                                     </RechartsPieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="lg:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col min-h-[300px]">
+                        <h3 className="text-lg font-bold text-white mb-6">Serviços Mais Rentáveis</h3>
+                        {stats.serviceData.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center text-slate-500 h-full border border-dashed border-slate-700 rounded-xl bg-slate-800/50">
+                                <TrendingUp size={32} className="mb-2 opacity-50"/>
+                                <p>Sem dados de serviços.</p>
+                            </div>
+                        ) : (
+                            <div className="flex-1 w-full min-h-0">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={stats.serviceData}>
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
+                                        <XAxis 
+                                            dataKey="name" 
+                                            stroke="#64748b" 
+                                            fontSize={10} 
+                                            tickLine={false} 
+                                            axisLine={false}
+                                            interval={0}
+                                            angle={-15}
+                                            textAnchor="end"
+                                        />
+                                        <YAxis 
+                                            stroke="#64748b" 
+                                            fontSize={12} 
+                                            tickLine={false} 
+                                            axisLine={false}
+                                            tickFormatter={(value) => `R$${value}`}
+                                        />
+                                        <Tooltip 
+                                            formatter={(value: number) => `R$ ${value.toFixed(2)}`}
+                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem' }}
+                                        />
+                                        <Line 
+                                            type="monotone" 
+                                            dataKey="value" 
+                                            stroke={settings.primaryColor || '#f97316'} 
+                                            strokeWidth={3}
+                                            dot={{ r: 4, fill: settings.primaryColor || '#f97316', strokeWidth: 2, stroke: '#1e293b' }}
+                                            activeDot={{ r: 6, strokeWidth: 0 }}
+                                            animationDuration={1500}
+                                        />
+                                    </LineChart>
                                 </ResponsiveContainer>
                             </div>
                         )}

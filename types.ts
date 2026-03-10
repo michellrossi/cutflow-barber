@@ -19,6 +19,7 @@ export interface Client {
   email?: string;
   avatarUrl?: string;
   notes?: string;
+  totalSpent?: number;
   createdAt: string;
 }
 

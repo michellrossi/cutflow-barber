@@ -277,6 +277,7 @@ export const ClientsPanel: React.FC = () => {
                 <th className="p-4 font-medium">Último Corte</th>
                 <th className="p-4 font-medium">Frequência</th>
                 <th className="p-4 font-medium">Status / Risco</th>
+                <th className="p-4 font-medium text-right">Total Gasto</th>
                 <th className="p-4 font-medium text-right">Ações</th>
               </tr>
             </thead>
@@ -331,6 +332,9 @@ export const ClientsPanel: React.FC = () => {
                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${getRiskBadgeColor(client.metrics.risk)}`}>
                         {client.metrics.risk}
                       </span>
+                    </td>
+                    <td className="p-4 text-right font-bold text-white">
+                      R$ {(client.totalSpent || 0).toFixed(2)}
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
