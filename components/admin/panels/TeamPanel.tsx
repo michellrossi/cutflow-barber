@@ -29,6 +29,7 @@ export const TeamPanel: React.FC = () => {
     const [role, setRole] = useState('');
     const [email, setEmail] = useState('');
     const [commission, setCommission] = useState('50'); // Default 50%
+    const [color, setColor] = useState('#f97316');
     const [photo, setPhoto] = useState<string | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -70,6 +71,7 @@ export const TeamPanel: React.FC = () => {
         setRole(pro.role);
         setEmail(pro.email || '');
         setCommission(pro.commissionPercentage ? pro.commissionPercentage.toString() : '50');
+        setColor(pro.color || '#f97316');
         setPhoto(pro.photoUrl);
         if (pro.workSchedule) setSchedule(pro.workSchedule);
         setIsFormOpen(true);
@@ -97,7 +99,8 @@ export const TeamPanel: React.FC = () => {
             email: email.toLowerCase().trim(),
             photoUrl: photo || 'https://picsum.photos/200', 
             workSchedule: schedule,
-            commissionPercentage: Number(commission)
+            commissionPercentage: Number(commission),
+            color
         };
         
         let result;
@@ -219,7 +222,7 @@ export const TeamPanel: React.FC = () => {
 
             <div className="flex justify-between mb-8">
                 <p className="text-slate-400">Adicione, edite ou remova profissionais da sua equipe.</p>
-                <button onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setCommission('50'); setPhoto(null); }} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity" style={{ backgroundColor: settings.primaryColor }}>
+                <button onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity" style={{ backgroundColor: settings.primaryColor }}>
                     <Plus size={18} /> Adicionar Profissional
                 </button>
             </div>
@@ -266,6 +269,31 @@ export const TeamPanel: React.FC = () => {
                                     onChange={e => setCommission(e.target.value)} 
                                     className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" 
                                     placeholder="Ex: 50" 
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm text-slate-400 mb-2">Cor na Agenda</label>
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    '#f97316', '#3b82f6', '#10b981', '#8b5cf6', 
+                                    '#ec4899', '#06b6d4', '#f59e0b', '#ef4444',
+                                    '#84cc16', '#a855f7', '#0ea5e9', '#14b8a6'
+                                ].map(c => (
+                                    <button
+                                        key={c}
+                                        type="button"
+                                        onClick={() => setColor(c)}
+                                        className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${color === c ? 'border-white scale-110 shadow-lg' : 'border-transparent'}`}
+                                        style={{ backgroundColor: c }}
+                                    />
+                                ))}
+                                <input 
+                                    type="color" 
+                                    value={color} 
+                                    onChange={e => setColor(e.target.value)}
+                                    className="w-8 h-8 rounded-full bg-transparent border-none cursor-pointer"
                                 />
                             </div>
                         </div>
@@ -343,10 +371,16 @@ export const TeamPanel: React.FC = () => {
                                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
                                 
                                 {isMaster && (
-            <div className="absolute top-2 right-2 bg-yellow-500 text-black text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg">
-                MASTER
+                                    <div className="absolute top-2 right-2 bg-yellow-500 text-black text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg">
+                                        MASTER
                                     </div>
                                 )}
+
+                                <div 
+                                    className="absolute bottom-2 right-2 w-4 h-4 rounded-full border-2 border-white shadow-lg" 
+                                    style={{ backgroundColor: pro.color }}
+                                    title="Cor na agenda"
+                                />
                             </div>
                             
                             {/* Bottom Half: Info */}
@@ -377,7 +411,7 @@ export const TeamPanel: React.FC = () => {
 
                 {/* Add New Card */}
                 <button 
-                    onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setCommission('50'); setPhoto(null); }}
+                    onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }}
                     className="bg-transparent rounded-2xl border-2 border-dashed border-slate-700 hover:border-slate-500 hover:bg-slate-800/30 transition-all flex flex-col items-center justify-center text-center w-full max-w-[190px] min-h-[310px] group"
                 >
                     <div className="w-12 h-12 rounded-full bg-[#27272a] group-hover:bg-[#3f3f46] flex items-center justify-center mb-4 transition-colors">
