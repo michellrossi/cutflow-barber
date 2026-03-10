@@ -30,29 +30,29 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
     subtotal, discountAmount, total, handleFinish, setStep, loading, error
 }) => (
     <div className="max-w-4xl mx-auto py-8 px-4">
-            <button onClick={() => setStep('datetime')} className="text-slate-400 flex items-center gap-2 mb-6 hover:text-white"><ArrowLeft size={16}/> Voltar</button>
-            <h2 className="text-3xl font-bold mb-2">Finalizar agendamento</h2>
-            <p className="text-slate-400 mb-8">Confirme seus dados e conclua a reserva</p>
+            <button onClick={() => setStep('datetime')} className="flex items-center gap-2 mb-6 hover:opacity-80 transition-opacity" style={{ color: settings.textColor || '#94a3b8' }}><ArrowLeft size={16}/> Voltar</button>
+            <h2 className="text-3xl font-bold mb-2" style={{ color: settings.titleColor || '#ffffff' }}>Finalizar agendamento</h2>
+            <p className="mb-8" style={{ color: settings.textColor || '#94a3b8' }}>Confirme seus dados e conclua a reserva</p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Column: Form */}
                 <div className="space-y-6">
                 <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
-                    <h3 className="font-bold text-lg mb-4 text-white">Seus dados</h3>
+                    <h3 className="font-bold text-lg mb-4" style={{ color: settings.titleColor || '#ffffff' }}>Seus dados</h3>
                     <div className="space-y-4">
                         <div>
-                            <label className="block text-sm text-slate-400 mb-1">Nome completo</label>
+                            <label className="block text-sm mb-1" style={{ color: settings.textColor || '#94a3b8' }}>Nome completo</label>
                             <input value={customerInfo.name} onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" placeholder="Seu nome" />
                         </div>
                         <div>
-                            <label className="block text-sm text-slate-400 mb-1">WhatsApp</label>
+                            <label className="block text-sm mb-1" style={{ color: settings.textColor || '#94a3b8' }}>WhatsApp</label>
                             <input value={customerInfo.phone} onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" placeholder="(00) 00000-0000" />
                         </div>
                     </div>
                 </div>
 
                 <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
-                    <h3 className="font-bold text-lg mb-4 text-white">Cupom de desconto</h3>
+                    <h3 className="font-bold text-lg mb-4" style={{ color: settings.titleColor || '#ffffff' }}>Cupom de desconto</h3>
                     <div className="flex gap-2">
                         <input 
                             value={couponCode} 
@@ -76,29 +76,29 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
 
                 {/* Right Column: Summary */}
                 <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 h-fit">
-                <h3 className="font-bold text-lg mb-6 text-white">Resumo do agendamento</h3>
+                <h3 className="font-bold text-lg mb-6" style={{ color: settings.titleColor || '#ffffff' }}>Resumo do agendamento</h3>
                 
                 <div className="space-y-4 mb-6">
                     <div className="flex justify-between items-start pb-4 border-b border-slate-700">
                         <div>
-                            <p className="text-slate-400 text-sm">Serviços</p>
-                            <div className="text-white font-medium">
+                            <p className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>Serviços</p>
+                            <div className="font-medium" style={{ color: settings.titleColor || '#ffffff' }}>
                                 {selectedServices.map(s => <div key={s.id}>{s.name}</div>)}
                             </div>
                         </div>
-                        <div className="text-right text-slate-300">R$ {subtotal.toFixed(2)}</div>
+                        <div className="text-right" style={{ color: settings.textColor || '#cbd5e1' }}>R$ {subtotal.toFixed(2)}</div>
                     </div>
 
                     <div className="pb-4 border-b border-slate-700">
-                        <p className="text-slate-400 text-sm">Profissional</p>
-                        <div className="text-white font-medium">
+                        <p className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>Profissional</p>
+                        <div className="font-medium" style={{ color: settings.titleColor || '#ffffff' }}>
                             {selectedProId ? professionals.find(p => p.id === selectedProId)?.name : 'Sem preferência'}
                         </div>
                     </div>
 
                     <div className="pb-4 border-b border-slate-700">
-                        <p className="text-slate-400 text-sm">Data e horário</p>
-                        <div className="text-white font-medium">
+                        <p className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>Data e horário</p>
+                        <div className="font-medium" style={{ color: settings.titleColor || '#ffffff' }}>
                             {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
                             <br/>
                             {selectedTime}
@@ -107,7 +107,7 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
                 </div>
 
                 <div className="space-y-2 mb-6">
-                        <div className="flex justify-between text-slate-400">
+                        <div className="flex justify-between" style={{ color: settings.textColor || '#94a3b8' }}>
                             <span>Subtotal</span>
                             <span>R$ {subtotal.toFixed(2)}</span>
                         </div>
@@ -117,7 +117,7 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
                                 <span>- R$ {discountAmount.toFixed(2)}</span>
                             </div>
                         )}
-                        <div className="flex justify-between text-2xl font-bold text-white pt-4 border-t border-slate-700">
+                        <div className="flex justify-between text-2xl font-bold pt-4 border-t border-slate-700" style={{ color: settings.titleColor || '#ffffff' }}>
                             <span>Total</span>
                             <span>R$ {total.toFixed(2)}</span>
                         </div>

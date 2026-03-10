@@ -188,73 +188,80 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         setError(null);
     };
 
-    switch(step) {
-        case 'home': 
-            return <HomeStep settings={settings} setStep={setStep} onAdminClick={onAdminClick} />;
-        case 'services': 
-            return <ServicesStep 
-                services={services} 
-                selectedServiceIds={selectedServiceIds} 
-                setSelectedServiceIds={setSelectedServiceIds} 
-                setStep={setStep} 
-                settings={settings} 
-                subtotal={subtotal}
-            />;
-        case 'professional': 
-            return <ProfessionalStep 
-                professionals={professionals} 
-                selectedProId={selectedProId} 
-                setSelectedProId={setSelectedProId} 
-                setStep={setStep} 
-                settings={settings} 
-                subtotal={subtotal}
-            />;
-        case 'datetime': 
-            return <DateTimeStep 
-                selectedDate={selectedDate} 
-                setSelectedDate={setSelectedDate} 
-                selectedTime={selectedTime} 
-                setSelectedTime={setSelectedTime} 
-                setStep={setStep} 
-                settings={settings}
-                subtotal={subtotal}
-                selectedProId={selectedProId}
-                professionals={professionals}
-                appointments={appointments}
-                services={services}
-                totalDuration={totalDuration}
-            />;
-        case 'summary': 
-            return <SummaryStep 
-                customerInfo={customerInfo}
-                setCustomerInfo={setCustomerInfo}
-                couponCode={couponCode}
-                setCouponCode={setCouponCode}
-                appliedCoupon={appliedCoupon}
-                handleApplyCoupon={handleApplyCoupon}
-                settings={settings}
-                selectedServices={selectedServices}
-                selectedProId={selectedProId}
-                professionals={professionals}
-                selectedDate={selectedDate}
-                selectedTime={selectedTime}
-                subtotal={subtotal}
-                discountAmount={discountAmount}
-                total={total}
-                handleFinish={handleFinish}
-                setStep={setStep}
-                loading={loading}
-                error={error}
-            />;
-        case 'success': 
-            return <SuccessStep 
-                customerInfo={customerInfo}
-                selectedDate={selectedDate}
-                selectedTime={selectedTime}
-                selectedProId={selectedProId}
-                professionals={professionals}
-                onReset={handleReset}
-            />;
-        default: return null;
-    }
+    return (
+        <div className="min-h-screen transition-colors duration-500" style={{ backgroundColor: settings.backgroundColor || '#0f172a' }}>
+            {(() => {
+                switch(step) {
+                    case 'home': 
+                        return <HomeStep settings={settings} setStep={setStep} onAdminClick={onAdminClick} />;
+                    case 'services': 
+                        return <ServicesStep 
+                            services={services} 
+                            selectedServiceIds={selectedServiceIds} 
+                            setSelectedServiceIds={setSelectedServiceIds} 
+                            setStep={setStep} 
+                            settings={settings} 
+                            subtotal={subtotal}
+                        />;
+                    case 'professional': 
+                        return <ProfessionalStep 
+                            professionals={professionals} 
+                            selectedProId={selectedProId} 
+                            setSelectedProId={setSelectedProId} 
+                            setStep={setStep} 
+                            settings={settings} 
+                            subtotal={subtotal}
+                        />;
+                    case 'datetime': 
+                        return <DateTimeStep 
+                            selectedDate={selectedDate} 
+                            setSelectedDate={setSelectedDate} 
+                            selectedTime={selectedTime} 
+                            setSelectedTime={setSelectedTime} 
+                            setStep={setStep} 
+                            settings={settings}
+                            subtotal={subtotal}
+                            selectedProId={selectedProId}
+                            professionals={professionals}
+                            appointments={appointments}
+                            services={services}
+                            totalDuration={totalDuration}
+                        />;
+                    case 'summary': 
+                        return <SummaryStep 
+                            customerInfo={customerInfo}
+                            setCustomerInfo={setCustomerInfo}
+                            couponCode={couponCode}
+                            setCouponCode={setCouponCode}
+                            appliedCoupon={appliedCoupon}
+                            handleApplyCoupon={handleApplyCoupon}
+                            settings={settings}
+                            selectedServices={selectedServices}
+                            selectedProId={selectedProId}
+                            professionals={professionals}
+                            selectedDate={selectedDate}
+                            selectedTime={selectedTime}
+                            subtotal={subtotal}
+                            discountAmount={discountAmount}
+                            total={total}
+                            handleFinish={handleFinish}
+                            setStep={setStep}
+                            loading={loading}
+                            error={error}
+                        />;
+                    case 'success': 
+                        return <SuccessStep 
+                            customerInfo={customerInfo}
+                            selectedDate={selectedDate}
+                            selectedTime={selectedTime}
+                            selectedProId={selectedProId}
+                            professionals={professionals}
+                            onReset={handleReset}
+                            settings={settings}
+                        />;
+                    default: return null;
+                }
+            })()}
+        </div>
+    );
 };

@@ -14,9 +14,9 @@ interface ProfessionalStepProps {
 
 export const ProfessionalStep: React.FC<ProfessionalStepProps> = ({ professionals, selectedProId, setSelectedProId, setStep, settings, subtotal }) => (
     <div className="max-w-2xl mx-auto py-8 px-4 pb-32">
-        <button onClick={() => setStep('services')} className="text-slate-400 flex items-center gap-2 mb-6 hover:text-white"><ArrowLeft size={16}/> Voltar</button>
-        <h2 className="text-3xl font-bold mb-2">Escolha o profissional</h2>
-        <p className="text-slate-400 mb-8">Selecione seu barbeiro ou deixe sem preferência</p>
+        <button onClick={() => setStep('services')} className="flex items-center gap-2 mb-6 hover:opacity-80 transition-opacity" style={{ color: settings.textColor || '#94a3b8' }}><ArrowLeft size={16}/> Voltar</button>
+        <h2 className="text-3xl font-bold mb-2" style={{ color: settings.titleColor || '#ffffff' }}>Escolha o profissional</h2>
+        <p className="mb-8" style={{ color: settings.textColor || '#94a3b8' }}>Selecione seu barbeiro ou deixe sem preferência</p>
 
         <div className="space-y-4">
             <div 
@@ -28,8 +28,8 @@ export const ProfessionalStep: React.FC<ProfessionalStepProps> = ({ professional
                     <User size={24}/>
                 </div>
                 <div>
-                    <h3 className="font-bold text-lg">Sem preferência</h3>
-                    <p className="text-slate-400 text-sm">Primeiro profissional disponível</p>
+                    <h3 className="font-bold text-lg" style={{ color: settings.titleColor || '#ffffff' }}>Sem preferência</h3>
+                    <p className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>Primeiro profissional disponível</p>
                 </div>
             </div>
 
@@ -44,8 +44,8 @@ export const ProfessionalStep: React.FC<ProfessionalStepProps> = ({ professional
                     >
                         <img src={pro.photoUrl} alt={pro.name} className="w-16 h-16 rounded-full object-cover" />
                         <div>
-                            <h3 className="font-bold text-lg">{pro.name}</h3>
-                            <p className="text-slate-400 text-sm">{pro.role}</p>
+                            <h3 className="font-bold text-lg" style={{ color: settings.titleColor || '#ffffff' }}>{pro.name}</h3>
+                            <p className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>{pro.role}</p>
                         </div>
                     </div>
                 );

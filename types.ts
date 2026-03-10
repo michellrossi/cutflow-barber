@@ -101,6 +101,10 @@ export interface ShopSettings {
   logoUrl: string | null;
   primaryColor: string;
   secondaryColor: string;
+  titleColor?: string;
+  textColor?: string;
+  backgroundColor?: string;
+  priceColor?: string;
 }
 
 export interface BlockedSlot {

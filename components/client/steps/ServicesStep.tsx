@@ -47,13 +47,13 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
                 </button>
             </div>
             
-            <h2 className="text-3xl font-bold mb-2">Escolha seus serviços</h2>
-            <p className="text-slate-400 mb-8">Selecione um ou mais serviços desejados</p>
+            <h2 className="text-3xl font-bold mb-2" style={{ color: settings.titleColor || '#ffffff' }}>Escolha seus serviços</h2>
+            <p className="mb-8" style={{ color: settings.textColor || '#94a3b8' }}>Selecione um ou mais serviços desejados</p>
 
             <div className="space-y-8">
                 {sortedCategories.map(category => (
                     <div key={category}>
-                        <h3 className="text-lg font-bold text-slate-300 mb-3 border-b border-slate-700 pb-2">
+                        <h3 className="text-lg font-bold mb-3 border-b border-slate-700 pb-2" style={{ color: settings.titleColor || '#ffffff' }}>
                             {category}
                         </h3>
                         <div className="space-y-4">
@@ -71,11 +71,11 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
                                                 {isSelected && <Check size={14} className="text-white" />}
                                             </div>
                                             <div className="flex-1">
-                                                <h3 className="font-bold text-lg">{service.name}</h3>
-                                                <p className="text-slate-400 text-sm mb-2">{service.description}</p>
+                                                <h3 className="font-bold text-lg" style={{ color: settings.titleColor || '#ffffff' }}>{service.name}</h3>
+                                                <p className="text-sm mb-2" style={{ color: settings.textColor || '#94a3b8' }}>{service.description}</p>
                                                 <div className="flex gap-4 text-sm font-medium">
-                                                    <span className="text-slate-300 flex items-center gap-1"><Clock size={14}/> {service.duration} min</span>
-                                                    <span style={{ color: settings.primaryColor }}>R$ {service.price.toFixed(2)}</span>
+                                                    <span className="flex items-center gap-1" style={{ color: settings.textColor || '#94a3b8' }}><Clock size={14}/> {service.duration} min</span>
+                                                    <span style={{ color: settings.priceColor || settings.primaryColor }}>R$ {service.price.toFixed(2)}</span>
                                                 </div>
                                             </div>
                                         </div>

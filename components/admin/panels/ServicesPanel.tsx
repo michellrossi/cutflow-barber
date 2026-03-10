@@ -289,7 +289,7 @@ export const ServicesPanel: React.FC = () => {
                  </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                 {services.map(service => (
                     <div key={service.id} className="bg-slate-800/40 rounded-[2rem] border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all shadow-xl">
                         {/* Imagem do Serviço */}

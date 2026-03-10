@@ -117,7 +117,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       name: data.name || "Minha Barbearia",
       logoUrl: data.logo_url,
       primaryColor: data.primary_color || "#f97316",
-      secondaryColor: data.secondary_color || "#1e293b"
+      secondaryColor: data.secondary_color || "#1e293b",
+      titleColor: data.title_color,
+      textColor: data.text_color,
+      backgroundColor: data.background_color,
+      priceColor: data.price_color
   });
 
   const mapService = (data: any): Service => ({
@@ -688,7 +692,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             photo_url: pro.photoUrl,
             work_schedule: pro.workSchedule || DEFAULT_SCHEDULE,
             email: pro.email ? sanitize(pro.email) : null,
-            commission_percentage: pro.commissionPercentage ?? 50
+            commission_percentage: pro.commissionPercentage ?? 50,
+            color: pro.color || PROFESSIONAL_COLORS[state.professionals.length % PROFESSIONAL_COLORS.length]
         }).select().single();
         
         if (error) throw error;
@@ -713,6 +718,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.workSchedule) payload.work_schedule = updated.workSchedule;
         if (updated.email !== undefined) payload.email = updated.email ? sanitize(updated.email) : null;
         if (updated.commissionPercentage !== undefined) payload.commission_percentage = updated.commissionPercentage;
+        if (updated.color) payload.color = sanitize(updated.color);
 
         const { data, error } = await supabase.from('professionals').update(payload).eq('id', id).select().single();
         if (error) throw error;
@@ -1066,6 +1072,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.logoUrl) payload.logo_url = updated.logoUrl;
         if (updated.primaryColor) payload.primary_color = sanitize(updated.primaryColor);
         if (updated.secondaryColor) payload.secondary_color = sanitize(updated.secondaryColor);
+        if (updated.titleColor) payload.title_color = sanitize(updated.titleColor);
+        if (updated.textColor) payload.text_color = sanitize(updated.textColor);
+        if (updated.backgroundColor) payload.background_color = sanitize(updated.backgroundColor);
+        if (updated.priceColor) payload.price_color = sanitize(updated.priceColor);
 
         let error;
         let newData;

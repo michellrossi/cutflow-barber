@@ -171,12 +171,12 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
 
     return (
         <div className="max-w-3xl mx-auto py-8 px-4 pb-32">
-                <button onClick={() => setStep('professional')} className="text-slate-400 flex items-center gap-2 mb-6 hover:text-white"><ArrowLeft size={16}/> Voltar</button>
-                <h2 className="text-3xl font-bold mb-2">Escolha data e horário</h2>
-                <p className="text-slate-400 mb-8">Selecione o melhor dia e hora para você</p>
+                <button onClick={() => setStep('professional')} className="flex items-center gap-2 mb-6 hover:opacity-80 transition-opacity" style={{ color: settings.textColor || '#94a3b8' }}><ArrowLeft size={16}/> Voltar</button>
+                <h2 className="text-3xl font-bold mb-2" style={{ color: settings.titleColor || '#ffffff' }}>Escolha data e horário</h2>
+                <p className="mb-8" style={{ color: settings.textColor || '#94a3b8' }}>Selecione o melhor dia e hora para você</p>
 
                 <div className="mb-6">
-                <h3 className="text-slate-300 font-bold mb-4 flex items-center gap-2"><Calendar size={18}/> Data</h3>
+                <h3 className="font-bold mb-4 flex items-center gap-2" style={{ color: settings.titleColor || '#ffffff' }}><Calendar size={18}/> Data</h3>
                 <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
                     {dates.map(date => {
                         const isSelected = selectedDate === date.full;
@@ -199,7 +199,7 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
 
                 {selectedDate && (
                     <div className="mb-8 animate-fade-in-down">
-                    <h3 className="text-slate-300 font-bold mb-4 flex items-center gap-2"><Clock size={18}/> Horários Disponíveis</h3>
+                    <h3 className="font-bold mb-4 flex items-center gap-2" style={{ color: settings.titleColor || '#ffffff' }}><Clock size={18}/> Horários Disponíveis</h3>
                     {timeSlots.length > 0 ? (
                         <div className="grid grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                             {timeSlots.map(time => {
@@ -217,7 +217,7 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
                             })}
                         </div>
                     ) : (
-                        <div className="p-6 bg-slate-800/50 rounded-xl border border-slate-700 text-center text-slate-400">
+                        <div className="p-6 bg-slate-800/50 rounded-xl border border-slate-700 text-center" style={{ color: settings.textColor || '#94a3b8' }}>
                             Não há horários disponíveis para esta data.
                         </div>
                     )}
@@ -226,8 +226,8 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
                 
                 {selectedDate && selectedTime && (
                     <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-8">
-                    <span className="text-slate-400 text-sm">Agendamento selecionado</span>
-                    <div className="text-white font-bold text-lg">
+                    <span className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>Agendamento selecionado</span>
+                    <div className="font-bold text-lg" style={{ color: settings.titleColor || '#ffffff' }}>
                         {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })} às {selectedTime}
                     </div>
                     </div>
