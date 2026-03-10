@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useShop } from '../../../store';
-import { ChevronLeft, ChevronRight, Plus, User, Clock, Calendar, Scissors, Check, Utensils } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, User, Clock, Calendar, Scissors, Check, Utensils, X, Phone } from 'lucide-react';
 import { Appointment } from '../../../types';
 
 interface WeeklyCalendarProps {
@@ -8,10 +8,11 @@ interface WeeklyCalendarProps {
 }
 
 export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment }) => {
-    const { appointments, professionals, services, settings, updateAppointmentStatus } = useShop();
+    const { appointments, professionals, services, settings, updateAppointmentStatus, updateAppointmentPaymentMethod } = useShop();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedProId, setSelectedProId] = useState<string | 'all'>('all');
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
     // Atualiza a linha do tempo a cada minuto
     useEffect(() => {
@@ -72,10 +73,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
 
     const getStatusStyles = (status: string) => {
         switch (status) {
-            case 'scheduled': return 'bg-orange-500/20 border-orange-500/50 text-orange-400';
-            case 'confirmed': return 'bg-blue-500/20 border-blue-500/50 text-blue-400';
-            case 'completed': return 'bg-green-500/20 border-green-500/50 text-green-400';
-            case 'noshow': return 'bg-red-500/20 border-red-500/50 text-red-400';
+            case 'scheduled': return 'bg-orange-500/10 border-orange-500/30 text-orange-400';
+            case 'confirmed': return 'bg-blue-500/10 border-blue-500/30 text-blue-400';
+            case 'completed': return 'bg-green-500/10 border-green-500/30 text-green-400';
+            case 'noshow': return 'bg-red-500/10 border-red-500/30 text-red-400';
             default: return 'bg-slate-700/50 border-slate-600 text-slate-400';
         }
     };
@@ -102,8 +103,116 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
         return (totalMinutes / 60) * pixelsPerHour;
     }, [currentTime]);
 
+    const getProColor = (proId: string | null) => {
+        if (!proId) return '#64748b';
+        return professionals.find(p => p.id === proId)?.color || '#64748b';
+    };
+
     return (
         <div className="flex flex-col gap-6 animate-fade-in">
+            {/* Modal de Detalhes do Agendamento */}
+            {selectedAppointment && (
+                <div 
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in"
+                    onClick={(e) => e.target === e.currentTarget && setSelectedAppointment(null)}
+                >
+                    <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-md shadow-2xl relative animate-scale-up overflow-hidden">
+                        <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
+                            <h3 className="text-xl font-bold text-white">Detalhes do Agendamento</h3>
+                            <button onClick={() => setSelectedAppointment(null)} className="text-slate-400 hover:text-white transition-colors"><X size={24}/></button>
+                        </div>
+                        
+                        <div className="p-6 space-y-6">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 font-bold text-xl border border-slate-600">
+                                    {selectedAppointment.clientName.substring(0, 2).toUpperCase()}
+                                </div>
+                                <div>
+                                    <h4 className="text-lg font-bold text-white">{selectedAppointment.clientName}</h4>
+                                    <div className="flex items-center gap-2 text-slate-400 text-sm">
+                                        <Phone size={12} /> {selectedAppointment.clientPhone}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Data e Hora</p>
+                                    <p className="text-sm text-white font-medium flex items-center gap-2">
+                                        <Calendar size={14} className="text-orange-500" />
+                                        {new Date(selectedAppointment.date + 'T12:00:00').toLocaleDateString('pt-BR')} às {selectedAppointment.time.substring(0, 5)}
+                                    </p>
+                                </div>
+                                <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Profissional</p>
+                                    <p className="text-sm text-white font-medium flex items-center gap-2">
+                                        <User size={14} className="text-orange-500" />
+                                        {professionals.find(p => p.id === selectedAppointment.professionalId)?.name || 'Qualquer um'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Serviços</p>
+                                <div className="space-y-2">
+                                    {selectedAppointment.serviceIds.map(sid => {
+                                        const service = services.find(s => s.id === sid);
+                                        return (
+                                            <div key={sid} className="flex justify-between items-center bg-slate-900/30 p-2 rounded-lg border border-slate-700/50">
+                                                <span className="text-sm text-slate-300">{service?.name}</span>
+                                                <span className="text-sm font-bold text-white">R$ {service?.price.toFixed(2)}</span>
+                                            </div>
+                                        );
+                                    })}
+                                    <div className="flex justify-between items-center pt-2 border-t border-slate-700">
+                                        <span className="text-sm font-bold text-slate-400">Total</span>
+                                        <span className="text-lg font-bold" style={{ color: settings.primaryColor }}>R$ {selectedAppointment.totalValue.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-700">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Status</label>
+                                    <select 
+                                        value={selectedAppointment.status}
+                                        onChange={(e) => {
+                                            const newStatus = e.target.value as any;
+                                            updateAppointmentStatus(selectedAppointment.id, newStatus);
+                                            setSelectedAppointment({...selectedAppointment, status: newStatus});
+                                        }}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-orange-500"
+                                    >
+                                        <option value="scheduled">Agendado</option>
+                                        <option value="confirmed">Confirmado</option>
+                                        <option value="completed">Finalizado / Pago</option>
+                                        <option value="noshow">Não Compareceu</option>
+                                        <option value="cancelled">Cancelado</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Pagamento</label>
+                                    <select 
+                                        value={selectedAppointment.paymentMethod || 'pix'}
+                                        disabled={selectedAppointment.status !== 'completed'}
+                                        onChange={(e) => {
+                                            const newMethod = e.target.value as any;
+                                            updateAppointmentPaymentMethod(selectedAppointment.id, newMethod);
+                                            setSelectedAppointment({...selectedAppointment, paymentMethod: newMethod});
+                                        }}
+                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-orange-500 disabled:opacity-50"
+                                    >
+                                        <option value="pix">PIX</option>
+                                        <option value="credit">Cartão</option>
+                                        <option value="cash">Dinheiro</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header da Agenda */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
@@ -161,11 +270,12 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                             onClick={() => setSelectedProId(pro.id)}
                             className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all border whitespace-nowrap ${
                                 selectedProId === pro.id 
-                                ? 'bg-orange-500/20 border-orange-500/50 text-orange-400' 
+                                ? 'bg-slate-700 border-slate-500 text-white' 
                                 : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
                             }`}
+                            style={selectedProId === pro.id ? { borderColor: pro.color, backgroundColor: `${pro.color}20`, color: pro.color } : {}}
                         >
-                            <User size={14} />
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pro.color }} />
                             {pro.name}
                         </button>
                     ))}
@@ -201,8 +311,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                             {/* Linha de Horário Atual */}
                             {timeLinePosition !== null && (
                                 <div 
-                                    className="absolute left-0 right-0 z-20 flex items-center pointer-events-none"
-                                    style={{ top: `${timeLinePosition + 48}px` }} // +48 para compensar o header do grid se necessário, mas aqui é relativo ao corpo
+                                    className="absolute left-[80px] right-0 z-20 flex items-center pointer-events-none"
+                                    style={{ top: `${timeLinePosition}px` }}
                                 >
                                     <div className="w-2 h-2 rounded-full bg-red-500 -ml-1 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
                                     <div className="flex-1 h-[2px] bg-red-500/50" />
@@ -227,11 +337,13 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                         );
 
                                         return (
-                                            <div key={dayIdx} className="relative border-r border-slate-700/30 last:border-r-0 p-1">
+                                            <div key={dayIdx} className={`relative border-r border-slate-700/30 last:border-r-0 p-1 flex gap-1 ${slotAppointments.length > 1 ? 'flex-row' : 'flex-col'}`}>
                                                 {slotAppointments.map(apt => (
                                                     <div 
                                                         key={apt.id}
-                                                        className={`p-2 rounded-xl border mb-1 shadow-lg cursor-pointer hover:brightness-110 transition-all ${getStatusStyles(apt.status)}`}
+                                                        onClick={() => setSelectedAppointment(apt)}
+                                                        className={`p-2 rounded-xl border shadow-lg cursor-pointer hover:brightness-110 transition-all flex-1 min-w-0 border-l-4 ${getStatusStyles(apt.status)}`}
+                                                        style={{ borderLeftColor: getProColor(apt.professionalId) }}
                                                     >
                                                         <p className="text-[11px] font-bold truncate leading-tight">{apt.clientName}</p>
                                                         <p className="text-[9px] opacity-70 truncate mb-1">

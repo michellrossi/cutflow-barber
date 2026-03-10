@@ -61,6 +61,7 @@ export interface Professional {
   email?: string;
   userId?: string;
   commissionPercentage?: number; // Novo campo
+  color?: string; // [NOVO] Cor para identificação na agenda
 }
 
 export interface Coupon {

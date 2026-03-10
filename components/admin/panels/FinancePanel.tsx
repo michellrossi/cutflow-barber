@@ -464,8 +464,11 @@ export const FinancePanel: React.FC = () => {
 
                 {/* Gráfico de Formas de Pagamento e Serviços */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-1 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col min-h-[300px]">
-                        <h3 className="text-lg font-bold text-white mb-6">Formas de Pagamento</h3>
+                    <div className="lg:col-span-1 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col min-h-[350px]">
+                        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <PieChart size={18} className="text-blue-500"/>
+                            Formas de Pagamento
+                        </h3>
                         {stats.paymentMethodData.length === 0 ? (
                             <div className="flex-1 flex flex-col items-center justify-center text-slate-500 h-full border border-dashed border-slate-700 rounded-xl bg-slate-800/50">
                                 <PieChart size={32} className="mb-2 opacity-50"/>
@@ -479,10 +482,11 @@ export const FinancePanel: React.FC = () => {
                                             data={stats.paymentMethodData}
                                             cx="50%"
                                             cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            paddingAngle={5}
+                                            innerRadius={65}
+                                            outerRadius={85}
+                                            paddingAngle={8}
                                             dataKey="value"
+                                            stroke="none"
                                         >
                                             {stats.paymentMethodData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.color} />
@@ -490,18 +494,31 @@ export const FinancePanel: React.FC = () => {
                                         </Pie>
                                         <Tooltip 
                                             formatter={(value: number) => `R$ ${value.toFixed(2)}`}
-                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem' }}
-                                            itemStyle={{ color: '#f97316', fontWeight: 'bold' }}
+                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem', border: '1px solid #334155' }}
+                                            itemStyle={{ fontWeight: 'bold' }}
                                         />
-                                        <Legend verticalAlign="bottom" height={36} />
+                                        <Legend 
+                                            verticalAlign="bottom" 
+                                            align="center"
+                                            iconType="circle"
+                                            wrapperStyle={{ paddingTop: '20px', fontSize: '12px' }}
+                                        />
                                     </RechartsPieChart>
                                 </ResponsiveContainer>
+                                {/* Centro do Donut */}
+                                <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total</p>
+                                    <p className="text-lg font-bold text-white">R$ {stats.totalRevenue.toFixed(0)}</p>
+                                </div>
                             </div>
                         )}
                     </div>
 
-                    <div className="lg:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col min-h-[300px]">
-                        <h3 className="text-lg font-bold text-white mb-6">Serviços Mais Rentáveis</h3>
+                    <div className="lg:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col min-h-[350px]">
+                        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                            <TrendingUp size={18} className="text-green-500"/>
+                            Serviços Mais Rentáveis
+                        </h3>
                         {stats.serviceData.length === 0 ? (
                             <div className="flex-1 flex flex-col items-center justify-center text-slate-500 h-full border border-dashed border-slate-700 rounded-xl bg-slate-800/50">
                                 <TrendingUp size={32} className="mb-2 opacity-50"/>
@@ -510,39 +527,40 @@ export const FinancePanel: React.FC = () => {
                         ) : (
                             <div className="flex-1 w-full min-h-0">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={stats.serviceData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
-                                        <XAxis 
-                                            dataKey="name" 
-                                            stroke="#64748b" 
-                                            fontSize={10} 
-                                            tickLine={false} 
-                                            axisLine={false}
-                                            interval={0}
-                                            angle={-15}
-                                            textAnchor="end"
-                                        />
+                                    <BarChart 
+                                        data={stats.serviceData} 
+                                        layout="vertical"
+                                        margin={{ left: 20, right: 40, top: 0, bottom: 0 }}
+                                    >
+                                        <XAxis type="number" hide />
                                         <YAxis 
+                                            dataKey="name" 
+                                            type="category" 
                                             stroke="#64748b" 
                                             fontSize={12} 
                                             tickLine={false} 
                                             axisLine={false}
-                                            tickFormatter={(value) => `R$${value}`}
+                                            width={120}
                                         />
                                         <Tooltip 
                                             formatter={(value: number) => `R$ ${value.toFixed(2)}`}
                                             contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem' }}
+                                            cursor={{ fill: '#334155', opacity: 0.1 }}
                                         />
-                                        <Line 
-                                            type="monotone" 
+                                        <Bar 
                                             dataKey="value" 
-                                            stroke={settings.primaryColor || '#f97316'} 
-                                            strokeWidth={3}
-                                            dot={{ r: 4, fill: settings.primaryColor || '#f97316', strokeWidth: 2, stroke: '#1e293b' }}
-                                            activeDot={{ r: 6, strokeWidth: 0 }}
+                                            radius={[0, 4, 4, 0]} 
+                                            barSize={20}
                                             animationDuration={1500}
-                                        />
-                                    </LineChart>
+                                        >
+                                            {stats.serviceData.map((entry, index) => (
+                                                <Cell 
+                                                    key={`cell-${index}`} 
+                                                    fill={index === 0 ? settings.primaryColor : `${settings.primaryColor}80`} 
+                                                />
+                                            ))}
+                                        </Bar>
+                                    </BarChart>
                                 </ResponsiveContainer>
                             </div>
                         )}

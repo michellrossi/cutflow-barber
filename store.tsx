@@ -130,7 +130,17 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       category: data.category || 'Geral'
   });
 
-  const mapProfessional = (data: any): Professional => ({
+  const PROFESSIONAL_COLORS = [
+    '#f97316', // orange-500
+    '#3b82f6', // blue-500
+    '#10b981', // emerald-500
+    '#8b5cf6', // violet-500
+    '#ec4899', // pink-500
+    '#06b6d4', // cyan-500
+    '#f59e0b', // amber-500
+  ];
+
+  const mapProfessional = (data: any, index: number): Professional => ({
       id: data.id,
       shopId: data.shop_id,
       name: data.name,
@@ -139,7 +149,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       workSchedule: data.work_schedule || DEFAULT_SCHEDULE,
       email: data.email,
       userId: data.user_id,
-      commissionPercentage: data.commission_percentage || 50 // Default 50%
+      commissionPercentage: data.commission_percentage || 50, // Default 50%
+      color: data.color || PROFESSIONAL_COLORS[index % PROFESSIONAL_COLORS.length]
   });
 
   const mapCoupon = (data: any): Coupon => ({
@@ -339,7 +350,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (appts) appointmentsData = appts.map(mapAppointment);
 
-        const mappedProfessionals = (prosRes.data || []).map(mapProfessional);
+        const mappedProfessionals = (prosRes.data || []).map((p: any, i: number) => mapProfessional(p, i));
         const mappedClients = (clientsRes.data || []).map((c: any) => ({
             id: c.id,
             shopId: c.shop_id,
@@ -678,7 +689,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (error) throw error;
 
         // Optimistic Update
-        const newPro = mapProfessional(data);
+        const newPro = mapProfessional(data, state.professionals.length);
         setState(prev => ({ ...prev, professionals: [...prev.professionals, newPro] }));
 
         return { success: true };
@@ -702,7 +713,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (error) throw error;
 
         // Optimistic Update
-        const updatedPro = mapProfessional(data);
+        const currentIndex = state.professionals.findIndex(p => p.id === id);
+        const updatedPro = mapProfessional(data, currentIndex !== -1 ? currentIndex : 0);
         setState(prev => ({
             ...prev,
             professionals: prev.professionals.map(p => p.id === id ? updatedPro : p)
