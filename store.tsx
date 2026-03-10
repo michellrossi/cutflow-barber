@@ -45,6 +45,7 @@ interface ShopContextType extends ShopState {
 
   addClient: (client: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
   updateClient: (id: string, client: Partial<Client>) => MutationResult;
+  removeClient: (id: string) => MutationResult;
 
   updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
   
@@ -222,6 +223,46 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
+  const reloadClients = async (shopId: string) => {
+      const { data: clients } = await supabase
+            .from('clients')
+            .select('*')
+            .eq('shop_id', shopId)
+            .order('name', { ascending: true });
+      
+      if (clients) {
+          const mapped = clients.map((c: any) => ({
+              id: c.id,
+              shopId: c.shop_id,
+              name: c.name,
+              phone: c.phone,
+              email: c.email,
+              avatarUrl: c.avatar_url,
+              notes: c.notes,
+              createdAt: c.created_at
+          }));
+          setState(prev => ({ ...prev, clients: mapped }));
+      }
+  };
+
+  const ensureClientExists = async (shopId: string, name: string, phone: string) => {
+      const { data: existing } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('shop_id', shopId)
+        .eq('phone', phone)
+        .maybeSingle();
+      
+      if (!existing) {
+          await supabase.from('clients').insert({
+              shop_id: shopId,
+              name: name,
+              phone: phone
+          });
+          await reloadClients(shopId);
+      }
+  };
+
   // --- Core Fetch Logic (Heavy - Use sparingly) ---
   const fetchData = async (targetShopId?: string) => {
     if (!state.shop) setLoading(true);
@@ -239,7 +280,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // 1. Tenta encontrar a loja onde o usuário é DONO
             if (userId) {
-                const { data: shopData } = await supabase.from('shops').select('*').eq('owner_id', userId).maybeSingle();
+                const { data: shopData } = await supabase.from('shops').select('*').eq('owner_id', userId).single();
                 if (shopData) {
                     shopId = shopData.id;
                     currentShopData = mapShop(shopData);
@@ -250,7 +291,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (!shopId && userEmail) {
                  const { data: proData } = await supabase.from('professionals').select('shop_id').eq('email', userEmail).single();
                  if (proData) {
-                     const { data: shopData } = await supabase.from('shops').select('*').eq('id', proData.shop_id).maybeSingle();
+                     const { data: shopData } = await supabase.from('shops').select('*').eq('id', proData.shop_id).single();
                      if (shopData) {
                         shopId = shopData.id;
                         currentShopData = mapShop(shopData);
@@ -757,6 +798,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (error) throw error;
         
+        // Garantir que o cliente exista na base de clientes
+        await ensureClientExists(shopId, cleanClientName, cleanClientPhone);
+
         // Como o RPC pode envolver validações complexas e triggers,
         // aqui fazemos um fetch leve apenas dos agendamentos para garantir consistência.
         await reloadAppointments(shopId);
@@ -788,6 +832,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           if (error) throw error;
           
+          // Garantir que o cliente exista na base de clientes
+          await ensureClientExists(shopId, cleanClientName, cleanClientPhone);
+
           // Optimistic Update
           const newApt = mapAppointment(data);
           // Adicionar no topo da lista (assumindo ordenação por data, mas para feedback imediato o topo é bom)
@@ -908,6 +955,22 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const removeClient = async (id: string): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { error } = await supabase.from('clients').delete().eq('id', id).eq('shop_id', shopId);
+        if (error) throw error;
+
+        setState(prev => ({
+            ...prev,
+            clients: prev.clients.filter(c => c.id !== id)
+        }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
   const addBlockedSlot = async (block: Omit<BlockedSlot, 'id' | 'shopId'>): MutationResult => {
     try {
         const shopId = ensureShopId();
@@ -1014,7 +1077,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       createManualAppointment,
       updateAppointmentStatus,
       updateAppointmentPaymentMethod,
-      addClient, updateClient,
+      addClient, updateClient, removeClient,
       addBlockedSlot, removeBlockedSlot,
       updateSettings,
       fetchFinancialReport,
