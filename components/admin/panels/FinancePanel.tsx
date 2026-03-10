@@ -21,7 +21,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const FinancePanel: React.FC = () => {
-    const { professionals, fetchFinancialReport, settings } = useShop();
+    const { professionals, services, fetchFinancialReport, settings } = useShop();
     const { showToast } = useToast();
     
     // Filtros de Data
