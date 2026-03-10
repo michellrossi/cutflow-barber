@@ -784,6 +784,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const cleanClientName = sanitize(apt.clientName);
         const cleanClientPhone = sanitize(apt.clientPhone);
 
+        console.log('addAppointment: Iniciando reserva...', { professionalId: apt.professionalId, date: apt.date, time: apt.time });
+
         const { error } = await supabase.rpc('book_appointment', {
             p_shop_id: shopId,
             p_client_name: cleanClientName,
@@ -796,7 +798,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             p_coupon_code: apt.couponCode ? sanitize(apt.couponCode) : null
         });
 
-        if (error) throw error;
+        if (error) {
+            console.error('addAppointment: Erro no RPC book_appointment:', error);
+            throw error;
+        }
+        
+        console.log('addAppointment: Reserva concluída com sucesso no backend.');
         
         // Garantir que o cliente exista na base de clientes
         await ensureClientExists(shopId, cleanClientName, cleanClientPhone);
@@ -807,6 +814,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         return { success: true };
     } catch (e: any) {
+        console.error('addAppointment: Exceção capturada:', e.message);
         return { success: false, error: e.message };
     }
   };

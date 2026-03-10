@@ -56,7 +56,15 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
     const { showToast } = useToast();
 
     // 1. Identificar qual profissional é o usuário logado
-    const currentPro = professionals.find(p => p.email === session?.user.email || p.userId === session?.user.id);
+    const currentPro = useMemo(() => {
+        const pro = professionals.find(p => p.email === session?.user.email || p.userId === session?.user.id);
+        if (pro) {
+            console.log(`BarberDashboard: Profissional identificado: ${pro.name} (ID: ${pro.id})`);
+        } else {
+            console.warn(`BarberDashboard: Profissional não encontrado para o email: ${session?.user.email} ou ID: ${session?.user.id}`);
+        }
+        return pro;
+    }, [professionals, session]);
 
     // States para Modal de Configuração
     const [isConfigOpen, setIsConfigOpen] = useState(false);
@@ -205,9 +213,10 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
     // 2. Filtrar agendamentos DESTE barbeiro
     const myAppointments = useMemo(() => {
         if (!currentPro) return [];
+        const filtered = appointments.filter(a => a.professionalId === currentPro.id);
+        console.log(`BarberDashboard: Total de agendamentos para ${currentPro.name}: ${filtered.length}`);
         // Ordenar: Hoje primeiro, depois data futura
-        return appointments
-            .filter(a => a.professionalId === currentPro.id)
+        return filtered
             .sort((a, b) => {
                 const dateA = new Date(`${a.date}T${a.time}`);
                 const dateB = new Date(`${b.date}T${b.time}`);

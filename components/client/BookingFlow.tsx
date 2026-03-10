@@ -75,6 +75,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
 
         // 1. AUTOMATIC ASSIGNMENT IF "NO PREFERENCE"
         if (!finalProId) {
+            console.log('Iniciando atribuição automática para "Sem preferência"...');
             const { timeToMinutes, getDayName } = await import('../../utils/dateHelpers');
             const dayName = getDayName(selectedDate);
             const timeMinutes = timeToMinutes(selectedTime);
@@ -123,6 +124,8 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                 return true;
             });
 
+            console.log(`Profissionais disponíveis encontrados: ${availablePros.length}`);
+
             if (availablePros.length > 0) {
                 // 3. PRIORITY: Pick the one with FEWEST appointments for that day
                 availablePros.sort((a, b) => {
@@ -131,13 +134,17 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                     return countA - countB;
                 });
                 finalProId = availablePros[0].id;
+                console.log(`Profissional atribuído automaticamente: ${availablePros[0].name} (ID: ${finalProId})`);
                 setSelectedProId(finalProId); // Update state for SuccessStep
             } else {
+                console.warn('Nenhum profissional disponível encontrado na atribuição automática.');
                 // This shouldn't happen if DateTimeStep logic is correct, but just in case
                 setError('Não encontramos profissionais disponíveis para este horário. Por favor, escolha outro horário.');
                 setLoading(false);
                 return;
             }
+        } else {
+            console.log(`Profissional selecionado manualmente: ${professionals.find(p => p.id === finalProId)?.name} (ID: ${finalProId})`);
         }
 
         const appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'> = {
