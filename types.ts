@@ -73,6 +73,7 @@ export interface Coupon {
   usageCount: number;
   active: boolean;
   maxUses: number | null; // [NOVO] Limite de uso
+  expiresAt?: string; // [NOVO] Data de expiração
 }
 
 export interface Appointment {
