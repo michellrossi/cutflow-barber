@@ -441,10 +441,23 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 filter: `shop_id=eq.${state.shop.id}`
             },
             () => {
-                // Ao receber atualização via socket, atualizamos apenas a lista de agendamentos
-                // Isso garante que se outro usuário mexer, a tela atualiza, 
-                // mas evita recarregar serviços/barbeiros desnecessariamente.
                 reloadAppointments(state.shop!.id);
+            }
+        )
+        .subscribe();
+
+      // 3. Listen for Client Changes
+      const clientsChannel = supabase.channel('clients_sync')
+        .on(
+            'postgres_changes',
+            {
+                event: '*', 
+                schema: 'public',
+                table: 'clients',
+                filter: `shop_id=eq.${state.shop.id}`
+            },
+            () => {
+                reloadClients(state.shop!.id);
             }
         )
         .subscribe();
@@ -452,6 +465,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return () => {
           supabase.removeChannel(shopChannel);
           supabase.removeChannel(appointmentsChannel);
+          supabase.removeChannel(clientsChannel);
       }
   }, [state.shop?.id]);
 
@@ -912,11 +926,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const shopId = ensureShopId();
         const { data, error } = await supabase.from('clients').insert({
             shop_id: shopId,
-            name: client.name,
-            phone: client.phone,
-            email: client.email,
+            name: sanitize(client.name),
+            phone: sanitize(client.phone),
+            email: client.email ? sanitize(client.email) : null,
             avatar_url: client.avatarUrl,
-            notes: client.notes
+            notes: client.notes ? sanitize(client.notes) : null
         }).select().single();
 
         if (error) throw error;
@@ -944,11 +958,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
         const shopId = ensureShopId();
         const updateData: any = {};
-        if (client.name !== undefined) updateData.name = client.name;
-        if (client.phone !== undefined) updateData.phone = client.phone;
-        if (client.email !== undefined) updateData.email = client.email;
+        if (client.name !== undefined) updateData.name = sanitize(client.name);
+        if (client.phone !== undefined) updateData.phone = sanitize(client.phone);
+        if (client.email !== undefined) updateData.email = client.email ? sanitize(client.email) : null;
         if (client.avatarUrl !== undefined) updateData.avatar_url = client.avatarUrl;
-        if (client.notes !== undefined) updateData.notes = client.notes;
+        if (client.notes !== undefined) updateData.notes = client.notes ? sanitize(client.notes) : null;
 
         const { error } = await supabase.from('clients').update(updateData).eq('id', id).eq('shop_id', shopId);
         if (error) throw error;
@@ -1100,4 +1114,4 @@ export const useShop = () => {
   const context = useContext(ShopContext);
   if (!context) throw new Error("useShop must be used within a ShopProvider");
   return context;
-};
+};      
