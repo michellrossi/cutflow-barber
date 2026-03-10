@@ -72,13 +72,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
     }, [appointments, weekDays, selectedProId]);
 
     const getStatusStyles = (status: string) => {
-        switch (status) {
-            case 'scheduled': return 'bg-orange-500/10 border-orange-500/30 text-orange-400';
-            case 'confirmed': return 'bg-blue-500/10 border-blue-500/30 text-blue-400';
-            case 'completed': return 'bg-green-500/10 border-green-500/30 text-green-400';
-            case 'noshow': return 'bg-red-500/10 border-red-500/30 text-red-400';
-            default: return 'bg-slate-700/50 border-slate-600 text-slate-400';
-        }
+        // Removendo cores de fundo e bordas coloridas, mantendo apenas o estilo base
+        // A borda lateral esquerda e o ícone de status já trazem a informação visual necessária
+        return 'bg-slate-800/80 border-slate-700 text-slate-300';
     };
 
     const getStatusLabel = (status: string) => {
@@ -363,15 +359,34 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                         );
                                     })}
 
-                                    {/* Horário de Almoço (12:00) */}
-                                    {time === '12:00' && (
-                                        <div className="absolute inset-0 z-10 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center pointer-events-none border-y border-slate-700/50 border-dashed">
-                                            <div className="flex items-center gap-2 px-4 py-1 rounded-full bg-slate-800 border border-slate-700 shadow-xl">
-                                                <Utensils size={14} className="text-slate-500" />
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Horário de Almoço</span>
-                                            </div>
-                                        </div>
-                                    )}
+                                    {/* Horário de Almoço Dinâmico */}
+                                    {(() => {
+                                        if (selectedProId === 'all') return null;
+                                        
+                                        const pro = professionals.find(p => p.id === selectedProId);
+                                        if (!pro?.workSchedule) return null;
+
+                                        const dayName = weekDays[0].toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as keyof typeof pro.workSchedule;
+                                        const schedule = pro.workSchedule[dayName];
+                                        
+                                        if (!schedule || !schedule.active) return null;
+
+                                        const [lStartH] = schedule.lunchStart.split(':').map(Number);
+                                        const [lEndH] = schedule.lunchEnd.split(':').map(Number);
+                                        const currentH = parseInt(time.split(':')[0]);
+
+                                        if (currentH >= lStartH && currentH < lEndH) {
+                                            return (
+                                                <div className="absolute inset-0 z-10 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center pointer-events-none border-y border-slate-700/50 border-dashed">
+                                                    <div className="flex items-center gap-2 px-4 py-1 rounded-full bg-slate-800 border border-slate-700 shadow-xl">
+                                                        <Utensils size={14} className="text-slate-500" />
+                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Horário de Almoço</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    })()}
                                 </div>
                             ))}
                         </div>

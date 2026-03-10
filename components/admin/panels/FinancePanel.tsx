@@ -525,43 +525,36 @@ export const FinancePanel: React.FC = () => {
                                 <p>Sem dados de serviços.</p>
                             </div>
                         ) : (
-                            <div className="flex-1 w-full min-h-0">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart 
-                                        data={stats.serviceData} 
-                                        layout="vertical"
-                                        margin={{ left: 20, right: 40, top: 0, bottom: 0 }}
-                                    >
-                                        <XAxis type="number" hide />
-                                        <YAxis 
-                                            dataKey="name" 
-                                            type="category" 
-                                            stroke="#64748b" 
-                                            fontSize={12} 
-                                            tickLine={false} 
-                                            axisLine={false}
-                                            width={120}
-                                        />
-                                        <Tooltip 
-                                            formatter={(value: number) => `R$ ${value.toFixed(2)}`}
-                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem' }}
-                                            cursor={{ fill: '#334155', opacity: 0.1 }}
-                                        />
-                                        <Bar 
-                                            dataKey="value" 
-                                            radius={[0, 4, 4, 0]} 
-                                            barSize={20}
-                                            animationDuration={1500}
-                                        >
-                                            {stats.serviceData.map((entry, index) => (
-                                                <Cell 
-                                                    key={`cell-${index}`} 
-                                                    fill={index === 0 ? settings.primaryColor : `${settings.primaryColor}80`} 
-                                                />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
+                            <div className="flex-1 flex flex-col justify-between">
+                                <div className="space-y-6">
+                                    {stats.serviceData.map((item, index) => {
+                                        const maxVal = Math.max(...stats.serviceData.map(d => d.value));
+                                        const percentage = (item.value / maxVal) * 100;
+                                        
+                                        return (
+                                            <div key={index} className="space-y-2">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-slate-200 font-medium">{item.name}</span>
+                                                    <span className="text-white font-bold">R$ {item.value.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span>
+                                                </div>
+                                                <div className="w-full bg-slate-700/50 h-2 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full rounded-full transition-all duration-1000"
+                                                        style={{ 
+                                                            width: `${percentage}%`,
+                                                            backgroundColor: settings.primaryColor 
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                
+                                <div className="mt-auto pt-8 border-t border-slate-700/50 flex justify-between items-center">
+                                    <span className="text-slate-500 text-sm font-medium">Total de serviços este mês</span>
+                                    <span className="text-white text-xl font-bold">{stats.totalCount}</span>
+                                </div>
                             </div>
                         )}
                     </div>

@@ -226,7 +226,7 @@ export const AppointmentsPanel: React.FC = () => {
                             {/* Serviços */}
                             <div>
                                 <label className="block text-sm text-slate-400 mb-2">Serviços Realizados</label>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                                     {services.map(s => {
                                         const selected = formData.serviceIds.includes(s.id);
                                         return (
