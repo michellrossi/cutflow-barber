@@ -415,7 +415,7 @@ export const AppointmentsPanel: React.FC = () => {
                                         </div>
                                         <div className="flex items-center gap-2 mt-1">
                                             <Clock size={14} className="text-slate-500"/>
-                                            <span className="text-sm font-bold">{apt.time}</span>
+                                            <span className="text-sm font-bold">{apt.time.substring(0, 5)}</span>
                                         </div>
                                     </td>
                                     <td className="p-4">

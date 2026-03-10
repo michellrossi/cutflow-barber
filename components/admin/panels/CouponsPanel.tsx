@@ -102,7 +102,7 @@ export const CouponsPanel: React.FC = () => {
                             <label className="block text-sm text-slate-400 mb-1">Código</label>
                             <input required value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none uppercase" placeholder="Ex: VERAO10" />
                         </div>
-                        <div className="w-full md:w-32">
+                        <div className="w-full md:w-48">
                              <label className="block text-sm text-slate-400 mb-1">Tipo</label>
                              <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as any})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none">
                                 <option value="percentage">Porcentagem (%)</option>

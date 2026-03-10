@@ -165,7 +165,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       totalValue: data.total_value,
       couponCode: data.coupon_code,
       createdAt: data.created_at,
-      status: data.status || 'scheduled'
+      status: data.status || 'scheduled',
+      paymentMethod: data.payment_method
   });
 
   const mapBlockedSlot = (data: any): BlockedSlot => ({
@@ -849,7 +850,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               time: apt.time,
               total_value: apt.totalValue,
               coupon_code: null,
-              status: apt.status || 'confirmed'
+              status: apt.status || 'confirmed',
+              payment_method: apt.paymentMethod
           }).select().single();
 
           if (error) throw error;
@@ -1114,4 +1116,4 @@ export const useShop = () => {
   const context = useContext(ShopContext);
   if (!context) throw new Error("useShop must be used within a ShopProvider");
   return context;
-};      
+};
