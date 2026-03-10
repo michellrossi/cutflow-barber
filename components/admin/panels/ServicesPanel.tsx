@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useShop } from '../../../store';
 import { Service } from '../../../types';
 import { ConfirmationModal } from '../../ui/ConfirmationModal';
-import { Plus, Edit2, Trash2, CalendarCheck, Loader2, X, Clock } from 'lucide-react';
+import { Plus, Edit2, Trash2, CalendarCheck, Loader2, X, Clock, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 
 export const ServicesPanel: React.FC = () => {
@@ -12,7 +12,14 @@ export const ServicesPanel: React.FC = () => {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
-    const [formData, setFormData] = useState({ name: '', description: '', price: '', duration: '', category: 'Cortes' });
+    const [formData, setFormData] = useState({ 
+        name: '', 
+        description: '', 
+        price: '', 
+        duration: '', 
+        category: 'Cortes',
+        imageUrl: '' 
+    });
     const [isSaving, setIsSaving] = useState(false);
 
     // Categorias disponíveis
@@ -38,14 +45,6 @@ export const ServicesPanel: React.FC = () => {
         { name: 'Relaxamento/Progressiva', category: 'Química' }
     ];
 
-    // Lógica de Agrupamento
-    const groupedServices = services.reduce((acc, service) => {
-        const cat = service.category || 'Outros';
-        if (!acc[cat]) acc[cat] = [];
-        acc[cat].push(service);
-        return acc;
-    }, {} as Record<string, Service[]>);
-
     const handleEdit = (service: Service) => {
         setEditingId(service.id);
         setFormData({
@@ -53,7 +52,8 @@ export const ServicesPanel: React.FC = () => {
             description: service.description,
             price: service.price.toString(),
             duration: service.duration.toString(),
-            category: service.category || 'Cortes'
+            category: service.category || 'Cortes',
+            imageUrl: service.imageUrl || ''
         });
         setIsFormOpen(true);
     };
@@ -93,7 +93,8 @@ export const ServicesPanel: React.FC = () => {
             description: formData.description,
             price: Number(formData.price),
             duration: Number(formData.duration),
-            category: formData.category
+            category: formData.category,
+            imageUrl: formData.imageUrl || undefined
         };
 
         let result;
@@ -109,14 +110,14 @@ export const ServicesPanel: React.FC = () => {
             showToast(editingId ? 'Serviço atualizado!' : 'Serviço criado!');
             setIsFormOpen(false);
             setEditingId(null);
-            setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes' });
+            setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes', imageUrl: '' });
         } else {
             showToast(result.error || 'Erro ao salvar.', 'error');
         }
     };
 
     return (
-        <div>
+        <div className="animate-fade-in">
             <ConfirmationModal 
                 isOpen={!!deleteId}
                 onClose={() => setDeleteId(null)}
@@ -127,65 +128,93 @@ export const ServicesPanel: React.FC = () => {
                 isDestructive
             />
 
-             <div className="flex justify-between mb-8">
-                <p className="text-slate-400">Adicione, edite ou remova serviços oferecidos.</p>
-                <button onClick={() => { setIsFormOpen(true); setEditingId(null); setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes' }); }} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium hover:opacity-90" style={{ backgroundColor: settings.primaryColor }}>
-                    <Plus size={18} /> Adicionar Serviço
+             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h2 className="text-2xl font-bold text-white mb-1">Gestão de Serviços</h2>
+                    <p className="text-slate-400">Adicione, edite ou remova serviços oferecidos.</p>
+                </div>
+                <button 
+                    onClick={() => { 
+                        setIsFormOpen(true); 
+                        setEditingId(null); 
+                        setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes', imageUrl: '' }); 
+                    }} 
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold shadow-lg hover:brightness-110 transition-all" 
+                    style={{ backgroundColor: settings.primaryColor }}
+                >
+                    <Plus size={20} /> Adicionar Serviço
                 </button>
             </div>
 
             {isFormOpen && (
-                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setIsFormOpen(false)}>
-                 <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 animate-scale-up w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                     <div className="flex justify-between items-start mb-4">
-                        <h3 className="text-lg font-bold">{editingId ? 'Editar Serviço' : 'Novo Serviço'}</h3>
-                        <button onClick={() => setIsFormOpen(false)}><X size={24} className="text-slate-400 hover:text-white"/></button>
+                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setIsFormOpen(false)}>
+                 <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 animate-scale-up w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                     <div className="flex justify-between items-start mb-6">
+                        <h3 className="text-xl font-bold text-white">{editingId ? 'Editar Serviço' : 'Novo Serviço'}</h3>
+                        <button onClick={() => setIsFormOpen(false)} className="text-slate-500 hover:text-white transition-colors"><X size={24}/></button>
                      </div>
                      
                      {!editingId && (
-                            <div className="flex items-center gap-2 mb-6">
-                                <span className="text-xs text-slate-400 uppercase font-bold">Catálogo Rápido:</span>
-                                <select 
-                                    onChange={handleTemplateSelect}
-                                    className="bg-slate-900 border border-slate-600 text-slate-300 text-sm rounded-lg p-2 focus:outline-none focus:border-orange-500"
-                                >
-                                    <option value="">-- Selecione --</option>
-                                    {CATALOG.map((item, idx) => (
-                                        <option key={idx} value={item.name}>{item.name}</option>
-                                    ))}
-                                </select>
+                            <div className="flex items-center gap-3 mb-8 p-4 bg-slate-900/50 rounded-xl border border-slate-700">
+                                <Sparkles size={18} className="text-orange-500" />
+                                <div className="flex-1">
+                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Catálogo Rápido</p>
+                                    <select 
+                                        onChange={handleTemplateSelect}
+                                        className="w-full bg-transparent text-slate-300 text-sm font-medium focus:outline-none cursor-pointer"
+                                    >
+                                        <option value="" className="bg-slate-800">Selecione um serviço pré-definido...</option>
+                                        {CATALOG.map((item, idx) => (
+                                            <option key={idx} value={item.name} className="bg-slate-800">{item.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                         )}
 
-                     <form onSubmit={handleSubmit} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <form onSubmit={handleSubmit} className="space-y-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div>
-                                <label className="block text-sm text-slate-400 mb-1">Nome do Serviço</label>
-                                <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" placeholder="Ex: Corte Masculino"/>
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nome do Serviço</label>
+                                <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500 font-bold" placeholder="Ex: Corte Masculino"/>
                             </div>
                             <div>
-                                <label className="block text-sm text-slate-400 mb-1">Duração (minutos)</label>
-                                <input required type="number" value={formData.duration} onChange={e => setFormData({...formData, duration: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" placeholder="30" />
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Duração (minutos)</label>
+                                <div className="relative">
+                                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                    <input required type="number" value={formData.duration} onChange={e => setFormData({...formData, duration: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 pl-12 text-white focus:outline-none focus:border-orange-500 font-bold" placeholder="30" />
+                                </div>
                             </div>
                             <div>
-                                <label className="block text-sm text-slate-400 mb-1">Preço (R$)</label>
-                                <input required type="number" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" placeholder="0.00" />
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Preço (R$)</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">R$</span>
+                                    <input required type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 pl-12 text-white focus:outline-none focus:border-orange-500 font-bold" placeholder="0.00" />
+                                </div>
                             </div>
                             <div>
-                                <label className="block text-sm text-slate-400 mb-1">Descrição Curta</label>
-                                <input required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" placeholder="Breve detalhe do serviço" />
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">URL da Imagem</label>
+                                <div className="relative">
+                                    <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                    <input value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 pl-12 text-white focus:outline-none focus:border-orange-500" placeholder="https://exemplo.com/foto.jpg" />
+                                </div>
                             </div>
                         </div>
                         
                         <div>
-                            <label className="block text-sm text-slate-400 mb-1">Categoria</label>
-                            <div className="flex gap-2 flex-wrap mb-2">
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Descrição do Serviço</label>
+                            <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500 min-h-[100px] resize-none" placeholder="Descreva os detalhes do serviço..." />
+                        </div>
+
+                        <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Categoria</label>
+                            <div className="flex gap-2 flex-wrap mb-3">
                                 {CATEGORIES.map(cat => (
                                     <button
                                         key={cat}
                                         type="button"
                                         onClick={() => setFormData({...formData, category: cat})}
-                                        className={`px-3 py-1 rounded-full text-sm border transition-colors ${formData.category === cat ? 'bg-orange-500 border-orange-500 text-white' : 'border-slate-600 text-slate-400 hover:border-slate-400'}`}
+                                        className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${formData.category === cat ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20' : 'border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300'}`}
                                     >
                                         {cat}
                                     </button>
@@ -194,15 +223,15 @@ export const ServicesPanel: React.FC = () => {
                              <input 
                                 value={formData.category} 
                                 onChange={e => setFormData({...formData, category: e.target.value})} 
-                                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none" 
+                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500" 
                                 placeholder="Ou digite uma nova categoria..."
                             />
                         </div>
 
-                        <div className="flex gap-2 justify-end pt-2">
-                             <button type="button" onClick={() => setIsFormOpen(false)} className="px-4 py-2 text-slate-400 hover:text-white" disabled={isSaving}>Cancelar</button>
-                             <button type="submit" className="px-6 py-2 rounded-lg text-white flex items-center gap-2" style={{ backgroundColor: settings.primaryColor }} disabled={isSaving}>
-                                {isSaving && <Loader2 size={16} className="animate-spin"/>} Salvar
+                        <div className="flex gap-4 justify-end pt-4">
+                             <button type="button" onClick={() => setIsFormOpen(false)} className="px-6 py-3 text-slate-400 font-bold hover:text-white transition-colors" disabled={isSaving}>Cancelar</button>
+                             <button type="submit" className="px-10 py-3 rounded-xl text-white font-bold flex items-center gap-2 shadow-lg hover:brightness-110 transition-all" style={{ backgroundColor: settings.primaryColor }} disabled={isSaving}>
+                                {isSaving ? <Loader2 size={20} className="animate-spin"/> : 'Salvar Serviço'}
                              </button>
                         </div>
                      </form>
@@ -210,50 +239,81 @@ export const ServicesPanel: React.FC = () => {
                  </div>
             )}
 
-            <div className="space-y-12">
-                {Object.entries(groupedServices).map(([category, items]) => (
-                    <div key={category}>
-                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-3">
-                            <span className="w-1.5 h-6 rounded-full bg-orange-500 block"></span>
-                            {category}
-                        </h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-3">
-                            {(items as Service[]).map(service => (
-                                <div key={service.id} className="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all w-full max-w-[160px] min-h-[240px]">
-                                    {/* Top Area: Duration Badge */}
-                                    <div className="h-20 w-full bg-slate-900/40 flex items-center justify-center relative">
-                                        <div className="absolute top-2 right-2 bg-slate-900/60 text-orange-400 text-[10px] font-bold px-2 py-1 rounded-md flex items-center gap-1">
-            <Clock size={10}/>
-                                            {service.duration} min
-                                        </div>
-                                        <CalendarCheck size={24} className="text-slate-600 group-hover:text-orange-500/50 transition-colors" />
-    </div>
-
-                                    {/* Bottom Area: Info */}
-                                    <div className="p-4 flex flex-col flex-1 text-center">
-        <h3 className="font-bold text-white text-sm leading-tight mb-1 truncate">{service.name}</h3>
-        <p className="text-[10px] text-slate-500 line-clamp-2 mb-3 h-8">{service.description}</p>
-
-        <div className="mt-auto">
-            <p className="text-lg font-bold text-orange-500 mb-3">
-                R$ {service.price.toFixed(2)}
-            </p>
-
-            <div className="flex gap-2">
-                <button onClick={() => handleEdit(service)} className="flex-1 py-1.5 bg-slate-700 rounded-lg text-slate-300 hover:text-white text-[10px] font-medium transition-colors">
-                    Editar
-                </button>
-                <button onClick={() => setDeleteId(service.id)} className="px-2 py-1.5 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors">
-                    <Trash2 size={14}/>
-                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {services.map(service => (
+                    <div key={service.id} className="bg-slate-800/40 rounded-[2rem] border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all shadow-xl">
+                        {/* Imagem do Serviço */}
+                        <div className="h-48 w-full relative overflow-hidden">
+                            {service.imageUrl ? (
+                                <img 
+                                    src={service.imageUrl} 
+                                    alt={service.name} 
+                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                    referrerPolicy="no-referrer"
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-slate-900 flex items-center justify-center">
+                                    <CalendarCheck size={48} className="text-slate-700" />
                                 </div>
-                            ))}
+                            )}
+                            {/* Badge de Duração */}
+                            <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-orange-400 text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-white/10">
+                                <Clock size={12}/>
+                                {service.duration} min
+                            </div>
+                        </div>
+
+                        {/* Conteúdo */}
+                        <div className="p-6 flex flex-col flex-1">
+                            <h3 className="font-bold text-white text-lg leading-tight mb-2">{service.name}</h3>
+                            <p className="text-xs text-slate-500 line-clamp-2 mb-6 min-h-[2rem] leading-relaxed">{service.description}</p>
+
+                            <div className="mt-auto">
+                                <p className="text-2xl font-bold text-orange-500 mb-6">
+                                    R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                </p>
+
+                                <div className="flex gap-3">
+                                    <button 
+                                        onClick={() => handleEdit(service)} 
+                                        className="flex-1 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-slate-300 hover:text-white hover:bg-slate-700 transition-all font-bold text-sm flex items-center justify-center gap-2"
+                                    >
+                                        <Edit2 size={14} /> Editar
+                                    </button>
+                                    <button 
+                                        onClick={() => setDeleteId(service.id)} 
+                                        className="px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                                    >
+                                        <Trash2 size={18}/>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 ))}
+
+                {/* Card de Adicionar Mais Serviços */}
+                <button 
+                    onClick={() => { 
+                        setIsFormOpen(true); 
+                        setEditingId(null); 
+                        setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes', imageUrl: '' }); 
+                    }}
+                    className="bg-slate-800/20 rounded-[2rem] border-2 border-dashed border-slate-700 p-8 flex flex-col items-center justify-center gap-6 hover:border-slate-500 hover:bg-slate-800/30 transition-all min-h-[400px] group"
+                >
+                    <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-orange-500 group-hover:scale-110 transition-all shadow-xl">
+                        <Plus size={32} />
+                    </div>
+                    <div className="text-center max-w-[200px]">
+                        <p className="text-xl font-bold text-white mb-2">Adicionar mais serviços?</p>
+                        <p className="text-sm text-slate-500 leading-relaxed">
+                            Expanda seu faturamento adicionando serviços como Pigmentação, Limpeza de Pele ou Relaxamento.
+                        </p>
+                    </div>
+                    <span className="text-orange-500 text-xs font-bold uppercase tracking-widest hover:underline">
+                        Ver sugestões de serviços lucrativos
+                    </span>
+                </button>
             </div>
         </div>
     );

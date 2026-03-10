@@ -31,6 +31,7 @@ export interface Service {
   price: number;
   duration: number; // in minutes
   category: string;
+  imageUrl?: string;
 }
 
 export interface DaySchedule {

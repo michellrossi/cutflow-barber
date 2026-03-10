@@ -127,7 +127,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       description: data.description,
       price: data.price,
       duration: data.duration,
-      category: data.category || 'Geral'
+      category: data.category || 'Geral',
+      imageUrl: data.image_url
   });
 
   const PROFESSIONAL_COLORS = [
@@ -614,11 +615,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     try {
         const shopId = ensureShopId();
         const { data, error } = await supabase.from('services').insert({ 
-          ...service, 
+          shop_id: shopId,
           name: sanitize(service.name),
           description: sanitize(service.description),
+          price: service.price,
+          duration: service.duration,
           category: sanitize(service.category),
-          shop_id: shopId 
+          image_url: service.imageUrl
         }).select().single();
         
         if (error) throw error;
@@ -642,6 +645,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.price !== undefined) payload.price = updated.price;
         if (updated.duration !== undefined) payload.duration = updated.duration;
         if (updated.category) payload.category = sanitize(updated.category);
+        if (updated.imageUrl !== undefined) payload.image_url = updated.imageUrl;
 
         const { data, error } = await supabase.from('services').update(payload).eq('id', id).select().single();
         if (error) throw error;
