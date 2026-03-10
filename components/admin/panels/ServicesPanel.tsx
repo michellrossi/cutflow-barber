@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useShop } from '../../../store';
+import { supabase } from '../../../supabaseClient';
 import { Service } from '../../../types';
 import { ConfirmationModal } from '../../ui/ConfirmationModal';
-import { Plus, Edit2, Trash2, CalendarCheck, Loader2, X, Clock, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Plus, Edit2, Trash2, CalendarCheck, Loader2, X, Clock, Image as ImageIcon, Sparkles, Upload } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 
 export const ServicesPanel: React.FC = () => {
@@ -21,6 +22,8 @@ export const ServicesPanel: React.FC = () => {
         imageUrl: '' 
     });
     const [isSaving, setIsSaving] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Categorias disponíveis
     const CATEGORIES = ['Cortes', 'Barba', 'Combos', 'Química', 'Estética', 'Outros'];
@@ -44,6 +47,28 @@ export const ServicesPanel: React.FC = () => {
         { name: 'Platinado', category: 'Química' },
         { name: 'Relaxamento/Progressiva', category: 'Química' }
     ];
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            setIsUploading(true);
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+                const filePath = `services/${fileName}`;
+                const { error: uploadError } = await supabase.storage.from('images').upload(filePath, file);
+                if (uploadError) throw uploadError;
+                const { data } = supabase.storage.from('images').getPublicUrl(filePath);
+                setFormData(prev => ({ ...prev, imageUrl: data.publicUrl }));
+                showToast('Foto do serviço enviada com sucesso!');
+            } catch (error) {
+                console.error("Erro no upload:", error);
+                showToast('Erro ao fazer upload da imagem.', 'error');
+            } finally {
+                setIsUploading(false);
+            }
+        }
+    };
 
     const handleEdit = (service: Service) => {
         setEditingId(service.id);
@@ -193,10 +218,35 @@ export const ServicesPanel: React.FC = () => {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">URL da Imagem</label>
-                                <div className="relative">
-                                    <ImageIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                    <input value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 pl-12 text-white focus:outline-none focus:border-orange-500" placeholder="https://exemplo.com/foto.jpg" />
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Foto do Serviço</label>
+                                <div className="flex items-center gap-4">
+                                    <div 
+                                        onClick={() => !isUploading && fileInputRef.current?.click()} 
+                                        className={`w-16 h-16 bg-slate-900 rounded-xl border border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    >
+                                        {isUploading ? (
+                                            <Loader2 size={24} className="text-orange-500 animate-spin" />
+                                        ) : (
+                                            formData.imageUrl ? (
+                                                <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Upload size={20} className="text-slate-500" />
+                                            )
+                                        )}
+                                    </div>
+                                    <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" disabled={isUploading} />
+                                    <div className="flex-1">
+                                        <p className="text-xs text-slate-500">{isUploading ? 'Enviando...' : 'Clique para carregar uma foto'}</p>
+                                        {formData.imageUrl && (
+                                            <button 
+                                                type="button" 
+                                                onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                                                className="text-[10px] text-red-500 hover:underline mt-1"
+                                            >
+                                                Remover foto
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -229,9 +279,9 @@ export const ServicesPanel: React.FC = () => {
                         </div>
 
                         <div className="flex gap-4 justify-end pt-4">
-                             <button type="button" onClick={() => setIsFormOpen(false)} className="px-6 py-3 text-slate-400 font-bold hover:text-white transition-colors" disabled={isSaving}>Cancelar</button>
-                             <button type="submit" className="px-10 py-3 rounded-xl text-white font-bold flex items-center gap-2 shadow-lg hover:brightness-110 transition-all" style={{ backgroundColor: settings.primaryColor }} disabled={isSaving}>
-                                {isSaving ? <Loader2 size={20} className="animate-spin"/> : 'Salvar Serviço'}
+                             <button type="button" onClick={() => setIsFormOpen(false)} className="px-6 py-3 text-slate-400 font-bold hover:text-white transition-colors" disabled={isUploading || isSaving}>Cancelar</button>
+                             <button type="submit" className="px-10 py-3 rounded-xl text-white font-bold flex items-center gap-2 shadow-lg hover:brightness-110 transition-all" style={{ backgroundColor: settings.primaryColor }} disabled={isUploading || isSaving}>
+                                {(isUploading || isSaving) ? <Loader2 size={20} className="animate-spin"/> : 'Salvar Serviço'}
                              </button>
                         </div>
                      </form>
