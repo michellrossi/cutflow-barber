@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useShop } from '../../../store';
-import { Professional, Appointment } from '../../../types';
+import { Professional, Appointment, Service } from '../../../types';
 import { ArrowLeft, Calendar, Clock } from 'lucide-react';
 import { StickyFooter } from '../StickyFooter';
 import { timeToMinutes, minutesToTime, getDayName } from '../../../utils/dateHelpers';
@@ -16,12 +16,13 @@ interface DateTimeStepProps {
     selectedProId: string | null;
     professionals: Professional[];
     appointments: Appointment[];
+    services: Service[];
     totalDuration: number;
 }
 
 export const DateTimeStep: React.FC<DateTimeStepProps> = ({ 
     selectedDate, setSelectedDate, selectedTime, setSelectedTime, setStep, settings, subtotal, 
-    selectedProId, professionals, appointments, totalDuration 
+    selectedProId, professionals, appointments, services, totalDuration 
 }) => {
     
     const { blockedSlots } = useShop();
@@ -140,7 +141,11 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
 
                 for (const apt of proAppts) {
                     const aptStart = timeToMinutes(apt.time);
-                    const aptDuration = 45; // Estimation (Should ideally come from service data)
+                    // Calculate actual duration of the existing appointment
+                    const aptDuration = services
+                        .filter(s => apt.serviceIds.includes(s.id))
+                        .reduce((acc, s) => acc + s.duration, 0) || 45; // Fallback to 45 if no services found
+                    
                     const aptEnd = aptStart + aptDuration;
 
                     if (time < aptEnd && serviceEndTime > aptStart) {

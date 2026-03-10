@@ -12,7 +12,7 @@ type Step = 'home' | 'services' | 'professional' | 'datetime' | 'summary' | 'suc
 
 export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick }) => {
     const [step, setStep] = useState<Step>('home');
-    const { services, professionals, settings, coupons, addAppointment, appointments } = useShop();
+    const { services, professionals, settings, coupons, addAppointment, appointments, blockedSlots } = useShop();
 
     // Booking State
     const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
@@ -71,11 +71,80 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         setLoading(true);
         setError(null);
 
+        let finalProId = selectedProId;
+
+        // 1. AUTOMATIC ASSIGNMENT IF "NO PREFERENCE"
+        if (!finalProId) {
+            const { timeToMinutes, getDayName } = await import('../../utils/dateHelpers');
+            const dayName = getDayName(selectedDate);
+            const timeMinutes = timeToMinutes(selectedTime);
+            const serviceEndTime = timeMinutes + totalDuration;
+
+            // Filter professionals available at this specific time
+            const availablePros = professionals.filter(pro => {
+                const schedule = pro.workSchedule ? pro.workSchedule[dayName] : null;
+
+                // Check Working Hours
+                if (!schedule || !schedule.active) return false;
+
+                const workStart = timeToMinutes(schedule.start);
+                const workEnd = timeToMinutes(schedule.end);
+                const lunchStart = timeToMinutes(schedule.lunchStart);
+                const lunchEnd = timeToMinutes(schedule.lunchEnd);
+
+                if (timeMinutes < workStart || serviceEndTime > workEnd) return false;
+                if (timeMinutes < lunchEnd && serviceEndTime > lunchStart) return false;
+
+                // Check Blocked Slots
+                const proBlocks = blockedSlots.filter(b => b.professionalId === pro.id && b.date === selectedDate);
+                for (const block of proBlocks) {
+                    const blockStart = timeToMinutes(block.startTime);
+                    const blockEnd = timeToMinutes(block.endTime);
+                    if (
+                        (timeMinutes >= blockStart && timeMinutes < blockEnd) || 
+                        (serviceEndTime > blockStart && serviceEndTime <= blockEnd) || 
+                        (timeMinutes <= blockStart && serviceEndTime >= blockEnd)
+                    ) return false;
+                }
+
+                // Check Appointment Conflicts
+                const proAppts = appointments.filter(a => a.professionalId === pro.id && a.date === selectedDate && a.status !== 'cancelled' && a.status !== 'noshow');
+                for (const apt of proAppts) {
+                    const aptStart = timeToMinutes(apt.time);
+                    // Calculate actual duration of the existing appointment
+                    const aptDuration = services
+                        .filter(s => apt.serviceIds.includes(s.id))
+                        .reduce((acc, s) => acc + s.duration, 0) || 45; // Fallback to 45 if no services found
+                    
+                    const aptEnd = aptStart + aptDuration;
+                    if (timeMinutes < aptEnd && serviceEndTime > aptStart) return false;
+                }
+
+                return true;
+            });
+
+            if (availablePros.length > 0) {
+                // 3. PRIORITY: Pick the one with FEWEST appointments for that day
+                availablePros.sort((a, b) => {
+                    const countA = appointments.filter(apt => apt.professionalId === a.id && apt.date === selectedDate).length;
+                    const countB = appointments.filter(apt => apt.professionalId === b.id && apt.date === selectedDate).length;
+                    return countA - countB;
+                });
+                finalProId = availablePros[0].id;
+                setSelectedProId(finalProId); // Update state for SuccessStep
+            } else {
+                // This shouldn't happen if DateTimeStep logic is correct, but just in case
+                setError('Não encontramos profissionais disponíveis para este horário. Por favor, escolha outro horário.');
+                setLoading(false);
+                return;
+            }
+        }
+
         const appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'> = {
             clientName: customerInfo.name,
             clientPhone: customerInfo.phone,
             serviceIds: selectedServiceIds,
-            professionalId: selectedProId,
+            professionalId: finalProId!,
             date: selectedDate,
             time: selectedTime,
             totalValue: total,
@@ -145,6 +214,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                 selectedProId={selectedProId}
                 professionals={professionals}
                 appointments={appointments}
+                services={services}
                 totalDuration={totalDuration}
             />;
         case 'summary': 
