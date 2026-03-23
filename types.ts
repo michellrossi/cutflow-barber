@@ -20,6 +20,8 @@ export interface Client {
   avatarUrl?: string;
   notes?: string;
   totalSpent?: number;
+  loyaltyPoints?: number;
+  loyaltyCardCount?: number;
   createdAt: string;
 }
 
@@ -75,6 +77,8 @@ export interface Coupon {
   active: boolean;
   maxUses: number | null; // [NOVO] Limite de uso
   expiresAt?: string; // [NOVO] Data de expiração
+  isLoyaltyReward?: boolean;
+  clientId?: string;
 }
 
 export interface Appointment {
@@ -105,6 +109,13 @@ export interface ShopSettings {
   textColor?: string;
   backgroundColor?: string;
   priceColor?: string;
+  loyaltyMode?: 'points' | 'card';
+  loyaltyCardGoal?: number;
+  loyaltyPointsRatio?: number;
+  loyaltyPointsGoal?: number;
+  loyaltyRewardValue?: number;
+  loyaltyRewardType?: 'percentage' | 'fixed';
+  loyaltyRewardValidityDays?: number;
 }
 
 export interface BlockedSlot {
@@ -126,6 +137,12 @@ export interface ShopState {
   clients: Client[]; // Nova lista de clientes
   blockedSlots: BlockedSlot[];
   settings: ShopSettings;
+  // [NOVO] Estado do Cliente Logado
+  currentClient: Client | null;
+  clientSession: {
+    clientId: string;
+    token: string;
+  } | null;
   // [NOVO] Estado derivado do trial
   trialStatus: 'active' | 'expired' | 'paid';
   daysRemaining: number;

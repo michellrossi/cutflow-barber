@@ -1,0 +1,66 @@
+-- Migration: Adicionar novos campos no Supabase
+-- Execute este script no SQL Editor do seu painel do Supabase
+
+-- 1. Adicionar forma de pagamento na tabela de agendamentos
+ALTER TABLE appointments 
+ADD COLUMN IF NOT EXISTS payment_method text;
+
+-- 2. Adicionar comissão na tabela de profissionais (caso ainda não exista)
+ALTER TABLE professionals 
+ADD COLUMN IF NOT EXISTS commission_percentage numeric DEFAULT 50;
+
+-- 3. Adicionar limite de uso na tabela de cupons (caso ainda não exista)
+ALTER TABLE coupons 
+ADD COLUMN IF NOT EXISTS max_uses integer;
+
+-- 4. Adicionar campos de assinatura/trial na tabela de lojas (caso ainda não existam)
+ALTER TABLE shops 
+ADD COLUMN IF NOT EXISTS trial_started_at timestamp with time zone,
+ADD COLUMN IF NOT EXISTS trial_ends_at timestamp with time zone,
+ADD COLUMN IF NOT EXISTS plan text DEFAULT 'trial',
+ADD COLUMN IF NOT EXISTS payment_confirmed_at timestamp with time zone;
+
+-- 5. Criar tabela de clientes (CRM)
+CREATE TABLE IF NOT EXISTS clients (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    shop_id uuid REFERENCES shops(id) ON DELETE CASCADE,
+    name text NOT NULL,
+    phone text,
+    email text,
+    avatar_url text,
+    notes text,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 6. Vincular agendamentos aos clientes
+ALTER TABLE appointments 
+ADD COLUMN IF NOT EXISTS client_id uuid REFERENCES clients(id) ON DELETE SET NULL;
+
+-- 7. Campos de Fidelidade nos Clientes
+ALTER TABLE clients 
+ADD COLUMN IF NOT EXISTS loyalty_points integer DEFAULT 0,
+ADD COLUMN IF NOT EXISTS loyalty_card_count integer DEFAULT 0;
+
+-- 8. Configurações de Fidelidade na tabela settings
+ALTER TABLE settings
+ADD COLUMN IF NOT EXISTS loyalty_mode text DEFAULT 'card', -- 'points' | 'card'
+ADD COLUMN IF NOT EXISTS loyalty_card_goal integer DEFAULT 10,
+ADD COLUMN IF NOT EXISTS loyalty_points_ratio integer DEFAULT 1, -- pontos por real gasto
+ADD COLUMN IF NOT EXISTS loyalty_points_goal integer DEFAULT 1000,
+ADD COLUMN IF NOT EXISTS loyalty_reward_value numeric DEFAULT 10,
+ADD COLUMN IF NOT EXISTS loyalty_reward_type text DEFAULT 'percentage', -- 'percentage' | 'fixed'
+ADD COLUMN IF NOT EXISTS loyalty_reward_validity_days integer DEFAULT 90;
+
+-- 9. Tabela de Tokens de Autenticação para Clientes (WhatsApp Login)
+CREATE TABLE IF NOT EXISTS client_auth_tokens (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    client_id uuid REFERENCES clients(id) ON DELETE CASCADE,
+    token text NOT NULL UNIQUE,
+    expires_at timestamp with time zone NOT NULL,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- 10. Rastreamento de Recompensas de Fidelidade nos Cupons
+ALTER TABLE coupons
+ADD COLUMN IF NOT EXISTS is_loyalty_reward boolean DEFAULT false,
+ADD COLUMN IF NOT EXISTS client_id uuid REFERENCES clients(id) ON DELETE CASCADE;

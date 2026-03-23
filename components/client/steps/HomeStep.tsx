@@ -5,9 +5,10 @@ interface HomeStepProps {
     settings: any;
     setStep: (s: any) => void;
     onAdminClick: () => void;
+    onProfileClick: () => void;
 }
 
-export const HomeStep: React.FC<HomeStepProps> = ({ settings, setStep, onAdminClick }) => (
+export const HomeStep: React.FC<HomeStepProps> = ({ settings, setStep, onAdminClick, onProfileClick }) => (
     <div className="flex flex-col items-center justify-center min-h-[80vh] text-center px-4">
         <div className="w-20 h-20 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-orange-500/20 bg-slate-800 overflow-hidden">
             {settings.logoUrl ? (
@@ -40,6 +41,12 @@ export const HomeStep: React.FC<HomeStepProps> = ({ settings, setStep, onAdminCl
         <button onClick={() => setStep('services')} className="px-8 py-4 rounded-full text-white font-bold text-lg shadow-lg hover:brightness-110 transition-all transform hover:-translate-y-1" style={{ backgroundColor: settings.primaryColor }}>
             Agendar Horário
         </button>
+
+        <button onClick={onProfileClick} className="mt-8 flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-800 border border-slate-700 text-white font-bold hover:bg-slate-700 transition-all shadow-lg">
+            <User size={20} style={{ color: settings.primaryColor }} />
+            Minha Conta / Fidelidade
+        </button>
+
         <button onClick={onAdminClick} className="mt-6 text-sm underline hover:opacity-80 transition-opacity" style={{ color: settings.textColor || '#94a3b8' }}>
             acessar painel administrativo
         </button>

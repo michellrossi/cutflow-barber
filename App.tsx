@@ -9,6 +9,7 @@ import { LandingPage } from './components/landing/LandingPage';
 import { Signup } from './components/auth/Signup';
 import { Login } from './components/auth/Login';
 import { UpdatePassword } from './components/auth/UpdatePassword';
+import { ClientTokenValidation } from './components/client/ClientTokenValidation';
 import { Loader2 } from 'lucide-react';
 
 // Wrapper para carregar dados da barbearia baseado na URL (Visão do Cliente)
@@ -108,6 +109,9 @@ const AppRoutes = () => {
             
             {/* Visão do Cliente (Agendamento) */}
             <Route path="/agendar/:slug" element={<BookingRoute />} />
+            
+            {/* [NOVO] Validação de Token de Acesso do Cliente */}
+            <Route path="/acesso/:token" element={<ClientTokenValidation />} />
             
             {/* Catch all (404) -> Home */}
             <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
 import { Appointment } from '../../types';
 import { HomeStep } from './steps/HomeStep';
@@ -7,12 +7,15 @@ import { ProfessionalStep } from './steps/ProfessionalStep';
 import { DateTimeStep } from './steps/DateTimeStep';
 import { SummaryStep } from './steps/SummaryStep';
 import { SuccessStep } from './steps/SuccessStep';
+import { ClientLogin } from './ClientLogin';
+import { ClientProfile } from './ClientProfile';
+import { ArrowLeft } from 'lucide-react';
 
-type Step = 'home' | 'services' | 'professional' | 'datetime' | 'summary' | 'success';
+type Step = 'home' | 'services' | 'professional' | 'datetime' | 'summary' | 'success' | 'login' | 'profile';
 
 export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick }) => {
     const [step, setStep] = useState<Step>('home');
-    const { services, professionals, settings, coupons, addAppointment, appointments, blockedSlots } = useShop();
+    const { services, professionals, settings, coupons, addAppointment, appointments, blockedSlots, currentClient, logoutClient } = useShop();
 
     // Booking State
     const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
@@ -27,6 +30,13 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     // Server feedback
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Auto-fill customer info if logged in
+    useEffect(() => {
+        if (currentClient && !customerInfo.name && !customerInfo.phone) {
+            setCustomerInfo({ name: currentClient.name, phone: currentClient.phone });
+        }
+    }, [currentClient]);
 
     // Helpers
     const selectedServices = services.filter(s => selectedServiceIds.includes(s.id));
@@ -190,10 +200,31 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
 
     return (
         <div className="min-h-screen transition-colors duration-500" style={{ backgroundColor: settings.backgroundColor || '#0f172a' }}>
+            {step !== 'home' && step !== 'success' && (
+                <div className="max-w-4xl mx-auto px-4 pt-6">
+                    <button 
+                        onClick={() => setStep(step === 'login' || step === 'profile' ? 'home' : 'home')} // Simplified for now, could be more granular
+                        className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
+                    >
+                        <ArrowLeft size={20} />
+                        <span>Voltar</span>
+                    </button>
+                </div>
+            )}
+
             {(() => {
                 switch(step) {
                     case 'home': 
-                        return <HomeStep settings={settings} setStep={setStep} onAdminClick={onAdminClick} />;
+                        return <HomeStep 
+                            settings={settings} 
+                            setStep={setStep} 
+                            onAdminClick={onAdminClick} 
+                            onProfileClick={() => setStep(currentClient ? 'profile' : 'login')}
+                        />;
+                    case 'login':
+                        return <ClientLogin onBack={() => setStep('home')} />;
+                    case 'profile':
+                        return <ClientProfile onLogout={() => { logoutClient(); setStep('home'); }} />;
                     case 'services': 
                         return <ServicesStep 
                             services={services} 

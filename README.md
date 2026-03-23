@@ -1,56 +1,20 @@
-✂️ CutFlow Barber
-O CutFlow Barber é uma solução completa de Software as a Service (SaaS) para gestão de barbearias. A plataforma permite que donos de barbearias gerenciem suas equipes, serviços e cupons, enquanto oferece aos clientes um fluxo de agendamento online fluido e intuitivo.
+<div align="center">
+<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+</div>
 
-🚀 Funcionalidades
-Agendamento Online 24h: Fluxo de reserva para clientes com seleção de serviço, profissional, data e horário.
+# Run and deploy your AI Studio app
 
-Painel Administrativo: Gestão completa de profissionais, catálogo de serviços e configurações de design.
+This contains everything you need to run your app locally.
 
-Painel do Barbeiro: Visão simplificada da agenda e ganhos diários para os colaboradores.
+View your app in AI Studio: https://ai.studio/apps/d54b6b45-8ca3-40d1-95ff-f0d423ea48d0
 
-Sistema de Cupons: Criação e validação de descontos fixos ou percentuais.
+## Run Locally
 
-Gestão de Bloqueios: Permite bloquear horários específicos para folgas ou compromissos médicos.
+**Prerequisites:**  Node.js
 
-Customização Visual: Alteração de cores primárias, secundárias e logotipo diretamente pelo painel.
 
-🛠️ Tecnologias Utilizadas
-Frontend: React 19 com TypeScript.
-
-Build Tool: Vite.
-
-Backend & Auth: Supabase (PostgreSQL + GoTrue).
-
-Estilização: Tailwind CSS.
-
-Ícones: Lucide React.
-
-📦 Configuração Local
-Pré-requisitos: Node.js instalado.
-
-Clone o repositório:
-
-Bash
-git clone [url-do-seu-repositorio]
-cd cutflow-barber
-Instale as dependências:
-
-Bash
-npm install
-Configure as variáveis de ambiente:
-Crie um arquivo .env.local na raiz do projeto e adicione suas credenciais do Supabase:
-
-Snippet de código
-VITE_SUPABASE_URL=sua_url_do_supabase
-VITE_SUPABASE_ANON_KEY=sua_chave_anon_do_supabase
-Inicie o servidor de desenvolvimento:
-
-Bash
-npm run dev
-🌐 Deploy na Vercel
-O projeto está configurado para deploy automático na Vercel utilizando o arquivo vercel.json para garantir o correto funcionamento das rotas do React Router.
-
-Importante: Ao realizar o deploy, certifique-se de configurar as variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no painel da Vercel para evitar erros de inicialização.
-
-📄 Licença
-Este projeto é privado. Todos os direitos reservados.
+1. Install dependencies:
+   `npm install`
+2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+3. Run the app:
+   `npm run dev`

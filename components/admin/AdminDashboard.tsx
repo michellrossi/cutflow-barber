@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
-import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle } from 'lucide-react';
+import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award } from 'lucide-react';
 import { TeamPanel } from './panels/TeamPanel';
 import { ServicesPanel } from './panels/ServicesPanel';
 import { CouponsPanel } from './panels/CouponsPanel';
@@ -9,10 +9,11 @@ import { AppointmentsPanel } from './panels/AppointmentsPanel';
 import { FinancePanel } from './panels/FinancePanel';
 import { ClientsPanel } from './panels/ClientsPanel';
 import { SettingsPanel } from './panels/SettingsPanel';
+import { LoyaltyPanel } from './panels/LoyaltyPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
 import { PaymentModal } from '../billing/PaymentModal';
 
-type AdminTab = 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings';
+type AdminTab = 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty';
 
 export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () => void }> = ({ onLogout, onViewClient }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>(() => {
@@ -40,6 +41,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'appointments': return <AppointmentsPanel />;
       case 'finance': return <FinancePanel />;
       case 'clients': return <ClientsPanel />;
+      case 'loyalty': return <LoyaltyPanel />;
       case 'settings': return <SettingsPanel />;
       default: return <TeamPanel />;
     }
@@ -53,6 +55,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'appointments': return 'Vendas & Agenda';
           case 'finance': return 'Financeiro';
           case 'clients': return 'Gestão de Clientes';
+          case 'loyalty': return 'Programa de Fidelidade';
           case 'settings': return 'Configurações';
       }
   }
@@ -77,6 +80,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => setActiveTab('coupons')} />
           <SidebarItem icon={<CalendarCheck size={20} />} label="Agendamentos" active={activeTab === 'appointments'} onClick={() => setActiveTab('appointments')} />
           <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
+          <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => setActiveTab('loyalty')} />
           <SidebarItem icon={<DollarSign size={20} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />
           <SidebarItem icon={<Settings size={20} />} label="Configurações" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
           
@@ -143,6 +147,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
             <button onClick={() => setActiveTab('team')} className={`px-3 py-1 rounded text-sm ${activeTab === 'team' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Equipe</button>
             <button onClick={() => setActiveTab('appointments')} className={`px-3 py-1 rounded text-sm ${activeTab === 'appointments' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Agenda</button>
             <button onClick={() => setActiveTab('clients')} className={`px-3 py-1 rounded text-sm ${activeTab === 'clients' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Clientes</button>
+            <button onClick={() => setActiveTab('loyalty')} className={`px-3 py-1 rounded text-sm ${activeTab === 'loyalty' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Fidelidade</button>
             <button onClick={() => setActiveTab('finance')} className={`px-3 py-1 rounded text-sm ${activeTab === 'finance' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Financeiro</button>
             <button onClick={() => setActiveTab('services')} className={`px-3 py-1 rounded text-sm ${activeTab === 'services' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Serviços</button>
             <button onClick={() => setActiveTab('coupons')} className={`px-3 py-1 rounded text-sm ${activeTab === 'coupons' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Cupons</button>
