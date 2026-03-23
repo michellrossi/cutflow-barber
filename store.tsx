@@ -861,6 +861,25 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         // Como o RPC pode envolver validações complexas e triggers,
         // aqui fazemos um fetch leve apenas dos agendamentos para garantir consistência.
         await reloadAppointments(shopId);
+
+        // Trigger AI Confirmation Notification (WhatsApp)
+        // We fetch the most recent appointment for this phone to get the ID
+        const { data: latestApt } = await supabase
+            .from('appointments')
+            .select('id')
+            .eq('client_phone', cleanClientPhone)
+            .eq('shop_id', shopId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+
+        if (latestApt) {
+            fetch('/api/notify/confirmation', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ appointmentId: latestApt.id })
+            }).catch(err => console.error("Erro ao disparar notificação:", err));
+        }
         
         return { success: true };
     } catch (e: any) {

@@ -64,3 +64,9 @@ CREATE TABLE IF NOT EXISTS client_auth_tokens (
 ALTER TABLE coupons
 ADD COLUMN IF NOT EXISTS is_loyalty_reward boolean DEFAULT false,
 ADD COLUMN IF NOT EXISTS client_id uuid REFERENCES clients(id) ON DELETE CASCADE;
+
+-- 11. Rastreamento de Notificações nos Agendamentos (IA WhatsApp)
+ALTER TABLE appointments 
+ADD COLUMN IF NOT EXISTS confirmation_sent boolean DEFAULT false,
+ADD COLUMN IF NOT EXISTS reminder_24h_sent boolean DEFAULT false,
+ADD COLUMN IF NOT EXISTS reminder_1h_sent boolean DEFAULT false;
