@@ -3,7 +3,6 @@ import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
-import cron from 'node-cron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -21,29 +20,29 @@ const ai = new GoogleGenAI({ apiKey: geminiKey });
 
 /**
  * GERA MENSAGEM COM IA (GEMINI)
- * Corrigido para o padrão ai.models.generateContent
+ * Ajustado para o SDK @google/genai conforme sua análise
  */
 async function generateWhatsAppMessage(type: string, data: any) {
     try {
-        let prompt = `Crie uma mensagem de ${type} curta e profissional para uma barbearia. Cliente: ${data.clientName}, Serviço: ${data.services}, Data: ${data.date}, Hora: ${data.time}. Use emojis.`;
+        const prompt = `Crie uma mensagem de ${type} curta e amigável para WhatsApp de uma barbearia. Cliente: ${data.clientName}, Serviço: ${data.services}, Data: ${data.date}, Hora: ${data.time}. Use emojis.`;
 
-        const result = await ai.models.generateContent({
-            model: "gemini-1.5-flash",
+        // Padrão correto para o SDK @google/genai
+        const response = await ai.models.generateContent({
+            model: "gemini-2.0-flash",
             contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
-        // O SDK @google/genai retorna o texto dentro de result.text ou na estrutura de candidatos
-        const messageText = result.text || `Olá ${data.clientName}, confirmamos seu agendamento de ${data.services} para ${data.date} às ${data.time}.`;
-        return messageText;
+        // Retorna o texto gerado ou o fallback em caso de vazio
+        return response.text || `Olá ${data.clientName}, confirmamos seu agendamento de ${data.services} para ${data.date} às ${data.time}.`;
     } catch (error) {
-        console.error("Erro ao gerar mensagem com Gemini:", error);
+        console.error("Erro no Gemini (usando fallback):", error);
         return `Olá ${data.clientName}, confirmamos seu agendamento de ${data.services} para ${data.date} às ${data.time}.`;
     }
 }
 
 /**
  * ENVIA WHATSAPP (EVOLUTION API V2)
- * Corrigido para tratar o 9º dígito e evitar PENDING infinito
+ * Ajustado para o 9º dígito e URL de sucesso do seu Postman
  */
 async function sendWhatsApp(phone: string, message: string) {
     const apiUrl = process.env.WHATSAPP_API_URL;
@@ -52,10 +51,11 @@ async function sendWhatsApp(phone: string, message: string) {
 
     if (!apiUrl || !apiKey) return false;
 
-    // Limpeza e formatação do número (Lógica do 9º dígito para DDDs 11-28)
+    // 1. Limpeza do número
     let cleanPhone = phone.replace(/\D/g, '');
     if (!cleanPhone.startsWith('55')) cleanPhone = `55${cleanPhone}`;
     
+    // 2. Lógica do 9º dígito para DDDs 11-28 (Evita ficar PENDING)
     let phoneToSubmit = cleanPhone;
     if (cleanPhone.length === 13) {
         const ddd = parseInt(cleanPhone.substring(2, 4));
@@ -82,10 +82,10 @@ async function sendWhatsApp(phone: string, message: string) {
             })
         });
         
-        console.log(`[WhatsApp] Status: ${response.status} | Enviado para: ${phoneToSubmit}`);
+        console.log(`[WhatsApp] Status: ${response.status} | Destino: ${phoneToSubmit}`);
         return response.ok;
     } catch (error) {
-        console.error("Erro na requisição WhatsApp:", error);
+        console.error("Erro na Evolution API:", error);
         return false;
     }
 }
@@ -95,7 +95,7 @@ async function startServer() {
     app.use(cors());
     app.use(express.json());
 
-    // Rota de Notificação
+    // Rota da API
     app.post('/api/notify/confirmation', async (req, res) => {
         const { appointmentId } = req.body;
         
@@ -119,13 +119,19 @@ async function startServer() {
         res.json({ success });
     });
 
+    // Configuração de Produção (Hospedagem Única no Railway)
     if (process.env.NODE_ENV === 'production') {
-        const distPath = path.join(__dirname, 'dist');
+        const distPath = path.resolve(__dirname, 'dist');
         app.use(express.static(distPath));
         
-        // CORREÇÃO DO CRASH: Usando '/*' em vez de '*' para evitar o PathError
-        app.get('/*', (req, res) => {
-            res.sendFile(path.join(distPath, 'index.html'));
+        // SOLUÇÃO PARA O CRASH 502: 
+        // Usamos um middleware de captura em vez de app.get('*') para evitar erro de sintaxe no path-to-regexp
+        app.use((req, res, next) => {
+            if (req.accepts('html')) {
+                res.sendFile(path.join(distPath, 'index.html'));
+            } else {
+                next();
+            }
         });
     } else {
         const vite = await createViteServer({
@@ -136,8 +142,10 @@ async function startServer() {
     }
 
     app.listen(Number(PORT), '0.0.0.0', () => {
-        console.log(`Servidor rodando na porta ${PORT}`);
+        console.log(`Servidor ativo na porta ${PORT}`);
     });
 }
 
-startServer().catch(console.error);
+startServer().catch(err => {
+    console.error("Erro ao iniciar servidor:", err);
+});
