@@ -55,7 +55,7 @@ async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | '
 async function sendWhatsApp(phone: string, message: string) {
     const apiUrl = process.env.WHATSAPP_API_URL;
     const apiKey = process.env.WHATSAPP_API_KEY;
-    const instance = process.env.WHATSAPP_INSTANCE;
+    const instance = process.env.WHATSAPP_INSTANCE; // Aqui ele vai ler 'cutflow' do Railway
 
     if (!apiUrl || !apiKey || !instance) {
         console.error("ERRO: Variáveis de ambiente do WhatsApp não configuradas!");
@@ -63,15 +63,13 @@ async function sendWhatsApp(phone: string, message: string) {
     }
 
     const cleanPhone = phone.replace(/\D/g, '');
-    const formattedPhone = `${cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`}@s.whatsapp.net`;
+    const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
 
     try {
-        // NA V2.3.7: A URL de envio é fixa, sem o nome da instância no fim
+        // Na v2.3.7, a URL termina em /message/sendText
         const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
         const url = `${baseUrl}/message/sendText`;
         
-        console.log(`[WhatsApp v2] Enviando para ${formattedPhone} via instância: ${instance}`);
-
         const response = await fetch(url, {
             method: 'POST',
             headers: { 
@@ -81,8 +79,7 @@ async function sendWhatsApp(phone: string, message: string) {
             body: JSON.stringify({
                 number: formattedPhone,
                 text: message,
-                // OBRIGATÓRIO NA V2: O nome da instância deve ser enviado aqui
-                instance: instance, 
+                instance: instance, // Enviando 'cutflow' dentro do corpo para a v2
                 delay: 1200,
                 linkPreview: false
             })
@@ -93,7 +90,7 @@ async function sendWhatsApp(phone: string, message: string) {
         
         return response.ok;
     } catch (error) {
-        console.error("Erro fatal na requisição Evolution API v2:", error);
+        console.error("Erro na requisição Evolution API v2:", error);
         return false;
     }
 }
