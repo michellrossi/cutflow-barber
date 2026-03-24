@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Configurações
 const PORT = process.env.PORT || 3000;
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
@@ -19,19 +20,20 @@ const ai = new GoogleGenAI({ apiKey: geminiKey });
 
 /**
  * GERA MENSAGEM COM IA (GEMINI)
- * Ajustado para o modelo estável 1.5-flash
+ * Ajustado para o SDK @google/genai conforme sua análise
  */
 async function generateWhatsAppMessage(type: string, data: any) {
     try {
         const prompt = `Crie uma mensagem de ${type} curta e amigável para WhatsApp de uma barbearia. Cliente: ${data.clientName}, Serviço: ${data.services}, Data: ${data.date}, Hora: ${data.time}. Use emojis.`;
 
-        // USANDO MODELO ESTÁVEL 1.5-FLASH
-        const result = await ai.models.generateContent({
-            model: "gemini-1.5-flash",
+        // Padrão correto para o SDK @google/genai
+        const response = await ai.models.generateContent({
+            model: "gemini-2.0-flash",
             contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
-        return result.text || `Olá ${data.clientName}, confirmamos seu agendamento de ${data.services} para ${data.date} às ${data.time}.`;
+        // Retorna o texto gerado ou o fallback em caso de vazio
+        return response.text || `Olá ${data.clientName}, confirmamos seu agendamento de ${data.services} para ${data.date} às ${data.time}.`;
     } catch (error) {
         console.error("Erro no Gemini (usando fallback):", error);
         return `Olá ${data.clientName}, confirmamos seu agendamento de ${data.services} para ${data.date} às ${data.time}.`;
@@ -40,7 +42,7 @@ async function generateWhatsAppMessage(type: string, data: any) {
 
 /**
  * ENVIA WHATSAPP (EVOLUTION API V2)
- * Ajustado para MANTER o 9º dígito (necessário para seu número)
+ * Ajustado para o 9º dígito e URL de sucesso do seu Postman
  */
 async function sendWhatsApp(phone: string, message: string) {
     const apiUrl = process.env.WHATSAPP_API_URL;
@@ -49,12 +51,18 @@ async function sendWhatsApp(phone: string, message: string) {
 
     if (!apiUrl || !apiKey) return false;
 
-    // LIMPEZA: Mantém o número exatamente como enviado (com o 9º dígito)
+    // 1. Limpeza do número
     let cleanPhone = phone.replace(/\D/g, '');
     if (!cleanPhone.startsWith('55')) cleanPhone = `55${cleanPhone}`;
     
-    // Removi a lógica que tirava o 9º dígito, pois seu log mostrou que sem ele não chega.
+    // 2. Lógica do 9º dígito para DDDs 11-28 (Evita ficar PENDING)
     let phoneToSubmit = cleanPhone;
+    if (cleanPhone.length === 13) {
+        const ddd = parseInt(cleanPhone.substring(2, 4));
+        if (ddd <= 28) {
+            phoneToSubmit = cleanPhone.substring(0, 4) + cleanPhone.substring(5);
+        }
+    }
 
     try {
         const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
@@ -87,6 +95,7 @@ async function startServer() {
     app.use(cors());
     app.use(express.json());
 
+    // Rota da API
     app.post('/api/notify/confirmation', async (req, res) => {
         const { appointmentId } = req.body;
         
@@ -110,14 +119,25 @@ async function startServer() {
         res.json({ success });
     });
 
+    // Configuração de Produção (Hospedagem Única no Railway)
     if (process.env.NODE_ENV === 'production') {
         const distPath = path.resolve(__dirname, 'dist');
         app.use(express.static(distPath));
-        app.get('/*', (req, res) => {
-            res.sendFile(path.join(distPath, 'index.html'));
+        
+        // SOLUÇÃO PARA O CRASH 502: 
+        // Usamos um middleware de captura em vez de app.get('*') para evitar erro de sintaxe no path-to-regexp
+        app.use((req, res, next) => {
+            if (req.accepts('html')) {
+                res.sendFile(path.join(distPath, 'index.html'));
+            } else {
+                next();
+            }
         });
     } else {
-        const vite = await createViteServer({ server: { middlewareMode: true }, appType: 'spa' });
+        const vite = await createViteServer({
+            server: { middlewareMode: true },
+            appType: 'spa',
+        });
         app.use(vite.middlewares);
     }
 
@@ -126,4 +146,6 @@ async function startServer() {
     });
 }
 
-startServer().catch(err => console.error("Erro fatal:", err));
+startServer().catch(err => {
+    console.error("Erro ao iniciar servidor:", err);
+});
