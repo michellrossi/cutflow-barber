@@ -70,3 +70,7 @@ ALTER TABLE appointments
 ADD COLUMN IF NOT EXISTS confirmation_sent boolean DEFAULT false,
 ADD COLUMN IF NOT EXISTS reminder_24h_sent boolean DEFAULT false,
 ADD COLUMN IF NOT EXISTS reminder_1h_sent boolean DEFAULT false;
+
+-- 12. Celular do Profissional para Notificações
+ALTER TABLE professionals 
+ADD COLUMN IF NOT EXISTS phone text;

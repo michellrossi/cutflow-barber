@@ -19,7 +19,7 @@ const geminiKey = process.env.GEMINI_API_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 const ai = new GoogleGenAI({ apiKey: geminiKey });
 
-async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | 'reminder_1h', data: any) {
+async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | 'reminder_1h' | 'pro_notification', data: any) {
     try {
         let prompt = "";
         if (type === 'confirmation') {
@@ -30,14 +30,18 @@ async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | '
             prompt = `Crie um lembrete de agendamento para daqui a 24 horas. 
             Cliente: ${data.clientName}, Serviço: ${data.services}, Data: ${data.date}, Hora: ${data.time}.
             Peça para avisar com antecedência caso precise desmarcar. Use emojis.`;
-        } else {
+        } else if (type === 'reminder_1h') {
             prompt = `Crie um lembrete urgente de agendamento para daqui a 1 hora. 
             Cliente: ${data.clientName}, Serviço: ${data.services}, Hora: ${data.time}.
             Diga que estamos ansiosos para vê-lo(a). Use emojis.`;
+        } else if (type === 'pro_notification') {
+            prompt = `Crie uma notificação para o profissional sobre um NOVO agendamento. 
+            Profissional: ${data.proName}, Cliente: ${data.clientName}, Serviço: ${data.services}, Data: ${data.date}, Hora: ${data.time}.
+            Seja direto e informativo. Use emojis.`;
         }
 
         const response = await ai.models.generateContent({
-            model: "gemini-1.5-flash",
+            model: "gemini-3-flash-preview",
             contents: prompt
         });
         return response.text;
@@ -52,6 +56,8 @@ async function sendWhatsApp(phone: string, message: string) {
     const apiKey = process.env.WHATSAPP_API_KEY;
     const instance = process.env.WHATSAPP_INSTANCE;
 
+    console.log(`[WhatsApp] Tentando enviar para ${phone}. API: ${apiUrl ? 'OK' : 'MISSING'}, Key: ${apiKey ? 'OK' : 'MISSING'}, Instance: ${instance ? 'OK' : 'MISSING'}`);
+
     if (!apiUrl || !apiKey || !instance) {
         console.error("ERRO: Variáveis de ambiente do WhatsApp não configuradas!");
         return false;
@@ -62,7 +68,9 @@ async function sendWhatsApp(phone: string, message: string) {
     const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
 
     try {
-        const response = await fetch(`${apiUrl}/message/sendText/${instance}`, {
+        const url = `${apiUrl}/message/sendText/${instance}`;
+        console.log(`[WhatsApp] Enviando POST para ${url}`);
+        const response = await fetch(url, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json', 
@@ -75,6 +83,9 @@ async function sendWhatsApp(phone: string, message: string) {
                 linkPreview: false
             })
         });
+        
+        const result = await response.json();
+        console.log(`[WhatsApp] Resposta da API (${response.status}):`, JSON.stringify(result));
         return response.ok;
     } catch (error) {
         console.error("Erro na requisição para Evolution API:", error);
@@ -89,14 +100,18 @@ async function startServer() {
     // API: Enviar Confirmação Imediata
     app.post('/api/notify/confirmation', async (req, res) => {
         const { appointmentId } = req.body;
+        console.log(`[API] Recebido pedido de notificação para agendamento: ${appointmentId}`);
         
         const { data: apt, error } = await supabase
             .from('appointments')
-            .select('*, shops(name), professionals(name)')
+            .select('*, shops(name), professionals(name, phone)')
             .eq('id', appointmentId)
             .single();
 
-        if (error || !apt) return res.status(404).json({ error: "Agendamento não encontrado" });
+        if (error || !apt) {
+            console.error(`[API] Erro ao buscar agendamento ${appointmentId}:`, error);
+            return res.status(404).json({ error: "Agendamento não encontrado" });
+        }
 
         // Buscar nomes dos serviços
         let servicesText = "seus serviços selecionados";
@@ -111,7 +126,8 @@ async function startServer() {
             }
         }
 
-        const message = await generateWhatsAppMessage('confirmation', {
+        // 1. Notificar Cliente
+        const clientMessage = await generateWhatsAppMessage('confirmation', {
             clientName: apt.client_name,
             services: servicesText,
             date: apt.date,
@@ -119,12 +135,28 @@ async function startServer() {
             proName: apt.professionals?.name
         });
 
-        const sent = await sendWhatsApp(apt.client_phone, message);
-        if (sent) {
+        const clientSent = await sendWhatsApp(apt.client_phone, clientMessage);
+        if (clientSent) {
             await supabase.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
+            console.log(`[API] Confirmação enviada para o cliente: ${apt.client_name}`);
         }
 
-        res.json({ success: sent });
+        // 2. Notificar Profissional (se tiver telefone cadastrado)
+        if (apt.professionals?.phone) {
+            const proMessage = await generateWhatsAppMessage('pro_notification', {
+                proName: apt.professionals.name,
+                clientName: apt.client_name,
+                services: servicesText,
+                date: apt.date,
+                time: apt.time
+            });
+            const proSent = await sendWhatsApp(apt.professionals.phone, proMessage);
+            if (proSent) {
+                console.log(`[API] Notificação enviada para o profissional: ${apt.professionals.name}`);
+            }
+        }
+
+        res.json({ success: clientSent });
     });
 
     // Cron Job: Verificar Lembretes (Roda a cada 15 minutos)

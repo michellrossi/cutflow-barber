@@ -63,6 +63,7 @@ export interface Professional {
   workSchedule?: WorkSchedule;
   email?: string;
   userId?: string;
+  phone?: string; // [NOVO] Celular para notificações
   commissionPercentage?: number; // Novo campo
   color?: string; // [NOVO] Cor para identificação na agenda
 }

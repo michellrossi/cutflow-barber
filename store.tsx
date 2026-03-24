@@ -181,6 +181,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       photoUrl: data.photo_url,
       workSchedule: data.work_schedule || DEFAULT_SCHEDULE,
       email: data.email,
+      phone: data.phone,
       userId: data.user_id,
       commissionPercentage: data.commission_percentage || 50, // Default 50%
       color: data.color || PROFESSIONAL_COLORS[index % PROFESSIONAL_COLORS.length]
@@ -700,6 +701,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             photo_url: pro.photoUrl,
             work_schedule: pro.workSchedule || DEFAULT_SCHEDULE,
             email: pro.email ? sanitize(pro.email) : null,
+            phone: pro.phone ? sanitize(pro.phone) : null,
             commission_percentage: pro.commissionPercentage ?? 50,
             color: pro.color || PROFESSIONAL_COLORS[state.professionals.length % PROFESSIONAL_COLORS.length]
         }).select().single();
@@ -725,6 +727,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.photoUrl) payload.photo_url = updated.photoUrl;
         if (updated.workSchedule) payload.work_schedule = updated.workSchedule;
         if (updated.email !== undefined) payload.email = updated.email ? sanitize(updated.email) : null;
+        if (updated.phone !== undefined) payload.phone = updated.phone ? sanitize(updated.phone) : null;
         if (updated.commissionPercentage !== undefined) payload.commission_percentage = updated.commissionPercentage;
         if (updated.color) payload.color = sanitize(updated.color);
 
