@@ -182,7 +182,13 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ appointmentId: result.data.id })
                     })
-                    .then(res => res.json())
+                    .then(async res => {
+                        if (!res.ok) {
+                            const text = await res.text();
+                            throw new Error(`Erro HTTP ${res.status}: ${text.slice(0, 100)}`);
+                        }
+                        return res.json();
+                    })
                     .then(data => console.log("Resposta da notificação:", data))
                     .catch(err => console.error("Erro ao disparar notificação:", err));
                 }

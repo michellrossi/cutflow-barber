@@ -1,5 +1,6 @@
 
 import express from 'express';
+import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
@@ -107,13 +108,30 @@ async function sendWhatsApp(phone: string, message: string) {
 
 async function startServer() {
     const app = express();
+    app.use(cors());
     app.use(express.json());
 
+    // Logger global para depuração
+    app.use((req, res, next) => {
+        console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+        next();
+    });
+
+    // API: Teste de rota
+    app.get('/api/notify/confirmation', (req, res) => {
+        res.send('API de Notificação está ativa! Use POST para disparar.');
+    });
+
     // API: Enviar Confirmação Imediata
-    app.post('/api/notify/confirmation', async (req, res) => {
+    const handleConfirmation = async (req: any, res: any) => {
         const { appointmentId } = req.body;
         console.log(`[API] Recebido pedido de notificação para agendamento: ${appointmentId}`);
         
+        if (!appointmentId) {
+            console.error("[API] Erro: appointmentId não fornecido no corpo da requisição");
+            return res.status(400).json({ error: "appointmentId é obrigatório" });
+        }
+
         const { data: apt, error } = await supabase
             .from('appointments')
             .select('*, shops(name), professionals(name, phone)')
@@ -169,7 +187,10 @@ async function startServer() {
         }
 
         res.json({ success: clientSent });
-    });
+    };
+
+    app.post('/api/notify/confirmation', handleConfirmation);
+    app.post('/api/notify/confirmation/', handleConfirmation);
 
     // Cron Job: Verificar Lembretes (Roda a cada 15 minutos)
     cron.schedule('*/15 * * * *', async () => {
