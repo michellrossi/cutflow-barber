@@ -20,27 +20,26 @@ const geminiKey = process.env.GEMINI_API_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 const ai = new GoogleGenAI({ apiKey: geminiKey });
 
+// 1. Ajuste da IA (Gemini)
 async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | 'reminder_1h' | 'pro_notification', data: any) {
     try {
-        const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" }); // Nome oficial do modelo
+        // Usando o formato compatível com sua inicialização
+        const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" }); 
 
-        let prompt = "";
-        if (type === 'confirmation') {
-            prompt = `Crie uma mensagem de confirmação de agendamento curta. Cliente: ${data.clientName}, Serviço: ${data.services}, Data: ${data.date}, Hora: ${data.time}. Use emojis.`;
-        } else {
-            prompt = `Lembrete de agendamento para ${data.clientName} às ${data.time}. Seja cordial.`;
-        }
+        let prompt = `Crie uma mensagem de ${type} curta e profissional para barbearia. Cliente: ${data.clientName}, Serviço: ${data.services}, Data: ${data.date}, Hora: ${data.time}. Use emojis.`;
 
         const result = await model.generateContent(prompt);
-        const response = await result.response;
-        return response.text(); // Forma correta de extrair o texto no SDK novo
+        const responseText = result.response.text();
+        
+        return responseText;
     } catch (error) {
-        console.error("Erro no Gemini (usando fallback):", error);
-        // Fallback: Se a IA falhar, enviamos uma mensagem padrão para não quebrar o WhatsApp
+        console.error("Erro na IA (usando padrão):", error);
+        // Fallback: Se a IA falhar, enviamos o texto básico para não dar erro 400 no WhatsApp
         return `Olá ${data.clientName}, confirmamos seu agendamento de ${data.services} para o dia ${data.date} às ${data.time}.`;
     }
 }
 
+// 2. Ajuste do Envio (WhatsApp)
 async function sendWhatsApp(phone: string, message: string) {
     const apiUrl = process.env.WHATSAPP_API_URL;
     const apiKey = process.env.WHATSAPP_API_KEY;
@@ -48,33 +47,38 @@ async function sendWhatsApp(phone: string, message: string) {
 
     if (!apiUrl || !apiKey || !instance) return false;
 
-    const cleanPhone = phone.replace(/\D/g, '');
-    const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    // LIMPEZA E AJUSTE DO NÚMERO (Problema do 9º dígito no Brasil)
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (!cleanPhone.startsWith('55')) cleanPhone = `55${cleanPhone}`;
+    
+    // Se o número tem 13 dígitos (55 + DDD + 9 dígitos), tentamos remover o 9 para o WhatsApp
+    // Muitos JIDs de WhatsApp no Brasil não usam o 9 para DDDs baixos (11 a 28)
+    let phoneToSubmit = cleanPhone;
+    if (cleanPhone.length === 13) {
+        const ddd = parseInt(cleanPhone.substring(2, 4));
+        if (ddd <= 28) {
+            phoneToSubmit = cleanPhone.substring(0, 4) + cleanPhone.substring(5);
+        }
+    }
 
     try {
-        // Usando a URL que funcionou no seu Postman (201 Created)
         const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
         const url = `${baseUrl}/message/sendText/${instance}`;
 
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', 
-                'apikey': apiKey 
-            },
+            headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
             body: JSON.stringify({
-                number: formattedPhone,
-                text: message || "Confirmação de agendamento recebida!", // Garante que nunca vá vazio
-                delay: 1200,
-                linkPreview: false
+                number: phoneToSubmit, // Número ajustado
+                text: message,
+                delay: 1200
             })
         });
 
         const result = await response.json();
-        console.log(`[WhatsApp v2] Resposta (${response.status}):`, JSON.stringify(result));
+        console.log(`[WhatsApp] Status: ${response.status} | Destino: ${phoneToSubmit}`);
         return response.ok;
     } catch (error) {
-        console.error("Erro fatal no envio:", error);
         return false;
     }
 }
