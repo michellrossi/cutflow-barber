@@ -98,8 +98,18 @@ async function startServer() {
 
         if (error || !apt) return res.status(404).json({ error: "Agendamento não encontrado" });
 
-        // Buscar nomes dos serviços (simplificado para o exemplo)
-        const servicesText = "seus serviços selecionados"; 
+        // Buscar nomes dos serviços
+        let servicesText = "seus serviços selecionados";
+        if (apt.service_ids && apt.service_ids.length > 0) {
+            const { data: services } = await supabase
+                .from('services')
+                .select('name')
+                .in('id', apt.service_ids);
+            
+            if (services && services.length > 0) {
+                servicesText = services.map(s => s.name).join(', ');
+            }
+        }
 
         const message = await generateWhatsAppMessage('confirmation', {
             clientName: apt.client_name,
@@ -135,9 +145,22 @@ async function startServer() {
 
         if (apts24h) {
             for (const apt of apts24h) {
+                // Buscar nomes dos serviços
+                let servicesText = "seu horário";
+                if (apt.service_ids && apt.service_ids.length > 0) {
+                    const { data: services } = await supabase
+                        .from('services')
+                        .select('name')
+                        .in('id', apt.service_ids);
+                    
+                    if (services && services.length > 0) {
+                        servicesText = services.map(s => s.name).join(', ');
+                    }
+                }
+
                 const message = await generateWhatsAppMessage('reminder_24h', {
                     clientName: apt.client_name,
-                    services: "seu horário",
+                    services: servicesText,
                     date: apt.date,
                     time: apt.time
                 });
@@ -166,9 +189,22 @@ async function startServer() {
                 const diffMins = diffMs / (1000 * 60);
 
                 if (diffMins > 0 && diffMins <= 60) {
+                    // Buscar nomes dos serviços
+                    let servicesText = "seu horário";
+                    if (apt.service_ids && apt.service_ids.length > 0) {
+                        const { data: services } = await supabase
+                            .from('services')
+                            .select('name')
+                            .in('id', apt.service_ids);
+                        
+                        if (services && services.length > 0) {
+                            servicesText = services.map(s => s.name).join(', ');
+                        }
+                    }
+
                     const message = await generateWhatsAppMessage('reminder_1h', {
                         clientName: apt.client_name,
-                        services: "seu horário",
+                        services: servicesText,
                         time: apt.time
                     });
                     if (await sendWhatsApp(apt.client_phone, message)) {
