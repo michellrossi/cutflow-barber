@@ -48,7 +48,7 @@ async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | '
 }
 
 async function sendWhatsApp(phone: string, message: string) {
-    const apiUrl = process.env.WHATSAPP_API_URL;
+    const apiUrl = process.env.WHATSAPP_API_URL; // Ex: https://sua-api.com/message/sendText/sua-instancia
     const apiKey = process.env.WHATSAPP_API_KEY;
 
     if (!apiUrl || !apiKey) {
@@ -60,13 +60,29 @@ async function sendWhatsApp(phone: string, message: string) {
     }
 
     try {
-        // Exemplo genérico de integração com API de WhatsApp
+        // Limpar o número (manter apenas dígitos)
+        const cleanPhone = phone.replace(/\D/g, '');
+        
+        // Formato para Evolution API (ajuste conforme sua versão/instância)
         const response = await fetch(apiUrl, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
-            body: JSON.stringify({ phone, message })
+            headers: { 
+                'Content-Type': 'application/json', 
+                'apikey': apiKey 
+            },
+            body: JSON.stringify({ 
+                number: cleanPhone,
+                text: message 
+            })
         });
-        return response.ok;
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Erro na API de WhatsApp (${response.status}):`, errorText);
+            return false;
+        }
+
+        return true;
     } catch (error) {
         console.error("Erro ao enviar WhatsApp:", error);
         return false;
