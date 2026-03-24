@@ -28,6 +28,7 @@ export const TeamPanel: React.FC = () => {
     const [name, setName] = useState('');
     const [role, setRole] = useState('');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [commission, setCommission] = useState('50'); // Default 50%
     const [color, setColor] = useState('#f97316');
     const [photo, setPhoto] = useState<string | null>(null);
@@ -70,6 +71,7 @@ export const TeamPanel: React.FC = () => {
         setName(pro.name);
         setRole(pro.role);
         setEmail(pro.email || '');
+        setPhone(pro.phone || '');
         setCommission(pro.commissionPercentage ? pro.commissionPercentage.toString() : '50');
         setColor(pro.color || '#f97316');
         setPhoto(pro.photoUrl);
@@ -97,6 +99,7 @@ export const TeamPanel: React.FC = () => {
             name, 
             role, 
             email: email.toLowerCase().trim(),
+            phone: phone.trim(),
             photoUrl: photo || 'https://picsum.photos/200', 
             workSchedule: schedule,
             commissionPercentage: Number(commission),
@@ -116,7 +119,7 @@ export const TeamPanel: React.FC = () => {
             showToast(editingId ? 'Profissional atualizado!' : 'Profissional adicionado!');
             setIsFormOpen(false);
             setEditingId(null);
-            setName(''); setRole(''); setEmail(''); setPhoto(null); setCommission('50');
+            setName(''); setRole(''); setEmail(''); setPhone(''); setPhoto(null); setCommission('50');
         } else {
             showToast(result.error || 'Ocorreu um erro.', 'error');
         }
@@ -222,7 +225,7 @@ export const TeamPanel: React.FC = () => {
 
             <div className="flex justify-between mb-8">
                 <p className="text-slate-400">Adicione, edite ou remova profissionais da sua equipe.</p>
-                <button onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity" style={{ backgroundColor: settings.primaryColor }}>
+                <button onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setPhone(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity" style={{ backgroundColor: settings.primaryColor }}>
                     <Plus size={18} /> Adicionar Profissional
                 </button>
             </div>
@@ -258,6 +261,20 @@ export const TeamPanel: React.FC = () => {
                                 />
                                 <p className="text-xs text-slate-500 mt-1">Se preenchido, o barbeiro poderá fazer login.</p>
                             </div>
+                            <div>
+                                <label className="block text-sm text-slate-400 mb-1">WhatsApp do Profissional (Opcional)</label>
+                                <input 
+                                    type="tel"
+                                    value={phone} 
+                                    onChange={e => setPhone(e.target.value)} 
+                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" 
+                                    placeholder="5511999999999" 
+                                />
+                                <p className="text-xs text-slate-500 mt-1">Para receber notificações de novos agendamentos.</p>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-sm text-slate-400 mb-1">Comissão (%)</label>
                                 <input 
@@ -411,7 +428,7 @@ export const TeamPanel: React.FC = () => {
 
                 {/* Add New Card */}
                 <button 
-                    onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }}
+                    onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setPhone(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }}
                     className="bg-transparent rounded-2xl border-2 border-dashed border-slate-700 hover:border-slate-500 hover:bg-slate-800/30 transition-all flex flex-col items-center justify-center text-center w-full max-w-[190px] min-h-[310px] group"
                 >
                     <div className="w-12 h-12 rounded-full bg-[#27272a] group-hover:bg-[#3f3f46] flex items-center justify-center mb-4 transition-colors">
