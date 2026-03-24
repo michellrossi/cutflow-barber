@@ -9,10 +9,10 @@ interface ProfessionalStepProps {
     setSelectedProId: (id: string | null) => void;
     setStep: (s: any) => void;
     settings: any;
-    subtotal: number;
+    total: number;
 }
 
-export const ProfessionalStep: React.FC<ProfessionalStepProps> = ({ professionals, selectedProId, setSelectedProId, setStep, settings, subtotal }) => (
+export const ProfessionalStep: React.FC<ProfessionalStepProps> = ({ professionals, selectedProId, setSelectedProId, setStep, settings, total }) => (
     <div className="max-w-2xl mx-auto py-8 px-4 pb-32">
         <button onClick={() => setStep('services')} className="flex items-center gap-2 mb-6 hover:opacity-80 transition-opacity" style={{ color: settings.textColor || '#94a3b8' }}><ArrowLeft size={16}/> Voltar</button>
         <h2 className="text-3xl font-bold mb-2" style={{ color: settings.titleColor || '#ffffff' }}>Escolha o profissional</h2>
@@ -53,7 +53,7 @@ export const ProfessionalStep: React.FC<ProfessionalStepProps> = ({ professional
         </div>
 
         <StickyFooter 
-            total={subtotal} 
+            total={total} 
             onContinue={() => setStep('datetime')} 
             disabled={false} // Always enabled as user can select "No preference"
             settings={settings} 

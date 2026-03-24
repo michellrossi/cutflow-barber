@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Configurações
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
 const geminiKey = process.env.GEMINI_API_KEY || '';
@@ -117,12 +117,6 @@ async function startServer() {
         next();
     });
 
-    // API: Teste de rota
-    app.get('/api/notify/confirmation', (req, res) => {
-        res.send('API de Notificação está ativa! Use POST para disparar.');
-    });
-
-    // API: Enviar Confirmação Imediata
     const handleConfirmation = async (req: any, res: any) => {
         const { appointmentId } = req.body;
         console.log(`[API] Recebido pedido de notificação para agendamento: ${appointmentId}`);
@@ -189,71 +183,32 @@ async function startServer() {
         res.json({ success: clientSent });
     };
 
-    app.post('/api/notify/confirmation', handleConfirmation);
-    app.post('/api/notify/confirmation/', handleConfirmation);
+    // API: Notificação de Confirmação
+    app.route('/api/notify/confirmation')
+        .get((req, res) => {
+            res.send('API de Notificação está ativa! Use POST para disparar.');
+        })
+        .post(handleConfirmation);
 
     // Cron Job: Verificar Lembretes (Roda a cada 15 minutos)
     cron.schedule('*/15 * * * *', async () => {
-        console.log("Checando lembretes automáticos...");
-        const now = new Date();
-        
-        // Lembrete 24h
-        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-        const tomorrowStr = tomorrow.toISOString().split('T')[0];
-        
-        const { data: apts24h } = await supabase
-            .from('appointments')
-            .select('*, professionals(name)')
-            .eq('date', tomorrowStr)
-            .eq('reminder_24h_sent', false)
-            .eq('status', 'scheduled');
+        try {
+            console.log("Checando lembretes automáticos...");
+            const now = new Date();
+            
+            // Lembrete 24h
+            const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+            const tomorrowStr = tomorrow.toISOString().split('T')[0];
+            
+            const { data: apts24h } = await supabase
+                .from('appointments')
+                .select('*, professionals(name)')
+                .eq('date', tomorrowStr)
+                .eq('reminder_24h_sent', false)
+                .eq('status', 'scheduled');
 
-        if (apts24h) {
-            for (const apt of apts24h) {
-                // Buscar nomes dos serviços
-                let servicesText = "seu horário";
-                if (apt.service_ids && apt.service_ids.length > 0) {
-                    const { data: services } = await supabase
-                        .from('services')
-                        .select('name')
-                        .in('id', apt.service_ids);
-                    
-                    if (services && services.length > 0) {
-                        servicesText = services.map(s => s.name).join(', ');
-                    }
-                }
-
-                const message = await generateWhatsAppMessage('reminder_24h', {
-                    clientName: apt.client_name,
-                    services: servicesText,
-                    date: apt.date,
-                    time: apt.time
-                });
-                if (await sendWhatsApp(apt.client_phone, message)) {
-                    await supabase.from('appointments').update({ reminder_24h_sent: true }).eq('id', apt.id);
-                }
-            }
-        }
-
-        // Lembrete 1h (Lógica simplificada: busca agendamentos para hoje com hora próxima)
-        const todayStr = now.toISOString().split('T')[0];
-        const { data: apts1h } = await supabase
-            .from('appointments')
-            .select('*, professionals(name)')
-            .eq('date', todayStr)
-            .eq('reminder_1h_sent', false)
-            .eq('status', 'scheduled');
-
-        if (apts1h) {
-            for (const apt of apts1h) {
-                const [h, m] = apt.time.split(':').map(Number);
-                const aptTime = new Date(now);
-                aptTime.setHours(h, m, 0, 0);
-                
-                const diffMs = aptTime.getTime() - now.getTime();
-                const diffMins = diffMs / (1000 * 60);
-
-                if (diffMins > 0 && diffMins <= 60) {
+            if (apts24h) {
+                for (const apt of apts24h) {
                     // Buscar nomes dos serviços
                     let servicesText = "seu horário";
                     if (apt.service_ids && apt.service_ids.length > 0) {
@@ -267,16 +222,63 @@ async function startServer() {
                         }
                     }
 
-                    const message = await generateWhatsAppMessage('reminder_1h', {
+                    const message = await generateWhatsAppMessage('reminder_24h', {
                         clientName: apt.client_name,
                         services: servicesText,
+                        date: apt.date,
                         time: apt.time
                     });
                     if (await sendWhatsApp(apt.client_phone, message)) {
-                        await supabase.from('appointments').update({ reminder_1h_sent: true }).eq('id', apt.id);
+                        await supabase.from('appointments').update({ reminder_24h_sent: true }).eq('id', apt.id);
                     }
                 }
             }
+
+            // Lembrete 1h (Lógica simplificada: busca agendamentos para hoje com hora próxima)
+            const todayStr = now.toISOString().split('T')[0];
+            const { data: apts1h } = await supabase
+                .from('appointments')
+                .select('*, professionals(name)')
+                .eq('date', todayStr)
+                .eq('reminder_1h_sent', false)
+                .eq('status', 'scheduled');
+
+            if (apts1h) {
+                for (const apt of apts1h) {
+                    const [h, m] = apt.time.split(':').map(Number);
+                    const aptTime = new Date(now);
+                    aptTime.setHours(h, m, 0, 0);
+                    
+                    const diffMs = aptTime.getTime() - now.getTime();
+                    const diffMins = diffMs / (1000 * 60);
+
+                    if (diffMins > 0 && diffMins <= 60) {
+                        // Buscar nomes dos serviços
+                        let servicesText = "seu horário";
+                        if (apt.service_ids && apt.service_ids.length > 0) {
+                            const { data: services } = await supabase
+                                .from('services')
+                                .select('name')
+                                .in('id', apt.service_ids);
+                            
+                            if (services && services.length > 0) {
+                                servicesText = services.map(s => s.name).join(', ');
+                            }
+                        }
+
+                        const message = await generateWhatsAppMessage('reminder_1h', {
+                            clientName: apt.client_name,
+                            services: servicesText,
+                            time: apt.time
+                        });
+                        if (await sendWhatsApp(apt.client_phone, message)) {
+                            await supabase.from('appointments').update({ reminder_1h_sent: true }).eq('id', apt.id);
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Erro crítico no Cron Job:", error);
         }
     });
 
@@ -287,15 +289,27 @@ async function startServer() {
         });
         app.use(vite.middlewares);
     } else {
-        app.use(express.static(path.join(__dirname, 'dist')));
-        app.get('*', (req, res) => {
-            res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+        const distPath = path.join(__dirname, 'dist');
+        console.log(`[Prod] Servindo arquivos estáticos de: ${distPath}`);
+        app.use(express.static(distPath));
+        app.get('*all', (req, res) => {
+            const indexPath = path.join(distPath, 'index.html');
+            res.sendFile(indexPath, (err) => {
+                if (err) {
+                    console.error(`[Prod] Erro ao enviar index.html: ${err.message}`);
+                    res.status(500).send("Erro ao carregar a aplicação. Verifique se o build foi executado.");
+                }
+            });
         });
     }
 
-    app.listen(PORT, '0.0.0.0', () => {
-        console.log(`Servidor rodando em http://localhost:${PORT}`);
+    app.listen(Number(PORT), '0.0.0.0', () => {
+        console.log(`Servidor rodando em http://0.0.0.0:${PORT}`);
+        console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
     });
 }
 
-startServer();
+startServer().catch(err => {
+    console.error("ERRO FATAL NA INICIALIZAÇÃO DO SERVIDOR:", err);
+    process.exit(1);
+});

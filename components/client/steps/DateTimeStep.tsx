@@ -12,7 +12,7 @@ interface DateTimeStepProps {
     setSelectedTime: (t: string) => void;
     setStep: (s: any) => void;
     settings: any;
-    subtotal: number;
+    total: number;
     selectedProId: string | null;
     professionals: Professional[];
     appointments: Appointment[];
@@ -21,7 +21,7 @@ interface DateTimeStepProps {
 }
 
 export const DateTimeStep: React.FC<DateTimeStepProps> = ({ 
-    selectedDate, setSelectedDate, selectedTime, setSelectedTime, setStep, settings, subtotal, 
+    selectedDate, setSelectedDate, selectedTime, setSelectedTime, setStep, settings, total, 
     selectedProId, professionals, appointments, services, totalDuration 
 }) => {
     
@@ -234,7 +234,7 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
                 )}
 
             <StickyFooter 
-                total={subtotal} 
+                total={total} 
                 onContinue={() => setStep('summary')} 
                 disabled={!selectedDate || !selectedTime} 
                 settings={settings} 

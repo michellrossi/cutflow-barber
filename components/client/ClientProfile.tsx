@@ -1,9 +1,9 @@
 
 import React, { useMemo } from 'react';
 import { useShop } from '../../store';
-import { Award, Calendar, Clock, LogOut, Star, User, History, Tag, Smartphone, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Award, Calendar, Clock, LogOut, Star, User, History, Tag, Smartphone, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
 
-export const ClientProfile: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
+export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void }> = ({ onLogout, onBack }) => {
     const { currentClient, appointments, services, settings, coupons } = useShop();
 
     const clientAppointments = useMemo(() => {
@@ -36,7 +36,16 @@ export const ClientProfile: React.FC<{ onLogout: () => void }> = ({ onLogout }) 
     const progress = getLoyaltyProgress();
 
     return (
-        <div className="max-w-2xl mx-auto space-y-8 pb-20">
+        <div className="max-w-2xl mx-auto space-y-8 pb-20 pt-6 px-4">
+            {/* Back Button */}
+            <button 
+                onClick={onBack}
+                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-4"
+            >
+                <ArrowLeft size={20} />
+                <span>Voltar</span>
+            </button>
+
             {/* Header */}
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-between shadow-xl">
                 <div className="flex items-center gap-4">

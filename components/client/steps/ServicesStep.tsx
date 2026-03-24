@@ -9,10 +9,10 @@ interface ServicesStepProps {
     setSelectedServiceIds: React.Dispatch<React.SetStateAction<string[]>>;
     setStep: (s: any) => void;
     settings: any;
-    subtotal: number;
+    total: number;
 }
 
-export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedServiceIds, setSelectedServiceIds, setStep, settings, subtotal }) => {
+export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedServiceIds, setSelectedServiceIds, setStep, settings, total }) => {
     
     const toggleService = (id: string) => {
         if (selectedServiceIds.includes(id)) {
@@ -88,7 +88,7 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
             </div>
 
             <StickyFooter 
-                total={subtotal} 
+                total={total} 
                 onContinue={() => setStep('professional')} 
                 disabled={selectedServiceIds.length === 0} 
                 settings={settings} 

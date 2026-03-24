@@ -220,18 +220,6 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
 
     return (
         <div className="min-h-screen transition-colors duration-500" style={{ backgroundColor: settings.backgroundColor || '#0f172a' }}>
-            {step !== 'home' && step !== 'success' && (
-                <div className="max-w-4xl mx-auto px-4 pt-6">
-                    <button 
-                        onClick={() => setStep(step === 'login' || step === 'profile' ? 'home' : 'home')} // Simplified for now, could be more granular
-                        className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors"
-                    >
-                        <ArrowLeft size={20} />
-                        <span>Voltar</span>
-                    </button>
-                </div>
-            )}
-
             {(() => {
                 switch(step) {
                     case 'home': 
@@ -244,7 +232,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                     case 'login':
                         return <ClientLogin onBack={() => setStep('home')} />;
                     case 'profile':
-                        return <ClientProfile onLogout={() => { logoutClient(); setStep('home'); }} />;
+                        return <ClientProfile onBack={() => setStep('home')} onLogout={() => { logoutClient(); setStep('home'); }} />;
                     case 'services': 
                         return <ServicesStep 
                             services={services} 
@@ -252,7 +240,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                             setSelectedServiceIds={setSelectedServiceIds} 
                             setStep={setStep} 
                             settings={settings} 
-                            subtotal={subtotal}
+                            total={total}
                         />;
                     case 'professional': 
                         return <ProfessionalStep 
@@ -261,7 +249,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                             setSelectedProId={setSelectedProId} 
                             setStep={setStep} 
                             settings={settings} 
-                            subtotal={subtotal}
+                            total={total}
                         />;
                     case 'datetime': 
                         return <DateTimeStep 
@@ -271,7 +259,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                             setSelectedTime={setSelectedTime} 
                             setStep={setStep} 
                             settings={settings}
-                            subtotal={subtotal}
+                            total={total}
                             selectedProId={selectedProId}
                             professionals={professionals}
                             appointments={appointments}
