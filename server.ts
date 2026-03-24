@@ -53,7 +53,7 @@ async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | '
 }
 
 async function sendWhatsApp(phone: string, message: string) {
-    const apiUrl = process.env.WHATSAPP_API_URL; // ex: https://api.up.railway.app
+    const apiUrl = process.env.WHATSAPP_API_URL;
     const apiKey = process.env.WHATSAPP_API_KEY;
     const instance = process.env.WHATSAPP_INSTANCE;
 
@@ -62,22 +62,14 @@ async function sendWhatsApp(phone: string, message: string) {
         return false;
     }
 
-    // Limpa o número e garante o prefixo 55
     const cleanPhone = phone.replace(/\D/g, '');
     const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
 
-    // TENTATIVA DE CORREÇÃO AUTOMÁTICA DA URL:
-    // Remove barras no final e garante que o /v1 esteja presente
-    let baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
-    if (!baseUrl.endsWith('/v1')) {
-        baseUrl += '/v1';
-    }
-
     try {
-        const url = `${baseUrl}/message/sendText/${instance}`;
+        // NA V2: A URL termina em /message/sendText (sem o nome da instância no fim)
+        const url = apiUrl.endsWith('/') ? `${apiUrl}message/sendText` : `${apiUrl}/message/sendText`;
         
-        // Log para você conferir no Railway se a URL está correta agora
-        console.log(`[WhatsApp] Chamando URL final: ${url}`);
+        console.log(`[WhatsApp v2] Enviando para ${formattedPhone} via instância: ${instance}`);
 
         const response = await fetch(url, {
             method: 'POST',
@@ -88,17 +80,18 @@ async function sendWhatsApp(phone: string, message: string) {
             body: JSON.stringify({
                 number: formattedPhone,
                 text: message,
+                instance: instance, // OBRIGATÓRIO NA V2: O nome da instância vai aqui dentro
                 delay: 1200,
                 linkPreview: false
             })
         });
         
         const result = await response.json();
-        console.log(`[WhatsApp] Resposta da Evolution API (${response.status}):`, JSON.stringify(result));
+        console.log(`[WhatsApp v2] Resposta da API (${response.status}):`, JSON.stringify(result));
         
         return response.ok;
     } catch (error) {
-        console.error("Erro fatal na requisição para Evolution API:", error);
+        console.error("Erro na requisição Evolution API v2:", error);
         return false;
     }
 }
