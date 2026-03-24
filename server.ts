@@ -48,43 +48,36 @@ async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | '
 }
 
 async function sendWhatsApp(phone: string, message: string) {
-    const apiUrl = process.env.WHATSAPP_API_URL; // Ex: https://sua-api.com/message/sendText/sua-instancia
+    const apiUrl = process.env.WHATSAPP_API_URL;
     const apiKey = process.env.WHATSAPP_API_KEY;
+    const instance = process.env.WHATSAPP_INSTANCE;
 
-    if (!apiUrl || !apiKey) {
-        console.log("--- SIMULAÇÃO WHATSAPP ---");
-        console.log(`Para: ${phone}`);
-        console.log(`Mensagem: ${message}`);
-        console.log("--------------------------");
-        return true;
+    if (!apiUrl || !apiKey || !instance) {
+        console.error("ERRO: Variáveis de ambiente do WhatsApp não configuradas!");
+        return false;
     }
 
+    // Formatação para garantir o padrão internacional (55 + DDD + Numero)
+    const cleanPhone = phone.replace(/\D/g, '');
+    const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+
     try {
-        // Limpar o número (manter apenas dígitos)
-        const cleanPhone = phone.replace(/\D/g, '');
-        
-        // Formato para Evolution API (ajuste conforme sua versão/instância)
-        const response = await fetch(apiUrl, {
+        const response = await fetch(`${apiUrl}/message/sendText/${instance}`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json', 
-                'apikey': apiKey 
+                'apikey': apiKey // Padrão exato da Evolution API
             },
-            body: JSON.stringify({ 
-                number: cleanPhone,
-                text: message 
+            body: JSON.stringify({
+                number: formattedPhone,
+                text: message,
+                delay: 1200, // Pequeno delay para parecer humano
+                linkPreview: false
             })
         });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`Erro na API de WhatsApp (${response.status}):`, errorText);
-            return false;
-        }
-
-        return true;
+        return response.ok;
     } catch (error) {
-        console.error("Erro ao enviar WhatsApp:", error);
+        console.error("Erro na requisição para Evolution API:", error);
         return false;
     }
 }
