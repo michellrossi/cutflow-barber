@@ -55,7 +55,7 @@ async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | '
 async function sendWhatsApp(phone: string, message: string) {
     const apiUrl = process.env.WHATSAPP_API_URL;
     const apiKey = process.env.WHATSAPP_API_KEY;
-    const instance = process.env.WHATSAPP_INSTANCE; // Aqui ele vai ler 'cutflow' do Railway
+    const instance = process.env.WHATSAPP_INSTANCE;
 
     if (!apiUrl || !apiKey || !instance) {
         console.error("ERRO: Variáveis de ambiente do WhatsApp não configuradas!");
@@ -66,28 +66,27 @@ async function sendWhatsApp(phone: string, message: string) {
     const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
 
     try {
-        // Na v2.3.7, a URL termina em /message/sendText
         const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
-        const url = `${baseUrl}/message/sendText`;
-        
+        const url = `${baseUrl}/message/sendText/${instance}`;  // ✅ instância na URL
+
+        console.log(`[WhatsApp v2] Chamando: ${url} | Número: ${formattedPhone}`);
+
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json', 
-                'apikey': apiKey 
+            headers: {
+                'Content-Type': 'application/json',
+                'apikey': apiKey
             },
             body: JSON.stringify({
                 number: formattedPhone,
-                text: message,
-                instance: instance, // Enviando 'cutflow' dentro do corpo para a v2
-                delay: 1200,
-                linkPreview: false
+                textMessage: { text: message },  // ✅ formato correto v2
+                delay: 1200
             })
         });
-        
+
         const result = await response.json();
-        console.log(`[WhatsApp v2] Resposta da API (${response.status}):`, JSON.stringify(result));
-        
+        console.log(`[WhatsApp v2] Resposta (${response.status}):`, JSON.stringify(result));
+
         return response.ok;
     } catch (error) {
         console.error("Erro na requisição Evolution API v2:", error);
