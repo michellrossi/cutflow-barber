@@ -63,7 +63,7 @@ async function sendWhatsApp(phone: string, message: string) {
     }
 
     const cleanPhone = phone.replace(/\D/g, '');
-    const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    const formattedPhone = `${cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`}@s.whatsapp.net`;
 
     try {
         // NA V2.3.7: A URL de envio é fixa, sem o nome da instância no fim
