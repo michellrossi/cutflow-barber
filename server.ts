@@ -28,7 +28,7 @@ async function generateWhatsAppMessage(type: string, data: any) {
 
         // Padrão correto para o SDK @google/genai
         const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-2.0-flash-lite",
             contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
@@ -56,13 +56,7 @@ async function sendWhatsApp(phone: string, message: string) {
     if (!cleanPhone.startsWith('55')) cleanPhone = `55${cleanPhone}`;
     
     // 2. Lógica do 9º dígito para DDDs 11-28 (Evita ficar PENDING)
-    let phoneToSubmit = cleanPhone;
-    if (cleanPhone.length === 13) {
-        const ddd = parseInt(cleanPhone.substring(2, 4));
-        if (ddd <= 28) {
-            phoneToSubmit = cleanPhone.substring(0, 4) + cleanPhone.substring(5);
-        }
-    }
+    const phoneToSubmit = cleanPhone;
 
     try {
         const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
