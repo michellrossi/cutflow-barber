@@ -67,8 +67,7 @@ async function sendWhatsApp(phone: string, message: string) {
 
     try {
         // NA V2: A URL termina em /message/sendText (sem o nome da instância no fim)
-        const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
-        const url = `${baseUrl}/message/sendText/${instance}`;
+        const url = apiUrl.endsWith('/') ? `${apiUrl}message/sendText` : `${apiUrl}/message/sendText`;
         
         console.log(`[WhatsApp v2] Enviando para ${formattedPhone} via instância: ${instance}`);
 
@@ -80,8 +79,11 @@ async function sendWhatsApp(phone: string, message: string) {
             },
             body: JSON.stringify({
                 number: formattedPhone,
-                textMessage: { text: message },
-                delay: 1200
+                text: message,
+                // NA V2 O NOME DA INSTÂNCIA VAI AQUI NO CORPO (BODY)
+                instance: michell, 
+                delay: 1200,
+                linkPreview: false
             })
         });
         
