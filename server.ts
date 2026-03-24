@@ -68,7 +68,7 @@ async function sendWhatsApp(phone: string, message: string) {
     const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
 
     try {
-        const url = `${apiUrl}/message/sendText/${instance}`;
+        const url = `${apiUrl}/message/sendText`;
         const response = await fetch(url, {
             method: 'POST',
             headers: { 
@@ -79,7 +79,8 @@ async function sendWhatsApp(phone: string, message: string) {
                 number: formattedPhone,
                 text: message,
                 delay: 1200,
-                linkPreview: false
+                linkPreview: false,
+                instance: instance
             })
         });
         
