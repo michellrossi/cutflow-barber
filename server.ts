@@ -42,7 +42,7 @@ async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | '
         }
 
         const response = await ai.models.generateContent({
-            model: "gemini-1.5-flash",
+            model: "gemini-2.0-flash",
             contents: prompt
         });
         return response.text;
@@ -62,8 +62,9 @@ async function sendWhatsApp(phone: string, message: string) {
         return false;
     }
 
-    const cleanPhone = phone.replace(/\D/g, '');
-    const formattedPhone = `${cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`}@s.whatsapp.net`;
+    // REMOVA qualquer sufixo @s.whatsapp.net
+        const cleanPhone = phone.replace(/\D/g, '').replace('@s.whatsapp.net', '');
+        const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
 
     try {
         const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
