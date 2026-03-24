@@ -63,12 +63,12 @@ async function sendWhatsApp(phone: string, message: string) {
     }
 
     const cleanPhone = phone.replace(/\D/g, '');
-    const formattedPhone = `${cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`}@s.whatsapp.net`;
+    const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
 
     try {
-        // NA V2: A URL termina em /message/sendText (sem o nome da instância no fim)
+        // NA V2.3.7: A URL de envio é fixa, sem o nome da instância no fim
         const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
-        const url = `${baseUrl}/message/sendText/${instance}`;
+        const url = `${baseUrl}/message/sendText`;
         
         console.log(`[WhatsApp v2] Enviando para ${formattedPhone} via instância: ${instance}`);
 
@@ -80,8 +80,11 @@ async function sendWhatsApp(phone: string, message: string) {
             },
             body: JSON.stringify({
                 number: formattedPhone,
-                textMessage: { text: message },
-                delay: 1200
+                text: message,
+                // OBRIGATÓRIO NA V2: O nome da instância deve ser enviado aqui
+                instance: instance, 
+                delay: 1200,
+                linkPreview: false
             })
         });
         
@@ -90,7 +93,7 @@ async function sendWhatsApp(phone: string, message: string) {
         
         return response.ok;
     } catch (error) {
-        console.error("Erro na requisição Evolution API v2:", error);
+        console.error("Erro fatal na requisição Evolution API v2:", error);
         return false;
     }
 }
