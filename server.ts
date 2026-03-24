@@ -63,29 +63,41 @@ async function sendWhatsApp(phone: string, message: string) {
         return false;
     }
 
+    // Limpar URL para evitar barras duplas
+    const cleanApiUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+    const url = `${cleanApiUrl}/message/sendText/${instance}`;
+    
+    console.log(`[WhatsApp] Tentando enviar para ${phone}. URL: ${url}`);
+
     // Formatação para garantir o padrão internacional (55 + DDD + Numero)
     const cleanPhone = phone.replace(/\D/g, '');
     const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
 
     try {
-        const url = `${apiUrl}/message/sendText/${instance}`;
         console.log(`[WhatsApp] Enviando POST para ${url}`);
         const response = await fetch(url, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json', 
-                'apikey': apiKey // Padrão exato da Evolution API
+                'apikey': apiKey 
             },
             body: JSON.stringify({
                 number: formattedPhone,
                 text: message,
-                delay: 1200, // Pequeno delay para parecer humano
+                delay: 1200,
                 linkPreview: false
             })
         });
         
-        const result = await response.json();
-        console.log(`[WhatsApp] Resposta da API (${response.status}):`, JSON.stringify(result));
+        const responseText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (e) {
+            result = responseText;
+        }
+        
+        console.log(`[WhatsApp] Resposta da API (${response.status}):`, typeof result === 'string' ? result : JSON.stringify(result));
         return response.ok;
     } catch (error) {
         console.error("Erro na requisição para Evolution API:", error);

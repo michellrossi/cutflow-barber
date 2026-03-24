@@ -174,12 +174,17 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
 
             if (result.success) {
                 // Disparar notificação de confirmação (WhatsApp)
+                console.log("Agendamento concluído com sucesso. ID:", result.data?.id);
                 if (result.data?.id) {
+                    console.log("Disparando notificação de confirmação...");
                     fetch('/api/notify/confirmation', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ appointmentId: result.data.id })
-                    }).catch(err => console.error("Erro ao disparar notificação:", err));
+                    })
+                    .then(res => res.json())
+                    .then(data => console.log("Resposta da notificação:", data))
+                    .catch(err => console.error("Erro ao disparar notificação:", err));
                 }
 
                 setStep('success');
