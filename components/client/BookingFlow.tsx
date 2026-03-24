@@ -173,6 +173,15 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
             const result = await addAppointment(appointment);
 
             if (result.success) {
+                // Disparar notificação de confirmação (WhatsApp)
+                if (result.data?.id) {
+                    fetch('/api/notify/confirmation', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ appointmentId: result.data.id })
+                    }).catch(err => console.error("Erro ao disparar notificação:", err));
+                }
+
                 setStep('success');
             } else {
                 setError(result.error || 'Erro ao agendar. Tente novamente.');

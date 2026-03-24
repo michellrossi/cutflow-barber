@@ -5,7 +5,7 @@ import { Session } from '@supabase/supabase-js';
 import DOMPurify from 'dompurify';
 
 // Standard response type for mutations
-type MutationResult = Promise<{ success: boolean; error?: string }>;
+type MutationResult<T = any> = Promise<{ success: boolean; data?: T; error?: string }>;
 
 interface ShopContextType extends ShopState {
   session: Session | null;
@@ -876,15 +876,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             .limit(1)
             .single();
 
-        if (latestApt) {
-            fetch('/api/notify/confirmation', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ appointmentId: latestApt.id })
-            }).catch(err => console.error("Erro ao disparar notificação:", err));
-        }
-        
-        return { success: true };
+        return { success: true, data: latestApt };
     } catch (e: any) {
         console.error('addAppointment: Exceção capturada:', e.message);
         return { success: false, error: e.message };
