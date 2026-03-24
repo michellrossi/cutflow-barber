@@ -53,22 +53,32 @@ async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | '
 }
 
 async function sendWhatsApp(phone: string, message: string) {
-    const apiUrl = process.env.WHATSAPP_API_URL;
+    const apiUrl = process.env.WHATSAPP_API_URL; // ex: https://api.up.railway.app
     const apiKey = process.env.WHATSAPP_API_KEY;
     const instance = process.env.WHATSAPP_INSTANCE;
 
-    console.log(`[WhatsApp] Tentando enviar para ${phone}. Instância: ${instance}`);
-
     if (!apiUrl || !apiKey || !instance) {
-        console.error("ERRO: Variáveis WHATSAPP_API_URL, WHATSAPP_API_KEY ou WHATSAPP_INSTANCE ausentes no Railway!");
+        console.error("ERRO: Variáveis de ambiente do WhatsApp não configuradas!");
         return false;
     }
 
+    // Limpa o número e garante o prefixo 55
     const cleanPhone = phone.replace(/\D/g, '');
     const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
 
+    // TENTATIVA DE CORREÇÃO AUTOMÁTICA DA URL:
+    // Remove barras no final e garante que o /v1 esteja presente
+    let baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+    if (!baseUrl.endsWith('/v1')) {
+        baseUrl += '/v1';
+    }
+
     try {
-        const url = `${apiUrl}/message/sendText`;
+        const url = `${baseUrl}/message/sendText/${instance}`;
+        
+        // Log para você conferir no Railway se a URL está correta agora
+        console.log(`[WhatsApp] Chamando URL final: ${url}`);
+
         const response = await fetch(url, {
             method: 'POST',
             headers: { 
@@ -79,14 +89,11 @@ async function sendWhatsApp(phone: string, message: string) {
                 number: formattedPhone,
                 text: message,
                 delay: 1200,
-                linkPreview: false,
-                instance: instance
+                linkPreview: false
             })
         });
         
         const result = await response.json();
-        
-        // ESTE LOG É O MAIS IMPORTANTE:
         console.log(`[WhatsApp] Resposta da Evolution API (${response.status}):`, JSON.stringify(result));
         
         return response.ok;
