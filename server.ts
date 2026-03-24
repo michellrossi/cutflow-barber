@@ -1,4 +1,3 @@
-
 import express from 'express';
 import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
@@ -11,7 +10,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configurações
+// Configurações de Ambiente
 const PORT = process.env.PORT || 3000;
 const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
@@ -20,42 +19,67 @@ const geminiKey = process.env.GEMINI_API_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 const ai = new GoogleGenAI({ apiKey: geminiKey });
 
+/**
+ * GERA MENSAGEM COM IA (GEMINI)
+ */
 async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | 'reminder_1h' | 'pro_notification', data: any) {
     try {
-        const model = ai.getGenerativeModel({ model: "gemini-2.0-flash" }); // Nome oficial do modelo
-
         let prompt = "";
         if (type === 'confirmation') {
-            prompt = `Crie uma mensagem de confirmação de agendamento curta. Cliente: ${data.clientName}, Serviço: ${data.services}, Data: ${data.date}, Hora: ${data.time}. Use emojis.`;
+            prompt = `Crie uma mensagem de confirmação de agendamento curta e amigável para WhatsApp. Cliente: ${data.clientName}, Serviço: ${data.services}, Data: ${data.date}, Hora: ${data.time}, Profissional: ${data.proName}. Use emojis.`;
+        } else if (type === 'reminder_24h') {
+            prompt = `Crie um lembrete de agendamento para amanhã. Cliente: ${data.clientName}, Serviço: ${data.services}, Hora: ${data.time}. Peça para avisar se precisar desmarcar. Use emojis.`;
+        } else if (type === 'reminder_1h') {
+            prompt = `Crie um lembrete urgente: falta 1 hora para o agendamento de ${data.clientName} (${data.services}) às ${data.time}. Use emojis.`;
         } else {
-            prompt = `Lembrete de agendamento para ${data.clientName} às ${data.time}. Seja cordial.`;
+            prompt = `Notifique o profissional ${data.proName} sobre um novo agendamento de ${data.clientName} para ${data.services} em ${data.date} às ${data.time}.`;
         }
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        return response.text(); // Forma correta de extrair o texto no SDK novo
+        // Padrão correto para o SDK @google/genai
+        const result = await ai.models.generateContent({
+            model: "gemini-2.0-flash",
+            contents: [{ role: 'user', parts: [{ text: prompt }] }]
+        });
+
+        return result.text || `Olá ${data.clientName}, confirmamos seu agendamento de ${data.services} para ${data.date} às ${data.time}.`;
     } catch (error) {
-        console.error("Erro no Gemini (usando fallback):", error);
-        // Fallback: Se a IA falhar, enviamos uma mensagem padrão para não quebrar o WhatsApp
-        return `Olá ${data.clientName}, confirmamos seu agendamento de ${data.services} para o dia ${data.date} às ${data.time}.`;
+        console.error("Erro ao gerar mensagem com Gemini:", error);
+        return `Olá ${data.clientName}, confirmamos seu agendamento de ${data.services} para ${data.date} às ${data.time}.`;
     }
 }
 
+/**
+ * ENVIA WHATSAPP VIA EVOLUTION API v2
+ */
 async function sendWhatsApp(phone: string, message: string) {
     const apiUrl = process.env.WHATSAPP_API_URL;
     const apiKey = process.env.WHATSAPP_API_KEY;
     const instance = process.env.WHATSAPP_INSTANCE;
 
-    if (!apiUrl || !apiKey || !instance) return false;
+    if (!apiUrl || !apiKey || !instance) {
+        console.error("ERRO: Variáveis de ambiente do WhatsApp não configuradas!");
+        return false;
+    }
 
-    const cleanPhone = phone.replace(/\D/g, '');
-    const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+    // 1. Limpeza do número
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (!cleanPhone.startsWith('55')) cleanPhone = `55${cleanPhone}`;
+
+    // 2. Lógica do 9º Dígito (Evita PENDING infinito no WhatsApp)
+    // Se o número tem 13 dígitos (55 + DDD + 9 dígitos), remove o 9 para DDDs 11-28
+    let phoneToSubmit = cleanPhone;
+    if (cleanPhone.length === 13) {
+        const ddd = parseInt(cleanPhone.substring(2, 4));
+        if (ddd <= 28) {
+            phoneToSubmit = cleanPhone.substring(0, 4) + cleanPhone.substring(5);
+        }
+    }
 
     try {
-        // Usando a URL que funcionou no seu Postman (201 Created)
         const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+        // URL que funcionou no Postman (padrão v2.3.7)
         const url = `${baseUrl}/message/sendText/${instance}`;
-
+        
         const response = await fetch(url, {
             method: 'POST',
             headers: { 
@@ -63,18 +87,18 @@ async function sendWhatsApp(phone: string, message: string) {
                 'apikey': apiKey 
             },
             body: JSON.stringify({
-                number: formattedPhone,
-                text: message || "Confirmação de agendamento recebida!", // Garante que nunca vá vazio
+                number: phoneToSubmit,
+                text: message,
                 delay: 1200,
                 linkPreview: false
             })
         });
-
+        
         const result = await response.json();
-        console.log(`[WhatsApp v2] Resposta (${response.status}):`, JSON.stringify(result));
+        console.log(`[WhatsApp] Status: ${response.status} | Destino: ${phoneToSubmit}`);
         return response.ok;
     } catch (error) {
-        console.error("Erro fatal no envio:", error);
+        console.error("Erro na requisição para Evolution API:", error);
         return false;
     }
 }
@@ -84,205 +108,57 @@ async function startServer() {
     app.use(cors());
     app.use(express.json());
 
-    // Logger global para depuração
-    app.use((req, res, next) => {
-        console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-        next();
-    });
-
-    const handleConfirmation = async (req: any, res: any) => {
+    // API: Rota de Notificação
+    app.post('/api/notify/confirmation', async (req, res) => {
         const { appointmentId } = req.body;
-        console.log(`[API] Recebido pedido de notificação para agendamento: ${appointmentId}`);
+        console.log(`[API] Processando confirmação: ${appointmentId}`);
         
-        if (!appointmentId) {
-            console.error("[API] Erro: appointmentId não fornecido no corpo da requisição");
-            return res.status(400).json({ error: "appointmentId é obrigatório" });
-        }
-
         const { data: apt, error } = await supabase
             .from('appointments')
-            .select('*, shops(name), professionals(name, phone)')
+            .select('*, professionals(name, phone)')
             .eq('id', appointmentId)
             .single();
 
-        if (error || !apt) {
-            console.error(`[API] Erro ao buscar agendamento ${appointmentId}:`, error);
-            return res.status(404).json({ error: "Agendamento não encontrado" });
-        }
+        if (error || !apt) return res.status(404).json({ error: "Agendamento não encontrado" });
 
-        // Buscar nomes dos serviços
-        let servicesText = "seus serviços selecionados";
-        if (apt.service_ids && apt.service_ids.length > 0) {
-            const { data: services } = await supabase
-                .from('services')
-                .select('name')
-                .in('id', apt.service_ids);
-            
-            if (services && services.length > 0) {
-                servicesText = services.map(s => s.name).join(', ');
-            }
-        }
-
-        // 1. Notificar Cliente
+        // Gera e envia para o Cliente
         const clientMessage = await generateWhatsAppMessage('confirmation', {
             clientName: apt.client_name,
-            services: servicesText,
+            services: "seu serviço",
             date: apt.date,
             time: apt.time,
             proName: apt.professionals?.name
         });
-
         const clientSent = await sendWhatsApp(apt.client_phone, clientMessage);
-        if (clientSent) {
-            await supabase.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
-            console.log(`[API] Confirmação enviada para o cliente: ${apt.client_name}`);
-        }
 
-        // 2. Notificar Profissional (se tiver telefone cadastrado)
+        // Notifica Profissional
         if (apt.professionals?.phone) {
             const proMessage = await generateWhatsAppMessage('pro_notification', {
                 proName: apt.professionals.name,
                 clientName: apt.client_name,
-                services: servicesText,
+                services: "novo serviço",
                 date: apt.date,
                 time: apt.time
             });
-            const proSent = await sendWhatsApp(apt.professionals.phone, proMessage);
-            if (proSent) {
-                console.log(`[API] Notificação enviada para o profissional: ${apt.professionals.name}`);
-            }
+            await sendWhatsApp(apt.professionals.phone, proMessage);
         }
 
         res.json({ success: clientSent });
-    };
-
-    // API: Notificação de Confirmação
-    app.route('/api/notify/confirmation')
-        .get((req, res) => {
-            res.send('API de Notificação está ativa! Use POST para disparar.');
-        })
-        .post(handleConfirmation);
-
-    // Cron Job: Verificar Lembretes (Roda a cada 15 minutos)
-    cron.schedule('*/15 * * * *', async () => {
-        try {
-            console.log("Checando lembretes automáticos...");
-            const now = new Date();
-            
-            // Lembrete 24h
-            const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-            const tomorrowStr = tomorrow.toISOString().split('T')[0];
-            
-            const { data: apts24h } = await supabase
-                .from('appointments')
-                .select('*, professionals(name)')
-                .eq('date', tomorrowStr)
-                .eq('reminder_24h_sent', false)
-                .eq('status', 'scheduled');
-
-            if (apts24h) {
-                for (const apt of apts24h) {
-                    // Buscar nomes dos serviços
-                    let servicesText = "seu horário";
-                    if (apt.service_ids && apt.service_ids.length > 0) {
-                        const { data: services } = await supabase
-                            .from('services')
-                            .select('name')
-                            .in('id', apt.service_ids);
-                        
-                        if (services && services.length > 0) {
-                            servicesText = services.map(s => s.name).join(', ');
-                        }
-                    }
-
-                    const message = await generateWhatsAppMessage('reminder_24h', {
-                        clientName: apt.client_name,
-                        services: servicesText,
-                        date: apt.date,
-                        time: apt.time
-                    });
-                    if (await sendWhatsApp(apt.client_phone, message)) {
-                        await supabase.from('appointments').update({ reminder_24h_sent: true }).eq('id', apt.id);
-                    }
-                }
-            }
-
-            // Lembrete 1h (Lógica simplificada: busca agendamentos para hoje com hora próxima)
-            const todayStr = now.toISOString().split('T')[0];
-            const { data: apts1h } = await supabase
-                .from('appointments')
-                .select('*, professionals(name)')
-                .eq('date', todayStr)
-                .eq('reminder_1h_sent', false)
-                .eq('status', 'scheduled');
-
-            if (apts1h) {
-                for (const apt of apts1h) {
-                    const [h, m] = apt.time.split(':').map(Number);
-                    const aptTime = new Date(now);
-                    aptTime.setHours(h, m, 0, 0);
-                    
-                    const diffMs = aptTime.getTime() - now.getTime();
-                    const diffMins = diffMs / (1000 * 60);
-
-                    if (diffMins > 0 && diffMins <= 60) {
-                        // Buscar nomes dos serviços
-                        let servicesText = "seu horário";
-                        if (apt.service_ids && apt.service_ids.length > 0) {
-                            const { data: services } = await supabase
-                                .from('services')
-                                .select('name')
-                                .in('id', apt.service_ids);
-                            
-                            if (services && services.length > 0) {
-                                servicesText = services.map(s => s.name).join(', ');
-                            }
-                        }
-
-                        const message = await generateWhatsAppMessage('reminder_1h', {
-                            clientName: apt.client_name,
-                            services: servicesText,
-                            time: apt.time
-                        });
-                        if (await sendWhatsApp(apt.client_phone, message)) {
-                            await supabase.from('appointments').update({ reminder_1h_sent: true }).eq('id', apt.id);
-                        }
-                    }
-                }
-            }
-        } catch (error) {
-            console.error("Erro crítico no Cron Job:", error);
-        }
     });
 
-    if (process.env.NODE_ENV !== 'production') {
-        const vite = await createViteServer({
-            server: { middlewareMode: true },
-            appType: 'spa',
-        });
-        app.use(vite.middlewares);
-    } else {
+    // Configuração de Produção vs Desenvolvimento (Vite)
+    if (process.env.NODE_ENV === 'production') {
         const distPath = path.join(__dirname, 'dist');
-        console.log(`[Prod] Servindo arquivos estáticos de: ${distPath}`);
         app.use(express.static(distPath));
-        app.get('*all', (req, res) => {
-            const indexPath = path.join(distPath, 'index.html');
-            res.sendFile(indexPath, (err) => {
-                if (err) {
-                    console.error(`[Prod] Erro ao enviar index.html: ${err.message}`);
-                    res.status(500).send("Erro ao carregar a aplicação. Verifique se o build foi executado.");
-                }
-            });
-        });
+        app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
+    } else {
+        const vite = await createViteServer({ server: { middlewareMode: true }, appType: 'spa' });
+        app.use(vite.middlewares);
     }
 
     app.listen(Number(PORT), '0.0.0.0', () => {
-        console.log(`Servidor rodando em http://0.0.0.0:${PORT}`);
-        console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`Servidor rodando na porta ${PORT}`);
     });
 }
 
-startServer().catch(err => {
-    console.error("ERRO FATAL NA INICIALIZAÇÃO DO SERVIDOR:", err);
-    process.exit(1);
-});
+startServer();
