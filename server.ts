@@ -42,7 +42,7 @@ async function generateWhatsAppMessage(type: 'confirmation' | 'reminder_24h' | '
         }
 
         const response = await ai.models.generateContent({
-            model: "gemini-3-flash-preview",
+            model: "gemini-1.5-flash",
             contents: prompt
         });
         return response.text;
