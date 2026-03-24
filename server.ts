@@ -57,25 +57,18 @@ async function sendWhatsApp(phone: string, message: string) {
     const apiKey = process.env.WHATSAPP_API_KEY;
     const instance = process.env.WHATSAPP_INSTANCE;
 
-    console.log(`[WhatsApp] Tentando enviar para ${phone}. API: ${apiUrl ? 'OK' : 'MISSING'}, Key: ${apiKey ? 'OK' : 'MISSING'}, Instance: ${instance ? 'OK' : 'MISSING'}`);
+    console.log(`[WhatsApp] Tentando enviar para ${phone}. Instância: ${instance}`);
 
     if (!apiUrl || !apiKey || !instance) {
-        console.error("ERRO: Variáveis de ambiente do WhatsApp não configuradas!");
+        console.error("ERRO: Variáveis WHATSAPP_API_URL, WHATSAPP_API_KEY ou WHATSAPP_INSTANCE ausentes no Railway!");
         return false;
     }
 
-    // Limpar URL para evitar barras duplas
-    const cleanApiUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
-    const url = `${cleanApiUrl}/message/sendText/${instance}`;
-    
-    console.log(`[WhatsApp] Tentando enviar para ${phone}. URL: ${url}`);
-
-    // Formatação para garantir o padrão internacional (55 + DDD + Numero)
     const cleanPhone = phone.replace(/\D/g, '');
     const formattedPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
 
     try {
-        console.log(`[WhatsApp] Enviando POST para ${url}`);
+        const url = `${apiUrl}/message/sendText/${instance}`;
         const response = await fetch(url, {
             method: 'POST',
             headers: { 
@@ -90,18 +83,14 @@ async function sendWhatsApp(phone: string, message: string) {
             })
         });
         
-        const responseText = await response.text();
-        let result;
-        try {
-            result = JSON.parse(responseText);
-        } catch (e) {
-            result = responseText;
-        }
+        const result = await response.json();
         
-        console.log(`[WhatsApp] Resposta da API (${response.status}):`, typeof result === 'string' ? result : JSON.stringify(result));
+        // ESTE LOG É O MAIS IMPORTANTE:
+        console.log(`[WhatsApp] Resposta da Evolution API (${response.status}):`, JSON.stringify(result));
+        
         return response.ok;
     } catch (error) {
-        console.error("Erro na requisição para Evolution API:", error);
+        console.error("Erro fatal na requisição para Evolution API:", error);
         return false;
     }
 }
