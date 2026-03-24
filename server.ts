@@ -28,7 +28,7 @@ async function generateWhatsAppMessage(type: string, data: any) {
         let prompt = `Crie uma mensagem de ${type} curta e profissional para uma barbearia. Cliente: ${data.clientName}, Serviço: ${data.services}, Data: ${data.date}, Hora: ${data.time}. Use emojis.`;
 
         const result = await ai.models.generateContent({
-            model: "gemini-2.0-flash",
+            model: "gemini-1.5-flash",
             contents: [{ role: 'user', parts: [{ text: prompt }] }]
         });
 
