@@ -96,7 +96,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
     }, [appointments, displayDays, selectedProId]);
 
     const getStatusStyles = (status: string) => {
-        return 'bg-slate-800/80 border-slate-700 text-slate-300 calendar-appointment';
+        return 'bg-slate-800/80 border-slate-700 text-slate-300 calendar-appointment border-l-4';
     };
 
     const getStatusLabel = (status: string) => {

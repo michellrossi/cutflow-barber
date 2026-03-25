@@ -426,9 +426,10 @@ export const AppointmentsPanel: React.FC = () => {
                                         const apptDateTime = new Date(`${apt.date}T${apt.time}`);
                                         const now = new Date();
                                         const isFuture = apptDateTime > now;
+                                        const proColor = professionals.find(p => p.id === apt.professionalId)?.color || '#64748b';
 
                                         return (
-                                        <tr key={apt.id} className="hover:bg-slate-700/30 transition-colors group border-b border-slate-700/50 last:border-0">
+                                        <tr key={apt.id} className="hover:bg-slate-700/30 transition-colors group border-b border-slate-700/50 last:border-0 appointment-list-item" style={{ borderLeftColor: proColor }}>
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
                                                     {STATUS_LABELS[apt.status] || apt.status}
@@ -512,7 +513,7 @@ export const AppointmentsPanel: React.FC = () => {
                                 const isFuture = apptDateTime > now;
 
                                 return (
-                                    <div key={apt.id} className="p-4 space-y-4">
+                                    <div key={apt.id} className="p-4 space-y-4 appointment-list-item" style={{ borderLeftColor: professionals.find(p => p.id === apt.professionalId)?.color || '#64748b' }}>
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <div className="font-bold text-white text-lg">{apt.clientName}</div>

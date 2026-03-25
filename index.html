@@ -141,8 +141,8 @@
       html.light .bg-slate-800\/40 { background-color: rgba(248, 250, 252, 0.7) !important; }
       html.light .bg-slate-800\/50 { background-color: rgba(248, 250, 252, 0.8) !important; }
       html.light .bg-slate-800\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
-      html.light .border-slate-800 { border-color: #e2e8f0 !important; }
-      html.light .border-slate-700 { border-color: #e2e8f0 !important; }
+      html.light .border-slate-800 { border-color: #e2e8f0; }
+      html.light .border-slate-700 { border-color: #e2e8f0; }
       html.light .border-slate-700\/30 { border-color: rgba(226, 232, 240, 0.3) !important; }
       html.light .border-slate-700\/50 { border-color: rgba(226, 232, 240, 0.5) !important; }
       html.light .text-slate-100 { color: #0f172a !important; }
@@ -181,6 +181,17 @@
         border-left-width: 4px !important;
         border-radius: 0.5rem !important;
       }
+      html.light .calendar-appointment[style*="border-left-color"] {
+        border-left-color: inherit !important;
+      }
+      
+      html.light .appointment-list-item {
+        border-left-width: 4px !important;
+        border-left-style: solid !important;
+      }
+      html.light .appointment-list-item[style*="border-left-color"] {
+        border-left-color: inherit !important;
+      }
       html.light .calendar-appointment p { color: #0f172a !important; }
       html.light .calendar-appointment span { color: #475569 !important; }
       
@@ -208,6 +219,19 @@
         border-right: 1px solid #e2e8f0 !important;
         box-shadow: none !important;
       }
+
+      /* Status Badges in Light Mode */
+      html.light .bg-blue-400\/10 { background-color: #eff6ff !important; border-color: #dbeafe !important; color: #1e40af !important; }
+      html.light .bg-orange-400\/10 { background-color: #fff7ed !important; border-color: #ffedd5 !important; color: #9a3412 !important; }
+      html.light .bg-green-400\/10 { background-color: #f0fdf4 !important; border-color: #dcfce7 !important; color: #166534 !important; }
+      html.light .bg-red-400\/10 { background-color: #fef2f2 !important; border-color: #fee2e2 !important; color: #991b1b !important; }
+      html.light .bg-slate-400\/10 { background-color: #f8fafc !important; border-color: #e2e8f0 !important; color: #475569 !important; }
+      
+      html.light .text-blue-400 { color: #1e40af !important; }
+      html.light .text-orange-400 { color: #9a3412 !important; }
+      html.light .text-green-400 { color: #166534 !important; }
+      html.light .text-red-400 { color: #991b1b !important; }
+      html.light .text-slate-400 { color: #475569 !important; }
 
       /* Alerts and Info boxes */
       html.light .bg-blue-500\/10 { background-color: #eff6ff !important; border: 1px solid #dbeafe !important; }
