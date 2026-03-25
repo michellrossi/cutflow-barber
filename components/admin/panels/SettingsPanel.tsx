@@ -4,73 +4,33 @@ import { supabase } from '../../../supabaseClient';
 import { Upload, Edit2, Loader2, Store, User, Clock, MessageSquare, Bell, CreditCard, Shield, Smartphone, Globe, CheckCircle2 } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 
-type SettingsTab = 'profile' | 'account' | 'hours' | 'automation' | 'notifications' | 'billing' | 'security' | 'integrations' | 'booking_page';
+export type SettingsTab = 'profile' | 'account' | 'hours' | 'automation' | 'notifications' | 'billing' | 'security' | 'integrations' | 'booking_page';
 
-export const SettingsPanel: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+interface SettingsPanelProps {
+    initialTab?: SettingsTab;
+    onTabChange?: (tab: SettingsTab) => void;
+}
+
+export const SettingsPanel: React.FC<SettingsPanelProps> = ({ initialTab, onTabChange }) => {
+    const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab || 'profile');
+
+    useEffect(() => {
+        if (initialTab && initialTab !== activeTab) {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab]);
+
+    const handleTabChange = (tab: SettingsTab) => {
+        setActiveTab(tab);
+        if (onTabChange) {
+            onTabChange(tab);
+        }
+    };
 
     return (
-        <div className="flex flex-col md:flex-row gap-8 h-full">
-            {/* Settings Sidebar */}
-            <div className="w-full md:w-64 shrink-0 space-y-1">
-                <SettingsTabItem 
-                    icon={<Store size={18} />} 
-                    label="Perfil da Barbearia" 
-                    active={activeTab === 'profile'} 
-                    onClick={() => setActiveTab('profile')} 
-                />
-                <SettingsTabItem 
-                    icon={<User size={18} />} 
-                    label="Minha Conta" 
-                    active={activeTab === 'account'} 
-                    onClick={() => setActiveTab('account')} 
-                />
-                <SettingsTabItem 
-                    icon={<Clock size={18} />} 
-                    label="Horários de Funcionamento" 
-                    active={activeTab === 'hours'} 
-                    onClick={() => setActiveTab('hours')} 
-                />
-                <SettingsTabItem 
-                    icon={<MessageSquare size={18} />} 
-                    label="Automação de Mensagens" 
-                    active={activeTab === 'automation'} 
-                    onClick={() => setActiveTab('automation')} 
-                />
-                <SettingsTabItem 
-                    icon={<Bell size={18} />} 
-                    label="Notificações" 
-                    active={activeTab === 'notifications'} 
-                    onClick={() => setActiveTab('notifications')} 
-                />
-                <SettingsTabItem 
-                    icon={<CreditCard size={18} />} 
-                    label="Pagamentos e Assinatura" 
-                    active={activeTab === 'billing'} 
-                    onClick={() => setActiveTab('billing')} 
-                />
-                <SettingsTabItem 
-                    icon={<Shield size={18} />} 
-                    label="Privacidade e Segurança" 
-                    active={activeTab === 'security'} 
-                    onClick={() => setActiveTab('security')} 
-                />
-                <SettingsTabItem 
-                    icon={<Smartphone size={18} />} 
-                    label="Integrações" 
-                    active={activeTab === 'integrations'} 
-                    onClick={() => setActiveTab('integrations')} 
-                />
-                <SettingsTabItem 
-                    icon={<Globe size={18} />} 
-                    label="Página de Agendamento" 
-                    active={activeTab === 'booking_page'} 
-                    onClick={() => setActiveTab('booking_page')} 
-                />
-            </div>
-
+        <div className="h-full">
             {/* Settings Content */}
-            <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-6 overflow-y-auto">
+            <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 overflow-y-auto h-full">
                 {activeTab === 'profile' && <ProfileSettings />}
                 {activeTab === 'account' && <AccountSettings />}
                 {activeTab === 'hours' && <HoursSettings />}

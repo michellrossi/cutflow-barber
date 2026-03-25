@@ -1,14 +1,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
-import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info } from 'lucide-react';
 import { TeamPanel } from './panels/TeamPanel';
 import { ServicesPanel } from './panels/ServicesPanel';
 import { CouponsPanel } from './panels/CouponsPanel';
 import { AppointmentsPanel } from './panels/AppointmentsPanel';
 import { FinancePanel } from './panels/FinancePanel';
 import { ClientsPanel } from './panels/ClientsPanel';
-import { SettingsPanel } from './panels/SettingsPanel';
+import { SettingsPanel, SettingsTab } from './panels/SettingsPanel';
 import { LoyaltyPanel } from './panels/LoyaltyPanel';
 import { InsightPanel } from './panels/InsightPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
@@ -22,12 +23,25 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       return (saved as AdminTab) || 'team';
   });
   
+  const [settingsSubTab, setSettingsSubTab] = useState<SettingsTab>(() => {
+      const saved = localStorage.getItem('adminSettingsSubTab');
+      return (saved as SettingsTab) || 'profile';
+  });
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(() => {
+      return activeTab === 'settings';
+  });
+  
   const { settings, trialStatus, daysRemaining, theme, toggleTheme } = useShop();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   useEffect(() => {
       localStorage.setItem('adminActiveTab', activeTab);
   }, [activeTab]);
+
+  useEffect(() => {
+      localStorage.setItem('adminSettingsSubTab', settingsSubTab);
+  }, [settingsSubTab]);
 
   // --- 1. PAYWALL CHECK ---
   if (trialStatus === 'expired') {
@@ -43,7 +57,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'finance': return <FinancePanel />;
       case 'clients': return <ClientsPanel />;
       case 'loyalty': return <LoyaltyPanel />;
-      case 'settings': return <SettingsPanel />;
+      case 'settings': return <SettingsPanel initialTab={settingsSubTab} onTabChange={setSettingsSubTab} />;
       case 'insight': return <InsightPanel />;
       default: return <TeamPanel />;
     }
@@ -86,7 +100,107 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => setActiveTab('loyalty')} />
           <SidebarItem icon={<Sparkles size={20} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => setActiveTab('insight')} />
           <SidebarItem icon={<DollarSign size={20} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />
-          <SidebarItem icon={<Settings size={20} />} label="Configurações" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+          
+          <div className="space-y-1">
+              <button 
+                  onClick={() => {
+                      setIsSettingsOpen(!isSettingsOpen);
+                      if (!isSettingsOpen) setActiveTab('settings');
+                  }}
+                  className={`flex items-center gap-3 px-4 py-3 w-full rounded-lg transition-all duration-200 ${activeTab === 'settings' ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+                  style={activeTab === 'settings' ? { borderLeft: `4px solid ${settings.primaryColor}` } : {}}
+              >
+                  <Settings size={20} style={{ color: activeTab === 'settings' ? settings.primaryColor : 'inherit' }} />
+                  <span className="flex-1 text-left">Configurações</span>
+                  <motion.div
+                      animate={{ rotate: isSettingsOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                  >
+                      <ChevronDown size={16} />
+                  </motion.div>
+              </button>
+
+              <AnimatePresence>
+                  {isSettingsOpen && (
+                      <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="pl-4 space-y-4 overflow-hidden"
+                      >
+                          {/* Group: Loja */}
+                          <div className="space-y-1 pt-2">
+                              <div className="px-5 text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Loja</div>
+                              <SubSidebarItem 
+                                  icon={<Store size={16} />} 
+                                  label="Perfil" 
+                                  active={activeTab === 'settings' && settingsSubTab === 'profile'} 
+                                  onClick={() => { setActiveTab('settings'); setSettingsSubTab('profile'); }} 
+                              />
+                              <SubSidebarItem 
+                                  icon={<Clock size={16} />} 
+                                  label="Horários" 
+                                  active={activeTab === 'settings' && settingsSubTab === 'hours'} 
+                                  onClick={() => { setActiveTab('settings'); setSettingsSubTab('hours'); }} 
+                              />
+                              <SubSidebarItem 
+                                  icon={<Globe size={16} />} 
+                                  label="Página Pública" 
+                                  active={activeTab === 'settings' && settingsSubTab === 'booking_page'} 
+                                  onClick={() => { setActiveTab('settings'); setSettingsSubTab('booking_page'); }} 
+                              />
+                          </div>
+
+                          {/* Group: Conta */}
+                          <div className="space-y-1">
+                              <div className="px-5 text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Conta</div>
+                              <SubSidebarItem 
+                                  icon={<UserCircle size={16} />} 
+                                  label="Minha Conta" 
+                                  active={activeTab === 'settings' && settingsSubTab === 'account'} 
+                                  onClick={() => { setActiveTab('settings'); setSettingsSubTab('account'); }} 
+                              />
+                              <SubSidebarItem 
+                                  icon={<CreditCard size={16} />} 
+                                  label="Assinatura" 
+                                  active={activeTab === 'settings' && settingsSubTab === 'billing'} 
+                                  onClick={() => { setActiveTab('settings'); setSettingsSubTab('billing'); }} 
+                              />
+                              <SubSidebarItem 
+                                  icon={<Shield size={16} />} 
+                                  label="Segurança" 
+                                  active={activeTab === 'settings' && settingsSubTab === 'security'} 
+                                  onClick={() => { setActiveTab('settings'); setSettingsSubTab('security'); }} 
+                              />
+                          </div>
+
+                          {/* Group: Comunicação */}
+                          <div className="space-y-1 pb-2">
+                              <div className="px-5 text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Comunicação</div>
+                              <SubSidebarItem 
+                                  icon={<MessageSquare size={16} />} 
+                                  label="Automação" 
+                                  active={activeTab === 'settings' && settingsSubTab === 'automation'} 
+                                  onClick={() => { setActiveTab('settings'); setSettingsSubTab('automation'); }} 
+                              />
+                              <SubSidebarItem 
+                                  icon={<Bell size={16} />} 
+                                  label="Notificações" 
+                                  active={activeTab === 'settings' && settingsSubTab === 'notifications'} 
+                                  onClick={() => { setActiveTab('settings'); setSettingsSubTab('notifications'); }} 
+                              />
+                              <SubSidebarItem 
+                                  icon={<Smartphone size={16} />} 
+                                  label="Integrações" 
+                                  active={activeTab === 'settings' && settingsSubTab === 'integrations'} 
+                                  onClick={() => { setActiveTab('settings'); setSettingsSubTab('integrations'); }} 
+                              />
+                          </div>
+                      </motion.div>
+                  )}
+              </AnimatePresence>
+          </div>
           
           <div className="pt-4 mt-2">
               <div className="h-px bg-slate-800 mb-4 mx-2"></div>
@@ -187,6 +301,19 @@ const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: bool
             style={active ? { borderLeft: `4px solid ${settings.primaryColor}` } : {}}
         >
             <span className={active ? `text-[${settings.primaryColor}]` : ''} style={{ color: active ? settings.primaryColor : 'inherit' }}>{icon}</span>
+            <span>{label}</span>
+        </button>
+    );
+}
+
+const SubSidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void }> = ({ icon, label, active, onClick }) => {
+    const { settings } = useShop();
+    return (
+        <button 
+            onClick={onClick}
+            className={`flex items-center gap-2 px-3 py-2 w-full rounded-lg text-xs transition-all duration-200 ${active ? 'text-white font-bold bg-slate-800/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900/50'}`}
+        >
+            <span style={{ color: active ? settings.primaryColor : 'inherit' }}>{icon}</span>
             <span>{label}</span>
         </button>
     );
