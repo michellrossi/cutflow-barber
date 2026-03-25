@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { supabase } from '../../../supabaseClient';
-import { Upload, Edit2, Loader2, Store, User, Clock, MessageSquare, Bell, CreditCard, Shield, Smartphone, Globe } from 'lucide-react';
+import { Upload, Edit2, Loader2, Store, User, Clock, MessageSquare, Bell, CreditCard, Shield, Smartphone, Globe, CheckCircle2 } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 
 type SettingsTab = 'profile' | 'account' | 'hours' | 'automation' | 'notifications' | 'billing' | 'security' | 'integrations' | 'booking_page';
@@ -72,7 +72,8 @@ export const SettingsPanel: React.FC = () => {
             {/* Settings Content */}
             <div className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-6 overflow-y-auto">
                 {activeTab === 'profile' && <ProfileSettings />}
-                {activeTab !== 'profile' && (
+                {activeTab === 'automation' && <AutomationSettings />}
+                {activeTab !== 'profile' && activeTab !== 'automation' && (
                     <div className="flex flex-col items-center justify-center h-64 text-slate-400">
                         <p>Configurações em desenvolvimento.</p>
                     </div>
@@ -249,6 +250,124 @@ const ProfileSettings: React.FC = () => {
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    );
+};
+
+const AutomationSettings: React.FC = () => {
+    const { getWhatsAppQRCode, getWhatsAppStatus, disconnectWhatsApp } = useShop();
+    const { showToast } = useToast();
+    const [qrCode, setQrCode] = useState<string | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [status, setStatus] = useState<'connected' | 'disconnected' | 'loading'>('loading');
+
+    const checkStatus = async () => {
+        const res = await getWhatsAppStatus();
+        if (res.connected) {
+            setStatus('connected');
+            setQrCode(null);
+        } else {
+            setStatus('disconnected');
+        }
+    };
+
+    useEffect(() => {
+        checkStatus();
+        const interval = setInterval(checkStatus, 10000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleConnect = async () => {
+        setLoading(true);
+        const res = await getWhatsAppQRCode();
+        setLoading(false);
+        if (res.qrcode) {
+            setQrCode(res.qrcode);
+        } else if (res.connected) {
+            setStatus('connected');
+        } else {
+            showToast(res.error || 'Erro ao gerar QR Code', 'error');
+        }
+    };
+
+    const handleDisconnect = async () => {
+        setLoading(true);
+        const res = await disconnectWhatsApp();
+        setLoading(false);
+        if (res.success) {
+            setStatus('disconnected');
+            setQrCode(null);
+            showToast('WhatsApp desconectado com sucesso!');
+        } else {
+            showToast(res.error || 'Erro ao desconectar', 'error');
+        }
+    };
+
+    return (
+        <div className="max-w-4xl">
+            <div className="mb-8">
+                <h3 className="text-xl font-bold text-white mb-2">Automação de Mensagens</h3>
+                <p className="text-slate-400">Conecte seu WhatsApp para enviar confirmações e lembretes automáticos.</p>
+            </div>
+
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-8 text-center">
+                {status === 'loading' ? (
+                    <div className="flex flex-col items-center py-12">
+                        <Loader2 size={48} className="text-green-500 animate-spin mb-4" />
+                        <p className="text-slate-400">Verificando conexão...</p>
+                    </div>
+                ) : status === 'connected' ? (
+                    <div className="flex flex-col items-center py-12">
+                        <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
+                            <Smartphone size={40} className="text-green-500" />
+                        </div>
+                        <h4 className="text-2xl font-bold text-white mb-2">WhatsApp Conectado!</h4>
+                        <p className="text-slate-400 mb-8">Sua barbearia já está enviando mensagens automáticas.</p>
+                        <button 
+                            onClick={handleDisconnect}
+                            className="px-8 py-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-xl font-bold hover:bg-red-500 hover:text-white transition-all"
+                        >
+                            Desconectar WhatsApp
+                        </button>
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center py-12">
+                        {qrCode ? (
+                            <div className="space-y-6">
+                                <div className="bg-white p-4 rounded-2xl inline-block shadow-2xl">
+                                    <img src={qrCode} alt="WhatsApp QR Code" className="w-64 h-64" />
+                                </div>
+                                <div className="max-w-xs mx-auto">
+                                    <p className="text-white font-bold mb-2">Escaneie o QR Code</p>
+                                    <p className="text-slate-400 text-sm">Abra o WhatsApp no seu celular, vá em Aparelhos Conectados e escaneie o código acima.</p>
+                                </div>
+                                <button 
+                                    onClick={() => setQrCode(null)}
+                                    className="text-slate-500 hover:text-white text-sm underline"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="w-20 h-20 bg-slate-900 rounded-full flex items-center justify-center mb-6 border border-slate-800">
+                                    <MessageSquare size={40} className="text-slate-600" />
+                                </div>
+                                <h4 className="text-2xl font-bold text-white mb-2">Conectar WhatsApp</h4>
+                                <p className="text-slate-400 mb-8 max-w-md mx-auto">Habilite o envio de mensagens automáticas de confirmação e lembretes para seus clientes.</p>
+                                <button 
+                                    onClick={handleConnect}
+                                    disabled={loading}
+                                    className="px-12 py-4 bg-green-600 hover:bg-green-500 text-white rounded-xl font-bold shadow-lg shadow-green-900/20 transition-all flex items-center gap-2"
+                                >
+                                    {loading && <Loader2 size={20} className="animate-spin" />}
+                                    Gerar QR Code de Conexão
+                                </button>
+                            </>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );
