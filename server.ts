@@ -26,7 +26,12 @@ const ai = new GoogleGenAI({ apiKey: geminiKey });
  */
 async function generateWhatsAppMessage(type: string, data: any) {
     try {
-        const prompt = `Crie uma mensagem de ${type} para WhatsApp de uma barbearia. Use um tom descontraído, amigável e profissional. Use o nome do cliente: ${data.clientName} e mencione que o barbeiro ${data.proName} o está aguardando para fazer ${data.services} no dia ${data.date} às ${data.time}. Use emojis de barbearia.`;
+        let prompt = '';
+        if (type === 'link de acesso') {
+            prompt = `Crie uma mensagem curta e segura para enviar um link de acesso único para o cliente ${data.clientName} na barbearia. O link é: ${data.url}. Informe que o link expira em 15 minutos e não deve ser compartilhado. Use emojis de segurança e barbearia.`;
+        } else {
+            prompt = `Crie uma mensagem de ${type} para WhatsApp de uma barbearia. Use um tom descontraído, amigável e profissional. Use o nome do cliente: ${data.clientName} e mencione que o barbeiro ${data.proName} o está aguardando para fazer ${data.services} no dia ${data.date} às ${data.time}. Use emojis de barbearia.`;
+        }
 
         // Padrão correto para o SDK @google/genai
         const response = await ai.models.generateContent({
@@ -35,9 +40,15 @@ async function generateWhatsAppMessage(type: string, data: any) {
         });
 
         // Retorna o texto gerado ou o fallback em caso de vazio
+        if (type === 'link de acesso') {
+            return response.text || `Olá ${data.clientName}! Aqui está seu link de acesso único: ${data.url}. Ele expira em 15 minutos. 🔐💈`;
+        }
         return response.text || `Olá ${data.clientName}! Passando para confirmar seu horário de ${data.services} com ${data.proName} no dia ${data.date} às ${data.time}. Até logo! ✂️💈`;
     } catch (error) {
         console.error("Erro no Gemini (usando fallback):", error);
+        if (type === 'link de acesso') {
+            return `Olá ${data.clientName}! Aqui está seu link de acesso único: ${data.url}. Ele expira em 15 minutos. 🔐💈`;
+        }
         return `Olá ${data.clientName}! Passando para confirmar seu horário de ${data.services} com ${data.proName} no dia ${data.date} às ${data.time}. Até logo! ✂️💈`;
     }
 }
@@ -129,6 +140,34 @@ async function startServer() {
         }
         
         res.json({ success });
+    });
+
+    // Rota para enviar link de login via WhatsApp
+    app.post('/api/notify/login-link', async (req, res) => {
+        const { phone, url, shopId } = req.body;
+        
+        const { data: shop, error: shopError } = await supabase
+            .from('shops')
+            .select('name, whatsapp_instance')
+            .eq('id', shopId)
+            .single();
+
+        if (shopError || !shop) return res.status(404).json({ error: "Loja não encontrada" });
+
+        const { data: client } = await supabase
+            .from('clients')
+            .select('name')
+            .eq('shop_id', shopId)
+            .eq('phone', phone)
+            .maybeSingle();
+
+        const msg = await generateWhatsAppMessage('link de acesso', {
+            clientName: client?.name || "Cliente",
+            url: url
+        });
+
+        const ok = await sendWhatsApp(phone, msg, shop.whatsapp_instance);
+        res.json({ success: ok });
     });
 
     // Rota do CRON para Lembretes (24h e 1h)

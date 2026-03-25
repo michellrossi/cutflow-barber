@@ -8,7 +8,6 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [phone, setPhone] = useState('');
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
-    const [loginUrl, setLoginUrl] = useState('');
     const [error, setError] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -25,18 +24,9 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         if (result.success && result.url) {
             setSent(true);
-            setLoginUrl(result.url);
         } else {
             setError(result.error || 'Ocorreu um erro ao solicitar o acesso.');
         }
-    };
-
-    const handleWhatsAppRedirect = () => {
-        const message = encodeURIComponent(`Olá! Aqui está o seu link de acesso único para a ${settings.name}: ${loginUrl}`);
-        const cleanPhone = phone.replace(/\D/g, '');
-        // In a real scenario, this would be sent via an automated backend.
-        // For this demo, we'll open WhatsApp with the message ready.
-        window.open(`https://wa.me/55${cleanPhone}?text=${message}`, '_blank');
     };
 
     if (sent) {
@@ -48,29 +38,19 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <div className="space-y-2">
                     <h2 className="text-2xl font-bold text-white">Link Enviado!</h2>
                     <p className="text-slate-400">
-                        Um link de acesso único foi gerado para você. 
-                        {/* Em produção, isso seria automático via API */}
-                        Como estamos em modo de demonstração, clique no botão abaixo para simular o envio via WhatsApp.
+                        Um link de acesso único foi enviado para o seu WhatsApp. 
+                        Por favor, verifique suas mensagens e clique no link para acessar seu perfil.
                     </p>
                 </div>
 
-                <button
-                    onClick={handleWhatsAppRedirect}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-green-600/20"
-                >
-                    <MessageSquare size={20} />
-                    Enviar via WhatsApp
-                </button>
-
-                <div className="p-4 bg-slate-800 rounded-lg text-left">
-                    <p className="text-xs text-slate-500 mb-2 uppercase font-bold tracking-wider">Link de Acesso (Demo):</p>
-                    <code className="text-[10px] text-orange-400 break-all bg-black/30 p-2 rounded block">
-                        {loginUrl}
-                    </code>
+                <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <p className="text-sm text-slate-300">
+                        O link expira em 15 minutos por motivos de segurança.
+                    </p>
                 </div>
 
-                <button onClick={onBack} className="text-slate-500 hover:text-white text-sm transition-colors">
-                    Voltar
+                <button onClick={onBack} className="w-full bg-slate-800 hover:bg-slate-700 text-white py-4 rounded-xl font-bold transition-all">
+                    Voltar para o agendamento
                 </button>
             </div>
         );

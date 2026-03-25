@@ -31,6 +31,18 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Handle initial view from query params
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const view = params.get('view');
+        if (view === 'profile' && currentClient) {
+            setStep('profile');
+            // Clean up URL without refreshing
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, [currentClient]);
+
     // Auto-fill customer info if logged in
     useEffect(() => {
         if (currentClient && !customerInfo.name && !customerInfo.phone) {

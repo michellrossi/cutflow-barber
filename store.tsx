@@ -257,6 +257,23 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { status: 'active', days };
   };
 
+  // Load client session from storage on init
+  useEffect(() => {
+    const savedClient = sessionStorage.getItem('currentClient');
+    const savedSession = sessionStorage.getItem('clientSession');
+    if (savedClient && savedSession) {
+      try {
+        setState(prev => ({
+          ...prev,
+          currentClient: JSON.parse(savedClient),
+          clientSession: JSON.parse(savedSession)
+        }));
+      } catch (e) {
+        console.error("Erro ao carregar sessão do cliente:", e);
+      }
+    }
+  }, []);
+
   // --- Helper to reload ONLY appointments (Lighter than fetchData) ---
   const reloadAppointments = async (shopId: string) => {
       const pastDate = new Date();
@@ -1276,6 +1293,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           const loginUrl = `${window.location.origin}/acesso/${token}`;
           
+          // Enviar via WhatsApp automaticamente
+          fetch('/api/notify/login-link', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ phone: cleanPhone, url: loginUrl, shopId })
+          }).catch(err => console.error("[Auth] Erro ao disparar WhatsApp de login:", err));
+          
           return { success: true, url: loginUrl };
       } catch (e: any) {
           return { success: false, error: e.message };
@@ -1301,10 +1325,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const client = mapClient(tokenData.clients);
           const shopSlug = tokenData.clients.shops?.slug;
           
+          const clientSession = { clientId: client.id, token: token };
+          
+          // Persist session
+          sessionStorage.setItem('currentClient', JSON.stringify(client));
+          sessionStorage.setItem('clientSession', JSON.stringify(clientSession));
+
           setState(prev => ({
               ...prev,
               currentClient: client,
-              clientSession: { clientId: client.id, token: token }
+              clientSession: clientSession
           }));
 
           // Delete token after use
@@ -1364,7 +1394,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const logoutClient = () => {
+   const logoutClient = () => {
+      sessionStorage.removeItem('currentClient');
+      sessionStorage.removeItem('clientSession');
       setState(prev => ({ ...prev, currentClient: null, clientSession: null }));
   };
 
