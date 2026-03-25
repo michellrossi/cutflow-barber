@@ -123,7 +123,7 @@ async function startServer() {
             const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
             const response = await genAI.models.generateContent({
-                model: "gemini-1.5-flash",
+                model: "gemini-3-flash-preview",
                 contents: [
                     ...chatHistory,
                     { role: 'user', parts: [{ text: prompt }] }
