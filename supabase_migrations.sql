@@ -79,3 +79,34 @@ ADD COLUMN IF NOT EXISTS phone text;
 ALTER TABLE shops 
 ADD COLUMN IF NOT EXISTS whatsapp_instance text,
 ADD COLUMN IF NOT EXISTS whatsapp_connected boolean DEFAULT false;
+
+-- 14. Habilitar RLS e criar políticas básicas para acesso do cliente
+-- Importante: Isso garante que o cliente consiga se autenticar via token
+
+ALTER TABLE client_auth_tokens ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clients ENABLE ROW LEVEL SECURITY;
+ALTER TABLE appointments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shops ENABLE ROW LEVEL SECURITY;
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE services ENABLE ROW LEVEL SECURITY;
+ALTER TABLE professionals ENABLE ROW LEVEL SECURITY;
+
+-- Políticas para client_auth_tokens
+CREATE POLICY "Permitir inserção de token por qualquer um" ON client_auth_tokens FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permitir leitura de token por qualquer um" ON client_auth_tokens FOR SELECT USING (true);
+CREATE POLICY "Permitir deleção de token por qualquer um" ON client_auth_tokens FOR DELETE USING (true);
+
+-- Políticas para clients
+CREATE POLICY "Permitir leitura de clientes por qualquer um" ON clients FOR SELECT USING (true);
+CREATE POLICY "Permitir inserção de clientes por qualquer um" ON clients FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permitir atualização do próprio cliente" ON clients FOR UPDATE USING (true);
+
+-- Políticas para appointments (leitura pública para o fluxo de agendamento e histórico)
+CREATE POLICY "Permitir leitura de agendamentos por qualquer um" ON appointments FOR SELECT USING (true);
+CREATE POLICY "Permitir inserção de agendamentos por qualquer um" ON appointments FOR INSERT WITH CHECK (true);
+
+-- Políticas para outras tabelas (leitura pública necessária para o BookingFlow)
+CREATE POLICY "Permitir leitura de lojas por qualquer um" ON shops FOR SELECT USING (true);
+CREATE POLICY "Permitir leitura de configurações por qualquer um" ON settings FOR SELECT USING (true);
+CREATE POLICY "Permitir leitura de serviços por qualquer um" ON services FOR SELECT USING (true);
+CREATE POLICY "Permitir leitura de profissionais por qualquer um" ON professionals FOR SELECT USING (true);

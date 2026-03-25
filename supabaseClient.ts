@@ -18,10 +18,10 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Verificação de segurança simplificada e robusta
-if (!supabaseUrl || !supabaseKey) {
-  const errorMsg = "ERRO DE CONFIGURAÇÃO: As credenciais do Supabase não foram encontradas. Certifique-se de que VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão definidas no arquivo .env";
-  console.error(errorMsg);
-  throw new Error(errorMsg);
+if (!supabaseUrl || !supabaseKey || supabaseKey === 'undefined' || supabaseKey === 'null') {
+  const errorMsg = "ERRO DE CONFIGURAÇÃO: As credenciais do Supabase não foram encontradas ou são inválidas. " +
+                   "Certifique-se de que VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY estão definidas corretamente nas configurações do projeto.";
+  console.error(errorMsg, { url: supabaseUrl, keyLength: supabaseKey?.length });
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient(supabaseUrl || '', supabaseKey || '');

@@ -1261,13 +1261,18 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
           const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
 
+          console.log("[Auth] Gerando token para cliente:", { clientId: client.id, token, expiresAt });
+
           const { error: tokenError } = await supabase.from('client_auth_tokens').insert({
               client_id: client.id,
               token: token,
               expires_at: expiresAt.toISOString()
           });
 
-          if (tokenError) throw tokenError;
+          if (tokenError) {
+              console.error("[Auth] Erro ao inserir token no Supabase:", tokenError);
+              throw tokenError;
+          }
 
           const loginUrl = `${window.location.origin}/acesso/${token}`;
           
@@ -1279,6 +1284,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const validateClientToken = async (token: string) => {
       try {
+          console.log("[Auth] Validando token:", token);
           const { data: tokenData, error: tokenError } = await supabase
               .from('client_auth_tokens')
               .select('*, clients(*)')
@@ -1286,8 +1292,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               .gt('expires_at', new Date().toISOString())
               .single();
 
-          if (tokenError || !tokenData) throw new Error("Token inválido ou expirado");
+          if (tokenError || !tokenData) {
+              console.error("[Auth] Erro na validação do token:", tokenError || "Token não encontrado ou expirado");
+              throw new Error("Token inválido ou expirado");
+          }
 
+          console.log("[Auth] Token válido! Cliente identificado:", tokenData.clients);
           const client = mapClient(tokenData.clients);
           
           setState(prev => ({
