@@ -83,6 +83,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
             case 'confirmed': return 'Confirmado';
             case 'completed': return 'Pago';
             case 'noshow': return 'Não veio';
+            case 'cancelled': return 'Cancelado';
             default: return status;
         }
     };
@@ -327,7 +328,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                             {timeSlots.map((time, slotIdx) => (
                                 <div key={slotIdx} className="grid grid-cols-[80px_repeat(7,1fr)] h-[100px] border-b border-slate-700/50 last:border-b-0 relative">
                                     {/* Horário na lateral */}
-                                    <div className="flex items-start justify-center pt-4 text-[11px] font-bold text-slate-500 border-r border-slate-700 bg-slate-900/20">
+                                    <div className="flex items-start justify-center pt-1 text-[11px] font-bold text-slate-500 border-r border-slate-700 bg-slate-900/20">
                                         {time}
                                     </div>
 
@@ -336,34 +337,63 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                         const dateStr = day.toISOString().split('T')[0];
                                         const hour = parseInt(time.split(':')[0]);
                                         
-                                        // Agendamentos neste slot
+                                        // Agendamentos neste slot de hora
                                         const slotAppointments = filteredAppointments.filter(apt => 
                                             apt.date === dateStr && parseInt(apt.time.split(':')[0]) === hour
                                         );
 
                                         return (
-                                            <div key={dayIdx} className={`relative border-r border-slate-700/30 last:border-r-0 p-1 flex gap-1 overflow-hidden ${slotAppointments.length > 1 ? 'flex-row' : 'flex-col'}`}>
-                                                {slotAppointments.map(apt => (
-                                                    <div 
-                                                        key={apt.id}
-                                                        onClick={() => setSelectedAppointment(apt)}
-                                                        className={`p-1.5 rounded-lg border shadow-lg cursor-pointer hover:brightness-110 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
-                                                        style={{ borderLeftColor: getProColor(apt.professionalId) }}
-                                                    >
-                                                        <p className="text-[10px] font-bold truncate leading-tight">{apt.clientName}</p>
-                                                        <p className="text-[8px] opacity-70 truncate mb-0.5">
-                                                            {apt.serviceIds.map(sid => services.find(s => s.id === sid)?.name).join(', ')}
-                                                        </p>
-                                                        <div className="flex items-center gap-1">
-                                                            <div className={`w-1 h-1 rounded-full ${
-                                                                apt.status === 'completed' ? 'bg-green-400' : 
-                                                                apt.status === 'noshow' ? 'bg-red-400' : 
-                                                                apt.status === 'confirmed' ? 'bg-blue-400' : 'bg-orange-400'
-                                                            }`} />
-                                                            <span className="text-[7px] font-bold uppercase tracking-tighter">{getStatusLabel(apt.status)}</span>
+                                            <div key={dayIdx} className="relative border-r border-slate-700/30 last:border-r-0 overflow-hidden grid grid-rows-2 h-full">
+                                                {/* Top half: :00 to :29 */}
+                                                <div className="border-b border-slate-700/10 p-0.5 flex gap-1 overflow-hidden">
+                                                    {slotAppointments.filter(a => parseInt(a.time.split(':')[1]) < 30).map(apt => (
+                                                        <div 
+                                                            key={apt.id}
+                                                            onClick={() => setSelectedAppointment(apt)}
+                                                            className={`p-1.5 rounded-lg border shadow-lg cursor-pointer hover:brightness-110 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
+                                                            style={{ borderLeftColor: getProColor(apt.professionalId) }}
+                                                        >
+                                                            <p className="text-[10px] font-bold truncate leading-tight">{apt.clientName}</p>
+                                                            <p className="text-[8px] opacity-70 truncate mb-0.5">
+                                                                {apt.serviceIds.map(sid => services.find(s => s.id === sid)?.name).join(', ')}
+                                                            </p>
+                                                            <div className="flex items-center gap-1">
+                                                                <div className={`w-1 h-1 rounded-full ${
+                                                                    apt.status === 'completed' ? 'bg-green-400' : 
+                                                                    apt.status === 'noshow' ? 'bg-red-400' : 
+                                                                    apt.status === 'cancelled' ? 'bg-red-500' :
+                                                                    apt.status === 'confirmed' ? 'bg-blue-400' : 'bg-orange-400'
+                                                                }`} />
+                                                                <span className={`text-[7px] font-bold uppercase tracking-tighter ${apt.status === 'cancelled' ? 'text-red-500' : ''}`}>{getStatusLabel(apt.status)}</span>
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
+                                                    ))}
+                                                </div>
+                                                {/* Bottom half: :30 to :59 */}
+                                                <div className="p-0.5 flex gap-1 overflow-hidden">
+                                                    {slotAppointments.filter(a => parseInt(a.time.split(':')[1]) >= 30).map(apt => (
+                                                        <div 
+                                                            key={apt.id}
+                                                            onClick={() => setSelectedAppointment(apt)}
+                                                            className={`p-1.5 rounded-lg border shadow-lg cursor-pointer hover:brightness-110 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
+                                                            style={{ borderLeftColor: getProColor(apt.professionalId) }}
+                                                        >
+                                                            <p className="text-[10px] font-bold truncate leading-tight">{apt.clientName}</p>
+                                                            <p className="text-[8px] opacity-70 truncate mb-0.5">
+                                                                {apt.serviceIds.map(sid => services.find(s => s.id === sid)?.name).join(', ')}
+                                                            </p>
+                                                            <div className="flex items-center gap-1">
+                                                                <div className={`w-1 h-1 rounded-full ${
+                                                                    apt.status === 'completed' ? 'bg-green-400' : 
+                                                                    apt.status === 'noshow' ? 'bg-red-400' : 
+                                                                    apt.status === 'cancelled' ? 'bg-red-500' :
+                                                                    apt.status === 'confirmed' ? 'bg-blue-400' : 'bg-orange-400'
+                                                                }`} />
+                                                                <span className={`text-[7px] font-bold uppercase tracking-tighter ${apt.status === 'cancelled' ? 'text-red-500' : ''}`}>{getStatusLabel(apt.status)}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         );
                                     })}

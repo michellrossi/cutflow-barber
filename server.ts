@@ -6,6 +6,8 @@ import { createClient } from '@supabase/supabase-js';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import cron from 'node-cron';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -24,7 +26,7 @@ const ai = new GoogleGenAI({ apiKey: geminiKey });
  */
 async function generateWhatsAppMessage(type: string, data: any) {
     try {
-        const prompt = `Crie uma mensagem de ${type} curta e amigável para WhatsApp de uma barbearia. Cliente: ${data.clientName}, Serviço: ${data.services}, Data: ${data.date}, Hora: ${data.time}. Use emojis.`;
+        const prompt = `Crie uma mensagem de ${type} para WhatsApp de uma barbearia. Use um tom descontraído, amigável e profissional. Use o nome do cliente: ${data.clientName} e mencione que o barbeiro ${data.proName} o está aguardando para fazer ${data.services} no dia ${data.date} às ${data.time}. Use emojis de barbearia.`;
 
         // Padrão correto para o SDK @google/genai
         const response = await ai.models.generateContent({
@@ -33,10 +35,10 @@ async function generateWhatsAppMessage(type: string, data: any) {
         });
 
         // Retorna o texto gerado ou o fallback em caso de vazio
-        return response.text || `Olá ${data.clientName}, confirmamos seu agendamento de ${data.services} para ${data.date} às ${data.time}.`;
+        return response.text || `Olá ${data.clientName}! Passando para confirmar seu horário de ${data.services} com ${data.proName} no dia ${data.date} às ${data.time}. Até logo! ✂️💈`;
     } catch (error) {
         console.error("Erro no Gemini (usando fallback):", error);
-        return `Olá ${data.clientName}, confirmamos seu agendamento de ${data.services} para ${data.date} às ${data.time}.`;
+        return `Olá ${data.clientName}! Passando para confirmar seu horário de ${data.services} com ${data.proName} no dia ${data.date} às ${data.time}. Até logo! ✂️💈`;
     }
 }
 
@@ -89,7 +91,7 @@ async function startServer() {
     app.use(cors());
     app.use(express.json());
 
-    // Rota da API
+    // Rota da API de Confirmação Imediata
     app.post('/api/notify/confirmation', async (req, res) => {
         const { appointmentId } = req.body;
         
@@ -101,16 +103,115 @@ async function startServer() {
 
         if (error || !apt) return res.status(404).json({ error: "Agendamento não encontrado" });
 
+        // Busca os nomes dos serviços
+        const { data: servicesData } = await supabase
+            .from('services')
+            .select('name')
+            .in('id', apt.service_ids || []);
+        
+        const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
+
         const clientMessage = await generateWhatsAppMessage('confirmação', {
             clientName: apt.client_name,
-            services: "seu serviço",
+            services: servicesNames,
             date: apt.date,
             time: apt.time,
-            proName: apt.professionals?.name
+            proName: apt.professionals?.name || "um de nossos profissionais"
         });
 
         const success = await sendWhatsApp(apt.client_phone, clientMessage, apt.shops?.whatsapp_instance);
+        
+        if (success) {
+            await supabase.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
+        }
+        
         res.json({ success });
+    });
+
+    // Rota do CRON para Lembretes (24h e 1h)
+    app.get('/api/notify/cron', async (req, res) => {
+        console.log("[Cron] Iniciando verificação de lembretes...");
+        
+        const now = new Date();
+        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
+
+        // 1. Lembretes de 24 Horas
+        // Agendamentos para amanhã que ainda não receberam o lembrete de 24h
+        const { data: apts24h } = await supabase
+            .from('appointments')
+            .select('*, professionals(name), shops(whatsapp_instance)')
+            .eq('status', 'confirmed')
+            .eq('confirmation_sent', true)
+            .eq('reminder_24h_sent', false)
+            .lte('date', tomorrow.toISOString().split('T')[0]);
+
+        if (apts24h) {
+            for (const apt of apts24h) {
+                // Verifica se falta aproximadamente 24h ou menos
+                const aptDateTime = new Date(`${apt.date}T${apt.time}`);
+                const diffHours = (aptDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+                if (diffHours <= 24 && diffHours > 1) {
+                    console.log(`[Cron] Enviando lembrete 24h para ${apt.client_name}`);
+                    
+                    const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
+                    const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
+
+                    const msg = await generateWhatsAppMessage('lembrete de 24 horas', {
+                        clientName: apt.client_name,
+                        services: servicesNames,
+                        date: apt.date,
+                        time: apt.time,
+                        proName: apt.professionals?.name || "seu barbeiro"
+                    });
+
+                    const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
+                    if (ok) {
+                        await supabase.from('appointments').update({ reminder_24h_sent: true }).eq('id', apt.id);
+                    }
+                }
+            }
+        }
+
+        // 2. Lembretes de 1 Hora
+        // Agendamentos para hoje que ainda não receberam o lembrete de 1h
+        const { data: apts1h } = await supabase
+            .from('appointments')
+            .select('*, professionals(name), shops(whatsapp_instance)')
+            .eq('status', 'confirmed')
+            .eq('confirmation_sent', true)
+            .eq('reminder_1h_sent', false)
+            .eq('date', now.toISOString().split('T')[0]);
+
+        if (apts1h) {
+            for (const apt of apts1h) {
+                const aptDateTime = new Date(`${apt.date}T${apt.time}`);
+                const diffMinutes = (aptDateTime.getTime() - now.getTime()) / (1000 * 60);
+
+                if (diffMinutes <= 65 && diffMinutes > 0) {
+                    console.log(`[Cron] Enviando lembrete 1h para ${apt.client_name}`);
+                    
+                    const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
+                    const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
+
+                    const msg = await generateWhatsAppMessage('lembrete de 1 hora', {
+                        clientName: apt.client_name,
+                        services: servicesNames,
+                        date: apt.date,
+                        time: apt.time,
+                        proName: apt.professionals?.name || "seu barbeiro"
+                    });
+
+                    const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
+                    if (ok) {
+                        await supabase.from('appointments').update({ reminder_1h_sent: true }).eq('id', apt.id);
+                    }
+                }
+            }
+        }
+
+        res.json({ status: "Cron executado com sucesso" });
     });
 
     // --- WhatsApp Multi-Instance Endpoints ---
@@ -225,6 +326,18 @@ async function startServer() {
 
     app.listen(Number(PORT), '0.0.0.0', () => {
         console.log(`Servidor ativo na porta ${PORT}`);
+        
+        // Inicia o Cron Job interno (roda a cada 30 minutos)
+        cron.schedule('*/30 * * * *', async () => {
+            console.log("[Internal Cron] Executando verificação de lembretes...");
+            try {
+                // Faz uma chamada interna para a rota de cron
+                const baseUrl = `http://localhost:${PORT}`;
+                await fetch(`${baseUrl}/api/notify/cron`);
+            } catch (err) {
+                console.error("[Internal Cron] Erro ao disparar cron:", err);
+            }
+        });
     });
 }
 
