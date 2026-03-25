@@ -1287,7 +1287,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           console.log("[Auth] Validando token:", token);
           const { data: tokenData, error: tokenError } = await supabase
               .from('client_auth_tokens')
-              .select('*, clients(*)')
+              .select('*, clients(*, shops(slug))')
               .eq('token', token)
               .gt('expires_at', new Date().toISOString())
               .single();
@@ -1299,6 +1299,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           console.log("[Auth] Token válido! Cliente identificado:", tokenData.clients);
           const client = mapClient(tokenData.clients);
+          const shopSlug = tokenData.clients.shops?.slug;
           
           setState(prev => ({
               ...prev,
@@ -1309,7 +1310,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           // Delete token after use
           await supabase.from('client_auth_tokens').delete().eq('id', tokenData.id);
 
-          return { success: true };
+          return { success: true, slug: shopSlug };
       } catch (e: any) {
           return { success: false, error: e.message };
       }

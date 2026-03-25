@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useShop } from '../../store';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -10,20 +10,25 @@ export const ClientTokenValidation: React.FC = () => {
     const { validateClientToken, shop } = useShop();
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
     const [error, setError] = useState('');
+    const validationStarted = useRef(false);
 
     useEffect(() => {
         const validate = async () => {
-            if (!token) {
-                setStatus('error');
-                setError('Token não fornecido.');
-                return;
-            }
-
-            const result = await validateClientToken(token);
+            if (!token || validationStarted.current) return;
+            
+            validationStarted.current = true;
+            const result = await (validateClientToken(token) as any);
+            
             if (result.success) {
                 setStatus('success');
+                const slug = result.slug || shop?.slug;
                 setTimeout(() => {
-                    navigate(`/agendar/${shop?.slug}`);
+                    if (slug) {
+                        navigate(`/agendar/${slug}`);
+                    } else {
+                        // Fallback se não tiver slug
+                        navigate('/');
+                    }
                 }, 1500);
             } else {
                 setStatus('error');
@@ -32,7 +37,7 @@ export const ClientTokenValidation: React.FC = () => {
         };
 
         validate();
-    }, [token, shop?.slug]);
+    }, [token, shop?.slug, navigate, validateClientToken]);
 
     return (
         <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6">
