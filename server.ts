@@ -121,7 +121,7 @@ async function startServer() {
             }));
 
             const response = await ai.models.generateContent({
-                model: "gemini-3-flash-latest",
+                model: "gemini-2.0-flash-lite",
                 contents: [
                     ...chatHistory,
                     { role: 'user', parts: [{ text: prompt }] }
