@@ -248,7 +248,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
             {/* Filtros de Profissionais */}
             <div className="flex flex-col gap-3">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Filtrar por:</span>
-                <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                <div className="flex gap-2 overflow-x-auto py-2 hide-scrollbar">
                     <button
                         onClick={() => setSelectedProId('all')}
                         className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all border ${
@@ -342,25 +342,25 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                         );
 
                                         return (
-                                            <div key={dayIdx} className={`relative border-r border-slate-700/30 last:border-r-0 p-1 flex gap-1 ${slotAppointments.length > 1 ? 'flex-row' : 'flex-col'}`}>
+                                            <div key={dayIdx} className={`relative border-r border-slate-700/30 last:border-r-0 p-1 flex gap-1 overflow-hidden ${slotAppointments.length > 1 ? 'flex-row' : 'flex-col'}`}>
                                                 {slotAppointments.map(apt => (
                                                     <div 
                                                         key={apt.id}
                                                         onClick={() => setSelectedAppointment(apt)}
-                                                        className={`p-2 rounded-xl border shadow-lg cursor-pointer hover:brightness-110 transition-all flex-1 min-w-0 border-l-4 ${getStatusStyles(apt.status)}`}
+                                                        className={`p-1.5 rounded-lg border shadow-lg cursor-pointer hover:brightness-110 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
                                                         style={{ borderLeftColor: getProColor(apt.professionalId) }}
                                                     >
-                                                        <p className="text-[11px] font-bold truncate leading-tight">{apt.clientName}</p>
-                                                        <p className="text-[9px] opacity-70 truncate mb-1">
+                                                        <p className="text-[10px] font-bold truncate leading-tight">{apt.clientName}</p>
+                                                        <p className="text-[8px] opacity-70 truncate mb-0.5">
                                                             {apt.serviceIds.map(sid => services.find(s => s.id === sid)?.name).join(', ')}
                                                         </p>
                                                         <div className="flex items-center gap-1">
-                                                            <div className={`w-1.5 h-1.5 rounded-full ${
+                                                            <div className={`w-1 h-1 rounded-full ${
                                                                 apt.status === 'completed' ? 'bg-green-400' : 
                                                                 apt.status === 'noshow' ? 'bg-red-400' : 
                                                                 apt.status === 'confirmed' ? 'bg-blue-400' : 'bg-orange-400'
                                                             }`} />
-                                                            <span className="text-[8px] font-bold uppercase tracking-tighter">{getStatusLabel(apt.status)}</span>
+                                                            <span className="text-[7px] font-bold uppercase tracking-tighter">{getStatusLabel(apt.status)}</span>
                                                         </div>
                                                     </div>
                                                 ))}

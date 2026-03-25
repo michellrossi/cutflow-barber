@@ -321,7 +321,7 @@ export const AppointmentsPanel: React.FC = () => {
                     {/* BARRA DE FILTROS DE DATA (Design Financeiro) */}
                     <div className="bg-slate-800 p-1.5 rounded-xl border border-slate-700 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-xl mb-4">
                         {/* Abas de Atalho */}
-                        <div className="flex bg-slate-900/50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto hide-scrollbar">
+                        <div className="flex bg-slate-900/50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto py-1 hide-scrollbar">
                             {[
                                 { id: 'today', label: 'Hoje' },
                                 { id: 'tomorrow', label: 'Amanhã' },
@@ -368,7 +368,7 @@ export const AppointmentsPanel: React.FC = () => {
                     <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
                         
                         {/* Filtros de Status */}
-                        <div className="flex gap-2 overflow-x-auto pb-2 md:pb-0 hide-scrollbar w-full md:w-auto">
+                        <div className="flex gap-2 overflow-x-auto py-2 md:pb-0 hide-scrollbar w-full md:w-auto">
                             {[
                                 { id: 'all', label: 'Todos' },
                                 { id: 'scheduled', label: 'Agendados' },
