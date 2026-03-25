@@ -49,6 +49,11 @@ interface ShopContextType extends ShopState {
 
   updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
   
+  // WhatsApp Actions
+  getWhatsAppQRCode: () => Promise<{ qrcode?: string; error?: string }>;
+  getWhatsAppStatus: () => Promise<{ connected: boolean; error?: string }>;
+  disconnectWhatsApp: () => Promise<{ success: boolean; error?: string }>;
+
   // Client Auth
   requestClientLogin: (phone: string) => Promise<{ success: boolean; url?: string; error?: string }>;
   validateClientToken: (token: string) => Promise<{ success: boolean; error?: string }>;
@@ -115,7 +120,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       trialStartedAt: data.trial_started_at,
       trialEndsAt: data.trial_ends_at,
       plan: data.plan,
-      paymentConfirmedAt: data.payment_confirmed_at
+      paymentConfirmedAt: data.payment_confirmed_at,
+      whatsappInstance: data.whatsapp_instance,
+      whatsappConnected: data.whatsapp_connected
   });
 
   const mapSettings = (data: any): ShopSettings => ({
@@ -1298,6 +1305,54 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
+  const getWhatsAppQRCode = async () => {
+    try {
+      const shopId = ensureShopId();
+      const response = await fetch('/api/whatsapp/qrcode', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shopId })
+      });
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      return { qrcode: data.qrcode, connected: data.connected };
+    } catch (e: any) {
+      return { error: e.message };
+    }
+  };
+
+  const getWhatsAppStatus = async () => {
+    try {
+      const shopId = ensureShopId();
+      const response = await fetch('/api/whatsapp/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shopId })
+      });
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      return { connected: data.connected };
+    } catch (e: any) {
+      return { error: e.message };
+    }
+  };
+
+  const disconnectWhatsApp = async () => {
+    try {
+      const shopId = ensureShopId();
+      const response = await fetch('/api/whatsapp/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shopId })
+      });
+      const data = await response.json();
+      if (data.error) throw new Error(data.error);
+      return { success: true };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  };
+
   const logoutClient = () => {
       setState(prev => ({ ...prev, currentClient: null, clientSession: null }));
   };
@@ -1321,6 +1376,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addClient, updateClient, removeClient,
       addBlockedSlot, removeBlockedSlot,
       updateSettings,
+      getWhatsAppQRCode,
+      getWhatsAppStatus,
+      disconnectWhatsApp,
       fetchFinancialReport,
       requestClientLogin,
       validateClientToken,

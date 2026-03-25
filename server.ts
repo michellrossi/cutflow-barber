@@ -44,10 +44,10 @@ async function generateWhatsAppMessage(type: string, data: any) {
  * ENVIA WHATSAPP (EVOLUTION API V2)
  * Ajustado para o 9º dígito e URL de sucesso do seu Postman
  */
-async function sendWhatsApp(phone: string, message: string) {
+async function sendWhatsApp(phone: string, message: string, instanceName?: string) {
     const apiUrl = process.env.WHATSAPP_API_URL;
     const apiKey = process.env.WHATSAPP_API_KEY;
-    const instance = process.env.WHATSAPP_INSTANCE || 'cutflow';
+    const instance = instanceName || process.env.WHATSAPP_INSTANCE || 'cutflow';
 
     if (!apiUrl || !apiKey) return false;
 
@@ -95,7 +95,7 @@ async function startServer() {
         
         const { data: apt, error } = await supabase
             .from('appointments')
-            .select('*, professionals(name, phone)')
+            .select('*, professionals(name, phone), shops(whatsapp_instance)')
             .eq('id', appointmentId)
             .single();
 
@@ -109,8 +109,96 @@ async function startServer() {
             proName: apt.professionals?.name
         });
 
-        const success = await sendWhatsApp(apt.client_phone, clientMessage);
+        const success = await sendWhatsApp(apt.client_phone, clientMessage, apt.shops?.whatsapp_instance);
         res.json({ success });
+    });
+
+    // --- WhatsApp Multi-Instance Endpoints ---
+
+    app.post('/api/whatsapp/qrcode', async (req, res) => {
+        const { shopId } = req.body;
+        const apiUrl = process.env.WHATSAPP_API_URL;
+        const apiKey = process.env.WHATSAPP_API_KEY;
+
+        if (!apiUrl || !apiKey) return res.status(500).json({ error: "API de WhatsApp não configurada" });
+
+        try {
+            // 1. Garantir que a instância existe
+            const instanceName = `shop-${shopId}`;
+            
+            // Tenta criar (se já existir, a API costuma retornar erro ou sucesso dependendo da versão, mas garantimos o nome)
+            await fetch(`${apiUrl}/instance/create`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
+                body: JSON.stringify({ instanceName, integration: "WHATSAPP-BAILEYS" })
+            });
+
+            // Salva o nome da instância no banco se ainda não tiver
+            await supabase.from('shops').update({ whatsapp_instance: instanceName }).eq('id', shopId);
+
+            // 2. Buscar QR Code
+            const response = await fetch(`${apiUrl}/instance/connect/${instanceName}`, {
+                headers: { 'apikey': apiKey }
+            });
+            const data = await response.json();
+
+            if (data.base64) {
+                res.json({ qrcode: data.base64 });
+            } else if (data.instance?.state === 'open') {
+                res.json({ connected: true });
+            } else {
+                res.status(400).json({ error: "Não foi possível gerar o QR Code. Verifique se a instância já está conectada." });
+            }
+        } catch (error: any) {
+            console.error("Erro ao gerar QR Code:", error);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app.post('/api/whatsapp/status', async (req, res) => {
+        const { shopId } = req.body;
+        const apiUrl = process.env.WHATSAPP_API_URL;
+        const apiKey = process.env.WHATSAPP_API_KEY;
+
+        try {
+            const { data: shop } = await supabase.from('shops').select('whatsapp_instance').eq('id', shopId).single();
+            if (!shop?.whatsapp_instance) return res.json({ connected: false });
+
+            const response = await fetch(`${apiUrl}/instance/connectionState/${shop.whatsapp_instance}`, {
+                headers: { 'apikey': apiKey }
+            });
+            const data = await response.json();
+            
+            const connected = data.instance?.state === 'open';
+            
+            // Atualiza o status no banco
+            await supabase.from('shops').update({ whatsapp_connected: connected }).eq('id', shopId);
+
+            res.json({ connected });
+        } catch (error) {
+            res.json({ connected: false });
+        }
+    });
+
+    app.post('/api/whatsapp/disconnect', async (req, res) => {
+        const { shopId } = req.body;
+        const apiUrl = process.env.WHATSAPP_API_URL;
+        const apiKey = process.env.WHATSAPP_API_KEY;
+
+        try {
+            const { data: shop } = await supabase.from('shops').select('whatsapp_instance').eq('id', shopId).single();
+            if (!shop?.whatsapp_instance) return res.json({ success: true });
+
+            await fetch(`${apiUrl}/instance/logout/${shop.whatsapp_instance}`, {
+                method: 'DELETE',
+                headers: { 'apikey': apiKey }
+            });
+
+            await supabase.from('shops').update({ whatsapp_connected: false }).eq('id', shopId);
+            res.json({ success: true });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
     });
 
     // Configuração de Produção (Hospedagem Única no Railway)

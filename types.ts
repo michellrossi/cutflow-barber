@@ -9,6 +9,9 @@ export interface Shop {
   trialEndsAt?: string;
   plan?: 'trial' | 'active' | 'suspended';
   paymentConfirmedAt?: string;
+  // [NOVO] WhatsApp Multi-Instância
+  whatsappInstance?: string;
+  whatsappConnected?: boolean;
 }
 
 export interface Client {

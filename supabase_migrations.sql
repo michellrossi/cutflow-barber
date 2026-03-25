@@ -74,3 +74,8 @@ ADD COLUMN IF NOT EXISTS reminder_1h_sent boolean DEFAULT false;
 -- 12. Celular do Profissional para Notificações
 ALTER TABLE professionals 
 ADD COLUMN IF NOT EXISTS phone text;
+
+-- 13. WhatsApp Multi-Instance Fields
+ALTER TABLE shops 
+ADD COLUMN IF NOT EXISTS whatsapp_instance text,
+ADD COLUMN IF NOT EXISTS whatsapp_connected boolean DEFAULT false;
