@@ -18,6 +18,7 @@ const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
 const geminiKey = process.env.GEMINI_API_KEY || '';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
+const ai = new GoogleGenAI({ apiKey: geminiKey });
 
 /**
  * GERA MENSAGEM (TEMPLATE)
@@ -87,6 +88,55 @@ async function startServer() {
     const app = express();
     app.use(cors());
     app.use(express.json());
+
+    // Rota para Insights da IA (Admin)
+    app.post('/api/admin/insights', async (req, res) => {
+        const { prompt, context, history } = req.body;
+
+        try {
+            const systemInstruction = `Você é um consultor de negócios especializado em barbearias. 
+            Você tem acesso aos dados reais da barbearia "${context.shopName}".
+            
+            DADOS ATUAIS:
+            - Total de Agendamentos: ${context.totalAppointments}
+            - Total de Clientes: ${context.totalClients}
+            - Total de Profissionais: ${context.totalProfessionals}
+            - Total de Serviços: ${context.totalServices}
+            - Agendamentos nos últimos 15 dias: ${context.last15Days}
+            - Receita Total (estimada): R$ ${context.revenue}
+            - Status dos Agendamentos: Concluídos (${context.appointmentsByStatus.completed}), Cancelados (${context.appointmentsByStatus.cancelled}), Faltas (${context.appointmentsByStatus.noshow}), Agendados (${context.appointmentsByStatus.scheduled})
+            - Ranking de Barbeiros: ${JSON.stringify(context.barberRanking)}
+
+            INSTRUÇÕES:
+            1. Responda de forma profissional, mas amigável.
+            2. Use os dados fornecidos para dar respostas precisas.
+            3. Se perguntarem algo que não está nos dados, diga que não tem essa informação específica no momento.
+            4. Dê sugestões de melhoria baseadas nos números (ex: se houver muitos cancelamentos, sugira lembretes).
+            5. Mantenha as respostas concisas e úteis.
+            6. Use emojis relacionados a negócios e barbearia.`;
+
+            const chatHistory = history.map((msg: any) => ({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            }));
+
+            const response = await ai.models.generateContent({
+                model: "gemini-3-flash-latest",
+                contents: [
+                    ...chatHistory,
+                    { role: 'user', parts: [{ text: prompt }] }
+                ],
+                config: {
+                    systemInstruction: systemInstruction
+                }
+            });
+
+            res.json({ success: true, answer: response.text });
+        } catch (error: any) {
+            console.error("Erro ao gerar insights:", error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
 
     // Rota da API de Confirmação Imediata
     app.post('/api/notify/confirmation', async (req, res) => {
