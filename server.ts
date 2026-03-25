@@ -133,13 +133,20 @@ async function startServer() {
             proName: apt.professionals?.name || "um de nossos profissionais"
         });
 
-        const success = await sendWhatsApp(apt.client_phone, clientMessage, apt.shops?.whatsapp_instance);
+        // Notifica o Cliente
+        const clientOk = await sendWhatsApp(apt.client_phone, clientMessage, apt.shops?.whatsapp_instance);
         
-        if (success) {
+        // Notifica o Barbeiro (se tiver telefone)
+        if (apt.professionals?.phone) {
+            const barberMessage = `*Novo Agendamento Confirmado!*\n\nCliente: ${apt.client_name}\nServiço: ${servicesNames}\nData: ${formattedDate}\nHora: ${formattedTime}`;
+            await sendWhatsApp(apt.professionals.phone, barberMessage, apt.shops?.whatsapp_instance);
+        }
+
+        if (clientOk) {
             await supabase.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
         }
         
-        res.json({ success });
+        res.json({ success: clientOk });
     });
 
     // Rota para enviar link de login via WhatsApp
@@ -183,7 +190,7 @@ async function startServer() {
         const { data: apts24h } = await supabase
             .from('appointments')
             .select('*, professionals(name), shops(whatsapp_instance)')
-            .eq('status', 'confirmed')
+            .in('status', ['confirmed', 'scheduled'])
             .eq('confirmation_sent', true)
             .eq('reminder_24h_sent', false)
             .lte('date', tomorrow.toISOString().split('T')[0]);
@@ -224,7 +231,7 @@ async function startServer() {
         const { data: apts1h } = await supabase
             .from('appointments')
             .select('*, professionals(name), shops(whatsapp_instance)')
-            .eq('status', 'confirmed')
+            .in('status', ['confirmed', 'scheduled'])
             .eq('confirmation_sent', true)
             .eq('reminder_1h_sent', false)
             .eq('date', now.toISOString().split('T')[0]);
@@ -260,6 +267,55 @@ async function startServer() {
         }
 
         res.json({ status: "Cron executado com sucesso" });
+    });
+
+    // Rota para Insights da IA (Admin)
+    app.post('/api/admin/insights', async (req, res) => {
+        const { prompt, context, history } = req.body;
+
+        try {
+            const systemInstruction = `Você é um consultor de negócios especializado em barbearias. 
+            Você tem acesso aos dados reais da barbearia "${context.shopName}".
+            
+            DADOS ATUAIS:
+            - Total de Agendamentos: ${context.totalAppointments}
+            - Total de Clientes: ${context.totalClients}
+            - Total de Profissionais: ${context.totalProfessionals}
+            - Total de Serviços: ${context.totalServices}
+            - Agendamentos nos últimos 15 dias: ${context.last15Days}
+            - Receita Total (estimada): R$ ${context.revenue}
+            - Status dos Agendamentos: Concluídos (${context.appointmentsByStatus.completed}), Cancelados (${context.appointmentsByStatus.cancelled}), Faltas (${context.appointmentsByStatus.noshow}), Agendados (${context.appointmentsByStatus.scheduled})
+            - Ranking de Barbeiros: ${JSON.stringify(context.barberRanking)}
+
+            INSTRUÇÕES:
+            1. Responda de forma profissional, mas amigável.
+            2. Use os dados fornecidos para dar respostas precisas.
+            3. Se perguntarem algo que não está nos dados, diga que não tem essa informação específica no momento.
+            4. Dê sugestões de melhoria baseadas nos números (ex: se houver muitos cancelamentos, sugira lembretes).
+            5. Mantenha as respostas concisas e úteis.
+            6. Use emojis relacionados a negócios e barbearia.`;
+
+            const chatHistory = history.map((msg: any) => ({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            }));
+
+            const response = await ai.models.generateContent({
+                model: "gemini-2.0-flash-lite",
+                contents: [
+                    ...chatHistory,
+                    { role: 'user', parts: [{ text: prompt }] }
+                ],
+                config: {
+                    systemInstruction: systemInstruction
+                }
+            });
+
+            res.json({ success: true, answer: response.text });
+        } catch (error: any) {
+            console.error("Erro ao gerar insights:", error);
+            res.status(500).json({ success: false, error: error.message });
+        }
     });
 
     // --- WhatsApp Multi-Instance Endpoints ---

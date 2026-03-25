@@ -61,6 +61,7 @@ interface ShopContextType extends ShopState {
 
   // New Report Method
   fetchFinancialReport: (startDate: string, endDate: string) => Promise<Appointment[]>;
+  toggleTheme: () => void;
 }
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -94,7 +95,8 @@ const INITIAL_STATE: ShopState = {
   currentClient: null,
   clientSession: null,
   trialStatus: 'active',
-  daysRemaining: 14
+  daysRemaining: 14,
+  theme: 'dark'
 };
 
 const sanitize = (text: string): string => {
@@ -257,10 +259,17 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { status: 'active', days };
   };
 
-  // Load client session from storage on init
+  // Load client session and theme from storage on init
   useEffect(() => {
     const savedClient = sessionStorage.getItem('currentClient');
     const savedSession = sessionStorage.getItem('clientSession');
+    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light';
+
+    if (savedTheme) {
+        setState(prev => ({ ...prev, theme: savedTheme }));
+        document.documentElement.classList.toggle('light', savedTheme === 'light');
+    }
+
     if (savedClient && savedSession) {
       try {
         setState(prev => ({
@@ -1400,6 +1409,15 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setState(prev => ({ ...prev, currentClient: null, clientSession: null }));
   };
 
+  const toggleTheme = () => {
+      setState(prev => {
+          const newTheme = prev.theme === 'dark' ? 'light' : 'dark';
+          localStorage.setItem('theme', newTheme);
+          document.documentElement.classList.toggle('light', newTheme === 'light');
+          return { ...prev, theme: newTheme };
+      });
+  };
+
   return (
     <ShopContext.Provider value={{
       ...state,
@@ -1426,6 +1444,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       requestClientLogin,
       validateClientToken,
       logoutClient,
+      toggleTheme,
       refresh: () => fetchData(state.shop?.id)
     }}>
       {children}

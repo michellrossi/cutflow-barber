@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
-import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award } from 'lucide-react';
+import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun } from 'lucide-react';
 import { TeamPanel } from './panels/TeamPanel';
 import { ServicesPanel } from './panels/ServicesPanel';
 import { CouponsPanel } from './panels/CouponsPanel';
@@ -10,10 +10,11 @@ import { FinancePanel } from './panels/FinancePanel';
 import { ClientsPanel } from './panels/ClientsPanel';
 import { SettingsPanel } from './panels/SettingsPanel';
 import { LoyaltyPanel } from './panels/LoyaltyPanel';
+import { InsightPanel } from './panels/InsightPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
 import { PaymentModal } from '../billing/PaymentModal';
 
-type AdminTab = 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty';
+type AdminTab = 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight';
 
 export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () => void }> = ({ onLogout, onViewClient }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>(() => {
@@ -21,7 +22,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       return (saved as AdminTab) || 'team';
   });
   
-  const { settings, trialStatus, daysRemaining } = useShop();
+  const { settings, trialStatus, daysRemaining, theme, toggleTheme } = useShop();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   useEffect(() => {
@@ -43,6 +44,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'clients': return <ClientsPanel />;
       case 'loyalty': return <LoyaltyPanel />;
       case 'settings': return <SettingsPanel />;
+      case 'insight': return <InsightPanel />;
       default: return <TeamPanel />;
     }
   };
@@ -57,6 +59,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'clients': return 'Gestão de Clientes';
           case 'loyalty': return 'Programa de Fidelidade';
           case 'settings': return 'Configurações';
+          case 'insight': return 'Insights com IA';
       }
   }
 
@@ -81,6 +84,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           <SidebarItem icon={<CalendarCheck size={20} />} label="Agendamentos" active={activeTab === 'appointments'} onClick={() => setActiveTab('appointments')} />
           <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
           <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => setActiveTab('loyalty')} />
+          <SidebarItem icon={<Sparkles size={20} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => setActiveTab('insight')} />
           <SidebarItem icon={<DollarSign size={20} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />
           <SidebarItem icon={<Settings size={20} />} label="Configurações" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
           
@@ -129,6 +133,13 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
         <header className="h-16 bg-slate-900 border-b border-slate-800 flex items-center px-4 md:px-8 justify-between shrink-0">
              <h2 className="text-xl md:text-2xl font-bold">{getTabLabel(activeTab)}</h2>
              <div className="flex items-center gap-4">
+                <button 
+                    onClick={toggleTheme}
+                    className="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                    title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
+                >
+                    {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                </button>
                 <button 
                     onClick={onViewClient}
                     className="flex items-center gap-2 px-4 py-2 rounded-full border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 text-sm font-medium transition-colors md:hidden"

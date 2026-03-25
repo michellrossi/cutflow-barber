@@ -150,4 +150,5 @@ export interface ShopState {
   // [NOVO] Estado derivado do trial
   trialStatus: 'active' | 'expired' | 'paid';
   daysRemaining: number;
+  theme: 'dark' | 'light';
 }
