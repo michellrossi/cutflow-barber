@@ -54,6 +54,9 @@
                 700: '#334155', // Slate 700
               }
             },
+            boxShadow: {
+              'card-light': '0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02)',
+            },
             animation: {
               'fade-in': 'fadeIn 0.3s ease-out forwards',
               'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
@@ -104,11 +107,11 @@
       }
 
       html.light {
-        --bg-color: #f8fafc;
-        --text-color: #0f172a;
+        --bg-color: #f8fafc; /* Slate 50 */
+        --text-color: #0f172a; /* Slate 900 */
         --card-bg: #ffffff;
-        --border-color: #e2e8f0;
-        --muted-text: #64748b;
+        --border-color: #e2e8f0; /* Slate 200 */
+        --muted-text: #475569; /* Slate 600 */
       }
 
       body {
@@ -119,29 +122,40 @@
 
       /* Overrides para Tailwind no modo claro */
       html.light .bg-slate-900 { background-color: var(--bg-color) !important; }
-      html.light .bg-slate-950 { background-color: #f1f5f9 !important; }
-      html.light .bg-slate-800 { background-color: var(--card-bg) !important; }
-      html.light .bg-slate-900\/50 { background-color: rgba(241, 245, 249, 0.8) !important; }
+      html.light .bg-slate-950 { background-color: #ffffff !important; }
+      html.light .bg-slate-800 { 
+        background-color: #ffffff !important; 
+        box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02) !important;
+        border-color: #e2e8f0 !important;
+        border-radius: 1rem !important; /* rounded-2xl */
+      }
+      html.light .bg-slate-800\/50 { 
+        background-color: #ffffff !important; 
+        box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02) !important;
+        border-color: #e2e8f0 !important;
+        border-radius: 1rem !important;
+      }
+      html.light .bg-slate-900\/50 { background-color: rgba(248, 250, 252, 0.5) !important; }
       html.light .bg-slate-900\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
-      html.light .bg-slate-900\/20 { background-color: rgba(241, 245, 249, 0.5) !important; }
-      html.light .bg-slate-900\/30 { background-color: rgba(241, 245, 249, 0.6) !important; }
-      html.light .bg-slate-800\/20 { background-color: rgba(241, 245, 249, 0.5) !important; }
-      html.light .bg-slate-800\/40 { background-color: rgba(241, 245, 249, 0.7) !important; }
-      html.light .bg-slate-800\/50 { background-color: rgba(241, 245, 249, 0.8) !important; }
+      html.light .bg-slate-900\/20 { background-color: rgba(248, 250, 252, 0.2) !important; }
+      html.light .bg-slate-900\/30 { background-color: rgba(248, 250, 252, 0.3) !important; }
+      html.light .bg-slate-800\/20 { background-color: rgba(248, 250, 252, 0.5) !important; }
+      html.light .bg-slate-800\/40 { background-color: rgba(248, 250, 252, 0.7) !important; }
+      html.light .bg-slate-800\/50 { background-color: rgba(248, 250, 252, 0.8) !important; }
       html.light .bg-slate-800\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
-      html.light .border-slate-800 { border-color: var(--border-color) !important; }
-      html.light .border-slate-700 { border-color: #cbd5e1 !important; }
-      html.light .border-slate-700\/30 { border-color: rgba(203, 213, 225, 0.5) !important; }
-      html.light .border-slate-700\/50 { border-color: rgba(203, 213, 225, 0.8) !important; }
-      html.light .text-slate-100 { color: var(--text-color) !important; }
+      html.light .border-slate-800 { border-color: #e2e8f0 !important; }
+      html.light .border-slate-700 { border-color: #e2e8f0 !important; }
+      html.light .border-slate-700\/30 { border-color: rgba(226, 232, 240, 0.3) !important; }
+      html.light .border-slate-700\/50 { border-color: rgba(226, 232, 240, 0.5) !important; }
+      html.light .text-slate-100 { color: #0f172a !important; }
       html.light .text-slate-200 { color: #1e293b !important; }
       html.light .text-slate-300 { color: #334155 !important; }
       html.light .text-slate-400 { color: #475569 !important; }
       html.light .text-slate-500 { color: #64748b !important; }
       html.light .text-white { color: #0f172a !important; }
       html.light .hover\:text-white:hover { color: #0f172a !important; }
-      html.light .hover\:bg-slate-800:hover { background-color: #f1f5f9 !important; }
-      html.light .hover\:bg-slate-700:hover { background-color: #e2e8f0 !important; }
+      html.light .hover\:bg-slate-800:hover { background-color: #f8fafc !important; }
+      html.light .hover\:bg-slate-700:hover { background-color: #f8fafc !important; }
       html.light .bg-black\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
       html.light .bg-black\/70 { background-color: rgba(255, 255, 255, 0.8) !important; }
       html.light .bg-black\/60 { background-color: rgba(255, 255, 255, 0.7) !important; }
@@ -149,24 +163,42 @@
       html.light .backdrop-blur-md { backdrop-filter: blur(12px) !important; background-color: rgba(255, 255, 255, 0.6) !important; }
       
       /* Specific calendar fixes for light mode */
-      html.light .calendar-grid-header { background-color: #f1f5f9 !important; }
-      html.light .calendar-time-column { background-color: #f8fafc !important; }
-      html.light .calendar-cell-today { background-color: rgba(249, 115, 22, 0.05) !important; }
+      html.light .calendar-grid-header { background-color: #f8fafc !important; border-bottom: 1px solid #e2e8f0 !important; }
+      html.light .calendar-time-column { background-color: #ffffff !important; border-right: 1px solid #e2e8f0 !important; }
+      html.light .calendar-cell-today { background-color: rgba(249, 115, 22, 0.03) !important; }
       html.light .calendar-appointment { 
         background-color: #ffffff !important; 
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05) !important;
-        border-color: #e2e8f0 !important;
+        box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -1px rgba(15, 23, 42, 0.02) !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 0.75rem !important;
       }
-      html.light .calendar-appointment p { color: #1e293b !important; }
-      html.light .calendar-appointment span { color: #64748b !important; }
+      html.light .calendar-appointment p { color: #0f172a !important; }
+      html.light .calendar-appointment span { color: #475569 !important; }
       
       /* Input e Textarea no modo claro */
       html.light input, html.light textarea, html.light select {
-        background-color: #ffffff !important;
+        background-color: #f1f5f9 !important; /* Slate 100 */
         color: #0f172a !important;
-        border-color: #cbd5e1 !important;
+        border-color: #e2e8f0 !important;
+        border-radius: 0.5rem !important;
+      }
+      html.light input:focus, html.light textarea:focus, html.light select:focus {
+        border-color: #f97316 !important; /* Primary focus */
+        background-color: #ffffff !important;
       }
       html.light input::placeholder { color: #94a3b8 !important; }
+
+      /* Botões e Navegação no modo claro */
+      html.light button.bg-primary, html.light button[style*="background-color"] {
+        border-radius: 9999px !important;
+        box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -1px rgba(15, 23, 42, 0.06) !important;
+      }
+      
+      html.light .admin-sidebar {
+        background-color: #ffffff !important;
+        border-right: 1px solid #e2e8f0 !important;
+        box-shadow: none !important;
+      }
 
       /* Utility Classes */
       .no-scrollbar::-webkit-scrollbar { display: none; }

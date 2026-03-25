@@ -69,7 +69,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
 
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col hidden md:flex">
+      <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col hidden md:flex admin-sidebar">
         <div className="p-6 flex items-center gap-3 border-b border-slate-800">
           <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold overflow-hidden" style={{ backgroundColor: settings.primaryColor }}>
              {settings.logoUrl ? <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover" /> : <Scissors size={18} />}
