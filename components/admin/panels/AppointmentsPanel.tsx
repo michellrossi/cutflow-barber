@@ -406,7 +406,7 @@ export const AppointmentsPanel: React.FC = () => {
                     </div>
 
                     {/* Tabela de Agendamentos (Desktop) / Cards (Mobile) */}
-                    <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-xl">
+                    <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
                         <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
@@ -428,7 +428,7 @@ export const AppointmentsPanel: React.FC = () => {
                                         const isFuture = apptDateTime > now;
 
                                         return (
-                                        <tr key={apt.id} className="hover:bg-slate-700/30 transition-colors group">
+                                        <tr key={apt.id} className="hover:bg-slate-700/30 transition-colors group border-b border-slate-700/50 last:border-0">
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
                                                     {STATUS_LABELS[apt.status] || apt.status}

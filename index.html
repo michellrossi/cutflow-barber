@@ -123,17 +123,15 @@
       /* Overrides para Tailwind no modo claro */
       html.light .bg-slate-900 { background-color: var(--bg-color) !important; }
       html.light .bg-slate-950 { background-color: #ffffff !important; }
-      html.light .bg-slate-800 { 
+      html.light div.bg-slate-800, html.light div.bg-slate-800\/50 { 
         background-color: #ffffff !important; 
         box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02) !important;
         border-color: #e2e8f0 !important;
         border-radius: 1rem !important; /* rounded-2xl */
       }
-      html.light .bg-slate-800\/50 { 
-        background-color: #ffffff !important; 
-        box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02) !important;
+      html.light button.bg-slate-800 {
+        background-color: #ffffff !important;
         border-color: #e2e8f0 !important;
-        border-radius: 1rem !important;
       }
       html.light .bg-slate-900\/50 { background-color: rgba(248, 250, 252, 0.5) !important; }
       html.light .bg-slate-900\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
@@ -151,7 +149,8 @@
       html.light .text-slate-200 { color: #1e293b !important; }
       html.light .text-slate-300 { color: #334155 !important; }
       html.light .text-slate-400 { color: #475569 !important; }
-      html.light .text-slate-500 { color: #64748b !important; }
+      html.light .text-slate-500 { color: #334155 !important; }
+      html.light .text-slate-600 { color: #1e293b !important; }
       html.light .text-white { color: #0f172a !important; }
       html.light .hover\:text-white:hover { color: #0f172a !important; }
       html.light .hover\:bg-slate-800:hover { background-color: #f8fafc !important; }
@@ -166,11 +165,21 @@
       html.light .calendar-grid-header { background-color: #f8fafc !important; border-bottom: 1px solid #e2e8f0 !important; }
       html.light .calendar-time-column { background-color: #ffffff !important; border-right: 1px solid #e2e8f0 !important; }
       html.light .calendar-cell-today { background-color: rgba(249, 115, 22, 0.03) !important; }
+      /* Calendar Specifics */
+      html.light .calendar-header { background-color: #ffffff !important; border-bottom: 1px solid #e2e8f0 !important; }
+      html.light .calendar-time-column { background-color: #f8fafc !important; border-right: 1px solid #e2e8f0 !important; }
+      html.light .calendar-grid-line { border-color: #f1f5f9 !important; }
+      html.light .calendar-day-column { border-right: 1px solid #f1f5f9 !important; }
+      html.light .calendar-current-time-line { background-color: #ef4444 !important; }
+      
       html.light .calendar-appointment { 
         background-color: #ffffff !important; 
         box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -1px rgba(15, 23, 42, 0.02) !important;
-        border: 1px solid #e2e8f0 !important;
-        border-radius: 0.75rem !important;
+        border-width: 1px !important;
+        border-style: solid !important;
+        border-color: #e2e8f0;
+        border-left-width: 4px !important;
+        border-radius: 0.5rem !important;
       }
       html.light .calendar-appointment p { color: #0f172a !important; }
       html.light .calendar-appointment span { color: #475569 !important; }
@@ -199,6 +208,15 @@
         border-right: 1px solid #e2e8f0 !important;
         box-shadow: none !important;
       }
+
+      /* Alerts and Info boxes */
+      html.light .bg-blue-500\/10 { background-color: #eff6ff !important; border: 1px solid #dbeafe !important; }
+      html.light .bg-blue-500\/10 p, html.light .bg-blue-500\/10 span { color: #1e40af !important; }
+      html.light .bg-orange-500\/10 { background-color: #fff7ed !important; border: 1px solid #ffedd5 !important; }
+      html.light .bg-orange-500\/10 p, html.light .bg-orange-500\/10 span { color: #9a3412 !important; }
+      
+      /* Active states in button groups */
+      html.light .bg-slate-700.text-white { background-color: #0f172a !important; color: #ffffff !important; }
 
       /* Utility Classes */
       .no-scrollbar::-webkit-scrollbar { display: none; }
