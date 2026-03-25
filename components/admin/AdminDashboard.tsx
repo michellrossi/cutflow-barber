@@ -64,7 +64,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   }
 
   return (
-    <div className="flex h-screen bg-slate-900 text-slate-100 overflow-hidden flex-col md:flex-row">
+    <div className="flex h-screen bg-slate-900 text-slate-100 overflow-hidden flex-col md:flex-row w-full">
       
       <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
 
@@ -153,16 +153,21 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
              </div>
         </header>
         
-        {/* Mobile Nav (Simple) */}
-        <div className="md:hidden bg-slate-950 p-2 flex overflow-x-auto gap-2 border-b border-slate-800 shrink-0">
-            <button onClick={() => setActiveTab('team')} className={`px-3 py-1 rounded text-sm ${activeTab === 'team' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Equipe</button>
-            <button onClick={() => setActiveTab('appointments')} className={`px-3 py-1 rounded text-sm ${activeTab === 'appointments' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Agenda</button>
-            <button onClick={() => setActiveTab('clients')} className={`px-3 py-1 rounded text-sm ${activeTab === 'clients' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Clientes</button>
-            <button onClick={() => setActiveTab('loyalty')} className={`px-3 py-1 rounded text-sm ${activeTab === 'loyalty' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Fidelidade</button>
-            <button onClick={() => setActiveTab('finance')} className={`px-3 py-1 rounded text-sm ${activeTab === 'finance' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Financeiro</button>
-            <button onClick={() => setActiveTab('services')} className={`px-3 py-1 rounded text-sm ${activeTab === 'services' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Serviços</button>
-            <button onClick={() => setActiveTab('coupons')} className={`px-3 py-1 rounded text-sm ${activeTab === 'coupons' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Cupons</button>
-             <button onClick={() => setActiveTab('settings')} className={`px-3 py-1 rounded text-sm ${activeTab === 'settings' ? 'bg-slate-800 text-white' : 'text-slate-400'}`}>Configurações</button>
+        {/* Mobile Nav (Improved) */}
+        <div className="md:hidden bg-slate-950 border-b border-slate-800 shrink-0 sticky top-0 z-30">
+            <div className="relative">
+                <div className="flex overflow-x-auto gap-1 p-2 scrollbar-hide no-scrollbar mask-fade-right">
+                    <MobileNavItem icon={<Users size={16} />} label="Equipe" active={activeTab === 'team'} onClick={() => setActiveTab('team')} />
+                    <MobileNavItem icon={<CalendarCheck size={16} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => setActiveTab('appointments')} />
+                    <MobileNavItem icon={<UserCircle size={16} />} label="Clientes" active={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
+                    <MobileNavItem icon={<Award size={16} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => setActiveTab('loyalty')} />
+                    <MobileNavItem icon={<DollarSign size={16} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />
+                    <MobileNavItem icon={<Scissors size={16} />} label="Serviços" active={activeTab === 'services'} onClick={() => setActiveTab('services')} />
+                    <MobileNavItem icon={<Tag size={16} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => setActiveTab('coupons')} />
+                    <MobileNavItem icon={<Sparkles size={16} />} label="IA" active={activeTab === 'insight'} onClick={() => setActiveTab('insight')} />
+                    <MobileNavItem icon={<Settings size={16} />} label="Config" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
+                </div>
+            </div>
         </div>
 
         <div className="flex-1 overflow-auto p-4 md:p-8">
@@ -183,6 +188,20 @@ const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: bool
         >
             <span className={active ? `text-[${settings.primaryColor}]` : ''} style={{ color: active ? settings.primaryColor : 'inherit' }}>{icon}</span>
             <span>{label}</span>
+        </button>
+    );
+}
+
+const MobileNavItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void }> = ({ icon, label, active, onClick }) => {
+    const { settings } = useShop();
+    return (
+        <button 
+            onClick={onClick}
+            className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[64px] ${active ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 active:bg-slate-900'}`}
+            style={active ? { color: settings.primaryColor } : {}}
+        >
+            <span className={active ? 'scale-110 transition-transform' : 'opacity-70'}>{icon}</span>
+            <span className="text-[9px] font-bold uppercase tracking-tighter whitespace-nowrap">{label}</span>
         </button>
     );
 }

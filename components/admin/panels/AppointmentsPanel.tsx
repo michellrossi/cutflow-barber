@@ -283,17 +283,18 @@ export const AppointmentsPanel: React.FC = () => {
                 </div>
             )}
 
-            <div className="flex justify-end mb-4">
-                <div className="bg-slate-800 p-1 rounded-lg border border-slate-700 flex gap-1">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-xl font-bold text-white hidden md:block">Agendamentos</h2>
+                <div className="bg-slate-800 p-1 rounded-lg border border-slate-700 flex gap-1 w-full md:w-auto">
                     <button 
                         onClick={() => setViewMode('calendar')}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'calendar' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'calendar' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
                     >
                         <CalendarIcon size={16} /> Agenda
                     </button>
                     <button 
                         onClick={() => setViewMode('list')}
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
                     >
                         <List size={16} /> Lista
                     </button>
@@ -319,23 +320,23 @@ export const AppointmentsPanel: React.FC = () => {
                     </div>
 
                     {/* BARRA DE FILTROS DE DATA (Design Financeiro) */}
-                    <div className="bg-slate-800 p-1.5 rounded-xl border border-slate-700 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-xl mb-4">
+                    <div className="bg-slate-800 p-1 md:p-1.5 rounded-xl border border-slate-700 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-xl mb-4">
                         {/* Abas de Atalho */}
-                        <div className="flex bg-slate-900/50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto py-1 hide-scrollbar">
+                        <div className="flex bg-slate-900/50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto py-1 hide-scrollbar no-scrollbar">
                             {[
                                 { id: 'today', label: 'Hoje' },
                                 { id: 'tomorrow', label: 'Amanhã' },
-                                { id: 'week', label: 'Esta Semana' },
-                                { id: 'month', label: 'Este Mês' },
-                                { id: 'all', label: 'Todos' }
+                                { id: 'week', label: 'Semana' },
+                                { id: 'month', label: 'Mês' },
+                                { id: 'all', label: 'Tudo' }
                             ].map((preset) => (
                                 <button
                                     key={preset.id}
                                     onClick={() => setPreset(preset.id as any)}
-                                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
+                                    className={`px-3 md:px-4 py-1.5 md:py-2 rounded-md text-[10px] md:text-sm font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
                                         activePreset === preset.id 
                                         ? 'bg-slate-700 text-white shadow-sm' 
-                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                        : 'text-slate-500 hover:text-white hover:bg-slate-800'
                                     }`}
                                 >
                                     {preset.label}
@@ -344,68 +345,69 @@ export const AppointmentsPanel: React.FC = () => {
                         </div>
 
                         {/* Seletor de Datas Unificado */}
-                        <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-900 px-3 py-2 rounded-lg border border-slate-700 focus-within:border-orange-500/50 transition-colors">
-                            <Calendar size={16} className="text-slate-500 shrink-0" />
+                        <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-900 px-3 py-1.5 md:py-2 rounded-lg border border-slate-700 focus-within:border-orange-500/50 transition-colors">
+                            <Calendar size={14} className="text-slate-500 shrink-0" />
                             <div className="flex items-center gap-2 flex-1">
                                 <input 
                                     type="date" 
                                     value={startDate} 
                                     onChange={e => handleDateChange('start', e.target.value)}
-                                    className="bg-transparent border-none text-slate-300 text-sm focus:outline-none w-full cursor-pointer font-sans"
+                                    className="bg-transparent border-none text-slate-300 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans"
                                 />
-                                <span className="text-slate-600 font-medium">até</span>
+                                <span className="text-slate-600 font-medium text-[10px]">até</span>
                                 <input 
                                     type="date" 
                                     value={endDate} 
                                     onChange={e => handleDateChange('end', e.target.value)}
-                                    className="bg-transparent border-none text-slate-300 text-sm focus:outline-none w-full cursor-pointer font-sans"
+                                    className="bg-transparent border-none text-slate-300 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans"
                                 />
                             </div>
                         </div>
                     </div>
 
                     {/* BARRA DE FILTROS DE STATUS E BUSCA */}
-                    <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
-                        
-                        {/* Filtros de Status */}
-                        <div className="flex gap-2 overflow-x-auto py-2 md:pb-0 hide-scrollbar w-full md:w-auto">
-                            {[
-                                { id: 'all', label: 'Todos' },
-                                { id: 'scheduled', label: 'Agendados' },
-                                { id: 'confirmed', label: 'Confirmados' },
-                                { id: 'completed', label: 'Finalizados' },
-                                { id: 'cancelled', label: 'Cancelados' },
-                                { id: 'noshow', label: 'Faltas' }
-                            ].map(status => (
-                                <button
-                                    key={status.id}
-                                    onClick={() => setStatusFilter(status.id)}
-                                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors border ${
-                                        statusFilter === status.id 
-                                        ? `bg-slate-700 text-white border-slate-500` 
-                                        : 'bg-transparent text-slate-400 border-slate-700 hover:border-slate-600 hover:text-slate-300'
-                                    }`}
-                                >
-                                    {status.label}
-                                </button>
-                            ))}
-                        </div>
+                    <div className="bg-slate-800 p-3 md:p-4 rounded-xl border border-slate-700 mb-6 flex flex-col gap-3 md:gap-4">
+                        <div className="flex flex-col md:flex-row gap-3 md:gap-4 justify-between items-center">
+                            {/* Busca */}
+                            <div className="bg-slate-900 border border-slate-700 rounded-lg flex items-center px-3 py-1.5 md:py-2 text-slate-400 w-full md:w-96">
+                                <Search size={16} className="mr-2 shrink-0"/>
+                                <input 
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Buscar cliente..." 
+                                    className="bg-transparent border-none outline-none w-full text-[12px] md:text-sm placeholder-slate-600" 
+                                />
+                            </div>
 
-                        {/* Busca */}
-                        <div className="bg-slate-900 border border-slate-700 rounded-lg flex items-center px-3 py-2 text-slate-400 w-full md:w-64">
-                            <Search size={18} className="mr-2"/>
-                            <input 
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                placeholder="Buscar cliente..." 
-                                className="bg-transparent border-none outline-none w-full text-sm placeholder-slate-600" 
-                            />
+                            {/* Filtros de Status */}
+                            <div className="flex gap-1.5 overflow-x-auto py-1 hide-scrollbar no-scrollbar w-full md:w-auto">
+                                {[
+                                    { id: 'all', label: 'Todos' },
+                                    { id: 'scheduled', label: 'Agendados' },
+                                    { id: 'confirmed', label: 'Confirmados' },
+                                    { id: 'completed', label: 'Finalizados' },
+                                    { id: 'cancelled', label: 'Cancelados' },
+                                    { id: 'noshow', label: 'Faltas' }
+                                ].map(status => (
+                                    <button
+                                        key={status.id}
+                                        onClick={() => setStatusFilter(status.id)}
+                                        className={`px-3 py-1.5 rounded-full text-[9px] md:text-[10px] font-bold whitespace-nowrap transition-colors border uppercase tracking-wider ${
+                                            statusFilter === status.id 
+                                            ? `bg-slate-700 text-white border-slate-500` 
+                                            : 'bg-transparent text-slate-500 border-slate-700 hover:border-slate-600 hover:text-slate-300'
+                                        }`}
+                                    >
+                                        {status.label}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Tabela de Agendamentos */}
+                    {/* Tabela de Agendamentos (Desktop) / Cards (Mobile) */}
                     <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-xl">
-                        <div className="overflow-x-auto">
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-slate-950/50 text-slate-400 text-sm border-b border-slate-700">
@@ -428,7 +430,7 @@ export const AppointmentsPanel: React.FC = () => {
                                         return (
                                         <tr key={apt.id} className="hover:bg-slate-700/30 transition-colors group">
                                             <td className="p-4">
-                                                <span className={`px-2 py-1 rounded text-xs font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
+                                                <span className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
                                                     {STATUS_LABELS[apt.status] || apt.status}
                                                 </span>
                                             </td>
@@ -498,17 +500,96 @@ export const AppointmentsPanel: React.FC = () => {
                                             </td>
                                         </tr>
                                     )})}
-                                    {filteredAppointments.length === 0 && (
-                                        <tr>
-                                            <td colSpan={6} className="p-12 text-center text-slate-500 flex flex-col items-center justify-center">
-                                                <Filter size={32} className="mb-2 opacity-20"/>
-                                                <p>Nenhum agendamento encontrado para este período ou filtro.</p>
-                                            </td>
-                                        </tr>
-                                    )}
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Lista de Cards (Mobile) */}
+                        <div className="md:hidden divide-y divide-slate-700">
+                            {filteredAppointments.map(apt => {
+                                const apptDateTime = new Date(`${apt.date}T${apt.time}`);
+                                const now = new Date();
+                                const isFuture = apptDateTime > now;
+
+                                return (
+                                    <div key={apt.id} className="p-4 space-y-4">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <div className="font-bold text-white text-lg">{apt.clientName}</div>
+                                                <div className="text-xs text-slate-500">{apt.clientPhone}</div>
+                                            </div>
+                                            <span className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
+                                                {STATUS_LABELS[apt.status] || apt.status}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                            <div className="flex items-center gap-2 text-slate-300">
+                                                <Calendar size={14} className="text-slate-500"/>
+                                                <span>{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 text-slate-300">
+                                                <Clock size={14} className="text-slate-500"/>
+                                                <span className="font-bold">{apt.time.substring(0, 5)}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-1 text-sm text-slate-300">
+                                                <Scissors size={14} className="text-orange-500 shrink-0"/> 
+                                                <span className="truncate">{getServicesNames(apt.serviceIds)}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1 text-xs text-slate-500">
+                                                <User size={12} className="shrink-0"/> 
+                                                <span>{getProName(apt.professionalId)}</span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-between items-center pt-2 border-t border-slate-700/50">
+                                            <div className="font-bold text-lg" style={{ color: settings.primaryColor }}>
+                                                R$ {apt.totalValue.toFixed(2)}
+                                            </div>
+                                            <div className="flex gap-2">
+                                                {apt.status === 'completed' && (
+                                                    <select 
+                                                        value={apt.paymentMethod || 'pix'}
+                                                        onChange={(e) => updateAppointmentPaymentMethod(apt.id, e.target.value)}
+                                                        className="bg-slate-900 border border-slate-600 text-slate-300 text-[10px] rounded p-1.5 focus:outline-none focus:border-orange-500"
+                                                    >
+                                                        <option value="pix">PIX</option>
+                                                        <option value="credit">Cartão</option>
+                                                        <option value="cash">Dinheiro</option>
+                                                    </select>
+                                                )}
+                                                <select 
+                                                    value={apt.status}
+                                                    onChange={(e) => {
+                                                        updateAppointmentStatus(apt.id, e.target.value);
+                                                        if (e.target.value === 'completed' && !apt.paymentMethod) {
+                                                            updateAppointmentPaymentMethod(apt.id, 'pix');
+                                                        }
+                                                    }}
+                                                    className="bg-slate-900 border border-slate-600 text-slate-300 text-[10px] rounded p-1.5 focus:outline-none focus:border-orange-500"
+                                                >
+                                                    <option value="scheduled">Agendado</option>
+                                                    <option value="confirmed">Confirmado</option>
+                                                    <option value="completed" disabled={isFuture && apt.status !== 'completed'}>Finalizado</option>
+                                                    <option value="noshow" disabled={isFuture && apt.status !== 'noshow'}>Falta</option>
+                                                    <option value="cancelled">Cancelar</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        {filteredAppointments.length === 0 && (
+                            <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center">
+                                <Filter size={32} className="mb-2 opacity-20"/>
+                                <p>Nenhum agendamento encontrado.</p>
+                            </div>
+                        )}
                     </div>
                 </>
             )}

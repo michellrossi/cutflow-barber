@@ -13,12 +13,26 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
     const [selectedProId, setSelectedProId] = useState<string | 'all'>('all');
     const [currentTime, setCurrentTime] = useState(new Date());
     const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+    const [viewType, setViewType] = useState<'week' | 'day'>(window.innerWidth < 768 ? 'day' : 'week');
 
     // Atualiza a linha do tempo a cada minuto
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-        return () => clearInterval(timer);
-    }, []);
+        
+        const handleResize = () => {
+            if (window.innerWidth < 768 && viewType === 'week') {
+                setViewType('day');
+            } else if (window.innerWidth >= 768 && viewType === 'day') {
+                setViewType('week');
+            }
+        };
+        window.addEventListener('resize', handleResize);
+
+        return () => {
+            clearInterval(timer);
+            window.removeEventListener('resize', handleResize);
+        };
+    }, [viewType]);
 
     // Calcula o início da semana (Segunda-feira)
     const weekStart = useMemo(() => {
@@ -30,22 +44,28 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
         return d;
     }, [currentDate]);
 
-    // Gera os 7 dias da semana
-    const weekDays = useMemo(() => {
+    // Gera os dias a serem exibidos
+    const displayDays = useMemo(() => {
+        if (viewType === 'day') {
+            return [currentDate];
+        }
         return Array.from({ length: 7 }, (_, i) => {
             const d = new Date(weekStart);
             d.setDate(weekStart.getDate() + i);
             return d;
         });
-    }, [weekStart]);
+    }, [weekStart, viewType, currentDate]);
 
     // Formatação do intervalo de datas do header
     const dateRangeLabel = useMemo(() => {
-        const start = weekDays[0];
-        const end = weekDays[6];
+        if (viewType === 'day') {
+            return currentDate.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' });
+        }
+        const start = displayDays[0];
+        const end = displayDays[6];
         const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: '2-digit' };
         return `${start.toLocaleDateString('pt-BR', options)} - ${end.toLocaleDateString('pt-BR', options)}`;
-    }, [weekDays]);
+    }, [displayDays, viewType, currentDate]);
 
     // Horários da agenda (08:00 às 20:00)
     const timeSlots = Array.from({ length: 13 }, (_, i) => {
@@ -53,28 +73,30 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
         return `${hour.toString().padStart(2, '0')}:00`;
     });
 
-    const navigateWeek = (direction: 'prev' | 'next') => {
+    const navigate = (direction: 'prev' | 'next') => {
         const d = new Date(currentDate);
-        d.setDate(currentDate.getDate() + (direction === 'next' ? 7 : -7));
+        if (viewType === 'day') {
+            d.setDate(currentDate.getDate() + (direction === 'next' ? 1 : -1));
+        } else {
+            d.setDate(currentDate.getDate() + (direction === 'next' ? 7 : -7));
+        }
         setCurrentDate(d);
     };
 
-    // Filtra agendamentos da semana e do profissional
+    // Filtra agendamentos do período e do profissional
     const filteredAppointments = useMemo(() => {
-        const startStr = weekDays[0].toISOString().split('T')[0];
-        const endStr = weekDays[6].toISOString().split('T')[0];
+        const startStr = displayDays[0].toISOString().split('T')[0];
+        const endStr = displayDays[displayDays.length - 1].toISOString().split('T')[0];
 
         return appointments.filter(apt => {
             const matchesPro = selectedProId === 'all' || apt.professionalId === selectedProId;
             const inRange = apt.date >= startStr && apt.date <= endStr;
             return matchesPro && inRange;
         });
-    }, [appointments, weekDays, selectedProId]);
+    }, [appointments, displayDays, selectedProId]);
 
     const getStatusStyles = (status: string) => {
-        // Removendo cores de fundo e bordas coloridas, mantendo apenas o estilo base
-        // A borda lateral esquerda e o ícone de status já trazem a informação visual necessária
-        return 'bg-slate-800/80 border-slate-700 text-slate-300';
+        return 'bg-slate-800/80 border-slate-700 text-slate-300 calendar-appointment';
     };
 
     const getStatusLabel = (status: string) => {
@@ -212,24 +234,46 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
 
             {/* Header da Agenda */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold text-white mb-1">Agenda Semanal</h2>
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-xl md:text-2xl font-bold text-white">Agenda</h2>
+                        <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700 text-[10px] font-bold uppercase tracking-wider">
+                            <button 
+                                onClick={() => setViewType('day')}
+                                className={`px-2 py-1 rounded transition-all ${viewType === 'day' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}
+                            >
+                                Dia
+                            </button>
+                            <button 
+                                onClick={() => setViewType('week')}
+                                className={`px-2 py-1 rounded transition-all ${viewType === 'week' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}
+                            >
+                                Semana
+                            </button>
+                        </div>
+                    </div>
                     <div className="flex items-center gap-2 text-slate-400">
-                        <Calendar size={16} />
-                        <span className="text-sm font-medium">{dateRangeLabel}</span>
+                        <Calendar size={14} />
+                        <span className="text-xs md:text-sm font-medium">{dateRangeLabel}</span>
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-3">
-                    <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700">
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                    <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700 flex-1 md:flex-none justify-between">
                         <button 
-                            onClick={() => navigateWeek('prev')}
+                            onClick={() => navigate('prev')}
                             className="p-2 hover:bg-slate-700 rounded-md text-slate-300 transition-colors"
                         >
                             <ChevronLeft size={20} />
                         </button>
                         <button 
-                            onClick={() => navigateWeek('next')}
+                            onClick={() => setCurrentDate(new Date())}
+                            className="px-3 py-1 text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest"
+                        >
+                            Hoje
+                        </button>
+                        <button 
+                            onClick={() => navigate('next')}
                             className="p-2 hover:bg-slate-700 rounded-md text-slate-300 transition-colors"
                         >
                             <ChevronRight size={20} />
@@ -238,10 +282,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                     
                     <button 
                         onClick={onNewAppointment}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-white font-bold shadow-lg hover:opacity-90 transition-all"
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-white font-bold shadow-lg hover:opacity-90 transition-all text-sm flex-1 md:flex-none"
                         style={{ backgroundColor: settings.primaryColor }}
                     >
-                        <Plus size={20} /> Novo Agendamento
+                        <Plus size={18} /> <span className="hidden sm:inline">Novo</span>
                     </button>
                 </div>
             </div>
@@ -291,16 +335,16 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
             {/* Grid da Agenda */}
             <div className="bg-slate-800/50 rounded-2xl border border-slate-700 overflow-hidden shadow-2xl">
                 <div className="overflow-x-auto custom-scrollbar">
-                    <div className="min-w-[1000px] relative">
+                    <div className={`${viewType === 'week' ? 'min-w-[1000px]' : 'min-w-full'} relative`}>
                         {/* Header do Grid (Dias) */}
-                        <div className="grid grid-cols-[80px_repeat(7,1fr)] border-b border-slate-700 bg-slate-900/50">
-                            <div className="p-4 flex items-center justify-center text-[10px] font-bold text-slate-500 border-r border-slate-700">
+                        <div className={`grid ${viewType === 'week' ? 'grid-cols-[80px_repeat(7,1fr)]' : 'grid-cols-[60px_1fr]'} border-b border-slate-700 bg-slate-900/50 calendar-grid-header`}>
+                            <div className={`p-4 flex items-center justify-center text-[10px] font-bold text-slate-500 border-r border-slate-700 calendar-time-column`}>
                                 GMT-3
                             </div>
-                            {weekDays.map((day, i) => {
+                            {displayDays.map((day, i) => {
                                 const isToday = day.toDateString() === new Date().toDateString();
                                 return (
-                                    <div key={i} className={`p-4 text-center border-r border-slate-700 last:border-r-0 ${isToday ? 'bg-orange-500/5' : ''}`}>
+                                    <div key={i} className={`p-4 text-center border-r border-slate-700 last:border-r-0 ${isToday ? 'bg-orange-500/5 calendar-cell-today' : ''}`}>
                                         <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isToday ? 'text-orange-500' : 'text-slate-500'}`}>
                                             {day.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}
                                         </p>
@@ -317,7 +361,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                             {/* Linha de Horário Atual */}
                             {timeLinePosition !== null && (
                                 <div 
-                                    className="absolute left-[80px] right-0 z-20 flex items-center pointer-events-none"
+                                    className={`absolute ${viewType === 'week' ? 'left-[80px]' : 'left-[60px]'} right-0 z-20 flex items-center pointer-events-none`}
                                     style={{ top: `${timeLinePosition}px` }}
                                 >
                                     <div className="w-2 h-2 rounded-full bg-red-500 -ml-1 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
@@ -326,14 +370,14 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                             )}
 
                             {timeSlots.map((time, slotIdx) => (
-                                <div key={slotIdx} className="grid grid-cols-[80px_repeat(7,1fr)] h-[100px] border-b border-slate-700/50 last:border-b-0 relative">
+                                <div key={slotIdx} className={`grid ${viewType === 'week' ? 'grid-cols-[80px_repeat(7,1fr)]' : 'grid-cols-[60px_1fr]'} h-[100px] border-b border-slate-700/50 last:border-b-0 relative`}>
                                     {/* Horário na lateral */}
-                                    <div className="flex items-start justify-center pt-1 text-[11px] font-bold text-slate-500 border-r border-slate-700 bg-slate-900/20">
+                                    <div className={`flex items-start justify-center pt-1 text-[11px] font-bold text-slate-500 border-r border-slate-700 bg-slate-900/20 calendar-time-column`}>
                                         {time}
                                     </div>
 
                                     {/* Células dos dias */}
-                                    {weekDays.map((day, dayIdx) => {
+                                    {displayDays.map((day, dayIdx) => {
                                         const dateStr = day.toISOString().split('T')[0];
                                         const hour = parseInt(time.split(':')[0]);
                                         
@@ -343,7 +387,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                         );
 
                                         return (
-                                            <div key={dayIdx} className="relative border-r border-slate-700/30 last:border-r-0 overflow-hidden grid grid-rows-2 h-full">
+                                            <div key={dayIdx} className={`relative border-r border-slate-700/30 last:border-r-0 overflow-hidden grid grid-rows-2 h-full ${day.toDateString() === new Date().toDateString() ? 'calendar-cell-today' : ''}`}>
                                                 {/* Top half: :00 to :29 */}
                                                 <div className="border-b border-slate-700/10 p-0.5 flex gap-1 overflow-hidden">
                                                     {slotAppointments.filter(a => parseInt(a.time.split(':')[1]) < 30).map(apt => (
@@ -405,7 +449,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                         const pro = professionals.find(p => p.id === selectedProId);
                                         if (!pro?.workSchedule) return null;
 
-                                        const dayName = weekDays[0].toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as keyof typeof pro.workSchedule;
+                                        const dayName = displayDays[0].toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as keyof typeof pro.workSchedule;
                                         const schedule = pro.workSchedule[dayName];
                                         
                                         if (!schedule || !schedule.active) return null;
@@ -416,7 +460,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
 
                                         if (currentH >= lStartH && currentH < lEndH) {
                                             return (
-                                                <div className="absolute inset-0 z-10 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center pointer-events-none border-y border-slate-700/50 border-dashed">
+                                                <div className={`absolute inset-0 z-10 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center pointer-events-none border-y border-slate-700/50 border-dashed`}>
                                                     <div className="flex items-center gap-2 px-4 py-1 rounded-full bg-slate-800 border border-slate-700 shadow-xl">
                                                         <Utensils size={14} className="text-slate-500" />
                                                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Horário de Almoço</span>
