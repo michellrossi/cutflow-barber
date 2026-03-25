@@ -23,10 +23,53 @@ export const ServicesPanel: React.FC = () => {
     });
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
+    const [isGeneratingImage, setIsGeneratingImage] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Categorias disponíveis
     const CATEGORIES = ['Cortes', 'Barba', 'Combos', 'Química', 'Estética', 'Outros'];
+
+    const generateAIImage = async () => {
+        if (!formData.name) {
+            showToast('Digite o nome do serviço primeiro!', 'error');
+            return;
+        }
+
+        setIsGeneratingImage(true);
+        try {
+            const response = await fetch('/api/ai/generate-image', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ serviceName: formData.name })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                // A imagem vem em base64. Vamos converter para Blob e subir pro Supabase pra ser permanente
+                const blob = await (await fetch(data.image)).blob();
+                
+                const fileName = `ai_${Date.now()}.png`;
+                const filePath = `services/${fileName}`;
+                
+                const { error: uploadError } = await supabase.storage.from('images').upload(filePath, blob, {
+                    contentType: 'image/png'
+                });
+
+                if (uploadError) throw uploadError;
+
+                const { data: urlData } = supabase.storage.from('images').getPublicUrl(filePath);
+                setFormData(prev => ({ ...prev, imageUrl: urlData.publicUrl }));
+                showToast('Imagem gerada com IA e salva com sucesso!');
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (error: any) {
+            console.error("Erro ao gerar imagem:", error);
+            showToast('Erro ao gerar imagem com IA.', 'error');
+        } finally {
+            setIsGeneratingImage(false);
+        }
+    };
 
     // CATALOGO PRE-DEFINIDO
     const CATALOG = [
@@ -221,10 +264,10 @@ export const ServicesPanel: React.FC = () => {
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Foto do Serviço</label>
                                 <div className="flex items-center gap-4">
                                     <div 
-                                        onClick={() => !isUploading && fileInputRef.current?.click()} 
-                                        className={`w-16 h-16 bg-slate-900 rounded-xl border border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative ${isUploading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        onClick={() => !isUploading && !isGeneratingImage && fileInputRef.current?.click()} 
+                                        className={`w-16 h-16 bg-slate-900 rounded-xl border border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative ${(isUploading || isGeneratingImage) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
-                                        {isUploading ? (
+                                        {(isUploading || isGeneratingImage) ? (
                                             <Loader2 size={24} className="text-orange-500 animate-spin" />
                                         ) : (
                                             formData.imageUrl ? (
@@ -234,10 +277,21 @@ export const ServicesPanel: React.FC = () => {
                                             )
                                         )}
                                     </div>
-                                    <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" disabled={isUploading} />
+                                    <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" disabled={isUploading || isGeneratingImage} />
                                     <div className="flex-1">
-                                        <p className="text-xs text-slate-500">{isUploading ? 'Enviando...' : 'Clique para carregar uma foto'}</p>
-                                        {formData.imageUrl && (
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-xs text-slate-500">{isUploading ? 'Enviando...' : isGeneratingImage ? 'Gerando com IA...' : 'Carregar foto'}</p>
+                                            {!isUploading && !isGeneratingImage && (
+                                                <button 
+                                                    type="button"
+                                                    onClick={generateAIImage}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-500/10 border border-orange-500/20 rounded-lg text-orange-500 text-[10px] font-bold hover:bg-orange-500/20 transition-all"
+                                                >
+                                                    <Sparkles size={12} /> Gerar com IA
+                                                </button>
+                                            )}
+                                        </div>
+                                        {formData.imageUrl && !isGeneratingImage && (
                                             <button 
                                                 type="button" 
                                                 onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}

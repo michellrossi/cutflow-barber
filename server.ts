@@ -140,6 +140,60 @@ async function startServer() {
         }
     });
 
+    // Rota para Gerar Imagem de Serviço com IA
+    app.post('/api/ai/generate-image', async (req, res) => {
+        const { serviceName } = req.body;
+
+        if (!serviceName) {
+            return res.status(400).json({ success: false, error: "Nome do serviço é obrigatório" });
+        }
+
+        try {
+            const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+            
+            const prompt = `Uma foto profissional e de alta qualidade de um serviço de barbearia chamado "${serviceName}". 
+            A imagem deve ser limpa, moderna, com iluminação de estúdio, focada no detalhe do serviço. 
+            Estilo barbearia premium, tons amadeirados ou industriais, visual nítido. 
+            Sem textos, sem logos.`;
+
+            const response = await genAI.models.generateContent({
+                model: 'gemini-2.5-flash-image',
+                contents: {
+                    parts: [
+                        {
+                            text: prompt,
+                        },
+                    ],
+                },
+                config: {
+                    imageConfig: {
+                        aspectRatio: "1:1",
+                    },
+                },
+            });
+
+            let base64Image = '';
+            for (const part of response.candidates[0].content.parts) {
+                if (part.inlineData) {
+                    base64Image = part.inlineData.data;
+                    break;
+                }
+            }
+
+            if (!base64Image) {
+                throw new Error("Nenhuma imagem foi gerada pelo modelo.");
+            }
+
+            res.json({ 
+                success: true, 
+                image: `data:image/png;base64,${base64Image}` 
+            });
+        } catch (error: any) {
+            console.error("Erro ao gerar imagem com IA:", error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
     // Rota da API de Confirmação Imediata
     app.post('/api/notify/confirmation', async (req, res) => {
         const { appointmentId } = req.body;
