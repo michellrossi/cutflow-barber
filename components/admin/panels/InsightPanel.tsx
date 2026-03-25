@@ -9,7 +9,7 @@ interface Message {
 }
 
 export const InsightPanel: React.FC = () => {
-    const { appointments, professionals, clients, services, settings } = useShop();
+    const { appointments, professionals, clients, services, settings, shop } = useShop();
     const [messages, setMessages] = useState<Message[]>([
         { role: 'assistant', content: `Olá! Sou seu assistente de inteligência de negócios. Posso analisar os dados da sua barbearia (${settings.name}) e te dar insights sobre performance, finanças e clientes. O que gostaria de saber hoje?` }
     ]);
@@ -48,6 +48,12 @@ export const InsightPanel: React.FC = () => {
                     const diff = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
                     return diff <= 15;
                 }).length,
+                last30Days: appointments.filter(a => {
+                    const date = new Date(a.date);
+                    const now = new Date();
+                    const diff = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
+                    return diff <= 30;
+                }).length,
                 barberRanking: professionals.map(p => ({
                     name: p.name,
                     appointments: appointments.filter(a => a.professionalId === p.id).length
@@ -67,7 +73,8 @@ export const InsightPanel: React.FC = () => {
                 body: JSON.stringify({
                     prompt: userMessage,
                     context: contextData,
-                    history: messages.slice(-6)
+                    history: messages.slice(-6),
+                    shopId: shop?.id
                 })
             });
 

@@ -18,7 +18,6 @@ const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
 const geminiKey = process.env.GEMINI_API_KEY || '';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
-const ai = new GoogleGenAI({ apiKey: geminiKey });
 
 /**
  * GERA MENSAGEM (TEMPLATE)
@@ -102,7 +101,7 @@ async function startServer() {
             - Total de Clientes: ${context.totalClients}
             - Total de Profissionais: ${context.totalProfessionals}
             - Total de Serviços: ${context.totalServices}
-            - Agendamentos nos últimos 15 dias: ${context.last15Days}
+            - Agendamentos nos últimos 30 dias: ${context.last30Days}
             - Receita Total (estimada): R$ ${context.revenue}
             - Status dos Agendamentos: Concluídos (${context.appointmentsByStatus.completed}), Cancelados (${context.appointmentsByStatus.cancelled}), Faltas (${context.appointmentsByStatus.noshow}), Agendados (${context.appointmentsByStatus.scheduled})
             - Ranking de Barbeiros: ${JSON.stringify(context.barberRanking)}
@@ -120,8 +119,11 @@ async function startServer() {
                 parts: [{ text: msg.content }]
             }));
 
-            const response = await ai.models.generateContent({
-                model: "gemini-1.5-flash",
+            // Instancia o cliente dentro do handler para garantir a chave mais atual
+            const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+
+            const response = await genAI.models.generateContent({
+                model: "gemini-3-flash-preview",
                 contents: [
                     ...chatHistory,
                     { role: 'user', parts: [{ text: prompt }] }
