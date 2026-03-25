@@ -45,8 +45,15 @@ export const ServicesPanel: React.FC = () => {
 
             const data = await response.json();
             if (data.success) {
-                // A imagem vem em base64. Vamos converter para Blob e subir pro Supabase pra ser permanente
-                const blob = await (await fetch(data.image)).blob();
+                // A imagem vem em base64. Vamos converter para Blob manualmente para evitar erro de CSP com fetch
+                const base64Data = data.image.split(',')[1];
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'image/png' });
                 
                 const fileName = `ai_${Date.now()}.png`;
                 const filePath = `services/${fileName}`;
