@@ -18,39 +18,25 @@ const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
 const geminiKey = process.env.GEMINI_API_KEY || '';
 
 const supabase = createClient(supabaseUrl, supabaseKey);
-const ai = new GoogleGenAI({ apiKey: geminiKey });
 
 /**
- * GERA MENSAGEM COM IA (GEMINI)
- * Ajustado para o SDK @google/genai conforme sua análise
+ * GERA MENSAGEM (TEMPLATE)
+ * Removido Gemini do backend conforme diretrizes
  */
 async function generateWhatsAppMessage(type: string, data: any) {
-    try {
-        let prompt = '';
-        if (type === 'link de acesso') {
-            prompt = `Crie uma mensagem curta e segura para enviar um link de acesso único para o cliente ${data.clientName} na barbearia. O link é: ${data.url}. Informe que o link expira em 15 minutos e não deve ser compartilhado. Use emojis de segurança e barbearia.`;
-        } else {
-            prompt = `Crie uma mensagem de ${type} para WhatsApp de uma barbearia. Use um tom descontraído, amigável e profissional. Use o nome do cliente: ${data.clientName} e mencione que o barbeiro ${data.proName} o está aguardando para fazer ${data.services} no dia ${data.date} às ${data.time}. Use emojis de barbearia.`;
-        }
-
-        // Padrão correto para o SDK @google/genai
-        const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash-lite",
-            contents: [{ role: 'user', parts: [{ text: prompt }] }]
-        });
-
-        // Retorna o texto gerado ou o fallback em caso de vazio
-        if (type === 'link de acesso') {
-            return response.text || `Olá ${data.clientName}! Aqui está seu link de acesso único: ${data.url}. Ele expira em 15 minutos. 🔐💈`;
-        }
-        return response.text || `Olá ${data.clientName}! Passando para confirmar seu horário de ${data.services} com ${data.proName} no dia ${data.date} às ${data.time}. Até logo! ✂️💈`;
-    } catch (error) {
-        console.error("Erro no Gemini (usando fallback):", error);
-        if (type === 'link de acesso') {
-            return `Olá ${data.clientName}! Aqui está seu link de acesso único: ${data.url}. Ele expira em 15 minutos. 🔐💈`;
-        }
-        return `Olá ${data.clientName}! Passando para confirmar seu horário de ${data.services} com ${data.proName} no dia ${data.date} às ${data.time}. Até logo! ✂️💈`;
+    if (type === 'link de acesso') {
+        return `Olá ${data.clientName}! Aqui está seu link de acesso único para a barbearia: ${data.url}. Ele expira em 15 minutos e não deve ser compartilhado. 🔐💈`;
     }
+    
+    if (type === 'lembrete de 24 horas') {
+        return `Olá ${data.clientName}! Passando para lembrar do seu horário de ${data.services} com ${data.proName} amanhã, dia ${data.date} às ${data.time}. Nos vemos lá! ✂️💈`;
+    }
+
+    if (type === 'lembrete de 1 hora') {
+        return `Olá ${data.clientName}! Seu horário de ${data.services} com ${data.proName} é daqui a pouco, às ${data.time}. Já estamos te esperando! ✂️💈`;
+    }
+
+    return `Olá ${data.clientName}! Passando para confirmar seu horário de ${data.services} com ${data.proName} no dia ${data.date} às ${data.time}. Até logo! ✂️💈`;
 }
 
 /**
@@ -267,55 +253,6 @@ async function startServer() {
         }
 
         res.json({ status: "Cron executado com sucesso" });
-    });
-
-    // Rota para Insights da IA (Admin)
-    app.post('/api/admin/insights', async (req, res) => {
-        const { prompt, context, history } = req.body;
-
-        try {
-            const systemInstruction = `Você é um consultor de negócios especializado em barbearias. 
-            Você tem acesso aos dados reais da barbearia "${context.shopName}".
-            
-            DADOS ATUAIS:
-            - Total de Agendamentos: ${context.totalAppointments}
-            - Total de Clientes: ${context.totalClients}
-            - Total de Profissionais: ${context.totalProfessionals}
-            - Total de Serviços: ${context.totalServices}
-            - Agendamentos nos últimos 15 dias: ${context.last15Days}
-            - Receita Total (estimada): R$ ${context.revenue}
-            - Status dos Agendamentos: Concluídos (${context.appointmentsByStatus.completed}), Cancelados (${context.appointmentsByStatus.cancelled}), Faltas (${context.appointmentsByStatus.noshow}), Agendados (${context.appointmentsByStatus.scheduled})
-            - Ranking de Barbeiros: ${JSON.stringify(context.barberRanking)}
-
-            INSTRUÇÕES:
-            1. Responda de forma profissional, mas amigável.
-            2. Use os dados fornecidos para dar respostas precisas.
-            3. Se perguntarem algo que não está nos dados, diga que não tem essa informação específica no momento.
-            4. Dê sugestões de melhoria baseadas nos números (ex: se houver muitos cancelamentos, sugira lembretes).
-            5. Mantenha as respostas concisas e úteis.
-            6. Use emojis relacionados a negócios e barbearia.`;
-
-            const chatHistory = history.map((msg: any) => ({
-                role: msg.role === 'assistant' ? 'model' : 'user',
-                parts: [{ text: msg.content }]
-            }));
-
-            const response = await ai.models.generateContent({
-                model: "gemini-2.0-flash-lite",
-                contents: [
-                    ...chatHistory,
-                    { role: 'user', parts: [{ text: prompt }] }
-                ],
-                config: {
-                    systemInstruction: systemInstruction
-                }
-            });
-
-            res.json({ success: true, answer: response.text });
-        } catch (error: any) {
-            console.error("Erro ao gerar insights:", error);
-            res.status(500).json({ success: false, error: error.message });
-        }
     });
 
     // --- WhatsApp Multi-Instance Endpoints ---

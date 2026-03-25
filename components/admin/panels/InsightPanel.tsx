@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { Send, Bot, User, Loader2, Sparkles, TrendingUp, Users, Scissors, DollarSign } from 'lucide-react';
+import { GoogleGenAI } from '@google/genai';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -9,7 +10,7 @@ interface Message {
 }
 
 export const InsightPanel: React.FC = () => {
-    const { appointments, professionals, clients, services, settings, shop } = useShop();
+    const { appointments, professionals, clients, services, settings } = useShop();
     const [messages, setMessages] = useState<Message[]>([
         { role: 'assistant', content: `Olá! Sou seu assistente de inteligência de negócios. Posso analisar os dados da sua barbearia (${settings.name}) e te dar insights sobre performance, finanças e clientes. O que gostaria de saber hoje?` }
     ]);
@@ -42,19 +43,16 @@ export const InsightPanel: React.FC = () => {
                 totalClients: clients.length,
                 totalProfessionals: professionals.length,
                 totalServices: services.length,
-                // Resumo dos últimos 15 dias
                 last15Days: appointments.filter(a => {
                     const date = new Date(a.date);
                     const now = new Date();
                     const diff = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
                     return diff <= 15;
                 }).length,
-                // Ranking de barbeiros
                 barberRanking: professionals.map(p => ({
                     name: p.name,
                     appointments: appointments.filter(a => a.professionalId === p.id).length
                 })).sort((a, b) => b.appointments - a.appointments),
-                // Resumo financeiro (simplificado)
                 revenue: appointments.filter(a => a.status === 'completed').reduce((acc, curr) => acc + curr.totalValue, 0),
                 appointmentsByStatus: {
                     completed: appointments.filter(a => a.status === 'completed').length,
@@ -64,25 +62,53 @@ export const InsightPanel: React.FC = () => {
                 }
             };
 
-            const response = await fetch('/api/admin/insights', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    prompt: userMessage,
-                    context: contextData,
-                    history: messages.slice(-6) // Envia as últimas 6 mensagens para contexto
-                })
+            const systemInstruction = `Você é um consultor de negócios especializado em barbearias. 
+            Você tem acesso aos dados reais da barbearia "${contextData.shopName}".
+            
+            DADOS ATUAIS:
+            - Total de Agendamentos: ${contextData.totalAppointments}
+            - Total de Clientes: ${contextData.totalClients}
+            - Total de Profissionais: ${contextData.totalProfessionals}
+            - Total de Serviços: ${contextData.totalServices}
+            - Agendamentos nos últimos 15 dias: ${contextData.last15Days}
+            - Receita Total (estimada): R$ ${contextData.revenue}
+            - Status dos Agendamentos: Concluídos (${contextData.appointmentsByStatus.completed}), Cancelados (${contextData.appointmentsByStatus.cancelled}), Faltas (${contextData.appointmentsByStatus.noshow}), Agendados (${contextData.appointmentsByStatus.scheduled})
+            - Ranking de Barbeiros: ${JSON.stringify(contextData.barberRanking)}
+
+            INSTRUÇÕES:
+            1. Responda de forma profissional, mas amigável.
+            2. Use os dados fornecidos para dar respostas precisas.
+            3. Se perguntarem algo que não está nos dados, diga que não tem essa informação específica no momento.
+            4. Dê sugestões de melhoria baseadas nos números (ex: se houver muitos cancelamentos, sugira lembretes).
+            5. Mantenha as respostas concisas e úteis.
+            6. Use emojis relacionados a negócios e barbearia.`;
+
+            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+            
+            const chatHistory = messages.slice(-6).map(msg => ({
+                role: msg.role === 'assistant' ? 'model' : 'user',
+                parts: [{ text: msg.content }]
+            }));
+
+            const response = await ai.models.generateContent({
+                model: "gemini-3-flash-preview",
+                contents: [
+                    ...chatHistory,
+                    { role: 'user', parts: [{ text: userMessage }] }
+                ],
+                config: {
+                    systemInstruction: systemInstruction
+                }
             });
 
-            const data = await response.json();
-            if (data.success) {
-                setMessages(prev => [...prev, { role: 'assistant', content: data.answer }]);
+            if (response.text) {
+                setMessages(prev => [...prev, { role: 'assistant', content: response.text || '' }]);
             } else {
                 setMessages(prev => [...prev, { role: 'assistant', content: "Desculpe, tive um problema ao processar sua solicitação. Tente novamente em instantes." }]);
             }
         } catch (error) {
             console.error("Erro ao buscar insights:", error);
-            setMessages(prev => [...prev, { role: 'assistant', content: "Erro de conexão com o servidor de inteligência." }]);
+            setMessages(prev => [...prev, { role: 'assistant', content: "Erro ao processar inteligência artificial. Verifique se a chave de API está configurada corretamente." }]);
         } finally {
             setIsLoading(false);
         }
