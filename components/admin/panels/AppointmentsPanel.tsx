@@ -435,7 +435,7 @@ export const AppointmentsPanel: React.FC = () => {
                                             <td className="p-4 text-slate-300 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
                                                     <Calendar size={14} className="text-slate-500"/>
-                                                    <span>{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'})}</span>
+                                                    <span>{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <Clock size={14} className="text-slate-500"/>

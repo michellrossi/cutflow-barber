@@ -16,23 +16,40 @@ export const ClientTokenValidation: React.FC = () => {
         const validate = async () => {
             if (!token || validationStarted.current) return;
             
+            // Check if this token is already being validated in this session
+            if (sessionStorage.getItem(`validating_${token}`)) {
+                console.log("[Auth] Token já está sendo validado ou já foi validado:", token);
+                return;
+            }
+
             validationStarted.current = true;
-            const result = await (validateClientToken(token) as any);
+            sessionStorage.setItem(`validating_${token}`, 'true');
             
-            if (result.success) {
-                setStatus('success');
-                const slug = result.slug || shop?.slug;
-                setTimeout(() => {
-                    if (slug) {
-                        navigate(`/agendar/${slug}`);
-                    } else {
-                        // Fallback se não tiver slug
-                        navigate('/');
-                    }
-                }, 1500);
-            } else {
+            try {
+                const result = await (validateClientToken(token) as any);
+                
+                if (result.success) {
+                    setStatus('success');
+                    const slug = result.slug || shop?.slug;
+                    setTimeout(() => {
+                        if (slug) {
+                            navigate(`/agendar/${slug}`);
+                        } else {
+                            // Fallback se não tiver slug
+                            navigate('/');
+                        }
+                    }, 1500);
+                } else {
+                    console.error("[Auth] Falha na validação:", result.error);
+                    setStatus('error');
+                    setError(result.error || 'Token inválido ou expirado.');
+                    sessionStorage.removeItem(`validating_${token}`); // Allow retry if failed
+                }
+            } catch (err) {
+                console.error("[Auth] Erro inesperado:", err);
                 setStatus('error');
-                setError(result.error || 'Token inválido ou expirado.');
+                setError('Ocorreu um erro inesperado.');
+                sessionStorage.removeItem(`validating_${token}`);
             }
         };
 

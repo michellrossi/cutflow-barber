@@ -111,11 +111,14 @@ async function startServer() {
         
         const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
 
+        const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+        const formattedTime = apt.time.substring(0, 5);
+
         const clientMessage = await generateWhatsAppMessage('confirmação', {
             clientName: apt.client_name,
             services: servicesNames,
-            date: apt.date,
-            time: apt.time,
+            date: formattedDate,
+            time: formattedTime,
             proName: apt.professionals?.name || "um de nossos profissionais"
         });
 
@@ -158,11 +161,14 @@ async function startServer() {
                     const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
                     const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
 
+                    const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                    const formattedTime = apt.time.substring(0, 5);
+
                     const msg = await generateWhatsAppMessage('lembrete de 24 horas', {
                         clientName: apt.client_name,
                         services: servicesNames,
-                        date: apt.date,
-                        time: apt.time,
+                        date: formattedDate,
+                        time: formattedTime,
                         proName: apt.professionals?.name || "seu barbeiro"
                     });
 
@@ -195,11 +201,14 @@ async function startServer() {
                     const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
                     const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
 
+                    const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                    const formattedTime = apt.time.substring(0, 5);
+
                     const msg = await generateWhatsAppMessage('lembrete de 1 hora', {
                         clientName: apt.client_name,
                         services: servicesNames,
-                        date: apt.date,
-                        time: apt.time,
+                        date: formattedDate,
+                        time: formattedTime,
                         proName: apt.professionals?.name || "seu barbeiro"
                     });
 

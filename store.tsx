@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client } from './types';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
@@ -1282,7 +1282,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
-  const validateClientToken = async (token: string) => {
+  const validateClientToken = useCallback(async (token: string) => {
       try {
           console.log("[Auth] Validando token:", token);
           const { data: tokenData, error: tokenError } = await supabase
@@ -1314,7 +1314,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } catch (e: any) {
           return { success: false, error: e.message };
       }
-  };
+  }, [supabase]);
 
   const getWhatsAppQRCode = async () => {
     try {

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Service } from '../../../types';
-import { ArrowLeft, Check, Clock } from 'lucide-react';
+import { ArrowLeft, Check, Clock, Scissors } from 'lucide-react';
 import { StickyFooter } from '../StickyFooter';
 
 interface ServicesStepProps {
@@ -56,26 +56,60 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
                         <h3 className="text-lg font-bold mb-3 border-b border-slate-700 pb-2" style={{ color: settings.titleColor || '#ffffff' }}>
                             {category}
                         </h3>
-                        <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {groupedServices[category].map(service => {
                                 const isSelected = selectedServiceIds.includes(service.id);
                                 return (
                                     <div 
                                         key={service.id} 
                                         onClick={() => toggleService(service.id)}
-                                        className={`p-5 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-slate-800 border-orange-500 ring-1 ring-orange-500' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'}`}
-                                        style={isSelected ? { borderColor: settings.primaryColor, '--tw-ring-color': settings.primaryColor } as any : {}}
+                                        className={`bg-slate-800/40 rounded-[2rem] border flex flex-col overflow-hidden group transition-all shadow-xl cursor-pointer relative ${
+                                            isSelected ? 'border-orange-500 ring-2 ring-orange-500/20' : 'border-slate-700 hover:border-slate-600'
+                                        }`}
+                                        style={isSelected ? { borderColor: settings.primaryColor, '--tw-ring-color': `${settings.primaryColor}33` } as any : {}}
                                     >
-                                        <div className="flex items-start gap-4">
-                                            <div className={`w-6 h-6 rounded-full border flex items-center justify-center mt-1 ${isSelected ? 'bg-orange-500 border-orange-500' : 'border-slate-500'}`} style={isSelected ? { backgroundColor: settings.primaryColor, borderColor: settings.primaryColor } : {}}>
-                                                {isSelected && <Check size={14} className="text-white" />}
+                                        {/* Imagem do Serviço */}
+                                        <div className="h-40 w-full relative overflow-hidden">
+                                            {service.imageUrl ? (
+                                                <img 
+                                                    src={service.imageUrl} 
+                                                    alt={service.name} 
+                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                    referrerPolicy="no-referrer"
+                                                />
+                                            ) : (
+                                                <div className="w-full h-full bg-slate-900 flex items-center justify-center">
+                                                    <Scissors size={40} className="text-slate-700" />
+                                                </div>
+                                            )}
+                                            {/* Badge de Duração */}
+                                            <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-orange-400 text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-white/10" style={{ color: settings.primaryColor }}>
+                                                <Clock size={12}/>
+                                                {service.duration} min
                                             </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-bold text-lg" style={{ color: settings.titleColor || '#ffffff' }}>{service.name}</h3>
-                                                <p className="text-sm mb-2" style={{ color: settings.textColor || '#94a3b8' }}>{service.description}</p>
-                                                <div className="flex gap-4 text-sm font-medium">
-                                                    <span className="flex items-center gap-1" style={{ color: settings.textColor || '#94a3b8' }}><Clock size={14}/> {service.duration} min</span>
-                                                    <span style={{ color: settings.priceColor || settings.primaryColor }}>R$ {service.price.toFixed(2)}</span>
+                                            {/* Checkbox Overlay */}
+                                            {isSelected && (
+                                                <div className="absolute inset-0 bg-orange-500/10 flex items-center justify-center" style={{ backgroundColor: `${settings.primaryColor}1a` }}>
+                                                    <div className="bg-orange-500 text-white rounded-full p-2 shadow-lg" style={{ backgroundColor: settings.primaryColor }}>
+                                                        <Check size={24} strokeWidth={3} />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {/* Conteúdo */}
+                                        <div className="p-5 flex flex-col flex-1">
+                                            <h3 className="font-bold text-white text-base leading-tight mb-1" style={{ color: settings.titleColor || '#ffffff' }}>{service.name}</h3>
+                                            <p className="text-[10px] text-slate-500 line-clamp-2 mb-4 min-h-[1.5rem] leading-relaxed" style={{ color: settings.textColor || '#94a3b8' }}>{service.description}</p>
+
+                                            <div className="mt-auto flex items-center justify-between">
+                                                <p className="text-xl font-bold text-orange-500" style={{ color: settings.priceColor || settings.primaryColor }}>
+                                                    R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                                </p>
+                                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                                    isSelected ? 'bg-orange-500 border-orange-500' : 'border-slate-600'
+                                                }`} style={isSelected ? { backgroundColor: settings.primaryColor, borderColor: settings.primaryColor } : {}}>
+                                                    {isSelected && <Check size={14} className="text-white" strokeWidth={3} />}
                                                 </div>
                                             </div>
                                         </div>

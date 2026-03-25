@@ -4,7 +4,7 @@ import { useShop } from '../../store';
 import { Award, Calendar, Clock, LogOut, Star, User, History, Tag, Smartphone, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
 
 export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void }> = ({ onLogout, onBack }) => {
-    const { currentClient, appointments, services, settings, coupons } = useShop();
+    const { currentClient, appointments, services, settings, coupons, professionals } = useShop();
 
     const clientAppointments = useMemo(() => {
         if (!currentClient) return [];
@@ -149,17 +149,24 @@ export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void 
                     <div className="space-y-3">
                         {clientAppointments.map(apt => {
                             const aptServices = services.filter(s => apt.serviceIds.includes(s.id));
+                            const professional = professionals.find(p => p.id === apt.professionalId);
                             return (
                                 <div key={apt.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between hover:bg-slate-800/50 transition-all">
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-bold text-white">{new Date(apt.date).toLocaleDateString()}</span>
+                                            <span className="font-bold text-white">{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
                                             <span className="text-slate-500 text-xs">•</span>
-                                            <span className="text-slate-400 text-sm">{apt.time}</span>
+                                            <span className="text-slate-400 text-sm">{apt.time.substring(0, 5)}</span>
                                         </div>
                                         <p className="text-sm text-slate-300 truncate max-w-[200px]">
                                             {aptServices.map(s => s.name).join(', ')}
                                         </p>
+                                        {professional && (
+                                            <p className="text-[10px] text-slate-500 flex items-center gap-1">
+                                                <User size={10} />
+                                                {professional.name}
+                                            </p>
+                                        )}
                                     </div>
                                     <div className="text-right space-y-1">
                                         <p className="font-bold text-orange-500">R$ {apt.totalValue}</p>

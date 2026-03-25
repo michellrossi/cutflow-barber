@@ -99,9 +99,7 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
                     <div className="pb-4 border-b border-slate-700">
                         <p className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>Data e horário</p>
                         <div className="font-medium" style={{ color: settings.titleColor || '#ffffff' }}>
-                            {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                            <br/>
-                            {selectedTime}
+                            {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })} às {selectedTime?.substring(0, 5)}
                         </div>
                     </div>
                 </div>

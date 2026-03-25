@@ -43,7 +43,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
     const dateRangeLabel = useMemo(() => {
         const start = weekDays[0];
         const end = weekDays[6];
-        const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'long' };
+        const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: '2-digit' };
         return `${start.toLocaleDateString('pt-BR', options)} - ${end.toLocaleDateString('pt-BR', options)}`;
     }, [weekDays]);
 

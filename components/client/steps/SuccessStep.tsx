@@ -23,7 +23,7 @@ export const SuccessStep: React.FC<SuccessStepProps> = ({ customerInfo, selected
         <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 w-full max-w-md mb-8 text-left">
             <div className="flex items-center gap-3 mb-4">
                 <Calendar style={{ color: settings.textColor || '#94a3b8' }} size={20}/>
-                <span style={{ color: settings.titleColor || '#ffffff' }}>{new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })} às {selectedTime}</span>
+                <span style={{ color: settings.titleColor || '#ffffff' }}>{new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })} às {selectedTime?.substring(0, 5)}</span>
             </div>
             <div className="flex items-center gap-3">
                     <User style={{ color: settings.textColor || '#94a3b8' }} size={20}/>
