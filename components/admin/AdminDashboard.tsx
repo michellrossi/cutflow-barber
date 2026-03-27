@@ -128,9 +128,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                           setIsSettingsOpen(false);
                       }
                   }}
-                  className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${activeTab === 'team' ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
+                  className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${activeTab === 'team' ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
               >
-                  <Users size={20} className={activeTab === 'team' ? 'text-orange-500' : 'text-slate-400'} />
+                  <Users size={20} className={activeTab === 'team' ? 'text-orange-500' : 'text-slate-700'} />
                   <span className="flex-1 text-left">Equipe</span>
                   <motion.div
                       animate={{ rotate: isTeamOpen ? 180 : 0 }}
@@ -190,9 +190,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                           setIsTeamOpen(false);
                       }
                   }}
-                  className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${activeTab === 'settings' ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
+                  className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${activeTab === 'settings' ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
               >
-                  <Settings size={20} className={activeTab === 'settings' ? 'text-orange-500' : 'text-slate-400'} />
+                  <Settings size={20} className={activeTab === 'settings' ? 'text-orange-500' : 'text-slate-700'} />
                   <span className="flex-1 text-left">Configurações</span>
                   <motion.div
                       animate={{ rotate: isSettingsOpen ? 180 : 0 }}
@@ -288,7 +288,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
               <div className="h-px bg-slate-100 mb-4 mx-2"></div>
               <button 
                   onClick={onViewClient}
-                  className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-colors group"
+                  className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group"
               >
                   <Smartphone size={20} className="group-hover:text-orange-500 transition-colors" />
                   <span className="flex-1 text-left">Agenda Digital</span>
@@ -298,7 +298,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
         </nav>
 
         <div className="p-4 border-t border-slate-100">
-          <button onClick={onLogout} className="flex items-center gap-3 px-4 py-3 w-full text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">
+          <button onClick={onLogout} className="flex items-center gap-3 px-4 py-3 w-full text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">
             <LogOut size={20} />
             <span>Sair / Home</span>
           </button>
@@ -319,7 +319,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                 </div>
                 <button 
                     onClick={() => setIsPaymentModalOpen(true)}
-                    className="bg-white text-slate-900 px-4 py-1 rounded text-xs font-bold hover:bg-slate-100 transition-colors uppercase tracking-wide"
+                    className="bg-white text-slate-900 px-4 py-1 rounded-md text-xs font-bold hover:bg-slate-100 transition-colors uppercase tracking-wide"
                 >
                     Assinar Agora
                 </button>
@@ -330,15 +330,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
              <h2 className="text-xl md:text-2xl font-bold text-slate-900">{getTabLabel(activeTab)}</h2>
              <div className="flex items-center gap-4">
                 <button 
-                    onClick={toggleTheme}
-                    className="p-2 rounded-full bg-slate-100 text-slate-400 hover:text-slate-900 transition-colors"
-                    title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
-                >
-                    {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-                </button>
-                <button 
                     onClick={onViewClient}
-                    className="flex items-center gap-2 px-4 py-2 rounded-full border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 text-sm font-medium transition-colors md:hidden"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 text-sm font-medium transition-colors md:hidden"
                 >
                     <ExternalLink size={16}/> Ver Agenda
                 </button>
@@ -379,9 +372,9 @@ const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: bool
     return (
         <button 
             onClick={onClick}
-            className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${active ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
+            className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${active ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
         >
-            <span className={active ? 'text-orange-500' : 'text-slate-400'}>{icon}</span>
+            <span className={active ? 'text-orange-500' : 'text-slate-700'}>{icon}</span>
             <span>{label}</span>
         </button>
     );
@@ -391,9 +384,9 @@ const SubSidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: b
     return (
         <button 
             onClick={onClick}
-            className={`flex items-center gap-2 px-3 py-2 w-full rounded-lg text-sm transition-all duration-200 ${active ? 'text-orange-600 font-bold bg-orange-50/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
+            className={`flex items-center gap-2 px-3 py-2 w-full rounded-lg text-sm transition-all duration-200 ${active ? 'text-orange-600 font-bold bg-orange-50/50' : 'text-slate-700 hover:text-slate-900 hover:bg-slate-50'}`}
         >
-            <span className={active ? 'text-orange-500' : 'text-slate-400'}>{icon}</span>
+            <span className={active ? 'text-orange-500' : 'text-slate-700'}>{icon}</span>
             <span>{label}</span>
         </button>
     );
@@ -404,7 +397,7 @@ const MobileNavItem: React.FC<{ icon: React.ReactNode, label: string, active: bo
     return (
         <button 
             onClick={onClick}
-            className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[64px] ${active ? 'bg-slate-100 text-orange-600 shadow-sm' : 'text-slate-500 active:bg-slate-50'}`}
+            className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all min-w-[64px] ${active ? 'bg-slate-100 text-orange-600 shadow-sm' : 'text-slate-500 active:bg-slate-50'}`}
             style={active ? { color: settings.primaryColor } : {}}
         >
             <span className={active ? 'scale-110 transition-transform' : 'opacity-70'}>{icon}</span>

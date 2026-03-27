@@ -219,7 +219,8 @@ export const ClientsPanel: React.FC = () => {
         </div>
         <button 
           onClick={() => handleOpenForm()}
-          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors self-start md:self-auto shadow-lg shadow-green-600/20"
+          className="text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors self-start md:self-auto shadow-lg"
+          style={{ backgroundColor: settings.primaryColor }}
         >
           <Plus size={18} />
           Novo Cliente
@@ -330,7 +331,7 @@ export const ClientsPanel: React.FC = () => {
                       )}
                     </td>
                     <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getRiskBadgeColor(client.metrics.risk)}`}>
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${getRiskBadgeColor(client.metrics.risk)}`}>
                         {client.metrics.risk}
                       </span>
                     </td>
@@ -499,7 +500,7 @@ export const ClientsPanel: React.FC = () => {
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900">{viewingClient.name}</h3>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getRiskBadgeColor(viewingClient.metrics.risk)}`}>
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${getRiskBadgeColor(viewingClient.metrics.risk)}`}>
                       {viewingClient.metrics.risk}
                     </span>
                     <div className="flex items-center gap-1 text-slate-600 text-sm font-medium">
@@ -652,12 +653,12 @@ const FilterButton: React.FC<{ active: boolean, onClick: () => void, label: stri
   return (
     <button 
       onClick={onClick}
-      className={`px-4 py-1.5 rounded-full border text-sm whitespace-nowrap flex items-center gap-2 transition-all shadow-sm ${getColorClasses()}`}
+      className={`px-4 py-1.5 rounded-lg border text-sm whitespace-nowrap flex items-center gap-2 transition-all shadow-sm ${getColorClasses()}`}
     >
       {color && <div className={`w-2 h-2 rounded-full ${dotColors[color]}`}></div>}
       {label}
       {count !== undefined && (
-        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${active ? 'bg-white/20' : 'bg-slate-100'} font-bold`}>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${active ? 'bg-white/20' : 'bg-slate-100'} font-bold`}>
           {count}
         </span>
       )}

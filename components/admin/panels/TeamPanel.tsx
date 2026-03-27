@@ -214,36 +214,34 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
             />
 
             {/* Sub-tabs Navigation */}
-            <div className="flex border-b border-slate-200 mb-6 overflow-x-auto">
-                <button 
-                    onClick={() => handleSubTabChange('list')}
-                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${subTab === 'list' ? 'border-orange-500 text-orange-500' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
-                >
-                    Profissionais
-                </button>
-                <button 
-                    onClick={() => {
-                        handleSubTabChange('schedules');
-                        if (professionals.length > 0 && !selectedProId) {
-                            setSelectedProId(professionals[0].id);
-                            setSchedule(professionals[0].workSchedule || DEFAULT_SCHEDULE);
-                        }
-                    }}
-                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${subTab === 'schedules' ? 'border-orange-500 text-orange-500' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
-                >
-                    Horários
-                </button>
-                <button 
-                    onClick={() => {
-                        handleSubTabChange('blocks');
-                        if (professionals.length > 0 && !selectedProId) {
-                            setSelectedProId(professionals[0].id);
-                        }
-                    }}
-                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${subTab === 'blocks' ? 'border-orange-500 text-orange-500' : 'border-transparent text-slate-500 hover:text-slate-900'}`}
-                >
-                    Bloqueio de Horários
-                </button>
+            <div className="flex gap-6 border-b border-slate-200 mb-8 overflow-x-auto no-scrollbar">
+                {[
+                    { id: 'list', label: 'Profissionais' },
+                    { id: 'schedules', label: 'Horários' },
+                    { id: 'blocks', label: 'Bloqueio de Horários' }
+                ].map(tab => (
+                    <button
+                        key={tab.id}
+                        onClick={() => {
+                            if (tab.id === 'schedules' || tab.id === 'blocks') {
+                                if (professionals.length > 0 && !selectedProId) {
+                                    setSelectedProId(professionals[0].id);
+                                    if (tab.id === 'schedules') setSchedule(professionals[0].workSchedule || DEFAULT_SCHEDULE);
+                                    if (tab.id === 'blocks') setBlockDate(new Date().toISOString().split('T')[0]);
+                                }
+                            }
+                            handleSubTabChange(tab.id as any);
+                        }}
+                        className={`pb-4 text-sm transition-all relative whitespace-nowrap ${
+                            subTab === tab.id ? 'text-slate-900 font-bold' : 'text-slate-500 font-medium hover:text-slate-700'
+                        }`}
+                    >
+                        {tab.label}
+                        {subTab === tab.id && (
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-orange-500 rounded-full" />
+                        )}
+                    </button>
+                ))}
             </div>
 
             {subTab === 'list' && (
@@ -256,7 +254,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                         {professionals.map(pro => {
                             const isMaster = pro.role.toLowerCase().includes('master');
                             return (
-                                <div key={pro.id} className="bg-white rounded-2xl border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all w-full max-w-[210px] shadow-lg">
+                                <div key={pro.id} className="bg-white rounded-xl border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all w-full max-w-[210px] shadow-lg">
                                     {/* Top Half: Photo */}
                                     <div className="relative h-64 w-full overflow-hidden">
                                         <img 
@@ -268,7 +266,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent" />
                                         
                                         {isMaster && (
-                                            <div className="absolute top-2 right-2 bg-yellow-500 text-black text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg">
+                                            <div className="absolute top-2 right-2 bg-yellow-500 text-black text-[9px] font-bold px-2 py-0.5 rounded-md shadow-lg">
                                                 MASTER
                                             </div>
                                         )}
@@ -332,7 +330,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                         {/* Add New Card */}
                         <button 
                             onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setPhone(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }}
-                            className="bg-transparent rounded-2xl border-2 border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-100 transition-all flex flex-col items-center justify-center text-center w-full max-w-[210px] min-h-[350px] group"
+                            className="bg-transparent rounded-xl border-2 border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-100 transition-all flex flex-col items-center justify-center text-center w-full max-w-[210px] min-h-[350px] group"
                         >
                             <div className="w-12 h-12 rounded-full bg-slate-100 group-hover:bg-slate-200 flex items-center justify-center mb-4 transition-colors">
                                 <UserPlus size={20} className="text-slate-400 group-hover:text-slate-600" />
