@@ -47,6 +47,12 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   const { settings, trialStatus, daysRemaining, theme, toggleTheme } = useShop();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
+  const handleTabChange = (tab: AdminTab) => {
+      setActiveTab(tab);
+      if (tab !== 'team') setIsTeamOpen(false);
+      if (tab !== 'settings') setIsSettingsOpen(false);
+  };
+
   useEffect(() => {
       localStorage.setItem('adminActiveTab', activeTab);
   }, [activeTab]);
@@ -86,7 +92,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'team': return 'Gerenciar Equipe';
           case 'services': return 'Gerenciar Serviços';
           case 'coupons': return 'Gerenciar Cupons';
-          case 'appointments': return 'Vendas & Agenda';
+          case 'appointments': return 'Agenda';
           case 'finance': return 'Financeiro';
           case 'clients': return 'Gestão de Clientes';
           case 'loyalty': return 'Programa de Fidelidade';
@@ -110,13 +116,17 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
         </div>
         
         <nav className="flex-1 p-4 space-y-1">
-          <SidebarItem icon={<LayoutGrid size={20} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
+          <SidebarItem icon={<LayoutGrid size={20} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => handleTabChange('dashboard')} />
           
           <div className="space-y-1">
               <button 
                   onClick={() => {
-                      setIsTeamOpen(!isTeamOpen);
-                      if (!isTeamOpen) setActiveTab('team');
+                      const newState = !isTeamOpen;
+                      setIsTeamOpen(newState);
+                      if (newState) {
+                          setActiveTab('team');
+                          setIsSettingsOpen(false);
+                      }
                   }}
                   className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-lg transition-all duration-200 text-sm ${activeTab === 'team' ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
                   style={activeTab === 'team' ? { borderLeft: `4px solid ${settings.primaryColor}` } : {}}
@@ -163,19 +173,23 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
               </AnimatePresence>
           </div>
 
-          <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => setActiveTab('services')} />
-          <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => setActiveTab('coupons')} />
-          <SidebarItem icon={<CalendarCheck size={20} />} label="Agendamentos" active={activeTab === 'appointments'} onClick={() => setActiveTab('appointments')} />
-          <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
-          <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => setActiveTab('loyalty')} />
-          <SidebarItem icon={<Sparkles size={20} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => setActiveTab('insight')} />
-          <SidebarItem icon={<DollarSign size={20} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />
+          <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} />
+          <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => handleTabChange('coupons')} />
+          <SidebarItem icon={<CalendarCheck size={20} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} />
+          <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} />
+          <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => handleTabChange('loyalty')} />
+          <SidebarItem icon={<Sparkles size={20} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} />
+          <SidebarItem icon={<DollarSign size={20} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => handleTabChange('finance')} />
           
           <div className="space-y-1">
               <button 
                   onClick={() => {
-                      setIsSettingsOpen(!isSettingsOpen);
-                      if (!isSettingsOpen) setActiveTab('settings');
+                      const newState = !isSettingsOpen;
+                      setIsSettingsOpen(newState);
+                      if (newState) {
+                          setActiveTab('settings');
+                          setIsTeamOpen(false);
+                      }
                   }}
                   className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-lg transition-all duration-200 text-sm ${activeTab === 'settings' ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
                   style={activeTab === 'settings' ? { borderLeft: `4px solid ${settings.primaryColor}` } : {}}

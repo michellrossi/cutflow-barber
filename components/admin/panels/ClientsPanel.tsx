@@ -181,11 +181,11 @@ export const ClientsPanel: React.FC = () => {
 
   const getRiskBadgeColor = (risk: string) => {
     switch (risk) {
-      case 'Baixo': return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20';
-      case 'Médio': return 'bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-500/10 dark:text-yellow-500 dark:border-yellow-500/20';
-      case 'Alto': return 'bg-orange-100 text-orange-800 border-orange-300 dark:bg-orange-500/10 dark:text-orange-500 dark:border-orange-500/20';
-      case 'Crítico': return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-500/10 dark:text-red-500 dark:border-red-500/20';
-      default: return 'bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+      case 'Baixo': return 'bg-green-100 text-green-900 border-green-400 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20';
+      case 'Médio': return 'bg-yellow-100 text-yellow-900 border-yellow-400 dark:bg-yellow-500/10 dark:text-yellow-500 dark:border-yellow-500/20';
+      case 'Alto': return 'bg-orange-100 text-orange-900 border-orange-400 dark:bg-orange-500/10 dark:text-orange-500 dark:border-orange-500/20';
+      case 'Crítico': return 'bg-red-100 text-red-900 border-red-400 dark:bg-red-500/10 dark:text-red-500 dark:border-red-500/20';
+      default: return 'bg-slate-100 text-slate-900 border-slate-400 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
     }
   };
 
@@ -281,7 +281,7 @@ export const ClientsPanel: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse table-fixed">
             <thead>
-              <tr className="border-b border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800/50 text-xs text-slate-800 dark:text-slate-400 uppercase tracking-wider">
+              <tr className="border-b border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800/50 text-xs text-slate-900 dark:text-slate-400 uppercase tracking-wider">
                 <th className="p-4 font-bold w-1/6">Nome</th>
                 <th className="p-4 font-bold w-1/6">Celular</th>
                 <th className="p-4 font-bold w-1/6">Data Último Corte</th>
@@ -360,7 +360,7 @@ export const ClientsPanel: React.FC = () => {
                         </button>
                         <button 
                           onClick={() => handleOpenForm(client)}
-                          className="p-1.5 rounded-lg bg-slate-300 text-slate-800 hover:bg-slate-800 hover:text-white transition-colors dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 dark:hover:text-white"
+                          className="p-1.5 rounded-lg bg-slate-200 text-slate-900 hover:bg-slate-800 hover:text-white transition-colors dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 dark:hover:text-white"
                           title="Editar"
                         >
                           <Edit2 size={14} />
@@ -636,10 +636,10 @@ export const ClientsPanel: React.FC = () => {
 
 const FilterButton: React.FC<{ active: boolean, onClick: () => void, label: string, count?: number, color?: 'red' | 'yellow' | 'green' }> = ({ active, onClick, label, count, color }) => {
   const getColorClasses = () => {
-    if (!active) return 'bg-white dark:bg-transparent border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50';
-    if (color === 'red') return 'bg-red-100 border-red-400 text-red-800 dark:bg-red-500/10 dark:border-red-500/50 dark:text-red-400';
-    if (color === 'yellow') return 'bg-yellow-100 border-yellow-400 text-yellow-800 dark:bg-yellow-500/10 dark:border-yellow-500/50 dark:text-yellow-400';
-    if (color === 'green') return 'bg-green-100 border-green-400 text-green-800 dark:bg-green-500/10 dark:border-green-500/50 dark:text-green-400';
+    if (!active) return 'bg-white dark:bg-transparent border-slate-400 dark:border-slate-700 text-slate-900 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50';
+    if (color === 'red') return 'bg-red-100 border-red-500 text-red-900 dark:bg-red-500/10 dark:border-red-500/50 dark:text-red-400';
+    if (color === 'yellow') return 'bg-yellow-100 border-yellow-500 text-yellow-900 dark:bg-yellow-500/10 dark:border-yellow-500/50 dark:text-yellow-400';
+    if (color === 'green') return 'bg-green-100 border-green-500 text-green-900 dark:bg-green-500/10 dark:border-green-500/50 dark:text-green-400';
     return 'bg-slate-900 border-slate-800 text-white dark:bg-slate-700 dark:border-slate-600';
   };
 

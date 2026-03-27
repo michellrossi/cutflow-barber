@@ -8,7 +8,7 @@ interface WeeklyCalendarProps {
 }
 
 export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment }) => {
-    const { appointments, professionals, services, settings, updateAppointmentStatus, updateAppointmentPaymentMethod } = useShop();
+    const { appointments, professionals, services, settings, updateAppointmentStatus, updateAppointmentPaymentMethod, theme } = useShop();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedProId, setSelectedProId] = useState<string | 'all'>('all');
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -96,7 +96,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
     }, [appointments, displayDays, selectedProId]);
 
     const getStatusStyles = (status: string) => {
-        return 'bg-slate-800/80 border-slate-700 text-slate-300 calendar-appointment border-l-4';
+        return 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 calendar-appointment border-l-4';
     };
 
     const getStatusLabel = (status: string) => {
@@ -236,7 +236,6 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-3">
-                        <h2 className="text-xl md:text-2xl font-bold text-white">Agenda</h2>
                         <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700 text-[10px] font-bold uppercase tracking-wider">
                             <button 
                                 onClick={() => setViewType('day')}
@@ -395,7 +394,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                             key={apt.id}
                                                             onClick={() => setSelectedAppointment(apt)}
                                                             className={`p-1.5 rounded-lg border shadow-lg cursor-pointer hover:brightness-110 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
-                                                            style={{ borderLeftColor: getProColor(apt.professionalId) }}
+                                                            style={{ 
+                                                                borderLeftColor: getProColor(apt.professionalId),
+                                                                backgroundColor: theme === 'light' ? `${getProColor(apt.professionalId)}15` : undefined
+                                                            }}
                                                         >
                                                             <p className="text-[10px] font-bold truncate leading-tight">{apt.clientName}</p>
                                                             <p className="text-[8px] opacity-70 truncate mb-0.5">
@@ -420,7 +422,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                             key={apt.id}
                                                             onClick={() => setSelectedAppointment(apt)}
                                                             className={`p-1.5 rounded-lg border shadow-lg cursor-pointer hover:brightness-110 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
-                                                            style={{ borderLeftColor: getProColor(apt.professionalId) }}
+                                                            style={{ 
+                                                                borderLeftColor: getProColor(apt.professionalId),
+                                                                backgroundColor: theme === 'light' ? `${getProColor(apt.professionalId)}15` : undefined
+                                                            }}
                                                         >
                                                             <p className="text-[10px] font-bold truncate leading-tight">{apt.clientName}</p>
                                                             <p className="text-[8px] opacity-70 truncate mb-0.5">

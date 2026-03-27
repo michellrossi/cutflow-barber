@@ -6,11 +6,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useToast } from '../../ui/ToastContext';
 
 // Custom Tooltip para o Recharts
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label, theme }: any) => {
     if (active && payload && payload.length) {
         return (
-            <div className="bg-slate-900 border border-slate-700 p-3 rounded-lg shadow-xl">
-                <p className="text-slate-400 text-xs mb-1 font-bold">{label}</p>
+            <div className={`${theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-700'} border p-3 rounded-lg shadow-xl`}>
+                <p className={`${theme === 'light' ? 'text-slate-500' : 'text-slate-400'} text-xs mb-1 font-bold`}>{label}</p>
                 <p className="text-orange-500 font-bold text-sm">
                     R$ {payload[0].value.toFixed(2)}
                 </p>
@@ -21,7 +21,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const FinancePanel: React.FC = () => {
-    const { professionals, services, fetchFinancialReport, settings } = useShop();
+    const { professionals, services, fetchFinancialReport, settings, theme } = useShop();
     const { showToast } = useToast();
     
     // Filtros de Data
@@ -406,7 +406,7 @@ export const FinancePanel: React.FC = () => {
                                             width={60}
                                         />
                                         <Tooltip 
-                                            content={<CustomTooltip />} 
+                                            content={<CustomTooltip theme={theme} />} 
                                             cursor={{fill: '#334155', opacity: 0.2}} 
                                         />
                                         <Bar dataKey="value" radius={[4, 4, 0, 0]} animationDuration={1000}>
@@ -482,8 +482,8 @@ export const FinancePanel: React.FC = () => {
                                             data={stats.paymentMethodData}
                                             cx="50%"
                                             cy="50%"
-                                            innerRadius={65}
-                                            outerRadius={85}
+                                            innerRadius={80}
+                                            outerRadius={110}
                                             paddingAngle={8}
                                             dataKey="value"
                                             stroke="none"
@@ -494,8 +494,14 @@ export const FinancePanel: React.FC = () => {
                                         </Pie>
                                         <Tooltip 
                                             formatter={(value: number) => `R$ ${value.toFixed(2)}`}
-                                            contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '0.5rem', border: '1px solid #334155' }}
-                                            itemStyle={{ fontWeight: 'bold' }}
+                                            contentStyle={{ 
+                                                backgroundColor: theme === 'light' ? '#ffffff' : '#0f172a', 
+                                                borderColor: theme === 'light' ? '#e2e8f0' : '#334155', 
+                                                borderRadius: '0.5rem', 
+                                                border: '1px solid',
+                                                color: theme === 'light' ? '#1e293b' : '#f8fafc'
+                                            }}
+                                            itemStyle={{ fontWeight: 'bold', color: theme === 'light' ? '#1e293b' : '#f8fafc' }}
                                         />
                                         <Legend 
                                             verticalAlign="bottom" 
@@ -506,9 +512,9 @@ export const FinancePanel: React.FC = () => {
                                     </RechartsPieChart>
                                 </ResponsiveContainer>
                                 {/* Centro do Donut */}
-                                <div className="absolute top-[40%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                                <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total</p>
-                                    <p className="text-lg font-bold text-white">R$ {stats.totalRevenue.toFixed(0)}</p>
+                                    <p className={`text-xl font-bold ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>R$ {stats.totalRevenue.toFixed(0)}</p>
                                 </div>
                             </div>
                         )}

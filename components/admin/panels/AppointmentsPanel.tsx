@@ -154,7 +154,7 @@ export const AppointmentsPanel: React.FC = () => {
         scheduled: 'text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-400/10 dark:border-blue-400/20',
         confirmed: 'text-orange-700 bg-orange-50 border-orange-200 dark:text-orange-400 dark:bg-orange-400/10 dark:border-orange-400/20',
         completed: 'text-green-700 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-400/10 dark:border-green-400/20',
-        cancelled: 'text-red-700 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-400/10 dark:border-red-400/20',
+        cancelled: 'text-red-700 bg-red-100 border-red-300 dark:text-red-400 dark:bg-red-400/10 dark:border-red-400/20',
         noshow: 'text-slate-700 bg-slate-50 border-slate-200 dark:text-slate-400 dark:bg-slate-400/10 dark:border-slate-400/20',
     };
 
@@ -319,9 +319,9 @@ export const AppointmentsPanel: React.FC = () => {
                     </div>
 
                     {/* BARRA DE FILTROS DE DATA (Design Financeiro) */}
-                    <div className="bg-slate-800 p-1 md:p-1.5 rounded-xl border border-slate-700 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-xl mb-4">
+                    <div className="bg-slate-800 p-1.5 md:p-2 rounded-xl border border-slate-700 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-xl mb-4">
                         {/* Abas de Atalho */}
-                        <div className="flex bg-slate-900/50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto py-1 hide-scrollbar no-scrollbar">
+                        <div className="flex bg-slate-900/50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto py-1 hide-scrollbar no-scrollbar border border-slate-700/50">
                             {[
                                 { id: 'today', label: 'Hoje' },
                                 { id: 'tomorrow', label: 'Amanhã' },
@@ -409,7 +409,7 @@ export const AppointmentsPanel: React.FC = () => {
                         <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-slate-100 dark:bg-slate-950/80 text-slate-800 dark:text-slate-200 text-sm border-b border-slate-200 dark:border-slate-700">
+                                    <tr className="bg-slate-200 dark:bg-slate-950/80 text-slate-900 dark:text-slate-200 text-sm border-b border-slate-300 dark:border-slate-700">
                                         <th className="p-4 font-bold whitespace-nowrap">Status</th>
                                         <th className="p-4 font-bold whitespace-nowrap">Data/Hora</th>
                                         <th className="p-4 font-bold">Cliente</th>
