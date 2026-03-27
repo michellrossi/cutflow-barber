@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useShop } from '../../../store';
 import { Client, Appointment } from '../../../types';
-import { Search, Filter, ChevronRight, MessageCircle, Plus, Star, Edit2, Trash2, X, Save, Phone, Mail, User, Loader2 } from 'lucide-react';
+import { Search, Filter, ChevronRight, MessageCircle, Plus, Star, Edit2, Trash2, X, Save, Phone, Mail, User, Loader2, Eye, Calendar, Clock, DollarSign } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 import { ConfirmationModal } from '../../ui/ConfirmationModal';
 
@@ -32,6 +32,10 @@ export const ClientsPanel: React.FC = () => {
   // Delete State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+
+  // View State
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [viewingClient, setViewingClient] = useState<ProcessedClient | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -170,6 +174,11 @@ export const ClientsPanel: React.FC = () => {
     }
   };
 
+  const handleViewClient = (client: ProcessedClient) => {
+    setViewingClient(client);
+    setIsViewModalOpen(true);
+  };
+
   const getRiskBadgeColor = (risk: string) => {
     switch (risk) {
       case 'Baixo': return 'bg-green-500/10 text-green-500 border-green-500/20';
@@ -270,43 +279,41 @@ export const ClientsPanel: React.FC = () => {
       {/* Table */}
       <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse table-fixed">
             <thead>
               <tr className="border-b border-slate-700 bg-slate-800/50 text-xs text-slate-400 uppercase tracking-wider">
-                <th className="p-4 font-medium">Cliente</th>
-                <th className="p-4 font-medium">Último Corte</th>
-                <th className="p-4 font-medium">Frequência</th>
-                <th className="p-4 font-medium">Status / Risco</th>
-                <th className="p-4 font-medium text-right">Total Gasto</th>
-                <th className="p-4 font-medium text-right">Ações</th>
+                <th className="p-4 font-medium w-1/6">Nome</th>
+                <th className="p-4 font-medium w-1/6">Celular</th>
+                <th className="p-4 font-medium w-1/6">Data Último Corte</th>
+                <th className="p-4 font-medium w-1/6">Status</th>
+                <th className="p-4 font-medium w-1/6 text-center">Frequência</th>
+                <th className="p-4 font-medium w-1/6 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700/50">
               {filteredClients.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="p-8 text-center text-slate-500">
+                  <td colSpan={6} className="p-8 text-center text-slate-500">
                     Nenhum cliente encontrado com os filtros atuais.
                   </td>
                 </tr>
               ) : (
                 filteredClients.map((client) => (
                   <tr key={client.id} className="hover:bg-slate-700/30 transition-colors group">
-                    <td className="p-4">
+                    <td className="p-4 truncate">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 font-bold text-sm border border-slate-600">
+                        <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 font-bold text-xs border border-slate-600 shrink-0">
                           {client.avatarUrl ? (
                             <img src={client.avatarUrl} alt={client.name} className="w-full h-full rounded-full object-cover" />
                           ) : (
                             client.name.substring(0, 2).toUpperCase()
                           )}
                         </div>
-                        <div>
-                          <div className="font-medium text-white">{client.name}</div>
-                          <div className="text-xs text-slate-400 flex items-center gap-1">
-                            <Phone size={10} /> {client.phone}
-                          </div>
-                        </div>
+                        <div className="font-medium text-white truncate">{client.name}</div>
                       </div>
+                    </td>
+                    <td className="p-4 text-slate-300 text-sm">
+                      {client.phone}
                     </td>
                     <td className="p-4">
                       {client.metrics.lastCutDate ? (
@@ -314,7 +321,7 @@ export const ClientsPanel: React.FC = () => {
                           <div className="text-sm text-white">
                             {new Date(client.metrics.lastCutDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                           </div>
-                          <div className="text-xs text-slate-500">
+                          <div className="text-[10px] text-slate-500">
                             há {client.metrics.daysSinceLastCut} dias
                           </div>
                         </div>
@@ -323,45 +330,47 @@ export const ClientsPanel: React.FC = () => {
                       )}
                     </td>
                     <td className="p-4">
-                      <div className="flex flex-col gap-1">
-                        {renderStars(client.metrics.frequency)}
-                        <span className="text-xs text-slate-400">{client.metrics.frequency} ({client.metrics.totalCuts} cortes)</span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${getRiskBadgeColor(client.metrics.risk)}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getRiskBadgeColor(client.metrics.risk)}`}>
                         {client.metrics.risk}
                       </span>
                     </td>
-                    <td className="p-4 text-right font-bold text-white">
-                      R$ {(client.totalSpent || 0).toFixed(2)}
+                    <td className="p-4">
+                      <div className="flex flex-col items-center gap-1">
+                        {renderStars(client.metrics.frequency)}
+                        <span className="text-[10px] text-slate-400">{client.metrics.frequency}</span>
+                      </div>
                     </td>
                     <td className="p-4 text-right">
-                      <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {(client.metrics.risk === 'Alto' || client.metrics.risk === 'Crítico') && (
-                          <a 
-                            href={`https://wa.me/${client.phone.replace(/\D/g, '')}?text=Olá ${client.name}, sentimos sua falta! Que tal agendar um horário com desconto especial?`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="p-2 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition-colors"
-                            title="Enviar Mensagem WhatsApp"
-                          >
-                            <MessageCircle size={16} />
-                          </a>
-                        )}
+                      <div className="flex items-center justify-end gap-1.5">
+                        <a 
+                          href={`https://wa.me/${client.phone.replace(/\D/g, '')}?text=Olá ${client.name}!`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="p-1.5 rounded-lg bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white transition-colors"
+                          title="WhatsApp"
+                        >
+                          <MessageCircle size={14} />
+                        </a>
+                        <button 
+                          onClick={() => handleViewClient(client)}
+                          className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white transition-colors"
+                          title="Visualizar Detalhes"
+                        >
+                          <Eye size={14} />
+                        </button>
                         <button 
                           onClick={() => handleOpenForm(client)}
-                          className="p-2 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white transition-colors"
+                          className="p-1.5 rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 hover:text-white transition-colors"
                           title="Editar"
                         >
-                          <Edit2 size={16} />
+                          <Edit2 size={14} />
                         </button>
                         <button 
                           onClick={() => { setClientToDelete(client); setIsDeleteModalOpen(true); }}
-                          className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
+                          className="p-1.5 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-colors"
                           title="Excluir"
                         >
-                          <Trash2 size={16} />
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
@@ -470,6 +479,154 @@ export const ClientsPanel: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* View Details Modal */}
+      {isViewModalOpen && viewingClient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setIsViewModalOpen(false)}>
+          <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-2xl shadow-2xl relative animate-scale-up overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 font-bold text-xl border-2 border-slate-600">
+                  {viewingClient.avatarUrl ? (
+                    <img src={viewingClient.avatarUrl} alt={viewingClient.name} className="w-full h-full rounded-full object-cover" />
+                  ) : (
+                    viewingClient.name.substring(0, 2).toUpperCase()
+                  )}
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-white">{viewingClient.name}</h3>
+                  <div className="flex items-center gap-3 mt-1">
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getRiskBadgeColor(viewingClient.metrics.risk)}`}>
+                      {viewingClient.metrics.risk}
+                    </span>
+                    <div className="flex items-center gap-1 text-slate-400 text-sm">
+                      <Phone size={14} /> {viewingClient.phone}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <button onClick={() => setIsViewModalOpen(false)} className="text-slate-500 hover:text-white p-2">
+                <X size={24} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 text-center">
+                  <div className="text-slate-500 text-xs uppercase font-bold mb-1">Total Gasto</div>
+                  <div className="text-xl font-bold text-green-500 flex items-center justify-center gap-1">
+                    <DollarSign size={16} />
+                    {viewingClient.metrics.totalSpent.toFixed(2)}
+                  </div>
+                </div>
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 text-center">
+                  <div className="text-slate-500 text-xs uppercase font-bold mb-1">Cortes Realizados</div>
+                  <div className="text-xl font-bold text-white flex items-center justify-center gap-1">
+                    <Star size={16} className="text-yellow-500" />
+                    {viewingClient.metrics.totalCuts}
+                  </div>
+                </div>
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 text-center">
+                  <div className="text-slate-500 text-xs uppercase font-bold mb-1">Frequência</div>
+                  <div className="text-xl font-bold text-white">
+                    {viewingClient.metrics.frequency}
+                  </div>
+                </div>
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50 text-center">
+                  <div className="text-slate-500 text-xs uppercase font-bold mb-1">Último Corte</div>
+                  <div className="text-sm font-bold text-white">
+                    {viewingClient.metrics.lastCutDate ? new Date(viewingClient.metrics.lastCutDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'N/A'}
+                  </div>
+                </div>
+              </div>
+
+              {/* History Sections */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Past Appointments */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Clock size={18} className="text-orange-500" />
+                    Histórico de Serviços
+                  </h4>
+                  <div className="space-y-3">
+                    {appointments
+                      .filter(a => (a.clientId === viewingClient.id || (!a.clientId && a.clientPhone === viewingClient.phone)) && a.status === 'completed')
+                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                      .slice(0, 5)
+                      .map(appt => (
+                        <div key={appt.id} className="bg-slate-900/30 p-3 rounded-lg border border-slate-700/30 flex justify-between items-center">
+                          <div>
+                            <div className="text-sm font-medium text-white">
+                              {new Date(appt.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                            </div>
+                            <div className="text-xs text-slate-500">
+                              {appt.serviceIds.length} serviço(s)
+                            </div>
+                          </div>
+                          <div className="text-sm font-bold text-green-500">
+                            R$ {appt.totalValue.toFixed(2)}
+                          </div>
+                        </div>
+                      ))}
+                    {appointments.filter(a => (a.clientId === viewingClient.id || (!a.clientId && a.clientPhone === viewingClient.phone)) && a.status === 'completed').length === 0 && (
+                      <div className="text-slate-500 text-sm italic py-4">Nenhum serviço realizado ainda.</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Upcoming Appointments */}
+                <div className="space-y-4">
+                  <h4 className="text-lg font-bold text-white flex items-center gap-2">
+                    <Calendar size={18} className="text-blue-500" />
+                    Próximos Agendamentos
+                  </h4>
+                  <div className="space-y-3">
+                    {appointments
+                      .filter(a => (a.clientId === viewingClient.id || (!a.clientId && a.clientPhone === viewingClient.phone)) && a.status === 'scheduled')
+                      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                      .map(appt => (
+                        <div key={appt.id} className="bg-slate-900/30 p-3 rounded-lg border border-slate-700/30 flex justify-between items-center">
+                          <div>
+                            <div className="text-sm font-medium text-white">
+                              {new Date(appt.date + 'T12:00:00').toLocaleDateString('pt-BR')}
+                            </div>
+                            <div className="text-xs text-slate-400">
+                              às {appt.time}
+                            </div>
+                          </div>
+                          <span className="px-2 py-0.5 bg-blue-500/10 text-blue-500 text-[10px] font-bold rounded uppercase">
+                            Agendado
+                          </span>
+                        </div>
+                      ))}
+                    {appointments.filter(a => (a.clientId === viewingClient.id || (!a.clientId && a.clientPhone === viewingClient.phone)) && a.status === 'scheduled').length === 0 && (
+                      <div className="text-slate-500 text-sm italic py-4">Nenhum agendamento futuro.</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes */}
+              {viewingClient.notes && (
+                <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700/50">
+                  <h4 className="text-sm font-bold text-slate-400 uppercase mb-2">Observações</h4>
+                  <p className="text-slate-300 text-sm italic">"{viewingClient.notes}"</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-slate-700 bg-slate-800/50 flex justify-end">
+              <button 
+                onClick={() => setIsViewModalOpen(false)}
+                className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}
