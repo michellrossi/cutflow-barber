@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { supabase } from '../../../supabaseClient';
-import { Upload, Edit2, Loader2, Store, User, Clock, MessageSquare, Bell, CreditCard, Shield, Smartphone, Globe, CheckCircle2 } from 'lucide-react';
+import { Upload, Edit2, Loader2, Store, User, Clock, MessageSquare, Bell, CreditCard, Shield, Smartphone, Globe, CheckCircle2, Info } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 
 export type SettingsTab = 'profile' | 'account' | 'hours' | 'automation' | 'notifications' | 'billing' | 'security' | 'integrations' | 'booking_page';
@@ -538,15 +538,19 @@ const ProfileSettings: React.FC = () => {
     return (
         <div className="max-w-4xl">
             <div className="mb-8">
-                <h3 className="text-xl font-bold text-white mb-2">Perfil da Barbearia</h3>
-                <p className="text-slate-400">Personalize a identidade visual da sua barbearia.</p>
+                <h3 className="text-xl font-bold text-white mb-2">Personalização da Agenda Digital</h3>
+                <p className="text-slate-400">Personalize a identidade visual que seus clientes verão ao agendar.</p>
+                <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg flex items-center gap-3 text-blue-400 text-xs">
+                    <Info size={16} />
+                    <span>O painel administrativo e do barbeiro possuem identidade visual fixa (INSIGHT BARBER).</span>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
                 <div className="space-y-6">
                     {/* Logo Upload */}
                     <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Logotipo</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Logotipo da Barbearia (Página do Cliente)</label>
                         <div className="flex items-center gap-4">
                             <div onClick={() => !isUploading && fileInputRef.current?.click()} className={`w-24 h-24 bg-slate-950 rounded-2xl border border-dashed border-slate-700 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative group ${isUploading ? 'cursor-not-allowed opacity-50' : ''}`}>
                                 {isUploading ? (
@@ -571,7 +575,7 @@ const ProfileSettings: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nome da Barbearia</label>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nome da Barbearia (Página do Cliente)</label>
                         <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500 font-bold" />
                     </div>
 

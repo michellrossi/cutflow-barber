@@ -432,10 +432,12 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
             <header className="bg-slate-950 border-b border-slate-800 p-4 sticky top-0 z-10">
                 <div className="flex justify-between items-center max-w-4xl mx-auto">
                     <div className="flex items-center gap-3">
-                        <img src={currentPro.photoUrl} alt={currentPro.name} className="w-10 h-10 rounded-full border border-slate-700 object-cover" />
+                        <div className="w-10 h-10 rounded bg-orange-500 flex items-center justify-center text-white font-bold overflow-hidden">
+                            <img src="https://i.freeimage.host/qD9Rddv.png" alt="Insight Barber Logo" className="w-full h-full object-cover" />
+                        </div>
                         <div>
-                            <h1 className="font-bold leading-tight">Olá, {currentPro.name.split(' ')[0]}</h1>
-                            <p className="text-xs text-slate-400">Painel do Barbeiro</p>
+                            <h1 className="font-bold leading-tight">INSIGHT BARBER</h1>
+                            <p className="text-xs text-slate-400">Olá, {currentPro.name.split(' ')[0]}</p>
                         </div>
                     </div>
                     <div className="flex gap-2">

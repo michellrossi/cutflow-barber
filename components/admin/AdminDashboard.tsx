@@ -103,13 +103,13 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       {/* Sidebar */}
       <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col hidden md:flex admin-sidebar">
         <div className="p-6 flex items-center gap-3 border-b border-slate-800">
-          <div className="w-8 h-8 rounded bg-primary flex items-center justify-center text-white font-bold overflow-hidden" style={{ backgroundColor: settings.primaryColor }}>
-             {settings.logoUrl ? <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-cover" /> : <Scissors size={18} />}
+          <div className="w-8 h-8 rounded bg-orange-500 flex items-center justify-center text-white font-bold overflow-hidden">
+             <img src="https://i.freeimage.host/qD9Rddv.png" alt="Insight Barber Logo" className="w-full h-full object-cover" />
           </div>
-          <span className="font-bold text-xl tracking-tight truncate">{settings.name}</span>
+          <span className="font-bold text-lg tracking-tight truncate">INSIGHT BARBER</span>
         </div>
         
-        <nav className="flex-1 p-4 space-y-2">
+        <nav className="flex-1 p-4 space-y-1">
           <SidebarItem icon={<LayoutGrid size={20} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
           
           <div className="space-y-1">
@@ -118,7 +118,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                       setIsTeamOpen(!isTeamOpen);
                       if (!isTeamOpen) setActiveTab('team');
                   }}
-                  className={`flex items-center gap-3 px-4 py-3 w-full rounded-lg transition-all duration-200 ${activeTab === 'team' ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+                  className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-lg transition-all duration-200 text-sm ${activeTab === 'team' ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
                   style={activeTab === 'team' ? { borderLeft: `4px solid ${settings.primaryColor}` } : {}}
               >
                   <Users size={20} style={{ color: activeTab === 'team' ? settings.primaryColor : 'inherit' }} />
@@ -177,7 +177,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                       setIsSettingsOpen(!isSettingsOpen);
                       if (!isSettingsOpen) setActiveTab('settings');
                   }}
-                  className={`flex items-center gap-3 px-4 py-3 w-full rounded-lg transition-all duration-200 ${activeTab === 'settings' ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+                  className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-lg transition-all duration-200 text-sm ${activeTab === 'settings' ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
                   style={activeTab === 'settings' ? { borderLeft: `4px solid ${settings.primaryColor}` } : {}}
               >
                   <Settings size={20} style={{ color: activeTab === 'settings' ? settings.primaryColor : 'inherit' }} />
@@ -368,7 +368,7 @@ const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: bool
     return (
         <button 
             onClick={onClick}
-            className={`flex items-center gap-3 px-4 py-3 w-full rounded-lg transition-all duration-200 ${active ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+            className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-lg transition-all duration-200 text-sm ${active ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
             style={active ? { borderLeft: `4px solid ${settings.primaryColor}` } : {}}
         >
             <span className={active ? `text-[${settings.primaryColor}]` : ''} style={{ color: active ? settings.primaryColor : 'inherit' }}>{icon}</span>
@@ -382,7 +382,7 @@ const SubSidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: b
     return (
         <button 
             onClick={onClick}
-            className={`flex items-center gap-2 px-3 py-2 w-full rounded-lg text-xs transition-all duration-200 ${active ? 'text-white font-bold bg-slate-800/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900/50'}`}
+            className={`flex items-center gap-2 px-3 py-2 w-full rounded-lg text-sm transition-all duration-200 ${active ? 'text-white font-bold bg-slate-800/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900/50'}`}
         >
             <span style={{ color: active ? settings.primaryColor : 'inherit' }}>{icon}</span>
             <span>{label}</span>
