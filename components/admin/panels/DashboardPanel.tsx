@@ -62,33 +62,33 @@ export const DashboardPanel: React.FC = () => {
             </div>
 
             {/* Today's Agenda Summary */}
-            <div className="bg-slate-800/50 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
-                <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/30">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg" style={{ color: settings.primaryColor }}>
                             <Clock size={20} />
                         </div>
-                        <h3 className="text-lg font-bold text-white">Resumo da Agenda de Hoje</h3>
+                        <h3 className="text-lg font-bold text-slate-900">Resumo da Agenda de Hoje</h3>
                     </div>
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
                         {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
                     </span>
                 </div>
 
-                <div className="divide-y divide-slate-700/50">
+                <div className="divide-y divide-slate-100">
                     {todayAgenda.length > 0 ? (
                         todayAgenda.map((apt) => (
-                            <div key={apt.id} className="p-4 hover:bg-slate-700/30 transition-colors grid grid-cols-1 sm:grid-cols-12 items-center gap-4">
+                            <div key={apt.id} className="p-4 hover:bg-slate-50 transition-colors grid grid-cols-1 sm:grid-cols-12 items-center gap-4">
                                 {/* Horário */}
-                                <div className="sm:col-span-1 flex flex-col items-center justify-center bg-slate-900 border border-slate-700 rounded-xl p-2 min-w-[70px]">
-                                    <span className="text-lg font-bold text-white">{apt.time.substring(0, 5)}</span>
+                                <div className="sm:col-span-1 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-xl p-2 min-w-[70px]">
+                                    <span className="text-lg font-bold text-slate-900">{apt.time.substring(0, 5)}</span>
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Horário</span>
                                 </div>
 
                                 {/* Cliente */}
                                 <div className="sm:col-span-3">
-                                    <h4 className="font-bold text-white text-base truncate">{apt.clientName}</h4>
-                                    <div className="flex items-center gap-2 text-slate-400 text-xs mt-1">
+                                    <h4 className="font-bold text-slate-900 text-base truncate">{apt.clientName}</h4>
+                                    <div className="flex items-center gap-2 text-slate-500 text-xs mt-1">
                                         <Phone size={12} className="shrink-0" />
                                         <span className="truncate">{apt.clientPhone}</span>
                                     </div>
@@ -99,14 +99,14 @@ export const DashboardPanel: React.FC = () => {
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Profissional</span>
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: professionals.find(p => p.id === apt.professionalId)?.color || '#64748b' }} />
-                                        <span className="text-sm text-slate-300 font-medium truncate">{getProName(apt.professionalId)}</span>
+                                        <span className="text-sm text-slate-700 font-medium truncate">{getProName(apt.professionalId)}</span>
                                     </div>
                                 </div>
 
                                 {/* Serviços */}
                                 <div className="sm:col-span-3 flex flex-col">
                                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Serviços</span>
-                                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                                    <div className="flex items-center gap-2 text-sm text-slate-700">
                                         <Scissors size={14} className="text-orange-500 shrink-0" />
                                         <span className="truncate">{getServicesNames(apt.serviceIds)}</span>
                                     </div>
@@ -121,7 +121,7 @@ export const DashboardPanel: React.FC = () => {
                             </div>
                         ))
                     ) : (
-                        <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center">
+                        <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center">
                             <Calendar size={48} className="mb-4 opacity-10" />
                             <p className="text-lg font-medium">Nenhum agendamento para hoje.</p>
                             <p className="text-sm opacity-60">Sua agenda está livre por enquanto.</p>
@@ -136,29 +136,29 @@ export const DashboardPanel: React.FC = () => {
 const StatCard: React.FC<{ icon: React.ReactNode, label: string, value: string, trend: string }> = ({ icon, label, value, trend }) => (
     <motion.div 
         whileHover={{ y: -4 }}
-        className="bg-slate-800/50 p-6 rounded-2xl border border-slate-700 shadow-lg hover:border-slate-600 transition-all"
+        className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all"
     >
         <div className="flex justify-between items-start mb-4">
-            <div className="p-3 bg-slate-900 rounded-xl border border-slate-700">
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                 {icon}
             </div>
-            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-900/50 px-2 py-1 rounded">
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">
                 {trend}
             </span>
         </div>
-        <h3 className="text-slate-400 text-sm font-medium mb-1">{label}</h3>
-        <p className="text-3xl font-bold text-white">{value}</p>
+        <h3 className="text-slate-500 text-sm font-medium mb-1">{label}</h3>
+        <p className="text-3xl font-bold text-slate-900">{value}</p>
     </motion.div>
 );
 
 const getStatusStyles = (status: string) => {
     switch (status) {
-        case 'scheduled': return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
-        case 'confirmed': return 'text-orange-400 bg-orange-400/10 border-orange-400/20';
-        case 'completed': return 'text-green-400 bg-green-400/10 border-green-400/20';
-        case 'cancelled': return 'text-red-400 bg-red-400/10 border-red-400/20';
-        case 'noshow': return 'text-slate-400 bg-slate-400/10 border-slate-400/20';
-        default: return 'text-slate-400 bg-slate-400/10 border-slate-400/20';
+        case 'scheduled': return 'text-blue-700 bg-blue-50 border-blue-200';
+        case 'confirmed': return 'text-orange-700 bg-orange-50 border-orange-200';
+        case 'completed': return 'text-green-700 bg-green-50 border-green-200';
+        case 'cancelled': return 'text-red-700 bg-red-50 border-red-200';
+        case 'noshow': return 'text-slate-700 bg-slate-50 border-slate-200';
+        default: return 'text-slate-700 bg-slate-50 border-slate-200';
     }
 };
 

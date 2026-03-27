@@ -6,11 +6,11 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { useToast } from '../../ui/ToastContext';
 
 // Custom Tooltip para o Recharts
-const CustomTooltip = ({ active, payload, label, theme }: any) => {
+const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         return (
-            <div className={`${theme === 'light' ? 'bg-white border-slate-200' : 'bg-slate-900 border-slate-700'} border p-3 rounded-lg shadow-xl`}>
-                <p className={`${theme === 'light' ? 'text-slate-500' : 'text-slate-400'} text-xs mb-1 font-bold`}>{label}</p>
+            <div className="bg-white border-slate-200 border p-3 rounded-lg shadow-xl">
+                <p className="text-slate-500 text-xs mb-1 font-bold">{label}</p>
                 <p className="text-orange-500 font-bold text-sm">
                     R$ {payload[0].value.toFixed(2)}
                 </p>
@@ -21,7 +21,7 @@ const CustomTooltip = ({ active, payload, label, theme }: any) => {
 };
 
 export const FinancePanel: React.FC = () => {
-    const { professionals, services, fetchFinancialReport, settings, theme } = useShop();
+    const { professionals, services, fetchFinancialReport, settings } = useShop();
     const { showToast } = useToast();
     
     // Filtros de Data
@@ -248,14 +248,14 @@ export const FinancePanel: React.FC = () => {
         <div className="space-y-6 animate-fade-in pb-20">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-bold text-white">Controle Financeiro</h2>
-                    <p className="text-slate-400">Visão geral de faturamento e desempenho.</p>
+                    <h2 className="text-2xl font-bold text-slate-900">Controle Financeiro</h2>
+                    <p className="text-slate-500">Visão geral de faturamento e desempenho.</p>
                 </div>
                 
                 <button 
                     onClick={handleExport}
                     disabled={isLoading || reportAppointments.length === 0}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-900/20"
+                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-900/10"
                 >
                     <Download size={18} />
                     Exportar Relatório
@@ -263,10 +263,10 @@ export const FinancePanel: React.FC = () => {
             </div>
 
             {/* BARRA DE FILTROS MODERNA */}
-            <div className="bg-slate-800 p-1.5 rounded-xl border border-slate-700 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-xl">
+            <div className="bg-white p-1.5 rounded-xl border border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-sm">
                 
                 {/* Abas de Atalho */}
-                <div className="flex bg-slate-900/50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto hide-scrollbar">
+                <div className="flex bg-slate-50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto hide-scrollbar border border-slate-200">
                     {[
                         { id: '30days', label: '30 Dias' },
                         { id: 'thisMonth', label: 'Este Mês' },
@@ -278,8 +278,8 @@ export const FinancePanel: React.FC = () => {
                             onClick={() => setPreset(preset.id as any)}
                             className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
                                 activePreset === preset.id 
-                                ? 'bg-slate-700 text-white shadow-sm' 
-                                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                ? 'bg-white text-slate-900 shadow-sm border border-slate-200' 
+                                : 'text-slate-500 hover:text-slate-900 hover:bg-white'
                             }`}
                         >
                             {preset.label}
@@ -288,21 +288,21 @@ export const FinancePanel: React.FC = () => {
                 </div>
 
                 {/* Seletor de Datas Unificado */}
-                <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-900 px-3 py-2 rounded-lg border border-slate-700 focus-within:border-orange-500/50 transition-colors">
-                    <Calendar size={16} className="text-slate-500 shrink-0" />
+                <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 focus-within:border-orange-500/50 transition-colors">
+                    <Calendar size={16} className="text-slate-400 shrink-0" />
                     <div className="flex items-center gap-2 flex-1">
                         <input 
                             type="date" 
                             value={startDate} 
                             onChange={e => handleDateChange('start', e.target.value)}
-                            className="bg-transparent border-none text-slate-300 text-sm focus:outline-none w-full cursor-pointer font-sans"
+                            className="bg-transparent border-none text-slate-700 text-sm focus:outline-none w-full cursor-pointer font-sans"
                         />
-                        <span className="text-slate-600 font-medium">até</span>
+                        <span className="text-slate-400 font-medium">até</span>
                         <input 
                             type="date" 
                             value={endDate} 
                             onChange={e => handleDateChange('end', e.target.value)}
-                            className="bg-transparent border-none text-slate-300 text-sm focus:outline-none w-full cursor-pointer font-sans"
+                            className="bg-transparent border-none text-slate-700 text-sm focus:outline-none w-full cursor-pointer font-sans"
                         />
                     </div>
                 </div>
@@ -319,53 +319,53 @@ export const FinancePanel: React.FC = () => {
                 {/* KPI Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     {/* Faturamento Total */}
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 relative overflow-hidden group hover:border-slate-600 transition-colors">
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500 border border-blue-500/20">
+                            <div className="p-2 bg-blue-50 rounded-lg text-blue-500 border border-blue-100">
                                 <DollarSign size={20} />
                             </div>
-                            <span className="text-slate-400 font-medium text-sm">Faturamento Bruto</span>
+                            <span className="text-slate-500 font-medium text-sm">Faturamento Bruto</span>
                         </div>
-                        <div className="text-2xl font-bold text-white mt-2">
+                        <div className="text-2xl font-bold text-slate-900 mt-2">
                             R$ {stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
 
                     {/* Lucro da Loja (Owner Share) */}
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 relative overflow-hidden group hover:border-slate-600 transition-colors">
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-green-500/10 rounded-lg text-green-500 border border-green-500/20">
+                            <div className="p-2 bg-green-50 rounded-lg text-green-500 border border-green-100">
                                 <Wallet size={20} />
                             </div>
-                            <span className="text-slate-400 font-medium text-sm">Lucro da Loja</span>
+                            <span className="text-slate-500 font-medium text-sm">Lucro da Loja</span>
                         </div>
-                        <div className="text-2xl font-bold text-green-400 mt-2">
+                        <div className="text-2xl font-bold text-green-600 mt-2">
                             R$ {stats.totalOwnerShare.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
 
                     {/* Comissões a Pagar */}
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 relative overflow-hidden group hover:border-slate-600 transition-colors">
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-orange-500/10 rounded-lg text-orange-500 border border-orange-500/20">
+                            <div className="p-2 bg-orange-50 rounded-lg text-orange-500 border border-orange-100">
                                 <PieChart size={20} />
                             </div>
-                            <span className="text-slate-400 font-medium text-sm">Comissões (Equipe)</span>
+                            <span className="text-slate-500 font-medium text-sm">Comissões (Equipe)</span>
                         </div>
-                        <div className="text-2xl font-bold text-orange-400 mt-2">
+                        <div className="text-2xl font-bold text-orange-600 mt-2">
                             R$ {stats.totalCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
 
                     {/* Ticket Médio */}
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 relative overflow-hidden group hover:border-slate-600 transition-colors">
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-purple-500/10 rounded-lg text-purple-500 border border-purple-500/20">
+                            <div className="p-2 bg-purple-50 rounded-lg text-purple-500 border border-purple-100">
                                 <Award size={20} />
                             </div>
-                            <span className="text-slate-400 font-medium text-sm">Ticket Médio</span>
+                            <span className="text-slate-500 font-medium text-sm">Ticket Médio</span>
                         </div>
-                        <div className="text-2xl font-bold text-white mt-2">
+                        <div className="text-2xl font-bold text-slate-900 mt-2">
                             R$ {stats.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
@@ -375,11 +375,11 @@ export const FinancePanel: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     
                     {/* Gráfico de Evolução Diária */}
-                    <div className="lg:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col min-h-[400px]">
-                        <h3 className="text-lg font-bold text-white mb-6">Evolução do Faturamento</h3>
+                    <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 flex flex-col min-h-[400px] shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-900 mb-6">Evolução do Faturamento</h3>
                         
                         {stats.chartData.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-slate-500 h-64 border border-dashed border-slate-700 rounded-xl bg-slate-800/50">
+                            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 h-64 border border-dashed border-slate-200 rounded-xl bg-slate-50">
                                 <TrendingUp size={32} className="mb-2 opacity-50"/>
                                 <p>Sem dados financeiros para o período.</p>
                             </div>
@@ -387,10 +387,10 @@ export const FinancePanel: React.FC = () => {
                             <div className="flex-1 w-full min-h-0">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={stats.chartData}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} vertical={false} />
                                         <XAxis 
                                             dataKey="displayDate" 
-                                            stroke="#64748b" 
+                                            stroke="#94a3b8" 
                                             fontSize={12} 
                                             tickLine={false} 
                                             axisLine={false}
@@ -398,7 +398,7 @@ export const FinancePanel: React.FC = () => {
                                             minTickGap={20}
                                         />
                                         <YAxis 
-                                            stroke="#64748b" 
+                                            stroke="#94a3b8" 
                                             fontSize={12} 
                                             tickLine={false} 
                                             axisLine={false}
@@ -406,8 +406,8 @@ export const FinancePanel: React.FC = () => {
                                             width={60}
                                         />
                                         <Tooltip 
-                                            content={<CustomTooltip theme={theme} />} 
-                                            cursor={{fill: '#334155', opacity: 0.2}} 
+                                            content={<CustomTooltip />} 
+                                            cursor={{fill: '#f1f5f9', opacity: 0.5}} 
                                         />
                                         <Bar dataKey="value" radius={[4, 4, 0, 0]} animationDuration={1000}>
                                             {stats.chartData.map((entry, index) => (
@@ -421,19 +421,19 @@ export const FinancePanel: React.FC = () => {
                     </div>
 
                     {/* Ranking de Profissionais */}
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col h-full max-h-[400px]">
-                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-full max-h-[400px] shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                             <Award size={18} className="text-yellow-500"/>
                             Top Profissionais
                         </h3>
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
                             {stats.sortedPros.length === 0 ? (
-                                <p className="text-slate-500 text-sm text-center py-10">Nenhum dado disponível.</p>
+                                <p className="text-slate-400 text-sm text-center py-10">Nenhum dado disponível.</p>
                             ) : (
                                 stats.sortedPros.map((pro, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-700/50 last:border-0 last:pb-0 group">
+                                    <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0 group">
                                         <div className="relative shrink-0">
-                                            <img src={pro.photo || 'https://via.placeholder.com/40'} alt={pro.name} className="w-10 h-10 rounded-full object-cover border border-slate-600 group-hover:border-slate-400 transition-colors" referrerPolicy="no-referrer" />
+                                            <img src={pro.photo || 'https://via.placeholder.com/40'} alt={pro.name} className="w-10 h-10 rounded-full object-cover border border-slate-200 group-hover:border-slate-300 transition-colors" referrerPolicy="no-referrer" />
                                             {idx < 3 && (
                                                 <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : 'bg-orange-700'}`}>
                                                     {idx + 1}
@@ -442,16 +442,16 @@ export const FinancePanel: React.FC = () => {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-center mb-1">
-                                                <span className="text-sm font-medium text-white truncate">{pro.name}</span>
-                                                <span className="text-sm font-bold text-green-400">R$ {pro.value.toFixed(0)}</span>
+                                                <span className="text-sm font-medium text-slate-900 truncate">{pro.name}</span>
+                                                <span className="text-sm font-bold text-green-600">R$ {pro.value.toFixed(0)}</span>
                                             </div>
-                                            <div className="w-full bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                                                 <div 
                                                     className="bg-green-500 h-full rounded-full transition-all duration-1000" 
                                                     style={{ width: `${(pro.value / (stats.totalRevenue || 1)) * 100}%` }}
                                                 ></div>
                                             </div>
-                                            <div className="mt-1 text-xs text-slate-500 text-right">
+                                            <div className="mt-1 text-xs text-slate-400 text-right">
                                                 {pro.count} atendimentos
                                             </div>
                                         </div>
@@ -464,13 +464,13 @@ export const FinancePanel: React.FC = () => {
 
                 {/* Gráfico de Formas de Pagamento e Serviços */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-1 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col min-h-[350px]">
-                        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-slate-200 flex flex-col min-h-[350px] shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                             <PieChart size={18} className="text-blue-500"/>
                             Formas de Pagamento
                         </h3>
                         {stats.paymentMethodData.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-slate-500 h-full border border-dashed border-slate-700 rounded-xl bg-slate-800/50">
+                            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 h-full border border-dashed border-slate-200 rounded-xl bg-slate-50">
                                 <PieChart size={32} className="mb-2 opacity-50"/>
                                 <p>Sem dados financeiros.</p>
                             </div>
@@ -495,13 +495,13 @@ export const FinancePanel: React.FC = () => {
                                         <Tooltip 
                                             formatter={(value: number) => `R$ ${value.toFixed(2)}`}
                                             contentStyle={{ 
-                                                backgroundColor: theme === 'light' ? '#ffffff' : '#0f172a', 
-                                                borderColor: theme === 'light' ? '#e2e8f0' : '#334155', 
+                                                backgroundColor: '#ffffff', 
+                                                borderColor: '#e2e8f0', 
                                                 borderRadius: '0.5rem', 
                                                 border: '1px solid',
-                                                color: theme === 'light' ? '#1e293b' : '#f8fafc'
+                                                color: '#1e293b'
                                             }}
-                                            itemStyle={{ fontWeight: 'bold', color: theme === 'light' ? '#1e293b' : '#f8fafc' }}
+                                            itemStyle={{ fontWeight: 'bold', color: '#1e293b' }}
                                         />
                                         <Legend 
                                             verticalAlign="bottom" 
@@ -514,19 +514,19 @@ export const FinancePanel: React.FC = () => {
                                 {/* Centro do Donut */}
                                 <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total</p>
-                                    <p className={`text-xl font-bold ${theme === 'light' ? 'text-slate-900' : 'text-white'}`}>R$ {stats.totalRevenue.toFixed(0)}</p>
+                                    <p className="text-xl font-bold text-slate-900">R$ {stats.totalRevenue.toFixed(0)}</p>
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    <div className="lg:col-span-2 bg-slate-800 p-6 rounded-xl border border-slate-700 flex flex-col min-h-[350px]">
-                        <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                    <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 flex flex-col min-h-[350px] shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                             <TrendingUp size={18} className="text-green-500"/>
                             Serviços Mais Rentáveis
                         </h3>
                         {stats.serviceData.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-slate-500 h-full border border-dashed border-slate-700 rounded-xl bg-slate-800/50">
+                            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 h-full border border-dashed border-slate-200 rounded-xl bg-slate-50">
                                 <TrendingUp size={32} className="mb-2 opacity-50"/>
                                 <p>Sem dados de serviços.</p>
                             </div>
@@ -540,10 +540,10 @@ export const FinancePanel: React.FC = () => {
                                         return (
                                             <div key={index} className="space-y-2">
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-slate-200 font-medium">{item.name}</span>
-                                                    <span className="text-white font-bold">R$ {item.value.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span>
+                                                    <span className="text-slate-700 font-medium">{item.name}</span>
+                                                    <span className="text-slate-900 font-bold">R$ {item.value.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span>
                                                 </div>
-                                                <div className="w-full bg-slate-700/50 h-2 rounded-full overflow-hidden">
+                                                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
                                                     <div 
                                                         className="h-full rounded-full transition-all duration-1000"
                                                         style={{ 
@@ -557,9 +557,9 @@ export const FinancePanel: React.FC = () => {
                                     })}
                                 </div>
                                 
-                                <div className="mt-auto pt-8 border-t border-slate-700/50 flex justify-between items-center">
+                                <div className="mt-auto pt-8 border-t border-slate-100 flex justify-between items-center">
                                     <span className="text-slate-500 text-sm font-medium">Total de serviços este mês</span>
-                                    <span className="text-white text-xl font-bold">{stats.totalCount}</span>
+                                    <span className="text-slate-900 text-xl font-bold">{stats.totalCount}</span>
                                 </div>
                             </div>
                         )}

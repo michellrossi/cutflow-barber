@@ -54,19 +54,19 @@ export const DesignPanel: React.FC = () => {
     return (
         <div className="max-w-2xl">
             <div className="mb-8">
-                <p className="text-slate-400">Personalize a identidade visual da sua barbearia.</p>
+                <p className="text-slate-500">Personalize a identidade visual da sua barbearia.</p>
             </div>
 
-            <div className="bg-slate-800 rounded-xl p-8 border border-slate-700 space-y-6">
+            <div className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm space-y-6">
                  {/* Logo Upload */}
                  <div>
-                    <label className="block text-sm text-slate-400 mb-2">Logotipo</label>
+                    <label className="block text-sm text-slate-500 mb-2">Logotipo</label>
                     <div className="flex items-center gap-4">
-                        <div onClick={() => !isUploading && fileInputRef.current?.click()} className={`w-20 h-20 bg-slate-900 rounded-xl border border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative group ${isUploading ? 'cursor-not-allowed opacity-50' : ''}`}>
+                        <div onClick={() => !isUploading && fileInputRef.current?.click()} className={`w-20 h-20 bg-slate-50 rounded-xl border border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative group ${isUploading ? 'cursor-not-allowed opacity-50' : ''}`}>
                              {isUploading ? (
                                 <Loader2 size={24} className="text-orange-500 animate-spin" />
                              ) : (
-                                logo ? <img src={logo} alt="Logo" className="w-full h-full object-cover" /> : <Upload size={24} className="text-slate-500" />
+                                logo ? <img src={logo} alt="Logo" className="w-full h-full object-cover" /> : <Upload size={24} className="text-slate-400" />
                              )}
                             {!isUploading && logo && (
                                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
@@ -76,37 +76,37 @@ export const DesignPanel: React.FC = () => {
                         </div>
                         <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" disabled={isUploading} />
                         <div>
-                             <button type="button" onClick={() => !isUploading && fileInputRef.current?.click()} className="text-sm text-slate-300 hover:text-white underline mb-1" disabled={isUploading}>
+                             <button type="button" onClick={() => !isUploading && fileInputRef.current?.click()} className="text-sm text-slate-600 hover:text-slate-900 underline mb-1" disabled={isUploading}>
                                  {isUploading ? 'Enviando...' : 'Alterar logotipo'}
                              </button>
-                             <p className="text-xs text-slate-500">Recomendado: 512x512px</p>
+                             <p className="text-xs text-slate-400">Recomendado: 512x512px</p>
                         </div>
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm text-slate-400 mb-2">Nome da Barbearia</label>
-                    <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" />
+                    <label className="block text-sm text-slate-500 mb-2">Nome da Barbearia</label>
+                    <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-orange-500" />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                         <label className="block text-sm text-slate-400 mb-2">Cor Primária (Destaques)</label>
+                         <label className="block text-sm text-slate-500 mb-2">Cor Primária (Destaques)</label>
                          <div className="flex items-center gap-3">
                              <input type="color" value={primary} onChange={e => setPrimary(e.target.value)} className="w-12 h-12 rounded bg-transparent cursor-pointer" />
-                             <input value={primary} onChange={e => setPrimary(e.target.value)} className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-white uppercase" />
+                             <input value={primary} onChange={e => setPrimary(e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 uppercase" />
                          </div>
                     </div>
                     <div>
-                         <label className="block text-sm text-slate-400 mb-2">Cor Secundária (Fundo)</label>
+                         <label className="block text-sm text-slate-500 mb-2">Cor Secundária (Fundo)</label>
                          <div className="flex items-center gap-3">
                              <input type="color" value={secondary} onChange={e => setSecondary(e.target.value)} className="w-12 h-12 rounded bg-transparent cursor-pointer" />
-                             <input value={secondary} onChange={e => setSecondary(e.target.value)} className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-white uppercase" />
+                             <input value={secondary} onChange={e => setSecondary(e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 uppercase" />
                          </div>
                     </div>
                 </div>
                 
-                <div className="pt-4 border-t border-slate-700">
+                <div className="pt-4 border-t border-slate-200">
                     <button onClick={handleSave} className="px-8 py-3 rounded-lg text-white font-bold transition-transform active:scale-95 flex items-center gap-2" style={{ backgroundColor: primary }} disabled={isUploading || isSaving}>
                         {(isUploading || isSaving) && <Loader2 size={16} className="animate-spin" />}
                         Salvar Alterações
@@ -114,8 +114,8 @@ export const DesignPanel: React.FC = () => {
                 </div>
             </div>
             
-            <div className="mt-8 p-6 bg-slate-800/50 rounded-xl border border-dashed border-slate-700 text-center">
-                 <h4 className="text-slate-400 mb-2">Pré-visualização do Botão</h4>
+            <div className="mt-8 p-6 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center">
+                 <h4 className="text-slate-500 mb-2">Pré-visualização do Botão</h4>
                  <button className="px-6 py-2 rounded-lg text-white font-medium" style={{ backgroundColor: primary }}>
                      Agendar Horário
                  </button>

@@ -151,11 +151,11 @@ export const AppointmentsPanel: React.FC = () => {
     };
 
     const STATUS_COLORS: Record<string, string> = {
-        scheduled: 'text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-400/10 dark:border-blue-400/20',
-        confirmed: 'text-orange-700 bg-orange-50 border-orange-200 dark:text-orange-400 dark:bg-orange-400/10 dark:border-orange-400/20',
-        completed: 'text-green-700 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-400/10 dark:border-green-400/20',
-        cancelled: 'text-red-700 bg-red-100 border-red-300 dark:text-red-400 dark:bg-red-400/10 dark:border-red-400/20',
-        noshow: 'text-slate-700 bg-slate-50 border-slate-200 dark:text-slate-400 dark:bg-slate-400/10 dark:border-slate-400/20',
+        scheduled: 'text-blue-700 bg-blue-50 border-blue-200',
+        confirmed: 'text-orange-700 bg-orange-50 border-orange-200',
+        completed: 'text-green-700 bg-green-50 border-green-200',
+        cancelled: 'text-red-700 bg-red-100 border-red-300',
+        noshow: 'text-slate-700 bg-slate-50 border-slate-200',
     };
 
     const STATUS_LABELS: Record<string, string> = {
@@ -171,49 +171,49 @@ export const AppointmentsPanel: React.FC = () => {
             {/* Modal de Novo Agendamento Manual */}
             {isModalOpen && (
                 <div 
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 animate-fade-in"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
                     onClick={(e) => e.target === e.currentTarget && setIsModalOpen(false)}
                 >
-                    <div className="bg-slate-800 rounded-xl border border-slate-700 w-full max-w-2xl shadow-2xl relative animate-scale-up max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b border-slate-700 flex justify-between items-center sticky top-0 bg-slate-800 z-10">
-                            <h3 className="text-xl font-bold text-white">Novo Agendamento Manual</h3>
-                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white"><X size={24}/></button>
+                    <div className="bg-white rounded-xl border border-slate-200 w-full max-w-2xl shadow-2xl relative animate-scale-up max-h-[90vh] overflow-y-auto">
+                        <div className="p-6 border-b border-slate-200 flex justify-between items-center sticky top-0 bg-white z-10">
+                            <h3 className="text-xl font-bold text-slate-900">Novo Agendamento Manual</h3>
+                            <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-900"><X size={24}/></button>
                         </div>
                         
                         <form onSubmit={handleCreate} className="p-6 space-y-6">
                             {/* Cliente */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Nome do Cliente</label>
-                                    <input required value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" placeholder="Ex: João Silva" />
+                                    <label className="block text-sm text-slate-500 mb-1">Nome do Cliente</label>
+                                    <input required value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-orange-500" placeholder="Ex: João Silva" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Telefone (Opcional)</label>
-                                    <input value={formData.clientPhone} onChange={e => setFormData({...formData, clientPhone: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" placeholder="(11) 99999-9999" />
+                                    <label className="block text-sm text-slate-500 mb-1">Telefone (Opcional)</label>
+                                    <input value={formData.clientPhone} onChange={e => setFormData({...formData, clientPhone: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-orange-500" placeholder="(11) 99999-9999" />
                                 </div>
                             </div>
 
                             {/* Data, Hora e Profissional */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Data</label>
+                                    <label className="block text-sm text-slate-500 mb-1">Data</label>
                                     <div className="relative">
-                                        <Calendar className="absolute left-3 top-3 text-slate-500" size={16}/>
-                                        <input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 pl-10 text-white focus:outline-none focus:border-orange-500" />
+                                        <Calendar className="absolute left-3 top-3 text-slate-400" size={16}/>
+                                        <input type="date" required value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 pl-10 text-slate-900 focus:outline-none focus:border-orange-500" />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Hora</label>
+                                    <label className="block text-sm text-slate-500 mb-1">Hora</label>
                                     <div className="relative">
-                                        <Clock className="absolute left-3 top-3 text-slate-500" size={16}/>
-                                        <input type="time" required value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 pl-10 text-white focus:outline-none focus:border-orange-500" />
+                                        <Clock className="absolute left-3 top-3 text-slate-400" size={16}/>
+                                        <input type="time" required value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 pl-10 text-slate-900 focus:outline-none focus:border-orange-500" />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-slate-400 mb-1">Barbeiro</label>
+                                    <label className="block text-sm text-slate-500 mb-1">Barbeiro</label>
                                     <div className="relative">
-                                        <User className="absolute left-3 top-3 text-slate-500" size={16}/>
-                                        <select value={formData.professionalId} onChange={e => setFormData({...formData, professionalId: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 pl-10 text-white focus:outline-none focus:border-orange-500 appearance-none">
+                                        <User className="absolute left-3 top-3 text-slate-400" size={16}/>
+                                        <select value={formData.professionalId} onChange={e => setFormData({...formData, professionalId: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 pl-10 text-slate-900 focus:outline-none focus:border-orange-500 appearance-none">
                                             <option value="">Qualquer um</option>
                                             {professionals.map(p => (
                                                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -225,7 +225,7 @@ export const AppointmentsPanel: React.FC = () => {
 
                             {/* Serviços */}
                             <div>
-                                <label className="block text-sm text-slate-400 mb-2">Serviços Realizados</label>
+                                <label className="block text-sm text-slate-500 mb-2">Serviços Realizados</label>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
                                     {services.map(s => {
                                         const selected = formData.serviceIds.includes(s.id);
@@ -233,15 +233,15 @@ export const AppointmentsPanel: React.FC = () => {
                                             <div 
                                                 key={s.id} 
                                                 onClick={() => toggleService(s.id)}
-                                                className={`p-3 rounded-lg border cursor-pointer flex items-center justify-between transition-colors ${selected ? 'bg-orange-500/20 border-orange-500/50' : 'bg-slate-900 border-slate-700 hover:border-slate-500'}`}
+                                                className={`p-3 rounded-lg border cursor-pointer flex items-center justify-between transition-colors ${selected ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}
                                             >
                                                 <div className="flex items-center gap-2">
-                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${selected ? 'bg-orange-500 border-orange-500' : 'border-slate-500'}`}>
+                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${selected ? 'bg-orange-500 border-orange-500' : 'border-slate-300'}`}>
                                                         {selected && <Check size={10} className="text-white"/>}
                                                     </div>
-                                                    <span className="text-sm font-medium">{s.name}</span>
+                                                    <span className="text-sm font-medium text-slate-900">{s.name}</span>
                                                 </div>
-                                                <span className="text-sm text-slate-400">R$ {s.price}</span>
+                                                <span className="text-sm text-slate-500">R$ {s.price}</span>
                                             </div>
                                         );
                                     })}
@@ -249,10 +249,10 @@ export const AppointmentsPanel: React.FC = () => {
                             </div>
 
                             {/* Status e Total */}
-                            <div className="flex flex-col sm:flex-row gap-4 items-end pt-4 border-t border-slate-700">
+                            <div className="flex flex-col sm:flex-row gap-4 items-end pt-4 border-t border-slate-200">
                                 <div className="flex-1 w-full">
-                                    <label className="block text-sm text-slate-400 mb-1">Status Inicial</label>
-                                    <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500">
+                                    <label className="block text-sm text-slate-500 mb-1">Status Inicial</label>
+                                    <select value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-orange-500">
                                         <option value="scheduled">Agendado (Futuro)</option>
                                         <option value="confirmed">Confirmado (Cliente Confirmou)</option>
                                         <option value="completed">Finalizado (Já pagou/saiu)</option>
@@ -261,8 +261,8 @@ export const AppointmentsPanel: React.FC = () => {
                                 </div>
                                 {formData.status === 'completed' && (
                                     <div className="flex-1 w-full">
-                                        <label className="block text-sm text-slate-400 mb-1">Forma de Pagamento</label>
-                                        <select value={formData.paymentMethod} onChange={e => setFormData({...formData, paymentMethod: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500">
+                                        <label className="block text-sm text-slate-500 mb-1">Forma de Pagamento</label>
+                                        <select value={formData.paymentMethod} onChange={e => setFormData({...formData, paymentMethod: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-orange-500">
                                             <option value="pix">PIX</option>
                                             <option value="credit">Cartão de Crédito</option>
                                             <option value="cash">Dinheiro</option>
@@ -270,7 +270,7 @@ export const AppointmentsPanel: React.FC = () => {
                                     </div>
                                 )}
                                 <div className="text-right">
-                                    <p className="text-sm text-slate-400">Total Estimado</p>
+                                    <p className="text-sm text-slate-500">Total Estimado</p>
                                     <p className="text-2xl font-bold" style={{ color: settings.primaryColor }}>R$ {calculateTotal().toFixed(2)}</p>
                                 </div>
                             </div>
@@ -284,16 +284,16 @@ export const AppointmentsPanel: React.FC = () => {
             )}
 
             <div className="flex justify-end items-center mb-4">
-                <div className="bg-slate-800 p-1 rounded-lg border border-slate-700 flex gap-1 w-full md:w-auto">
+                <div className="bg-white p-1 rounded-lg border border-slate-200 flex gap-1 w-full md:w-auto">
                     <button 
                         onClick={() => setViewMode('calendar')}
-                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'calendar' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'calendar' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
                     >
                         <CalendarIcon size={16} /> Agenda
                     </button>
                     <button 
                         onClick={() => setViewMode('list')}
-                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
                     >
                         <List size={16} /> Lista
                     </button>
@@ -307,7 +307,7 @@ export const AppointmentsPanel: React.FC = () => {
                     {/* Cabeçalho Simplificado */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                         <div>
-                            <p className="text-slate-400">Gerencie sua agenda e registre atendimentos manuais.</p>
+                            <p className="text-slate-500">Gerencie sua agenda e registre atendimentos manuais.</p>
                         </div>
                         <button 
                             onClick={() => setIsModalOpen(true)}
@@ -319,9 +319,9 @@ export const AppointmentsPanel: React.FC = () => {
                     </div>
 
                     {/* BARRA DE FILTROS DE DATA (Design Financeiro) */}
-                    <div className="bg-slate-800 p-1.5 md:p-2 rounded-xl border border-slate-700 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-xl mb-4">
+                    <div className="bg-white p-1.5 md:p-2 rounded-xl border border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-sm mb-4">
                         {/* Abas de Atalho */}
-                        <div className="flex bg-slate-900/50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto py-1 hide-scrollbar no-scrollbar border border-slate-700/50">
+                        <div className="flex bg-slate-50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto py-1 hide-scrollbar no-scrollbar border border-slate-200">
                             {[
                                 { id: 'today', label: 'Hoje' },
                                 { id: 'tomorrow', label: 'Amanhã' },
@@ -334,8 +334,8 @@ export const AppointmentsPanel: React.FC = () => {
                                     onClick={() => setPreset(preset.id as any)}
                                     className={`px-3 md:px-4 py-1.5 md:py-2 rounded-md text-[10px] md:text-sm font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
                                         activePreset === preset.id 
-                                        ? 'bg-slate-700 text-white shadow-sm' 
-                                        : 'text-slate-500 hover:text-white hover:bg-slate-800'
+                                        ? 'bg-white text-slate-900 shadow-sm border border-slate-200' 
+                                        : 'text-slate-500 hover:text-slate-900 hover:bg-white'
                                     }`}
                                 >
                                     {preset.label}
@@ -344,37 +344,37 @@ export const AppointmentsPanel: React.FC = () => {
                         </div>
 
                         {/* Seletor de Datas Unificado */}
-                        <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-900 px-3 py-1.5 md:py-2 rounded-lg border border-slate-700 focus-within:border-orange-500/50 transition-colors">
-                            <Calendar size={14} className="text-slate-500 shrink-0" />
+                        <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-50 px-3 py-1.5 md:py-2 rounded-lg border border-slate-200 focus-within:border-orange-500/50 transition-colors">
+                            <Calendar size={14} className="text-slate-400 shrink-0" />
                             <div className="flex items-center gap-2 flex-1">
                                 <input 
                                     type="date" 
                                     value={startDate} 
                                     onChange={e => handleDateChange('start', e.target.value)}
-                                    className="bg-transparent border-none text-slate-300 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans"
+                                    className="bg-transparent border-none text-slate-700 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans"
                                 />
-                                <span className="text-slate-600 font-medium text-[10px]">até</span>
+                                <span className="text-slate-400 font-medium text-[10px]">até</span>
                                 <input 
                                     type="date" 
                                     value={endDate} 
                                     onChange={e => handleDateChange('end', e.target.value)}
-                                    className="bg-transparent border-none text-slate-300 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans"
+                                    className="bg-transparent border-none text-slate-700 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans"
                                 />
                             </div>
                         </div>
                     </div>
 
                     {/* BARRA DE FILTROS DE STATUS E BUSCA */}
-                    <div className="bg-slate-800 p-3 md:p-4 rounded-xl border border-slate-700 mb-6 flex flex-col gap-3 md:gap-4">
+                    <div className="bg-white p-3 md:p-4 rounded-xl border border-slate-200 mb-6 flex flex-col gap-3 md:gap-4">
                         <div className="flex flex-col md:flex-row gap-3 md:gap-4 justify-between items-center">
                             {/* Busca */}
-                            <div className="bg-slate-900 border border-slate-700 rounded-lg flex items-center px-3 py-1.5 md:py-2 text-slate-400 w-full md:w-96">
+                            <div className="bg-slate-50 border border-slate-200 rounded-lg flex items-center px-3 py-1.5 md:py-2 text-slate-500 w-full md:w-96">
                                 <Search size={16} className="mr-2 shrink-0"/>
                                 <input 
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     placeholder="Buscar cliente..." 
-                                    className="bg-transparent border-none outline-none w-full text-[12px] md:text-sm placeholder-slate-600" 
+                                    className="bg-transparent border-none outline-none w-full text-[12px] md:text-sm placeholder-slate-400" 
                                 />
                             </div>
 
@@ -393,8 +393,8 @@ export const AppointmentsPanel: React.FC = () => {
                                         onClick={() => setStatusFilter(status.id)}
                                         className={`px-3 py-1.5 rounded-full text-[9px] md:text-[10px] font-bold whitespace-nowrap transition-colors border uppercase tracking-wider ${
                                             statusFilter === status.id 
-                                            ? `bg-slate-700 text-white border-slate-500 dark:bg-slate-700 dark:border-slate-500` 
-                                            : 'bg-transparent text-slate-600 dark:text-slate-500 border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:text-slate-800 dark:hover:text-slate-300'
+                                            ? `bg-slate-100 text-slate-900 border-slate-300` 
+                                            : 'bg-transparent text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
                                         }`}
                                     >
                                         {status.label}
@@ -405,11 +405,11 @@ export const AppointmentsPanel: React.FC = () => {
                     </div>
 
                     {/* Tabela de Agendamentos (Desktop) / Cards (Mobile) */}
-                    <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                         <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-slate-200 dark:bg-slate-950/80 text-slate-900 dark:text-slate-200 text-sm border-b border-slate-300 dark:border-slate-700">
+                                    <tr className="bg-slate-50 text-slate-500 text-sm border-b border-slate-200">
                                         <th className="p-4 font-bold whitespace-nowrap">Status</th>
                                         <th className="p-4 font-bold whitespace-nowrap">Data/Hora</th>
                                         <th className="p-4 font-bold">Cliente</th>
@@ -419,7 +419,7 @@ export const AppointmentsPanel: React.FC = () => {
                                         <th className="p-4 font-bold text-right">Ações</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-700">
+                                <tbody className="divide-y divide-slate-100">
                                     {filteredAppointments.map(apt => {
                                         // Lógica para bloquear status futuros
                                         const apptDateTime = new Date(`${apt.date}T${apt.time}`);
@@ -428,32 +428,32 @@ export const AppointmentsPanel: React.FC = () => {
                                         const proColor = professionals.find(p => p.id === apt.professionalId)?.color || '#64748b';
 
                                         return (
-                                        <tr key={apt.id} className="hover:bg-slate-700/30 transition-colors group border-b border-slate-700/50 last:border-0 border-l-4" style={{ borderLeftColor: proColor }}>
+                                        <tr key={apt.id} className="hover:bg-slate-50 transition-colors group border-b border-slate-100 last:border-0 border-l-4" style={{ borderLeftColor: proColor }}>
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
                                                     {STATUS_LABELS[apt.status] || apt.status}
                                                 </span>
                                             </td>
-                                            <td className="p-4 text-slate-300 whitespace-nowrap">
+                                            <td className="p-4 text-slate-600 whitespace-nowrap">
                                                 <div className="flex items-center gap-2">
-                                                    <Calendar size={14} className="text-slate-500"/>
+                                                    <Calendar size={14} className="text-slate-400"/>
                                                     <span>{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
                                                 </div>
                                                 <div className="flex items-center gap-2 mt-1">
-                                                    <Clock size={14} className="text-slate-500"/>
+                                                    <Clock size={14} className="text-slate-400"/>
                                                     <span className="text-sm font-bold">{apt.time.substring(0, 5)}</span>
                                                 </div>
                                             </td>
                                             <td className="p-4">
-                                                <div className="font-bold text-white text-base">{apt.clientName}</div>
+                                                <div className="font-bold text-slate-900 text-base">{apt.clientName}</div>
                                                 <div className="text-xs text-slate-500 mt-0.5">{apt.clientPhone}</div>
                                             </td>
                                             <td className="p-4">
-                                                <div className="flex items-center gap-1 text-sm text-slate-300 mb-1">
+                                                <div className="flex items-center gap-1 text-sm text-slate-600 mb-1">
                                                     <Scissors size={14} className="text-orange-500"/> 
                                                     <span className="truncate max-w-[150px] sm:max-w-[200px]" title={getServicesNames(apt.serviceIds)}>{getServicesNames(apt.serviceIds)}</span>
                                                 </div>
-                                                <div className="flex items-center gap-1 text-xs text-slate-500">
+                                                <div className="flex items-center gap-1 text-xs text-slate-400">
                                                     <User size={12}/> 
                                                     <span>{getProName(apt.professionalId)}</span>
                                                 </div>
@@ -466,14 +466,14 @@ export const AppointmentsPanel: React.FC = () => {
                                                     <select 
                                                         value={apt.paymentMethod || 'pix'}
                                                         onChange={(e) => updateAppointmentPaymentMethod(apt.id, e.target.value)}
-                                                        className="bg-slate-900 border border-slate-600 text-slate-300 text-xs rounded p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-800"
+                                                        className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100"
                                                     >
                                                         <option value="pix">PIX</option>
                                                         <option value="credit">Cartão</option>
                                                         <option value="cash">Dinheiro</option>
                                                     </select>
                                                 ) : (
-                                                    <span className="text-slate-500 text-xs">-</span>
+                                                    <span className="text-slate-400 text-xs">-</span>
                                                 )}
                                             </td>
                                             <td className="p-4 text-right">
@@ -485,7 +485,7 @@ export const AppointmentsPanel: React.FC = () => {
                                                             updateAppointmentPaymentMethod(apt.id, 'pix'); // Default to PIX when completing
                                                         }
                                                     }}
-                                                    className="bg-slate-900 border border-slate-600 text-slate-300 text-xs rounded p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-800"
+                                                    className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100"
                                                 >
                                                     <option value="scheduled">Agendado</option>
                                                     <option value="confirmed">Confirmado</option>
@@ -505,7 +505,7 @@ export const AppointmentsPanel: React.FC = () => {
                         </div>
 
                         {/* Lista de Cards (Mobile) */}
-                        <div className="md:hidden divide-y divide-slate-700">
+                        <div className="md:hidden divide-y divide-slate-100">
                             {filteredAppointments.map(apt => {
                                 const apptDateTime = new Date(`${apt.date}T${apt.time}`);
                                 const now = new Date();
@@ -515,7 +515,7 @@ export const AppointmentsPanel: React.FC = () => {
                                     <div key={apt.id} className="p-4 space-y-4 border-l-4" style={{ borderLeftColor: professionals.find(p => p.id === apt.professionalId)?.color || '#64748b' }}>
                                         <div className="flex justify-between items-start">
                                             <div>
-                                                <div className="font-bold text-white text-lg">{apt.clientName}</div>
+                                                <div className="font-bold text-slate-900 text-lg">{apt.clientName}</div>
                                                 <div className="text-xs text-slate-500">{apt.clientPhone}</div>
                                             </div>
                                             <span className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
@@ -524,28 +524,28 @@ export const AppointmentsPanel: React.FC = () => {
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-2 text-sm">
-                                            <div className="flex items-center gap-2 text-slate-300">
-                                                <Calendar size={14} className="text-slate-500"/>
+                                            <div className="flex items-center gap-2 text-slate-600">
+                                                <Calendar size={14} className="text-slate-400"/>
                                                 <span>{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-slate-300">
-                                                <Clock size={14} className="text-slate-500"/>
+                                            <div className="flex items-center gap-2 text-slate-600">
+                                                <Clock size={14} className="text-slate-400"/>
                                                 <span className="font-bold">{apt.time.substring(0, 5)}</span>
                                             </div>
                                         </div>
 
                                         <div className="space-y-1">
-                                            <div className="flex items-center gap-1 text-sm text-slate-300">
+                                            <div className="flex items-center gap-1 text-sm text-slate-600">
                                                 <Scissors size={14} className="text-orange-500 shrink-0"/> 
                                                 <span className="truncate">{getServicesNames(apt.serviceIds)}</span>
                                             </div>
-                                            <div className="flex items-center gap-1 text-xs text-slate-500">
+                                            <div className="flex items-center gap-1 text-xs text-slate-400">
                                                 <User size={12} className="shrink-0"/> 
                                                 <span>{getProName(apt.professionalId)}</span>
                                             </div>
                                         </div>
 
-                                        <div className="flex justify-between items-center pt-2 border-t border-slate-700/50">
+                                        <div className="flex justify-between items-center pt-2 border-t border-slate-100">
                                             <div className="font-bold text-lg" style={{ color: settings.primaryColor }}>
                                                 R$ {apt.totalValue.toFixed(2)}
                                             </div>
@@ -554,7 +554,7 @@ export const AppointmentsPanel: React.FC = () => {
                                                     <select 
                                                         value={apt.paymentMethod || 'pix'}
                                                         onChange={(e) => updateAppointmentPaymentMethod(apt.id, e.target.value)}
-                                                        className="bg-slate-900 border border-slate-600 text-slate-300 text-[10px] rounded p-1.5 focus:outline-none focus:border-orange-500"
+                                                        className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded p-1.5 focus:outline-none focus:border-orange-500"
                                                     >
                                                         <option value="pix">PIX</option>
                                                         <option value="credit">Cartão</option>
@@ -569,7 +569,7 @@ export const AppointmentsPanel: React.FC = () => {
                                                             updateAppointmentPaymentMethod(apt.id, 'pix');
                                                         }
                                                     }}
-                                                    className="bg-slate-900 border border-slate-600 text-slate-300 text-[10px] rounded p-1.5 focus:outline-none focus:border-orange-500"
+                                                    className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded p-1.5 focus:outline-none focus:border-orange-500"
                                                 >
                                                     <option value="scheduled">Agendado</option>
                                                     <option value="confirmed">Confirmado</option>
@@ -585,7 +585,7 @@ export const AppointmentsPanel: React.FC = () => {
                         </div>
 
                         {filteredAppointments.length === 0 && (
-                            <div className="p-12 text-center text-slate-500 flex flex-col items-center justify-center">
+                            <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center">
                                 <Filter size={32} className="mb-2 opacity-20"/>
                                 <p>Nenhum agendamento encontrado.</p>
                             </div>

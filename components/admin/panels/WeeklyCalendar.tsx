@@ -96,7 +96,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
     }, [appointments, displayDays, selectedProId]);
 
     const getStatusStyles = (status: string) => {
-        return 'bg-white dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 calendar-appointment border-l-4';
+        return 'border-slate-200 text-slate-700 calendar-appointment border-l-4';
     };
 
     const getStatusLabel = (status: string) => {
@@ -132,39 +132,39 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
             {/* Modal de Detalhes do Agendamento */}
             {selectedAppointment && (
                 <div 
-                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in"
+                    className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
                     onClick={(e) => e.target === e.currentTarget && setSelectedAppointment(null)}
                 >
-                    <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-md shadow-2xl relative animate-scale-up overflow-hidden">
-                        <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
-                            <h3 className="text-xl font-bold text-white">Detalhes do Agendamento</h3>
-                            <button onClick={() => setSelectedAppointment(null)} className="text-slate-400 hover:text-white transition-colors"><X size={24}/></button>
+                    <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-md shadow-2xl relative animate-scale-up overflow-hidden">
+                        <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+                            <h3 className="text-xl font-bold text-slate-900">Detalhes do Agendamento</h3>
+                            <button onClick={() => setSelectedAppointment(null)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={24}/></button>
                         </div>
                         
                         <div className="p-6 space-y-6">
                             <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center text-slate-300 font-bold text-xl border border-slate-600">
+                                <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xl border border-slate-200">
                                     {selectedAppointment.clientName.substring(0, 2).toUpperCase()}
                                 </div>
                                 <div>
-                                    <h4 className="text-lg font-bold text-white">{selectedAppointment.clientName}</h4>
-                                    <div className="flex items-center gap-2 text-slate-400 text-sm">
+                                    <h4 className="text-lg font-bold text-slate-900">{selectedAppointment.clientName}</h4>
+                                    <div className="flex items-center gap-2 text-slate-500 text-sm">
                                         <Phone size={12} /> {selectedAppointment.clientPhone}
                                     </div>
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Data e Hora</p>
-                                    <p className="text-sm text-white font-medium flex items-center gap-2">
+                                    <p className="text-sm text-slate-900 font-medium flex items-center gap-2">
                                         <Calendar size={14} className="text-orange-500" />
                                         {new Date(selectedAppointment.date + 'T12:00:00').toLocaleDateString('pt-BR')} às {selectedAppointment.time.substring(0, 5)}
                                     </p>
                                 </div>
-                                <div className="bg-slate-900/50 p-3 rounded-xl border border-slate-700">
+                                <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Profissional</p>
-                                    <p className="text-sm text-white font-medium flex items-center gap-2">
+                                    <p className="text-sm text-slate-900 font-medium flex items-center gap-2">
                                         <User size={14} className="text-orange-500" />
                                         {professionals.find(p => p.id === selectedAppointment.professionalId)?.name || 'Qualquer um'}
                                     </p>
@@ -177,20 +177,20 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                     {selectedAppointment.serviceIds.map(sid => {
                                         const service = services.find(s => s.id === sid);
                                         return (
-                                            <div key={sid} className="flex justify-between items-center bg-slate-900/30 p-2 rounded-lg border border-slate-700/50">
-                                                <span className="text-sm text-slate-300">{service?.name}</span>
-                                                <span className="text-sm font-bold text-white">R$ {service?.price.toFixed(2)}</span>
+                                            <div key={sid} className="flex justify-between items-center bg-slate-50 p-2 rounded-lg border border-slate-200">
+                                                <span className="text-sm text-slate-600">{service?.name}</span>
+                                                <span className="text-sm font-bold text-slate-900">R$ {service?.price.toFixed(2)}</span>
                                             </div>
                                         );
                                     })}
-                                    <div className="flex justify-between items-center pt-2 border-t border-slate-700">
+                                    <div className="flex justify-between items-center pt-2 border-t border-slate-200">
                                         <span className="text-sm font-bold text-slate-400">Total</span>
                                         <span className="text-lg font-bold" style={{ color: settings.primaryColor }}>R$ {selectedAppointment.totalValue.toFixed(2)}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-700">
+                            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200">
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Status</label>
                                     <select 
@@ -200,7 +200,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                             updateAppointmentStatus(selectedAppointment.id, newStatus);
                                             setSelectedAppointment({...selectedAppointment, status: newStatus});
                                         }}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-orange-500"
+                                        className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm text-slate-900 focus:outline-none focus:border-orange-500"
                                     >
                                         <option value="scheduled">Agendado</option>
                                         <option value="confirmed">Confirmado</option>
@@ -219,7 +219,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                             updateAppointmentPaymentMethod(selectedAppointment.id, newMethod);
                                             setSelectedAppointment({...selectedAppointment, paymentMethod: newMethod});
                                         }}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-sm text-white focus:outline-none focus:border-orange-500 disabled:opacity-50"
+                                        className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm text-slate-900 focus:outline-none focus:border-orange-500 disabled:opacity-50"
                                     >
                                         <option value="pix">PIX</option>
                                         <option value="credit">Cartão</option>
@@ -236,44 +236,44 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-3">
-                        <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700 text-[10px] font-bold uppercase tracking-wider">
+                        <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200 text-[10px] font-bold uppercase tracking-wider">
                             <button 
                                 onClick={() => setViewType('day')}
-                                className={`px-2 py-1 rounded transition-all ${viewType === 'day' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}
+                                className={`px-2 py-1 rounded transition-all ${viewType === 'day' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
                             >
                                 Dia
                             </button>
                             <button 
                                 onClick={() => setViewType('week')}
-                                className={`px-2 py-1 rounded transition-all ${viewType === 'week' ? 'bg-slate-700 text-white' : 'text-slate-500'}`}
+                                className={`px-2 py-1 rounded transition-all ${viewType === 'week' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
                             >
                                 Semana
                             </button>
                         </div>
                     </div>
-                    <div className="flex items-center gap-2 text-slate-400">
+                    <div className="flex items-center gap-2 text-slate-500">
                         <Calendar size={14} />
                         <span className="text-xs md:text-sm font-medium">{dateRangeLabel}</span>
                     </div>
                 </div>
                 
                 <div className="flex items-center gap-2 w-full md:w-auto">
-                    <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700 flex-1 md:flex-none justify-between">
+                    <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200 flex-1 md:flex-none justify-between">
                         <button 
                             onClick={() => navigate('prev')}
-                            className="p-2 hover:bg-slate-700 rounded-md text-slate-300 transition-colors"
+                            className="p-2 hover:bg-white rounded-md text-slate-600 transition-colors"
                         >
                             <ChevronLeft size={20} />
                         </button>
                         <button 
                             onClick={() => setCurrentDate(new Date())}
-                            className="px-3 py-1 text-xs font-bold text-slate-400 hover:text-white uppercase tracking-widest"
+                            className="px-3 py-1 text-xs font-bold text-slate-500 hover:text-slate-900 uppercase tracking-widest"
                         >
                             Hoje
                         </button>
                         <button 
                             onClick={() => navigate('next')}
-                            className="p-2 hover:bg-slate-700 rounded-md text-slate-300 transition-colors"
+                            className="p-2 hover:bg-white rounded-md text-slate-600 transition-colors"
                         >
                             <ChevronRight size={20} />
                         </button>
@@ -298,15 +298,15 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                         className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all border ${
                             selectedProId === 'all' 
                             ? 'shadow-lg scale-105' 
-                            : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
+                            : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                         }`}
                         style={{ 
-                            borderColor: selectedProId === 'all' ? settings.primaryColor : 'transparent',
-                            backgroundColor: selectedProId === 'all' ? `${settings.primaryColor}20` : undefined,
+                            borderColor: selectedProId === 'all' ? settings.primaryColor : undefined,
+                            backgroundColor: selectedProId === 'all' ? `${settings.primaryColor}10` : undefined,
                             color: selectedProId === 'all' ? settings.primaryColor : undefined
                         }}
                     >
-                        <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: selectedProId === 'all' ? settings.primaryColor : '#64748b' }} />
+                        <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: selectedProId === 'all' ? settings.primaryColor : '#94a3b8' }} />
                         Todos
                     </button>
                     {professionals.map(pro => (
@@ -316,11 +316,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                             className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all border whitespace-nowrap ${
                                 selectedProId === pro.id 
                                 ? 'shadow-lg scale-105' 
-                                : 'bg-slate-800 border-slate-700 text-slate-400 hover:border-slate-600'
+                                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                             }`}
                             style={{ 
-                                borderColor: selectedProId === pro.id ? pro.color : 'transparent',
-                                backgroundColor: selectedProId === pro.id ? `${pro.color}20` : undefined,
+                                borderColor: selectedProId === pro.id ? pro.color : undefined,
+                                backgroundColor: selectedProId === pro.id ? `${pro.color}10` : undefined,
                                 color: selectedProId === pro.id ? pro.color : undefined
                             }}
                         >
@@ -332,22 +332,22 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
             </div>
 
             {/* Grid da Agenda */}
-            <div className="bg-slate-800/50 rounded-2xl border border-slate-700 overflow-hidden shadow-2xl">
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xl">
                 <div className="overflow-x-auto custom-scrollbar">
                     <div className={`${viewType === 'week' ? 'min-w-[1000px]' : 'min-w-full'} relative`}>
                         {/* Header do Grid (Dias) */}
-                        <div className={`grid ${viewType === 'week' ? 'grid-cols-[80px_repeat(7,1fr)]' : 'grid-cols-[60px_1fr]'} border-b border-slate-700 bg-slate-900/50 calendar-grid-header`}>
-                            <div className={`p-4 flex items-center justify-center text-[10px] font-bold text-slate-500 border-r border-slate-700 calendar-time-column`}>
+                        <div className={`grid ${viewType === 'week' ? 'grid-cols-[80px_repeat(7,1fr)]' : 'grid-cols-[60px_1fr]'} border-b border-slate-200 bg-slate-50 calendar-grid-header`}>
+                            <div className={`p-4 flex items-center justify-center text-[10px] font-bold text-slate-400 border-r border-slate-200 calendar-time-column`}>
                                 GMT-3
                             </div>
                             {displayDays.map((day, i) => {
                                 const isToday = day.toDateString() === new Date().toDateString();
                                 return (
-                                    <div key={i} className={`p-4 text-center border-r border-slate-700 last:border-r-0 ${isToday ? 'bg-orange-500/5 calendar-cell-today' : ''}`}>
-                                        <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isToday ? 'text-orange-500' : 'text-slate-500'}`}>
+                                    <div key={i} className={`p-4 text-center border-r border-slate-200 last:border-r-0 ${isToday ? 'bg-orange-500/5 calendar-cell-today' : ''}`}>
+                                        <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isToday ? 'text-orange-500' : 'text-slate-400'}`}>
                                             {day.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')}
                                         </p>
-                                        <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${isToday ? 'bg-orange-500 text-white' : 'text-slate-300'}`}>
+                                        <div className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${isToday ? 'bg-orange-500 text-white' : 'text-slate-600'}`}>
                                             {day.getDate()}
                                         </div>
                                     </div>
@@ -363,15 +363,15 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                     className={`absolute ${viewType === 'week' ? 'left-[80px]' : 'left-[60px]'} right-0 z-20 flex items-center pointer-events-none`}
                                     style={{ top: `${timeLinePosition}px` }}
                                 >
-                                    <div className="w-2 h-2 rounded-full bg-red-500 -ml-1 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-                                    <div className="flex-1 h-[2px] bg-red-500/50" />
+                                    <div className="w-2 h-2 rounded-full bg-red-500 -ml-1 shadow-[0_0_8px_rgba(239,68,68,0.4)]" />
+                                    <div className="flex-1 h-[2px] bg-red-500/30" />
                                 </div>
                             )}
 
                             {timeSlots.map((time, slotIdx) => (
-                                <div key={slotIdx} className={`grid ${viewType === 'week' ? 'grid-cols-[80px_repeat(7,1fr)]' : 'grid-cols-[60px_1fr]'} h-[100px] border-b border-slate-700/50 last:border-b-0 relative`}>
+                                <div key={slotIdx} className={`grid ${viewType === 'week' ? 'grid-cols-[80px_repeat(7,1fr)]' : 'grid-cols-[60px_1fr]'} h-[100px] border-b border-slate-100 last:border-b-0 relative`}>
                                     {/* Horário na lateral */}
-                                    <div className={`flex items-start justify-center pt-1 text-[11px] font-bold text-slate-500 border-r border-slate-700 bg-slate-900/20 calendar-time-column`}>
+                                    <div className={`flex items-start justify-center pt-1 text-[11px] font-bold text-slate-400 border-r border-slate-200 bg-slate-50/50 calendar-time-column`}>
                                         {time}
                                     </div>
 
@@ -386,31 +386,31 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                         );
 
                                         return (
-                                            <div key={dayIdx} className={`relative border-r border-slate-700/30 last:border-r-0 overflow-hidden grid grid-rows-2 h-full ${day.toDateString() === new Date().toDateString() ? 'calendar-cell-today' : ''}`}>
+                                            <div key={dayIdx} className={`relative border-r border-slate-100 last:border-r-0 overflow-hidden grid grid-rows-2 h-full ${day.toDateString() === new Date().toDateString() ? 'bg-orange-500/5' : ''}`}>
                                                 {/* Top half: :00 to :29 */}
-                                                <div className="border-b border-slate-700/10 p-0.5 flex gap-1 overflow-hidden">
+                                                <div className="border-b border-slate-50 p-0.5 flex gap-1 overflow-hidden">
                                                     {slotAppointments.filter(a => parseInt(a.time.split(':')[1]) < 30).map(apt => (
                                                         <div 
                                                             key={apt.id}
                                                             onClick={() => setSelectedAppointment(apt)}
-                                                            className={`p-1.5 rounded-lg border shadow-lg cursor-pointer hover:brightness-110 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
+                                                            className={`p-1.5 rounded-lg border shadow-sm cursor-pointer hover:brightness-95 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
                                                             style={{ 
                                                                 borderLeftColor: getProColor(apt.professionalId),
-                                                                backgroundColor: theme === 'light' ? `${getProColor(apt.professionalId)}15` : undefined
+                                                                backgroundColor: `${getProColor(apt.professionalId)}15`
                                                             }}
                                                         >
-                                                            <p className="text-[10px] font-bold truncate leading-tight">{apt.clientName}</p>
-                                                            <p className="text-[8px] opacity-70 truncate mb-0.5">
+                                                            <p className="text-[10px] font-bold truncate leading-tight text-slate-900">{apt.clientName}</p>
+                                                            <p className="text-[8px] text-slate-500 truncate mb-0.5">
                                                                 {apt.serviceIds.map(sid => services.find(s => s.id === sid)?.name).join(', ')}
                                                             </p>
                                                             <div className="flex items-center gap-1">
                                                                 <div className={`w-1 h-1 rounded-full ${
-                                                                    apt.status === 'completed' ? 'bg-green-400' : 
+                                                                    apt.status === 'completed' ? 'bg-green-500' : 
                                                                     apt.status === 'noshow' ? 'bg-red-400' : 
                                                                     apt.status === 'cancelled' ? 'bg-red-500' :
-                                                                    apt.status === 'confirmed' ? 'bg-blue-400' : 'bg-orange-400'
+                                                                    apt.status === 'confirmed' ? 'bg-blue-500' : 'bg-orange-500'
                                                                 }`} />
-                                                                <span className={`text-[7px] font-bold uppercase tracking-tighter ${apt.status === 'cancelled' ? 'text-red-500' : ''}`}>{getStatusLabel(apt.status)}</span>
+                                                                <span className={`text-[7px] font-bold uppercase tracking-tighter ${apt.status === 'cancelled' ? 'text-red-500' : 'text-slate-500'}`}>{getStatusLabel(apt.status)}</span>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -421,24 +421,24 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                         <div 
                                                             key={apt.id}
                                                             onClick={() => setSelectedAppointment(apt)}
-                                                            className={`p-1.5 rounded-lg border shadow-lg cursor-pointer hover:brightness-110 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
+                                                            className={`p-1.5 rounded-lg border shadow-sm cursor-pointer hover:brightness-95 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
                                                             style={{ 
                                                                 borderLeftColor: getProColor(apt.professionalId),
-                                                                backgroundColor: theme === 'light' ? `${getProColor(apt.professionalId)}15` : undefined
+                                                                backgroundColor: `${getProColor(apt.professionalId)}15`
                                                             }}
                                                         >
-                                                            <p className="text-[10px] font-bold truncate leading-tight">{apt.clientName}</p>
-                                                            <p className="text-[8px] opacity-70 truncate mb-0.5">
+                                                            <p className="text-[10px] font-bold truncate leading-tight text-slate-900">{apt.clientName}</p>
+                                                            <p className="text-[8px] text-slate-500 truncate mb-0.5">
                                                                 {apt.serviceIds.map(sid => services.find(s => s.id === sid)?.name).join(', ')}
                                                             </p>
                                                             <div className="flex items-center gap-1">
                                                                 <div className={`w-1 h-1 rounded-full ${
-                                                                    apt.status === 'completed' ? 'bg-green-400' : 
+                                                                    apt.status === 'completed' ? 'bg-green-500' : 
                                                                     apt.status === 'noshow' ? 'bg-red-400' : 
                                                                     apt.status === 'cancelled' ? 'bg-red-500' :
-                                                                    apt.status === 'confirmed' ? 'bg-blue-400' : 'bg-orange-400'
+                                                                    apt.status === 'confirmed' ? 'bg-blue-500' : 'bg-orange-500'
                                                                 }`} />
-                                                                <span className={`text-[7px] font-bold uppercase tracking-tighter ${apt.status === 'cancelled' ? 'text-red-500' : ''}`}>{getStatusLabel(apt.status)}</span>
+                                                                <span className={`text-[7px] font-bold uppercase tracking-tighter ${apt.status === 'cancelled' ? 'text-red-500' : 'text-slate-500'}`}>{getStatusLabel(apt.status)}</span>
                                                             </div>
                                                         </div>
                                                     ))}
@@ -465,10 +465,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
 
                                         if (currentH >= lStartH && currentH < lEndH) {
                                             return (
-                                                <div className={`absolute inset-0 z-10 bg-slate-900/60 backdrop-blur-[2px] flex items-center justify-center pointer-events-none border-y border-slate-700/50 border-dashed`}>
-                                                    <div className="flex items-center gap-2 px-4 py-1 rounded-full bg-slate-800 border border-slate-700 shadow-xl">
-                                                        <Utensils size={14} className="text-slate-500" />
-                                                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Horário de Almoço</span>
+                                                <div className={`absolute inset-0 z-10 bg-slate-100/60 backdrop-blur-[2px] flex items-center justify-center pointer-events-none border-y border-slate-200 border-dashed`}>
+                                                    <div className="flex items-center gap-2 px-4 py-1 rounded-full bg-white border border-slate-200 shadow-md">
+                                                        <Utensils size={14} className="text-slate-400" />
+                                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em]">Horário de Almoço</span>
                                                     </div>
                                                 </div>
                                             );

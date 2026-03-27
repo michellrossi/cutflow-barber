@@ -232,53 +232,53 @@ export const ServicesPanel: React.FC = () => {
 
              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Gestão de Serviços</h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">Adicione, edite ou remova serviços oferecidos.</p>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Serviços</h2>
+                    <p className="text-slate-500 text-sm">Adicione, edite ou remova serviços oferecidos.</p>
                 </div>
             </div>
 
             {isFormOpen && (
                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setIsFormOpen(false)}>
-                 <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 animate-scale-up w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                 <div className="bg-white p-8 rounded-2xl border border-slate-200 animate-scale-up w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
                      <div className="flex justify-between items-start mb-6">
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{editingId ? 'Editar Serviço' : 'Novo Serviço'}</h3>
-                        <button onClick={() => setIsFormOpen(false)} className="text-slate-400 hover:text-slate-900 dark:text-slate-500 dark:hover:text-white transition-colors"><X size={24}/></button>
+                        <h3 className="text-xl font-bold text-slate-900">{editingId ? 'Editar Serviço' : 'Novo Serviço'}</h3>
+                        <button onClick={() => setIsFormOpen(false)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={24}/></button>
                      </div>
                      
                       {!editingId && (
                             <div className="space-y-4 mb-8">
-                                <div className={`flex items-center gap-3 p-4 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl transition-all ${!selectedCat ? 'py-12 flex-col text-center' : ''}`}>
+                                <div className={`flex items-center gap-3 p-4 bg-slate-100 border border-slate-300 rounded-xl transition-all ${!selectedCat ? 'py-12 flex-col text-center' : ''}`}>
                                     <Sparkles size={!selectedCat ? 32 : 18} className="text-orange-500" />
                                     <div className="flex-1 w-full">
-                                        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 text-left">1. Categoria do Serviço</p>
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1 text-left">1. Categoria do Serviço</p>
                                         <select 
                                             value={selectedCat}
                                             onChange={handleCategorySelect}
-                                            className="w-full bg-transparent text-slate-900 dark:text-slate-100 text-sm font-bold focus:outline-none cursor-pointer"
+                                            className="w-full bg-transparent text-slate-900 text-sm font-bold focus:outline-none cursor-pointer"
                                         >
-                                            <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Selecione uma categoria...</option>
+                                            <option value="" className="bg-white text-slate-900">Selecione uma categoria...</option>
                                             {CATEGORIES.map((cat, idx) => (
-                                                <option key={idx} value={cat} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{cat}</option>
+                                                <option key={idx} value={cat} className="bg-white text-slate-900">{cat}</option>
                                             ))}
                                         </select>
                                     </div>
                                 </div>
 
                                 {selectedCat && selectedCat !== 'Outros' && (
-                                    <div className="flex items-center gap-3 p-4 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl animate-fade-in">
+                                    <div className="flex items-center gap-3 p-4 bg-slate-100 border border-slate-300 rounded-xl animate-fade-in">
                                         <CalendarCheck size={18} className="text-orange-500" />
                                         <div className="flex-1 w-full">
-                                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">2. Escolha o Serviço</p>
+                                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">2. Escolha o Serviço</p>
                                             <select 
                                                 value={isCustom ? 'CUSTOM' : formData.name}
                                                 onChange={handleTemplateSelect}
-                                                className="w-full bg-transparent text-slate-900 dark:text-slate-100 text-sm font-bold focus:outline-none cursor-pointer"
+                                                className="w-full bg-transparent text-slate-900 text-sm font-bold focus:outline-none cursor-pointer"
                                             >
-                                                <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Selecione um serviço de {selectedCat}...</option>
+                                                <option value="" className="bg-white text-slate-900">Selecione um serviço de {selectedCat}...</option>
                                                 {CATALOG.filter(item => item.category === selectedCat).map((item, idx) => (
-                                                    <option key={idx} value={item.name} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{item.name}</option>
+                                                    <option key={idx} value={item.name} className="bg-white text-slate-900">{item.name}</option>
                                                 ))}
-                                                <option value="CUSTOM" className="bg-white dark:bg-slate-800 text-orange-500 font-bold">➕ Outro (Serviço Personalizado)</option>
+                                                <option value="CUSTOM" className="bg-white text-orange-500 font-bold">➕ Outro (Serviço Personalizado)</option>
                                             </select>
                                         </div>
                                     </div>
@@ -291,20 +291,20 @@ export const ServicesPanel: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div>
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nome do Serviço</label>
-                                <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 font-bold" placeholder="Ex: Corte Masculino"/>
+                                <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="Ex: Corte Masculino"/>
                             </div>
                             <div>
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Duração (minutos)</label>
                                 <div className="relative">
-                                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
-                                    <input required type="number" value={formData.duration} onChange={e => setFormData({...formData, duration: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 pl-12 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 font-bold" placeholder="30" />
+                                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                    <input required type="number" value={formData.duration} onChange={e => setFormData({...formData, duration: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 pl-12 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="30" />
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Preço (R$)</label>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-bold">R$</span>
-                                    <input required type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 pl-12 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 font-bold" placeholder="0.00" />
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">R$</span>
+                                    <input required type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 pl-12 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="0.00" />
                                 </div>
                             </div>
                             <div>
@@ -312,7 +312,7 @@ export const ServicesPanel: React.FC = () => {
                                 <div className="flex items-center gap-4">
                                     <div 
                                         onClick={() => !isUploading && !isGeneratingImage && fileInputRef.current?.click()} 
-                                        className={`w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative ${(isUploading || isGeneratingImage) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        className={`w-16 h-16 bg-slate-50 rounded-xl border border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative ${(isUploading || isGeneratingImage) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         {(isUploading || isGeneratingImage) ? (
                                             <Loader2 size={24} className="text-orange-500 animate-spin" />
@@ -320,7 +320,7 @@ export const ServicesPanel: React.FC = () => {
                                             formData.imageUrl ? (
                                                 <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
                                             ) : (
-                                                <Upload size={20} className="text-slate-400 dark:text-slate-500" />
+                                                <Upload size={20} className="text-slate-400" />
                                             )
                                         )}
                                     </div>
@@ -354,7 +354,7 @@ export const ServicesPanel: React.FC = () => {
                         
                         <div>
                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Descrição do Serviço</label>
-                            <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 min-h-[100px] resize-none" placeholder="Descreva os detalhes do serviço..." />
+                            <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 min-h-[100px] resize-none" placeholder="Descreva os detalhes do serviço..." />
                         </div>
 
                         <div>
@@ -365,7 +365,7 @@ export const ServicesPanel: React.FC = () => {
                                         key={cat}
                                         type="button"
                                         onClick={() => setFormData({...formData, category: cat})}
-                                        className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${formData.category === cat ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                                        className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${formData.category === cat ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20' : 'border-slate-200 text-slate-500 hover:border-slate-400 hover:text-slate-700'}`}
                                     >
                                         {cat}
                                     </button>
@@ -374,13 +374,13 @@ export const ServicesPanel: React.FC = () => {
                              <input 
                                 value={formData.category} 
                                 onChange={e => setFormData({...formData, category: e.target.value})} 
-                                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500" 
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500" 
                                 placeholder="Ou digite uma nova categoria..."
                             />
                         </div>
 
                         <div className="flex gap-4 justify-end pt-4">
-                             <button type="button" onClick={() => setIsFormOpen(false)} className="px-6 py-3 text-slate-500 dark:text-slate-400 font-bold hover:text-slate-900 dark:hover:text-white transition-colors" disabled={isUploading || isSaving}>Cancelar</button>
+                             <button type="button" onClick={() => setIsFormOpen(false)} className="px-6 py-3 text-slate-500 font-bold hover:text-slate-900 transition-colors" disabled={isUploading || isSaving}>Cancelar</button>
                              <button type="submit" className="px-10 py-3 rounded-xl text-white font-bold flex items-center gap-2 shadow-lg hover:brightness-110 transition-all" style={{ backgroundColor: settings.primaryColor }} disabled={isUploading || isSaving}>
                                 {(isUploading || isSaving) ? <Loader2 size={20} className="animate-spin"/> : 'Salvar Serviço'}
                              </button>
@@ -393,7 +393,7 @@ export const ServicesPanel: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                 {services.map(service => (
-                    <div key={service.id} className="bg-slate-800/40 rounded-[2rem] border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all shadow-xl">
+                    <div key={service.id} className="bg-white rounded-[2rem] border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all shadow-xl">
                         {/* Imagem do Serviço */}
                         <div className="h-48 w-full relative overflow-hidden">
                             {service.imageUrl ? (
@@ -404,12 +404,12 @@ export const ServicesPanel: React.FC = () => {
                                     referrerPolicy="no-referrer"
                                 />
                             ) : (
-                                <div className="w-full h-full bg-slate-900 flex items-center justify-center">
-                                    <CalendarCheck size={48} className="text-slate-700" />
+                                <div className="w-full h-full bg-slate-100 flex items-center justify-center">
+                                    <CalendarCheck size={48} className="text-slate-300" />
                                 </div>
                             )}
                             {/* Badge de Duração */}
-                            <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-orange-400 text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-white/10">
+                            <div className="absolute top-4 right-4 bg-white/60 backdrop-blur-md text-orange-600 text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-slate-200">
                                 <Clock size={12}/>
                                 {service.duration} min
                             </div>
@@ -417,7 +417,7 @@ export const ServicesPanel: React.FC = () => {
 
                         {/* Conteúdo */}
                         <div className="p-6 flex flex-col flex-1">
-                            <h3 className="font-bold text-white text-lg leading-tight mb-2">{service.name}</h3>
+                            <h3 className="font-bold text-slate-900 text-lg leading-tight mb-2">{service.name}</h3>
                             <p className="text-xs text-slate-500 line-clamp-2 mb-6 min-h-[2rem] leading-relaxed">{service.description}</p>
 
                             <div className="mt-auto">
@@ -428,13 +428,13 @@ export const ServicesPanel: React.FC = () => {
                                 <div className="flex gap-3">
                                     <button 
                                         onClick={() => handleEdit(service)} 
-                                        className="flex-1 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-slate-300 hover:text-white hover:bg-slate-700 transition-all font-bold text-sm flex items-center justify-center gap-2"
+                                        className="flex-1 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all font-bold text-sm flex items-center justify-center gap-2"
                                     >
                                         <Edit2 size={14} /> Editar
                                     </button>
                                     <button 
                                         onClick={() => setDeleteId(service.id)} 
-                                        className="px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                                        className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
                                     >
                                         <Trash2 size={18}/>
                                     </button>
@@ -453,13 +453,13 @@ export const ServicesPanel: React.FC = () => {
                     setSelectedCat('');
                     setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes', imageUrl: '' }); 
                 }}
-                    className="bg-slate-800/20 rounded-[2rem] border-2 border-dashed border-slate-700 p-8 flex flex-col items-center justify-center gap-6 hover:border-slate-500 hover:bg-slate-800/30 transition-all min-h-[400px] group"
+                    className="bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 p-8 flex flex-col items-center justify-center gap-6 hover:border-slate-300 hover:bg-slate-100 transition-all min-h-[400px] group"
                 >
-                    <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-orange-500 group-hover:scale-110 transition-all shadow-xl">
+                    <div className="w-16 h-16 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-orange-500 group-hover:scale-110 transition-all shadow-xl">
                         <Plus size={32} />
                     </div>
                     <div className="text-center max-w-[200px]">
-                        <p className="text-xl font-bold text-white mb-2">Adicionar mais serviços?</p>
+                        <p className="text-xl font-bold text-slate-900 mb-2">Adicionar mais serviços?</p>
                         <p className="text-sm text-slate-500 leading-relaxed">
                             Expanda seu faturamento adicionando serviços como Pigmentação, Limpeza de Pele ou Relaxamento.
                         </p>

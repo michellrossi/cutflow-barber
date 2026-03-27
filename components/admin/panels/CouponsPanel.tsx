@@ -108,13 +108,13 @@ export const CouponsPanel: React.FC = () => {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Gestão de Cupons</h2>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm">Crie e gerencie promoções para fidelizar seus clientes.</p>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Cupons</h2>
+                    <p className="text-slate-600 text-sm font-medium">Crie e gerencie promoções para fidelizar seus clientes.</p>
                 </div>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-6 border-b border-slate-700 mb-8">
+            <div className="flex gap-6 border-b border-slate-200 mb-8">
                 {[
                     { id: 'all', label: 'Todos' },
                     { id: 'active', label: 'Ativos' },
@@ -123,32 +123,32 @@ export const CouponsPanel: React.FC = () => {
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
-                        className={`pb-4 text-sm font-bold transition-all relative ${
-                            activeTab === tab.id ? 'text-white' : 'text-slate-500 hover:text-slate-300'
+                        className={`pb-4 text-sm font-black transition-all relative ${
+                            activeTab === tab.id ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700'
                         }`}
                     >
                         {tab.label}
                         {activeTab === tab.id && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-orange-500 rounded-full" />
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-orange-500 rounded-full" />
                         )}
                     </button>
                 ))}
             </div>
 
             {isFormOpen && (
-                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setIsFormOpen(false)}>
-                 <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 animate-scale-up relative w-full max-w-2xl shadow-2xl">
-                     <button onClick={() => setIsFormOpen(false)} className="absolute top-6 right-6 text-slate-500 hover:text-white transition-colors"><X size={24}/></button>
-                     <h3 className="text-xl font-bold mb-6 text-white">{editingId ? 'Editar Cupom' : 'Novo Cupom'}</h3>
+                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setIsFormOpen(false)}>
+                 <div className="bg-white p-8 rounded-2xl border border-slate-200 animate-scale-up relative w-full max-w-2xl shadow-2xl">
+                     <button onClick={() => setIsFormOpen(false)} className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 transition-colors"><X size={24}/></button>
+                     <h3 className="text-xl font-bold mb-6 text-slate-900">{editingId ? 'Editar Cupom' : 'Novo Cupom'}</h3>
                      <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Código do Cupom</label>
-                                <input required value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500 uppercase font-bold tracking-wider" placeholder="Ex: VERAO10" />
+                                <input required value={formData.code} onChange={e => setFormData({...formData, code: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 uppercase font-bold tracking-wider" placeholder="Ex: VERAO10" />
                             </div>
                             <div>
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Tipo de Desconto</label>
-                                <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as any})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500 font-medium">
+                                <select value={formData.type} onChange={e => setFormData({...formData, type: e.target.value as any})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-medium">
                                     <option value="percentage">Porcentagem (%)</option>
                                     <option value="fixed">Valor Fixo (R$)</option>
                                 </select>
@@ -159,8 +159,8 @@ export const CouponsPanel: React.FC = () => {
                             <div>
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Valor</label>
                                 <div className="relative">
-                                    <input required type="number" value={formData.value} onChange={e => setFormData({...formData, value: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500 font-bold" />
-                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">{formData.type === 'percentage' ? '%' : 'R$'}</span>
+                                    <input required type="number" value={formData.value} onChange={e => setFormData({...formData, value: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" />
+                                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold">{formData.type === 'percentage' ? '%' : 'R$'}</span>
                                 </div>
                             </div>
                             <div>
@@ -170,19 +170,19 @@ export const CouponsPanel: React.FC = () => {
                                     min="0"
                                     value={formData.maxUses} 
                                     onChange={e => setFormData({...formData, maxUses: e.target.value})} 
-                                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500" 
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500" 
                                     placeholder="Ilimitado"
                                 />
                             </div>
                             <div>
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Expira em</label>
                                 <div className="relative">
-                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                     <input 
                                         type="date" 
                                         value={formData.expiresAt} 
                                         onChange={e => setFormData({...formData, expiresAt: e.target.value})} 
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 pl-12 text-white focus:outline-none focus:border-orange-500" 
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 pl-12 text-slate-900 focus:outline-none focus:border-orange-500" 
                                     />
                                 </div>
                             </div>
@@ -202,24 +202,24 @@ export const CouponsPanel: React.FC = () => {
                     const usagePercentage = coupon.maxUses ? (coupon.usageCount / coupon.maxUses) * 100 : 0;
                     
                     return (
-                        <div key={coupon.id} className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 flex flex-col relative group hover:border-slate-400 dark:hover:border-slate-600 transition-all shadow-sm dark:shadow-xl">
+                        <div key={coupon.id} className="bg-white rounded-2xl border border-slate-200 p-4 flex flex-col relative group hover:border-slate-400 transition-all shadow-sm">
                             {/* Header do Card */}
                             <div className="flex justify-between items-start mb-4">
-                                <div className="bg-slate-100 dark:bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-green-600 dark:text-green-500 font-bold tracking-widest text-xs">
+                                <div className="bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 text-green-700 font-black tracking-widest text-xs">
                                     {coupon.code}
                                 </div>
-                                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${
-                                    expired ? 'bg-red-100 text-red-600 border border-red-200 dark:bg-red-500/10 dark:text-red-500 dark:border-red-500/20' : 'bg-green-100 text-green-600 border border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
+                                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest border-2 ${
+                                    expired ? 'bg-red-50 text-red-700 border-red-200' : 'bg-green-50 text-green-700 border-green-200'
                                 }`}>
-                                    <div className={`w-1 h-1 rounded-full ${expired ? 'bg-red-500' : 'bg-green-500'}`} />
+                                    <div className={`w-1 h-1 rounded-full ${expired ? 'bg-red-600' : 'bg-green-600'}`} />
                                     {expired ? 'EXPIRADO' : 'ATIVO'}
                                 </div>
                             </div>
 
                             {/* Info de Benefício */}
                             <div className="mb-4">
-                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Valor do Benefício</p>
-                                <h4 className="text-lg font-bold text-slate-900 dark:text-white">
+                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Valor do Benefício</p>
+                                <h4 className="text-lg font-black text-slate-900">
                                     {coupon.type === 'percentage' ? `${coupon.value}% de desconto` : `R$ ${coupon.value.toFixed(2)} OFF`}
                                 </h4>
                             </div>
@@ -227,14 +227,14 @@ export const CouponsPanel: React.FC = () => {
                             {/* Progresso de Uso */}
                             <div className="mb-4">
                                 <div className="flex justify-between items-end mb-1.5">
-                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Uso atual</p>
-                                    <p className="text-[9px] font-bold text-slate-400">
+                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Uso atual</p>
+                                    <p className="text-[9px] font-black text-slate-900">
                                         {coupon.usageCount}{coupon.maxUses ? `/${coupon.maxUses}` : ' (Ilimitado)'}
                                     </p>
                                 </div>
-                                <div className="w-full bg-slate-100 dark:bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700/50">
+                                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden border border-slate-200 shadow-inner">
                                     <div 
-                                        className={`h-full rounded-full transition-all duration-1000 ${expired ? 'bg-red-500/50' : 'bg-green-500'}`}
+                                        className={`h-full rounded-full transition-all duration-1000 ${expired ? 'bg-red-500/50' : 'bg-green-600'}`}
                                         style={{ width: `${coupon.maxUses ? Math.min(usagePercentage, 100) : 10}%` }}
                                     />
                                 </div>
@@ -242,10 +242,10 @@ export const CouponsPanel: React.FC = () => {
 
                             {/* Expiração */}
                             <div className="mb-5">
-                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">
+                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">
                                     {expired ? 'Expirou em' : 'Expira em'}
                                 </p>
-                                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                <p className="text-xs font-black text-slate-800">
                                     {coupon.expiresAt ? new Date(coupon.expiresAt + 'T12:00:00').toLocaleDateString('pt-BR') : 'Sem validade'}
                                 </p>
                             </div>
@@ -254,13 +254,13 @@ export const CouponsPanel: React.FC = () => {
                             <div className="mt-auto flex gap-2">
                                 <button 
                                     onClick={() => handleEdit(coupon)} 
-                                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-bold text-xs"
+                                    className="flex-1 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 hover:text-slate-900 hover:bg-slate-100 transition-all font-black text-xs"
                                 >
                                     Editar
                                 </button>
                                 <button 
                                     onClick={() => setDeleteId(coupon.id)} 
-                                    className="p-2 bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-100 dark:hover:text-red-500 dark:hover:bg-red-500/10 transition-all"
+                                    className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-500 hover:text-red-700 hover:bg-red-50 transition-all"
                                 >
                                     <Trash2 size={16}/>
                                 </button>
@@ -276,14 +276,14 @@ export const CouponsPanel: React.FC = () => {
                         setEditingId(null); 
                         setFormData({ code: '', value: '', type: 'percentage', maxUses: '', expiresAt: '' }); 
                     }}
-                    className="bg-slate-50 dark:bg-slate-800/20 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-4 flex flex-col items-center justify-center gap-3 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/30 transition-all min-h-[250px] group"
+                    className="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-4 flex flex-col items-center justify-center gap-3 hover:border-slate-400 hover:bg-slate-100 transition-all min-h-[250px] group shadow-sm"
                 >
-                    <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-orange-500 group-hover:scale-110 transition-all shadow-sm">
+                    <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-orange-500 group-hover:scale-110 transition-all shadow-md">
                         <Plus size={20} />
                     </div>
                     <div className="text-center">
-                        <p className="text-base font-bold text-slate-900 dark:text-white mb-0.5">Novo Cupom</p>
-                        <p className="text-xs text-slate-500">Crie uma nova regra de promoção</p>
+                        <p className="text-base font-black text-slate-900 mb-0.5">Novo Cupom</p>
+                        <p className="text-xs text-slate-500 font-medium">Crie uma nova regra de promoção</p>
                     </div>
                 </button>
             </div>

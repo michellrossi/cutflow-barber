@@ -48,11 +48,6 @@
             colors: {
               primary: '#f97316', // Default orange
               secondary: '#ea580c',
-              dark: {
-                900: '#0f172a', // Slate 900
-                800: '#1e293b', // Slate 800
-                700: '#334155', // Slate 700
-              }
             },
             boxShadow: {
               'card-light': '0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02)',
@@ -99,14 +94,6 @@
     </script>
     <style>
       :root {
-        --bg-color: #0B0F19;
-        --text-color: #f1f5f9;
-        --card-bg: #1e293b;
-        --border-color: #334155;
-        --muted-text: #94a3b8;
-      }
-
-      html.light {
         --bg-color: #f8fafc; /* Slate 50 */
         --text-color: #0f172a; /* Slate 900 */
         --card-bg: #ffffff;
@@ -121,58 +108,58 @@
       }
 
       /* Overrides para Tailwind no modo claro */
-      html.light .bg-slate-900 { background-color: var(--bg-color) !important; }
-      html.light .bg-slate-950 { background-color: #ffffff !important; }
-      html.light div.bg-slate-800, html.light div.bg-slate-800\/50 { 
+      .bg-slate-900 { background-color: var(--bg-color) !important; }
+      .bg-slate-950 { background-color: #ffffff !important; }
+      div.bg-slate-800, div.bg-slate-800\/50 { 
         background-color: #ffffff !important; 
         box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02) !important;
         border-color: #e2e8f0 !important;
         border-radius: 1rem !important; /* rounded-2xl */
       }
-      html.light button.bg-slate-800 {
+      button.bg-slate-800 {
         background-color: #ffffff !important;
         border-color: #e2e8f0 !important;
       }
-      html.light .bg-slate-900\/50 { background-color: rgba(248, 250, 252, 0.5) !important; }
-      html.light .bg-slate-900\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
-      html.light .bg-slate-900\/20 { background-color: rgba(248, 250, 252, 0.2) !important; }
-      html.light .bg-slate-900\/30 { background-color: rgba(248, 250, 252, 0.3) !important; }
-      html.light .bg-slate-800\/20 { background-color: rgba(248, 250, 252, 0.5) !important; }
-      html.light .bg-slate-800\/40 { background-color: rgba(248, 250, 252, 0.7) !important; }
-      html.light .bg-slate-800\/50 { background-color: rgba(248, 250, 252, 0.8) !important; }
-      html.light .bg-slate-800\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
-      html.light .border-slate-800 { border-color: #e2e8f0; }
-      html.light .border-slate-700 { border-color: #e2e8f0; }
-      html.light .border-slate-700\/30 { border-color: rgba(226, 232, 240, 0.3) !important; }
-      html.light .border-slate-700\/50 { border-color: rgba(226, 232, 240, 0.5) !important; }
-      html.light .text-slate-100 { color: #0f172a !important; }
-      html.light .text-slate-200 { color: #1e293b !important; }
-      html.light .text-slate-300 { color: #334155 !important; }
-      html.light .text-slate-400 { color: #475569 !important; }
-      html.light .text-slate-500 { color: #334155 !important; }
-      html.light .text-slate-600 { color: #1e293b !important; }
-      html.light .text-white { color: #0f172a !important; }
-      html.light .hover\:text-white:hover { color: #0f172a !important; }
-      html.light .hover\:bg-slate-800:hover { background-color: #f8fafc !important; }
-      html.light .hover\:bg-slate-700:hover { background-color: #f8fafc !important; }
-      html.light .bg-black\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
-      html.light .bg-black\/70 { background-color: rgba(255, 255, 255, 0.8) !important; }
-      html.light .bg-black\/60 { background-color: rgba(255, 255, 255, 0.7) !important; }
-      html.light .backdrop-blur-sm { backdrop-filter: blur(8px) !important; background-color: rgba(255, 255, 255, 0.5) !important; }
-      html.light .backdrop-blur-md { backdrop-filter: blur(12px) !important; background-color: rgba(255, 255, 255, 0.6) !important; }
+      .bg-slate-900\/50 { background-color: rgba(248, 250, 252, 0.5) !important; }
+      .bg-slate-900\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
+      .bg-slate-900\/20 { background-color: rgba(248, 250, 252, 0.2) !important; }
+      .bg-slate-900\/30 { background-color: rgba(248, 250, 252, 0.3) !important; }
+      .bg-slate-800\/20 { background-color: rgba(248, 250, 252, 0.5) !important; }
+      .bg-slate-800\/40 { background-color: rgba(248, 250, 252, 0.7) !important; }
+      .bg-slate-800\/50 { background-color: rgba(248, 250, 252, 0.8) !important; }
+      .bg-slate-800\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
+      .border-slate-800 { border-color: #e2e8f0; }
+      .border-slate-700 { border-color: #e2e8f0; }
+      .border-slate-700\/30 { border-color: rgba(226, 232, 240, 0.3) !important; }
+      .border-slate-700\/50 { border-color: rgba(226, 232, 240, 0.5) !important; }
+      .text-slate-100 { color: #0f172a !important; }
+      .text-slate-200 { color: #1e293b !important; }
+      .text-slate-300 { color: #334155 !important; }
+      .text-slate-400 { color: #475569 !important; }
+      .text-slate-500 { color: #334155 !important; }
+      .text-slate-600 { color: #1e293b !important; }
+      .text-white { color: #0f172a !important; }
+      .hover\:text-white:hover { color: #0f172a !important; }
+      .hover\:bg-slate-800:hover { background-color: #f8fafc !important; }
+      .hover\:bg-slate-700:hover { background-color: #f8fafc !important; }
+      .bg-black\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
+      .bg-black\/70 { background-color: rgba(255, 255, 255, 0.8) !important; }
+      .bg-black\/60 { background-color: rgba(255, 255, 255, 0.7) !important; }
+      .backdrop-blur-sm { backdrop-filter: blur(8px) !important; background-color: rgba(255, 255, 255, 0.5) !important; }
+      .backdrop-blur-md { backdrop-filter: blur(12px) !important; background-color: rgba(255, 255, 255, 0.6) !important; }
       
       /* Specific calendar fixes for light mode */
-      html.light .calendar-grid-header { background-color: #f8fafc !important; border-bottom: 1px solid #e2e8f0 !important; }
-      html.light .calendar-time-column { background-color: #ffffff !important; border-right: 1px solid #e2e8f0 !important; }
-      html.light .calendar-cell-today { background-color: rgba(249, 115, 22, 0.03) !important; }
+      .calendar-grid-header { background-color: #f8fafc !important; border-bottom: 1px solid #e2e8f0 !important; }
+      .calendar-time-column { background-color: #ffffff !important; border-right: 1px solid #e2e8f0 !important; }
+      .calendar-cell-today { background-color: rgba(249, 115, 22, 0.03) !important; }
       /* Calendar Specifics */
-      html.light .calendar-header { background-color: #ffffff !important; border-bottom: 1px solid #e2e8f0 !important; }
-      html.light .calendar-time-column { background-color: #f8fafc !important; border-right: 1px solid #e2e8f0 !important; }
-      html.light .calendar-grid-line { border-color: #f1f5f9 !important; }
-      html.light .calendar-day-column { border-right: 1px solid #f1f5f9 !important; }
-      html.light .calendar-current-time-line { background-color: #ef4444 !important; }
+      .calendar-header { background-color: #ffffff !important; border-bottom: 1px solid #e2e8f0 !important; }
+      .calendar-time-column { background-color: #f8fafc !important; border-right: 1px solid #e2e8f0 !important; }
+      .calendar-grid-line { border-color: #f1f5f9 !important; }
+      .calendar-day-column { border-right: 1px solid #f1f5f9 !important; }
+      .calendar-current-time-line { background-color: #ef4444 !important; }
       
-      html.light .calendar-appointment { 
+      .calendar-appointment { 
         background-color: #ffffff !important; 
         box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -1px rgba(15, 23, 42, 0.02) !important;
         border-width: 1px !important;
@@ -181,66 +168,66 @@
         border-left-width: 4px !important;
         border-radius: 0.5rem !important;
       }
-      html.light .calendar-appointment[style*="border-left-color"] {
+      .calendar-appointment[style*="border-left-color"] {
         border-left-color: inherit !important;
       }
       
-      html.light .appointment-list-item {
+      .appointment-list-item {
         border-left-width: 4px !important;
         border-left-style: solid !important;
       }
-      html.light .appointment-list-item[style*="border-left-color"] {
+      .appointment-list-item[style*="border-left-color"] {
         border-left-color: inherit !important;
       }
-      html.light .calendar-appointment p { color: #0f172a !important; }
-      html.light .calendar-appointment span { color: #475569 !important; }
+      .calendar-appointment p { color: #0f172a !important; }
+      .calendar-appointment span { color: #475569 !important; }
       
       /* Input e Textarea no modo claro */
-      html.light input, html.light textarea, html.light select {
+      input, textarea, select {
         background-color: #f1f5f9 !important; /* Slate 100 */
         color: #0f172a !important;
         border-color: #e2e8f0 !important;
         border-radius: 0.5rem !important;
       }
-      html.light input:focus, html.light textarea:focus, html.light select:focus {
+      input:focus, textarea:focus, select:focus {
         border-color: #f97316 !important; /* Primary focus */
         background-color: #ffffff !important;
       }
-      html.light input::placeholder { color: #94a3b8 !important; }
+      input::placeholder { color: #94a3b8 !important; }
 
       /* Botões e Navegação no modo claro */
-      html.light button.bg-primary, html.light button[style*="background-color"] {
+      button.bg-primary, button[style*="background-color"] {
         border-radius: 9999px !important;
         box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.1), 0 2px 4px -1px rgba(15, 23, 42, 0.06) !important;
       }
       
-      html.light .admin-sidebar {
+      .admin-sidebar {
         background-color: #ffffff !important;
         border-right: 1px solid #e2e8f0 !important;
         box-shadow: none !important;
       }
 
       /* Status Badges in Light Mode */
-      html.light .bg-blue-400\/10 { background-color: #eff6ff !important; border-color: #dbeafe !important; color: #1e40af !important; }
-      html.light .bg-orange-400\/10 { background-color: #fff7ed !important; border-color: #ffedd5 !important; color: #9a3412 !important; }
-      html.light .bg-green-400\/10 { background-color: #f0fdf4 !important; border-color: #dcfce7 !important; color: #166534 !important; }
-      html.light .bg-red-400\/10 { background-color: #fef2f2 !important; border-color: #fee2e2 !important; color: #991b1b !important; }
-      html.light .bg-slate-400\/10 { background-color: #f8fafc !important; border-color: #e2e8f0 !important; color: #475569 !important; }
+      .bg-blue-400\/10 { background-color: #eff6ff !important; border-color: #dbeafe !important; color: #1e40af !important; }
+      .bg-orange-400\/10 { background-color: #fff7ed !important; border-color: #ffedd5 !important; color: #9a3412 !important; }
+      .bg-green-400\/10 { background-color: #f0fdf4 !important; border-color: #dcfce7 !important; color: #166534 !important; }
+      .bg-red-400\/10 { background-color: #fef2f2 !important; border-color: #fee2e2 !important; color: #991b1b !important; }
+      .bg-slate-400\/10 { background-color: #f8fafc !important; border-color: #e2e8f0 !important; color: #475569 !important; }
       
-      html.light .text-blue-400 { color: #1e40af !important; }
-      html.light .text-orange-400 { color: #9a3412 !important; }
-      html.light .text-green-400 { color: #166534 !important; }
-      html.light .text-red-400 { color: #991b1b !important; }
-      html.light .text-slate-400 { color: #475569 !important; }
+      .text-blue-400 { color: #1e40af !important; }
+      .text-orange-400 { color: #9a3412 !important; }
+      .text-green-400 { color: #166534 !important; }
+      .text-red-400 { color: #991b1b !important; }
+      .text-slate-400 { color: #475569 !important; }
 
       /* Alerts and Info boxes */
-      html.light .bg-blue-500\/10 { background-color: #eff6ff !important; border: 1px solid #dbeafe !important; }
-      html.light .bg-blue-500\/10 p, html.light .bg-blue-500\/10 span { color: #1e40af !important; }
-      html.light .bg-orange-500\/10 { background-color: #fff7ed !important; border: 1px solid #ffedd5 !important; }
-      html.light .bg-orange-500\/10 p, html.light .bg-orange-500\/10 span { color: #9a3412 !important; }
+      .bg-blue-500\/10 { background-color: #eff6ff !important; border: 1px solid #dbeafe !important; }
+      .bg-blue-500\/10 p, .bg-blue-500\/10 span { color: #1e40af !important; }
+      .bg-orange-500\/10 { background-color: #fff7ed !important; border: 1px solid #ffedd5 !important; }
+      .bg-orange-500\/10 p, .bg-orange-500\/10 span { color: #9a3412 !important; }
       
       /* Active states in button groups */
-      html.light .bg-slate-700.text-white { background-color: #0f172a !important; color: #ffffff !important; }
+      .bg-slate-700.text-white { background-color: #0f172a !important; color: #ffffff !important; }
 
       /* Utility Classes */
       .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -272,6 +259,7 @@
         background-size: 40px 40px;
       }
     </style>
+
 <script type="importmap">
 {
   "imports": {

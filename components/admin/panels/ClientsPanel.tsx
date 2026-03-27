@@ -181,11 +181,11 @@ export const ClientsPanel: React.FC = () => {
 
   const getRiskBadgeColor = (risk: string) => {
     switch (risk) {
-      case 'Baixo': return 'bg-green-100 text-green-900 border-green-400 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20';
-      case 'Médio': return 'bg-yellow-100 text-yellow-900 border-yellow-400 dark:bg-yellow-500/10 dark:text-yellow-500 dark:border-yellow-500/20';
-      case 'Alto': return 'bg-orange-100 text-orange-900 border-orange-400 dark:bg-orange-500/10 dark:text-orange-500 dark:border-orange-500/20';
-      case 'Crítico': return 'bg-red-100 text-red-900 border-red-400 dark:bg-red-500/10 dark:text-red-500 dark:border-red-500/20';
-      default: return 'bg-slate-100 text-slate-900 border-slate-400 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
+      case 'Baixo': return 'bg-green-100 text-green-900 border-green-400';
+      case 'Médio': return 'bg-yellow-100 text-yellow-900 border-yellow-400';
+      case 'Alto': return 'bg-orange-100 text-orange-900 border-orange-400';
+      case 'Crítico': return 'bg-red-100 text-red-900 border-red-400';
+      default: return 'bg-slate-100 text-slate-900 border-slate-400';
     }
   };
 
@@ -214,8 +214,8 @@ export const ClientsPanel: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Gestão de Clientes</h2>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Gerencie sua base, identifique oportunidades e recupere clientes inativos.</p>
+          <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Clientes</h2>
+          <p className="text-slate-500 text-sm">Gerencie sua base, identifique oportunidades e recupere clientes inativos.</p>
         </div>
         <button 
           onClick={() => handleOpenForm()}
@@ -227,13 +227,13 @@ export const ClientsPanel: React.FC = () => {
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-300 dark:border-slate-700/50 shadow-sm">
+      <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div className="relative flex-1 w-full lg:max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-500" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text" 
             placeholder="Buscar por nome, telefone ou email..." 
-            className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 transition-colors placeholder:text-slate-500 dark:placeholder:text-slate-500"
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:outline-none focus:border-orange-500 transition-colors placeholder:text-slate-400"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -277,11 +277,11 @@ export const ClientsPanel: React.FC = () => {
       </div>
 
       {/* Table */}
-      <div className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm dark:shadow-xl">
+      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse table-fixed">
             <thead>
-              <tr className="border-b border-slate-300 dark:border-slate-700 bg-slate-200 dark:bg-slate-800/50 text-xs text-slate-900 dark:text-slate-400 uppercase tracking-wider">
+              <tr className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 uppercase tracking-wider">
                 <th className="p-4 font-bold w-1/6">Nome</th>
                 <th className="p-4 font-bold w-1/6">Celular</th>
                 <th className="p-4 font-bold w-1/6">Data Último Corte</th>
@@ -290,7 +290,7 @@ export const ClientsPanel: React.FC = () => {
                 <th className="p-4 font-bold w-1/6 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
+            <tbody className="divide-y divide-slate-100">
               {filteredClients.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="p-8 text-center text-slate-500">
@@ -299,34 +299,34 @@ export const ClientsPanel: React.FC = () => {
                 </tr>
               ) : (
                 filteredClients.map((client) => (
-                  <tr key={client.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
+                  <tr key={client.id} className="hover:bg-slate-50 transition-colors group">
                     <td className="p-4 truncate">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-slate-300 dark:bg-slate-700 flex items-center justify-center text-slate-800 dark:text-slate-300 font-bold text-xs border border-slate-400 dark:border-slate-600 shrink-0">
+                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs border border-slate-200 shrink-0">
                           {client.avatarUrl ? (
                             <img src={client.avatarUrl} alt={client.name} className="w-full h-full rounded-full object-cover" />
                           ) : (
                             client.name.substring(0, 2).toUpperCase()
                           )}
                         </div>
-                        <div className="font-bold text-slate-900 dark:text-white truncate">{client.name}</div>
+                        <div className="font-bold text-slate-900 truncate">{client.name}</div>
                       </div>
                     </td>
-                    <td className="p-4 text-slate-700 dark:text-slate-300 text-sm font-medium">
+                    <td className="p-4 text-slate-600 text-sm font-medium">
                       {client.phone}
                     </td>
                     <td className="p-4">
                       {client.metrics.lastCutDate ? (
                         <div>
-                          <div className="text-sm font-bold text-slate-900 dark:text-white">
+                          <div className="text-sm font-bold text-slate-900">
                             {new Date(client.metrics.lastCutDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                           </div>
-                          <div className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                          <div className="text-[10px] font-medium text-slate-500">
                             há {client.metrics.daysSinceLastCut} dias
                           </div>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-400 dark:text-slate-500 italic">Nunca cortou</span>
+                        <span className="text-xs text-slate-400 italic">Nunca cortou</span>
                       )}
                     </td>
                     <td className="p-4">
@@ -337,7 +337,7 @@ export const ClientsPanel: React.FC = () => {
                     <td className="p-4">
                       <div className="flex flex-col items-center gap-1">
                         {renderStars(client.metrics.frequency)}
-                        <span className="text-[10px] font-bold text-slate-600 dark:text-slate-400">{client.metrics.frequency}</span>
+                        <span className="text-[10px] font-bold text-slate-500">{client.metrics.frequency}</span>
                       </div>
                     </td>
                     <td className="p-4 text-right">
@@ -346,28 +346,28 @@ export const ClientsPanel: React.FC = () => {
                           href={`https://wa.me/${client.phone.replace(/\D/g, '')}?text=Olá ${client.name}!`}
                           target="_blank"
                           rel="noreferrer"
-                          className="p-1.5 rounded-lg bg-green-100 text-green-700 hover:bg-green-600 hover:text-white transition-colors dark:bg-green-500/10 dark:text-green-500 dark:hover:bg-green-500 dark:hover:text-white"
+                          className="p-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors"
                           title="WhatsApp"
                         >
                           <MessageCircle size={14} />
                         </a>
                         <button 
                           onClick={() => handleViewClient(client)}
-                          className="p-1.5 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-600 hover:text-white transition-colors dark:bg-blue-500/10 dark:text-blue-500 dark:hover:bg-blue-500 dark:hover:text-white"
+                          className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"
                           title="Visualizar Detalhes"
                         >
                           <Eye size={14} />
                         </button>
                         <button 
                           onClick={() => handleOpenForm(client)}
-                          className="p-1.5 rounded-lg bg-slate-200 text-slate-900 hover:bg-slate-800 hover:text-white transition-colors dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 dark:hover:text-white"
+                          className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-800 hover:text-white transition-colors"
                           title="Editar"
                         >
                           <Edit2 size={14} />
                         </button>
                         <button 
                           onClick={() => { setClientToDelete(client); setIsDeleteModalOpen(true); }}
-                          className="p-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-600 hover:text-white transition-colors dark:bg-red-500/10 dark:text-red-500 dark:hover:bg-red-500 dark:hover:text-white"
+                          className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-colors"
                           title="Excluir"
                         >
                           <Trash2 size={14} />
@@ -395,27 +395,27 @@ export const ClientsPanel: React.FC = () => {
       {/* Modal Form */}
       {isFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setIsFormOpen(false)}>
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 w-full max-w-lg shadow-2xl relative animate-scale-up">
-            <button onClick={() => setIsFormOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-900 dark:text-slate-500 dark:hover:text-white">
+          <div className="bg-white p-6 rounded-xl border border-slate-200 w-full max-w-lg shadow-2xl relative animate-scale-up">
+            <button onClick={() => setIsFormOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-900">
               <X size={20} />
             </button>
             
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
               {editingClient ? <Edit2 size={20} className="text-orange-500"/> : <Plus size={20} className="text-green-500"/>}
               {editingClient ? 'Editar Cliente' : 'Novo Cliente'}
             </h3>
 
             <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-400 mb-1">Nome Completo</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Nome Completo</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                   <input 
                     required
                     type="text" 
                     value={formData.name}
                     onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 dark:text-white focus:border-orange-500 focus:outline-none"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none"
                     placeholder="Ex: João Silva"
                   />
                 </div>
@@ -423,28 +423,28 @@ export const ClientsPanel: React.FC = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-400 mb-1">Telefone (WhatsApp)</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Telefone (WhatsApp)</label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input 
                       required
                       type="tel" 
                       value={formData.phone}
                       onChange={e => setFormData({...formData, phone: e.target.value})}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 dark:text-white focus:border-orange-500 focus:outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none"
                       placeholder="(00) 00000-0000"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-400 mb-1">Email (Opcional)</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1">Email (Opcional)</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input 
                       type="email" 
                       value={formData.email}
                       onChange={e => setFormData({...formData, email: e.target.value})}
-                      className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 dark:text-white focus:border-orange-500 focus:outline-none"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none"
                       placeholder="joao@email.com"
                     />
                   </div>
@@ -452,11 +452,11 @@ export const ClientsPanel: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-slate-700 dark:text-slate-400 mb-1">Observações</label>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Observações</label>
                 <textarea 
                   value={formData.notes}
                   onChange={e => setFormData({...formData, notes: e.target.value})}
-                  className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-3 text-slate-900 dark:text-white focus:border-orange-500 focus:outline-none min-h-[100px]"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:border-orange-500 focus:outline-none min-h-[100px]"
                   placeholder="Preferências, alergias, etc..."
                 />
               </div>
@@ -465,7 +465,7 @@ export const ClientsPanel: React.FC = () => {
                 <button 
                   type="button" 
                   onClick={() => setIsFormOpen(false)}
-                  className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white rounded-lg font-bold transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold transition-colors"
                 >
                   Cancelar
                 </button>
@@ -486,10 +486,10 @@ export const ClientsPanel: React.FC = () => {
       {/* View Details Modal */}
       {isViewModalOpen && viewingClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setIsViewModalOpen(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 w-full max-w-2xl shadow-2xl relative animate-scale-up overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-6 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center bg-slate-50 dark:bg-slate-800/50">
+          <div className="bg-white rounded-xl border border-slate-200 w-full max-w-2xl shadow-2xl relative animate-scale-up overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-300 font-bold text-xl border-2 border-slate-300 dark:border-slate-600">
+                <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 font-bold text-xl border-2 border-slate-300">
                   {viewingClient.avatarUrl ? (
                     <img src={viewingClient.avatarUrl} alt={viewingClient.name} className="w-full h-full rounded-full object-cover" />
                   ) : (
@@ -497,18 +497,18 @@ export const ClientsPanel: React.FC = () => {
                   )}
                 </div>
                 <div>
-                  <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{viewingClient.name}</h3>
+                  <h3 className="text-2xl font-bold text-slate-900">{viewingClient.name}</h3>
                   <div className="flex items-center gap-3 mt-1">
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase border ${getRiskBadgeColor(viewingClient.metrics.risk)}`}>
                       {viewingClient.metrics.risk}
                     </span>
-                    <div className="flex items-center gap-1 text-slate-600 dark:text-slate-400 text-sm font-medium">
+                    <div className="flex items-center gap-1 text-slate-600 text-sm font-medium">
                       <Phone size={14} /> {viewingClient.phone}
                     </div>
                   </div>
                 </div>
               </div>
-              <button onClick={() => setIsViewModalOpen(false)} className="text-slate-400 hover:text-slate-900 dark:text-slate-500 dark:hover:text-white p-2">
+              <button onClick={() => setIsViewModalOpen(false)} className="text-slate-400 hover:text-slate-900 p-2">
                 <X size={24} />
               </button>
             </div>
@@ -516,29 +516,29 @@ export const ClientsPanel: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
               {/* Stats Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 text-center">
-                  <div className="text-slate-500 dark:text-slate-500 text-xs uppercase font-bold mb-1">Total Gasto</div>
-                  <div className="text-xl font-bold text-green-600 dark:text-green-500 flex items-center justify-center gap-1">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                  <div className="text-slate-500 text-xs uppercase font-bold mb-1">Total Gasto</div>
+                  <div className="text-xl font-bold text-green-600 flex items-center justify-center gap-1">
                     <DollarSign size={16} />
                     {viewingClient.metrics.totalSpent.toFixed(2)}
                   </div>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 text-center">
-                  <div className="text-slate-500 dark:text-slate-500 text-xs uppercase font-bold mb-1">Cortes Realizados</div>
-                  <div className="text-xl font-bold text-slate-900 dark:text-white flex items-center justify-center gap-1">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                  <div className="text-slate-500 text-xs uppercase font-bold mb-1">Cortes Realizados</div>
+                  <div className="text-xl font-bold text-slate-900 flex items-center justify-center gap-1">
                     <Star size={16} className="text-yellow-500" />
                     {viewingClient.metrics.totalCuts}
                   </div>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 text-center">
-                  <div className="text-slate-500 dark:text-slate-500 text-xs uppercase font-bold mb-1">Frequência</div>
-                  <div className="text-xl font-bold text-slate-900 dark:text-white">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                  <div className="text-slate-500 text-xs uppercase font-bold mb-1">Frequência</div>
+                  <div className="text-xl font-bold text-slate-900">
                     {viewingClient.metrics.frequency}
                   </div>
                 </div>
-                <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50 text-center">
-                  <div className="text-slate-500 dark:text-slate-500 text-xs uppercase font-bold mb-1">Último Corte</div>
-                  <div className="text-sm font-bold text-slate-900 dark:text-white">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                  <div className="text-slate-500 text-xs uppercase font-bold mb-1">Último Corte</div>
+                  <div className="text-sm font-bold text-slate-900">
                     {viewingClient.metrics.lastCutDate ? new Date(viewingClient.metrics.lastCutDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'N/A'}
                   </div>
                 </div>
@@ -548,7 +548,7 @@ export const ClientsPanel: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Past Appointments */}
                 <div className="space-y-4">
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                     <Clock size={18} className="text-orange-500" />
                     Histórico de Serviços
                   </h4>
@@ -558,16 +558,16 @@ export const ClientsPanel: React.FC = () => {
                       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                       .slice(0, 5)
                       .map(appt => (
-                        <div key={appt.id} className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg border border-slate-200 dark:border-slate-700/30 flex justify-between items-center">
+                        <div key={appt.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
                           <div>
-                            <div className="text-sm font-bold text-slate-900 dark:text-white">
+                            <div className="text-sm font-bold text-slate-900">
                               {new Date(appt.date + 'T12:00:00').toLocaleDateString('pt-BR')}
                             </div>
-                            <div className="text-xs text-slate-500 dark:text-slate-500">
+                            <div className="text-xs text-slate-500">
                               {appt.serviceIds.length} serviço(s)
                             </div>
                           </div>
-                          <div className="text-sm font-bold text-green-600 dark:text-green-500">
+                          <div className="text-sm font-bold text-green-600">
                             R$ {appt.totalValue.toFixed(2)}
                           </div>
                         </div>
@@ -580,7 +580,7 @@ export const ClientsPanel: React.FC = () => {
 
                 {/* Upcoming Appointments */}
                 <div className="space-y-4">
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <h4 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                     <Calendar size={18} className="text-blue-500" />
                     Próximos Agendamentos
                   </h4>
@@ -589,16 +589,16 @@ export const ClientsPanel: React.FC = () => {
                       .filter(a => (a.clientId === viewingClient.id || (!a.clientId && a.clientPhone === viewingClient.phone)) && a.status === 'scheduled')
                       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                       .map(appt => (
-                        <div key={appt.id} className="bg-slate-50 dark:bg-slate-900/30 p-3 rounded-lg border border-slate-200 dark:border-slate-700/30 flex justify-between items-center">
+                        <div key={appt.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
                           <div>
-                            <div className="text-sm font-bold text-slate-900 dark:text-white">
+                            <div className="text-sm font-bold text-slate-900">
                               {new Date(appt.date + 'T12:00:00').toLocaleDateString('pt-BR')}
                             </div>
-                            <div className="text-xs text-slate-600 dark:text-slate-400">
+                            <div className="text-xs text-slate-600">
                               às {appt.time}
                             </div>
                           </div>
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-500 text-[10px] font-bold rounded uppercase">
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold rounded uppercase">
                             Agendado
                           </span>
                         </div>
@@ -612,17 +612,17 @@ export const ClientsPanel: React.FC = () => {
 
               {/* Notes */}
               {viewingClient.notes && (
-                <div className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700/50">
-                  <h4 className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase mb-2">Observações</h4>
-                  <p className="text-slate-700 dark:text-slate-300 text-sm italic">"{viewingClient.notes}"</p>
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                  <h4 className="text-sm font-bold text-slate-500 uppercase mb-2">Observações</h4>
+                  <p className="text-slate-700 text-sm italic">"{viewingClient.notes}"</p>
                 </div>
               )}
             </div>
 
-            <div className="p-6 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 flex justify-end">
+            <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end">
               <button 
                 onClick={() => setIsViewModalOpen(false)}
-                className="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white rounded-lg font-bold transition-colors"
+                className="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold transition-colors"
               >
                 Fechar
               </button>
@@ -636,11 +636,11 @@ export const ClientsPanel: React.FC = () => {
 
 const FilterButton: React.FC<{ active: boolean, onClick: () => void, label: string, count?: number, color?: 'red' | 'yellow' | 'green' }> = ({ active, onClick, label, count, color }) => {
   const getColorClasses = () => {
-    if (!active) return 'bg-white dark:bg-transparent border-slate-400 dark:border-slate-700 text-slate-900 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700/50';
-    if (color === 'red') return 'bg-red-100 border-red-500 text-red-900 dark:bg-red-500/10 dark:border-red-500/50 dark:text-red-400';
-    if (color === 'yellow') return 'bg-yellow-100 border-yellow-500 text-yellow-900 dark:bg-yellow-500/10 dark:border-yellow-500/50 dark:text-yellow-400';
-    if (color === 'green') return 'bg-green-100 border-green-500 text-green-900 dark:bg-green-500/10 dark:border-green-500/50 dark:text-green-400';
-    return 'bg-slate-900 border-slate-800 text-white dark:bg-slate-700 dark:border-slate-600';
+    if (!active) return 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50';
+    if (color === 'red') return 'bg-red-50 border-red-500 text-red-700';
+    if (color === 'yellow') return 'bg-yellow-50 border-yellow-500 text-yellow-700';
+    if (color === 'green') return 'bg-green-50 border-green-500 text-green-700';
+    return 'bg-slate-900 border-slate-800 text-white';
   };
 
   const dotColors = {
@@ -657,7 +657,7 @@ const FilterButton: React.FC<{ active: boolean, onClick: () => void, label: stri
       {color && <div className={`w-2 h-2 rounded-full ${dotColors[color]}`}></div>}
       {label}
       {count !== undefined && (
-        <span className={`text-xs px-1.5 py-0.5 rounded ${active ? 'bg-black/20' : 'bg-slate-800'} opacity-70`}>
+        <span className={`text-xs px-1.5 py-0.5 rounded ${active ? 'bg-black/10' : 'bg-slate-100'} font-bold`}>
           {count}
         </span>
       )}
