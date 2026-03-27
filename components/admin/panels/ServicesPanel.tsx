@@ -21,6 +21,8 @@ export const ServicesPanel: React.FC = () => {
         category: 'Cortes',
         imageUrl: '' 
     });
+    const [isCustom, setIsCustom] = useState(false);
+    const [selectedCat, setSelectedCat] = useState<string>('');
     const [isSaving, setIsSaving] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -122,6 +124,7 @@ export const ServicesPanel: React.FC = () => {
 
     const handleEdit = (service: Service) => {
         setEditingId(service.id);
+        setIsCustom(false);
         setFormData({
             name: service.name,
             description: service.description,
@@ -133,12 +136,34 @@ export const ServicesPanel: React.FC = () => {
         setIsFormOpen(true);
     };
 
+    const handleCategorySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const cat = e.target.value;
+        setSelectedCat(cat);
+        setIsCustom(false);
+        setFormData(prev => ({ ...prev, name: '', category: cat === 'Outros' ? 'Outros' : cat }));
+        
+        if (cat === 'Outros') {
+            setIsCustom(true);
+        }
+    };
+
     const handleTemplateSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const selectedName = e.target.value;
-        if (!selectedName) return;
+        if (!selectedName) {
+            setFormData(prev => ({ ...prev, name: '' }));
+            setIsCustom(false);
+            return;
+        }
+
+        if (selectedName === 'CUSTOM') {
+            setIsCustom(true);
+            setFormData(prev => ({ ...prev, name: '' }));
+            return;
+        }
 
         const template = CATALOG.find(item => item.name === selectedName);
         if (template) {
+            setIsCustom(false);
             setFormData(prev => ({
                 ...prev,
                 name: template.name,
@@ -185,6 +210,8 @@ export const ServicesPanel: React.FC = () => {
             showToast(editingId ? 'Serviço atualizado!' : 'Serviço criado!');
             setIsFormOpen(false);
             setEditingId(null);
+            setIsCustom(false);
+            setSelectedCat('');
             setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes', imageUrl: '' });
         } else {
             showToast(result.error || 'Erro ao salvar.', 'error');
@@ -218,25 +245,49 @@ export const ServicesPanel: React.FC = () => {
                         <button onClick={() => setIsFormOpen(false)} className="text-slate-400 hover:text-slate-900 dark:text-slate-500 dark:hover:text-white transition-colors"><X size={24}/></button>
                      </div>
                      
-                     {!editingId && (
-                            <div className="flex items-center gap-3 mb-8 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                                <Sparkles size={18} className="text-orange-500" />
-                                <div className="flex-1">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Catálogo Rápido</p>
-                                    <select 
-                                        onChange={handleTemplateSelect}
-                                        className="w-full bg-transparent text-slate-700 dark:text-slate-300 text-sm font-bold focus:outline-none cursor-pointer"
-                                    >
-                                        <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Selecione um serviço pré-definido...</option>
-                                        {CATALOG.map((item, idx) => (
-                                            <option key={idx} value={item.name} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{item.name}</option>
-                                        ))}
-                                    </select>
+                      {!editingId && (
+                            <div className="space-y-4 mb-8">
+                                <div className={`flex items-center gap-3 p-4 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl transition-all ${!selectedCat ? 'py-12 flex-col text-center' : ''}`}>
+                                    <Sparkles size={!selectedCat ? 32 : 18} className="text-orange-500" />
+                                    <div className="flex-1 w-full">
+                                        <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 text-left">1. Categoria do Serviço</p>
+                                        <select 
+                                            value={selectedCat}
+                                            onChange={handleCategorySelect}
+                                            className="w-full bg-transparent text-slate-900 dark:text-slate-100 text-sm font-bold focus:outline-none cursor-pointer"
+                                        >
+                                            <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Selecione uma categoria...</option>
+                                            {CATEGORIES.map((cat, idx) => (
+                                                <option key={idx} value={cat} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{cat}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
+
+                                {selectedCat && selectedCat !== 'Outros' && (
+                                    <div className="flex items-center gap-3 p-4 bg-slate-100 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl animate-fade-in">
+                                        <CalendarCheck size={18} className="text-orange-500" />
+                                        <div className="flex-1 w-full">
+                                            <p className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1">2. Escolha o Serviço</p>
+                                            <select 
+                                                value={isCustom ? 'CUSTOM' : formData.name}
+                                                onChange={handleTemplateSelect}
+                                                className="w-full bg-transparent text-slate-900 dark:text-slate-100 text-sm font-bold focus:outline-none cursor-pointer"
+                                            >
+                                                <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Selecione um serviço de {selectedCat}...</option>
+                                                {CATALOG.filter(item => item.category === selectedCat).map((item, idx) => (
+                                                    <option key={idx} value={item.name} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{item.name}</option>
+                                                ))}
+                                                <option value="CUSTOM" className="bg-white dark:bg-slate-800 text-orange-500 font-bold">➕ Outro (Serviço Personalizado)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
-                     <form onSubmit={handleSubmit} className="space-y-6">
+                     {(formData.name || isCustom || editingId) && (
+                        <form onSubmit={handleSubmit} className="space-y-6 animate-fade-in">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div>
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nome do Serviço</label>
@@ -335,6 +386,7 @@ export const ServicesPanel: React.FC = () => {
                              </button>
                         </div>
                      </form>
+                     )}
                  </div>
                  </div>
             )}
@@ -394,11 +446,13 @@ export const ServicesPanel: React.FC = () => {
 
                 {/* Card de Adicionar Mais Serviços */}
                 <button 
-                    onClick={() => { 
-                        setIsFormOpen(true); 
-                        setEditingId(null); 
-                        setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes', imageUrl: '' }); 
-                    }}
+                onClick={() => { 
+                    setIsFormOpen(true); 
+                    setEditingId(null); 
+                    setIsCustom(false);
+                    setSelectedCat('');
+                    setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes', imageUrl: '' }); 
+                }}
                     className="bg-slate-800/20 rounded-[2rem] border-2 border-dashed border-slate-700 p-8 flex flex-col items-center justify-center gap-6 hover:border-slate-500 hover:bg-slate-800/30 transition-all min-h-[400px] group"
                 >
                     <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-orange-500 group-hover:scale-110 transition-all shadow-xl">
