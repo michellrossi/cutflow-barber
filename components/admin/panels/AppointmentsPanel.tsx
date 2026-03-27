@@ -151,11 +151,11 @@ export const AppointmentsPanel: React.FC = () => {
     };
 
     const STATUS_COLORS: Record<string, string> = {
-        scheduled: 'text-blue-600 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-400/10 dark:border-blue-400/20',
-        confirmed: 'text-orange-600 bg-orange-50 border-orange-200 dark:text-orange-400 dark:bg-orange-400/10 dark:border-orange-400/20',
-        completed: 'text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-400/10 dark:border-green-400/20',
-        cancelled: 'text-red-600 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-400/10 dark:border-red-400/20',
-        noshow: 'text-slate-600 bg-slate-50 border-slate-200 dark:text-slate-400 dark:bg-slate-400/10 dark:border-slate-400/20',
+        scheduled: 'text-blue-700 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-400/10 dark:border-blue-400/20',
+        confirmed: 'text-orange-700 bg-orange-50 border-orange-200 dark:text-orange-400 dark:bg-orange-400/10 dark:border-orange-400/20',
+        completed: 'text-green-700 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-400/10 dark:border-green-400/20',
+        cancelled: 'text-red-700 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-400/10 dark:border-red-400/20',
+        noshow: 'text-slate-700 bg-slate-50 border-slate-200 dark:text-slate-400 dark:bg-slate-400/10 dark:border-slate-400/20',
     };
 
     const STATUS_LABELS: Record<string, string> = {
@@ -379,7 +379,7 @@ export const AppointmentsPanel: React.FC = () => {
                             </div>
 
                             {/* Filtros de Status */}
-                            <div className="flex gap-1.5 overflow-x-auto py-2 px-1 hide-scrollbar no-scrollbar w-full md:w-auto">
+                            <div className="flex gap-1.5 overflow-x-auto py-3 px-2 hide-scrollbar no-scrollbar w-full md:w-auto">
                                 {[
                                     { id: 'all', label: 'Todos' },
                                     { id: 'scheduled', label: 'Agendados' },
@@ -393,8 +393,8 @@ export const AppointmentsPanel: React.FC = () => {
                                         onClick={() => setStatusFilter(status.id)}
                                         className={`px-3 py-1.5 rounded-full text-[9px] md:text-[10px] font-bold whitespace-nowrap transition-colors border uppercase tracking-wider ${
                                             statusFilter === status.id 
-                                            ? `bg-slate-700 text-white border-slate-500` 
-                                            : 'bg-transparent text-slate-500 border-slate-700 hover:border-slate-600 hover:text-slate-300'
+                                            ? `bg-slate-700 text-white border-slate-500 dark:bg-slate-700 dark:border-slate-500` 
+                                            : 'bg-transparent text-slate-600 dark:text-slate-500 border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600 hover:text-slate-800 dark:hover:text-slate-300'
                                         }`}
                                     >
                                         {status.label}
@@ -409,7 +409,7 @@ export const AppointmentsPanel: React.FC = () => {
                         <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-slate-950/80 text-slate-200 text-sm border-b border-slate-700">
+                                    <tr className="bg-slate-100 dark:bg-slate-950/80 text-slate-800 dark:text-slate-200 text-sm border-b border-slate-200 dark:border-slate-700">
                                         <th className="p-4 font-bold whitespace-nowrap">Status</th>
                                         <th className="p-4 font-bold whitespace-nowrap">Data/Hora</th>
                                         <th className="p-4 font-bold">Cliente</th>
