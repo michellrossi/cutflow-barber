@@ -151,11 +151,11 @@ export const AppointmentsPanel: React.FC = () => {
     };
 
     const STATUS_COLORS: Record<string, string> = {
-        scheduled: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
-        confirmed: 'text-orange-400 bg-orange-400/10 border-orange-400/20',
-        completed: 'text-green-400 bg-green-400/10 border-green-400/20',
-        cancelled: 'text-red-400 bg-red-400/10 border-red-400/20',
-        noshow: 'text-slate-400 bg-slate-400/10 border-slate-400/20',
+        scheduled: 'text-blue-600 bg-blue-50 border-blue-200 dark:text-blue-400 dark:bg-blue-400/10 dark:border-blue-400/20',
+        confirmed: 'text-orange-600 bg-orange-50 border-orange-200 dark:text-orange-400 dark:bg-orange-400/10 dark:border-orange-400/20',
+        completed: 'text-green-600 bg-green-50 border-green-200 dark:text-green-400 dark:bg-green-400/10 dark:border-green-400/20',
+        cancelled: 'text-red-600 bg-red-50 border-red-200 dark:text-red-400 dark:bg-red-400/10 dark:border-red-400/20',
+        noshow: 'text-slate-600 bg-slate-50 border-slate-200 dark:text-slate-400 dark:bg-slate-400/10 dark:border-slate-400/20',
     };
 
     const STATUS_LABELS: Record<string, string> = {
@@ -283,8 +283,7 @@ export const AppointmentsPanel: React.FC = () => {
                 </div>
             )}
 
-            <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold text-white hidden md:block">Agendamentos</h2>
+            <div className="flex justify-end items-center mb-4">
                 <div className="bg-slate-800 p-1 rounded-lg border border-slate-700 flex gap-1 w-full md:w-auto">
                     <button 
                         onClick={() => setViewMode('calendar')}
@@ -380,7 +379,7 @@ export const AppointmentsPanel: React.FC = () => {
                             </div>
 
                             {/* Filtros de Status */}
-                            <div className="flex gap-1.5 overflow-x-auto py-1 hide-scrollbar no-scrollbar w-full md:w-auto">
+                            <div className="flex gap-1.5 overflow-x-auto py-2 px-1 hide-scrollbar no-scrollbar w-full md:w-auto">
                                 {[
                                     { id: 'all', label: 'Todos' },
                                     { id: 'scheduled', label: 'Agendados' },
@@ -410,14 +409,14 @@ export const AppointmentsPanel: React.FC = () => {
                         <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
-                                    <tr className="bg-slate-950/50 text-slate-400 text-sm border-b border-slate-700">
-                                        <th className="p-4 font-medium whitespace-nowrap">Status</th>
-                                        <th className="p-4 font-medium whitespace-nowrap">Data/Hora</th>
-                                        <th className="p-4 font-medium">Cliente</th>
-                                        <th className="p-4 font-medium">Serviços / Profissional</th>
-                                        <th className="p-4 font-medium text-right">Valor</th>
-                                        <th className="p-4 font-medium text-right">Pagamento</th>
-                                        <th className="p-4 font-medium text-right">Ações</th>
+                                    <tr className="bg-slate-950/80 text-slate-200 text-sm border-b border-slate-700">
+                                        <th className="p-4 font-bold whitespace-nowrap">Status</th>
+                                        <th className="p-4 font-bold whitespace-nowrap">Data/Hora</th>
+                                        <th className="p-4 font-bold">Cliente</th>
+                                        <th className="p-4 font-bold">Serviços / Profissional</th>
+                                        <th className="p-4 font-bold text-right">Valor</th>
+                                        <th className="p-4 font-bold text-right">Pagamento</th>
+                                        <th className="p-4 font-bold text-right">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-700">
@@ -429,7 +428,7 @@ export const AppointmentsPanel: React.FC = () => {
                                         const proColor = professionals.find(p => p.id === apt.professionalId)?.color || '#64748b';
 
                                         return (
-                                        <tr key={apt.id} className="hover:bg-slate-700/30 transition-colors group border-b border-slate-700/50 last:border-0 appointment-list-item" style={{ borderLeftColor: proColor }}>
+                                        <tr key={apt.id} className="hover:bg-slate-700/30 transition-colors group border-b border-slate-700/50 last:border-0 border-l-4" style={{ borderLeftColor: proColor }}>
                                             <td className="p-4">
                                                 <span className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
                                                     {STATUS_LABELS[apt.status] || apt.status}
@@ -513,7 +512,7 @@ export const AppointmentsPanel: React.FC = () => {
                                 const isFuture = apptDateTime > now;
 
                                 return (
-                                    <div key={apt.id} className="p-4 space-y-4 appointment-list-item" style={{ borderLeftColor: professionals.find(p => p.id === apt.professionalId)?.color || '#64748b' }}>
+                                    <div key={apt.id} className="p-4 space-y-4 border-l-4" style={{ borderLeftColor: professionals.find(p => p.id === apt.professionalId)?.color || '#64748b' }}>
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <div className="font-bold text-white text-lg">{apt.clientName}</div>
