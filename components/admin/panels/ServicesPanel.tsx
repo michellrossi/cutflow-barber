@@ -205,42 +205,31 @@ export const ServicesPanel: React.FC = () => {
 
              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
-                    <h2 className="text-2xl font-bold text-white mb-1">Gestão de Serviços</h2>
-                    <p className="text-slate-400">Adicione, edite ou remova serviços oferecidos.</p>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Gestão de Serviços</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Adicione, edite ou remova serviços oferecidos.</p>
                 </div>
-                <button 
-                    onClick={() => { 
-                        setIsFormOpen(true); 
-                        setEditingId(null); 
-                        setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes', imageUrl: '' }); 
-                    }} 
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold shadow-lg hover:brightness-110 transition-all" 
-                    style={{ backgroundColor: settings.primaryColor }}
-                >
-                    <Plus size={20} /> Adicionar Serviço
-                </button>
             </div>
 
             {isFormOpen && (
                  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setIsFormOpen(false)}>
-                 <div className="bg-slate-800 p-8 rounded-2xl border border-slate-700 animate-scale-up w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+                 <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 animate-scale-up w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
                      <div className="flex justify-between items-start mb-6">
-                        <h3 className="text-xl font-bold text-white">{editingId ? 'Editar Serviço' : 'Novo Serviço'}</h3>
-                        <button onClick={() => setIsFormOpen(false)} className="text-slate-500 hover:text-white transition-colors"><X size={24}/></button>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{editingId ? 'Editar Serviço' : 'Novo Serviço'}</h3>
+                        <button onClick={() => setIsFormOpen(false)} className="text-slate-400 hover:text-slate-900 dark:text-slate-500 dark:hover:text-white transition-colors"><X size={24}/></button>
                      </div>
                      
                      {!editingId && (
-                            <div className="flex items-center gap-3 mb-8 p-4 bg-slate-900/50 rounded-xl border border-slate-700">
+                            <div className="flex items-center gap-3 mb-8 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-700">
                                 <Sparkles size={18} className="text-orange-500" />
                                 <div className="flex-1">
                                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Catálogo Rápido</p>
                                     <select 
                                         onChange={handleTemplateSelect}
-                                        className="w-full bg-transparent text-slate-300 text-sm font-medium focus:outline-none cursor-pointer"
+                                        className="w-full bg-transparent text-slate-700 dark:text-slate-300 text-sm font-bold focus:outline-none cursor-pointer"
                                     >
-                                        <option value="" className="bg-slate-800">Selecione um serviço pré-definido...</option>
+                                        <option value="" className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">Selecione um serviço pré-definido...</option>
                                         {CATALOG.map((item, idx) => (
-                                            <option key={idx} value={item.name} className="bg-slate-800">{item.name}</option>
+                                            <option key={idx} value={item.name} className="bg-white dark:bg-slate-800 text-slate-900 dark:text-white">{item.name}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -251,20 +240,20 @@ export const ServicesPanel: React.FC = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                              <div>
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nome do Serviço</label>
-                                <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500 font-bold" placeholder="Ex: Corte Masculino"/>
+                                <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 font-bold" placeholder="Ex: Corte Masculino"/>
                             </div>
                             <div>
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Duração (minutos)</label>
                                 <div className="relative">
-                                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                                    <input required type="number" value={formData.duration} onChange={e => setFormData({...formData, duration: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 pl-12 text-white focus:outline-none focus:border-orange-500 font-bold" placeholder="30" />
+                                    <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" size={18} />
+                                    <input required type="number" value={formData.duration} onChange={e => setFormData({...formData, duration: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 pl-12 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 font-bold" placeholder="30" />
                                 </div>
                             </div>
                             <div>
                                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Preço (R$)</label>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">R$</span>
-                                    <input required type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 pl-12 text-white focus:outline-none focus:border-orange-500 font-bold" placeholder="0.00" />
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 font-bold">R$</span>
+                                    <input required type="number" step="0.01" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 pl-12 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 font-bold" placeholder="0.00" />
                                 </div>
                             </div>
                             <div>
@@ -272,7 +261,7 @@ export const ServicesPanel: React.FC = () => {
                                 <div className="flex items-center gap-4">
                                     <div 
                                         onClick={() => !isUploading && !isGeneratingImage && fileInputRef.current?.click()} 
-                                        className={`w-16 h-16 bg-slate-900 rounded-xl border border-dashed border-slate-600 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative ${(isUploading || isGeneratingImage) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                        className={`w-16 h-16 bg-slate-50 dark:bg-slate-900 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative ${(isUploading || isGeneratingImage) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         {(isUploading || isGeneratingImage) ? (
                                             <Loader2 size={24} className="text-orange-500 animate-spin" />
@@ -280,7 +269,7 @@ export const ServicesPanel: React.FC = () => {
                                             formData.imageUrl ? (
                                                 <img src={formData.imageUrl} alt="Preview" className="w-full h-full object-cover" />
                                             ) : (
-                                                <Upload size={20} className="text-slate-500" />
+                                                <Upload size={20} className="text-slate-400 dark:text-slate-500" />
                                             )
                                         )}
                                     </div>
@@ -314,7 +303,7 @@ export const ServicesPanel: React.FC = () => {
                         
                         <div>
                             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Descrição do Serviço</label>
-                            <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500 min-h-[100px] resize-none" placeholder="Descreva os detalhes do serviço..." />
+                            <textarea required value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})} className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500 min-h-[100px] resize-none" placeholder="Descreva os detalhes do serviço..." />
                         </div>
 
                         <div>
@@ -325,7 +314,7 @@ export const ServicesPanel: React.FC = () => {
                                         key={cat}
                                         type="button"
                                         onClick={() => setFormData({...formData, category: cat})}
-                                        className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${formData.category === cat ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20' : 'border-slate-700 text-slate-500 hover:border-slate-500 hover:text-slate-300'}`}
+                                        className={`px-4 py-2 rounded-full text-xs font-bold border transition-all ${formData.category === cat ? 'bg-orange-500 border-orange-500 text-white shadow-lg shadow-orange-500/20' : 'border-slate-200 dark:border-slate-700 text-slate-500 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                                     >
                                         {cat}
                                     </button>
@@ -334,13 +323,13 @@ export const ServicesPanel: React.FC = () => {
                              <input 
                                 value={formData.category} 
                                 onChange={e => setFormData({...formData, category: e.target.value})} 
-                                className="w-full bg-slate-900 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500" 
+                                className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-4 text-slate-900 dark:text-white focus:outline-none focus:border-orange-500" 
                                 placeholder="Ou digite uma nova categoria..."
                             />
                         </div>
 
                         <div className="flex gap-4 justify-end pt-4">
-                             <button type="button" onClick={() => setIsFormOpen(false)} className="px-6 py-3 text-slate-400 font-bold hover:text-white transition-colors" disabled={isUploading || isSaving}>Cancelar</button>
+                             <button type="button" onClick={() => setIsFormOpen(false)} className="px-6 py-3 text-slate-500 dark:text-slate-400 font-bold hover:text-slate-900 dark:hover:text-white transition-colors" disabled={isUploading || isSaving}>Cancelar</button>
                              <button type="submit" className="px-10 py-3 rounded-xl text-white font-bold flex items-center gap-2 shadow-lg hover:brightness-110 transition-all" style={{ backgroundColor: settings.primaryColor }} disabled={isUploading || isSaving}>
                                 {(isUploading || isSaving) ? <Loader2 size={20} className="animate-spin"/> : 'Salvar Serviço'}
                              </button>

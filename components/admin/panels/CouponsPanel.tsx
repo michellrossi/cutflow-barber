@@ -108,20 +108,9 @@ export const CouponsPanel: React.FC = () => {
 
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
-                    <h2 className="text-2xl font-bold text-white mb-1">Gestão de Cupons</h2>
-                    <p className="text-slate-400">Crie e gerencie promoções para fidelizar seus clientes.</p>
+                    <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Gestão de Cupons</h2>
+                    <p className="text-slate-500 dark:text-slate-400 text-sm">Crie e gerencie promoções para fidelizar seus clientes.</p>
                 </div>
-                <button 
-                    onClick={() => { 
-                        setIsFormOpen(true); 
-                        setEditingId(null); 
-                        setFormData({ code: '', value: '', type: 'percentage', maxUses: '', expiresAt: '' }); 
-                    }} 
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold shadow-lg hover:brightness-110 transition-all" 
-                    style={{ backgroundColor: settings.primaryColor }}
-                >
-                    <Plus size={20} /> Novo Cupom
-                </button>
             </div>
 
             {/* Tabs */}
@@ -207,43 +196,43 @@ export const CouponsPanel: React.FC = () => {
                  </div>
             )}
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {filteredCoupons.map(coupon => {
                     const expired = isCouponExpired(coupon);
                     const usagePercentage = coupon.maxUses ? (coupon.usageCount / coupon.maxUses) * 100 : 0;
                     
                     return (
-                        <div key={coupon.id} className="bg-slate-800/40 rounded-3xl border border-slate-700 p-6 flex flex-col relative group hover:border-slate-600 transition-all shadow-xl">
+                        <div key={coupon.id} className="bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 flex flex-col relative group hover:border-slate-400 dark:hover:border-slate-600 transition-all shadow-sm dark:shadow-xl">
                             {/* Header do Card */}
-                            <div className="flex justify-between items-start mb-6">
-                                <div className="bg-slate-900/80 px-4 py-2 rounded-xl border border-slate-700 text-green-500 font-bold tracking-widest text-sm">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="bg-slate-100 dark:bg-slate-900/80 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-green-600 dark:text-green-500 font-bold tracking-widest text-xs">
                                     {coupon.code}
                                 </div>
-                                <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                                    expired ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'
+                                <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-widest ${
+                                    expired ? 'bg-red-100 text-red-600 border border-red-200 dark:bg-red-500/10 dark:text-red-500 dark:border-red-500/20' : 'bg-green-100 text-green-600 border border-green-200 dark:bg-green-500/10 dark:text-green-500 dark:border-green-500/20'
                                 }`}>
-                                    <div className={`w-1.5 h-1.5 rounded-full ${expired ? 'bg-red-500' : 'bg-green-500'}`} />
+                                    <div className={`w-1 h-1 rounded-full ${expired ? 'bg-red-500' : 'bg-green-500'}`} />
                                     {expired ? 'EXPIRADO' : 'ATIVO'}
                                 </div>
                             </div>
 
                             {/* Info de Benefício */}
-                            <div className="mb-6">
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Valor do Benefício</p>
-                                <h4 className="text-xl font-bold text-white">
+                            <div className="mb-4">
+                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">Valor do Benefício</p>
+                                <h4 className="text-lg font-bold text-slate-900 dark:text-white">
                                     {coupon.type === 'percentage' ? `${coupon.value}% de desconto` : `R$ ${coupon.value.toFixed(2)} OFF`}
                                 </h4>
                             </div>
 
                             {/* Progresso de Uso */}
-                            <div className="mb-6">
-                                <div className="flex justify-between items-end mb-2">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Uso atual</p>
-                                    <p className="text-[10px] font-bold text-slate-400">
+                            <div className="mb-4">
+                                <div className="flex justify-between items-end mb-1.5">
+                                    <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Uso atual</p>
+                                    <p className="text-[9px] font-bold text-slate-400">
                                         {coupon.usageCount}{coupon.maxUses ? `/${coupon.maxUses}` : ' (Ilimitado)'}
                                     </p>
                                 </div>
-                                <div className="w-full bg-slate-900 h-2 rounded-full overflow-hidden border border-slate-700/50">
+                                <div className="w-full bg-slate-100 dark:bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700/50">
                                     <div 
                                         className={`h-full rounded-full transition-all duration-1000 ${expired ? 'bg-red-500/50' : 'bg-green-500'}`}
                                         style={{ width: `${coupon.maxUses ? Math.min(usagePercentage, 100) : 10}%` }}
@@ -252,28 +241,28 @@ export const CouponsPanel: React.FC = () => {
                             </div>
 
                             {/* Expiração */}
-                            <div className="mb-8">
-                                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                            <div className="mb-5">
+                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-0.5">
                                     {expired ? 'Expirou em' : 'Expira em'}
                                 </p>
-                                <p className="text-sm font-bold text-slate-300">
+                                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
                                     {coupon.expiresAt ? new Date(coupon.expiresAt + 'T12:00:00').toLocaleDateString('pt-BR') : 'Sem validade'}
                                 </p>
                             </div>
 
                             {/* Ações */}
-                            <div className="mt-auto flex gap-3">
+                            <div className="mt-auto flex gap-2">
                                 <button 
                                     onClick={() => handleEdit(coupon)} 
-                                    className="flex-1 py-3 bg-slate-900/50 border border-slate-700 rounded-xl text-slate-300 hover:text-white hover:bg-slate-700 transition-all font-bold text-sm"
+                                    className="flex-1 py-2 bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-all font-bold text-xs"
                                 >
                                     Editar
                                 </button>
                                 <button 
                                     onClick={() => setDeleteId(coupon.id)} 
-                                    className="p-3 bg-slate-900/50 border border-slate-700 rounded-xl text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                                    className="p-2 bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-100 dark:hover:text-red-500 dark:hover:bg-red-500/10 transition-all"
                                 >
-                                    <Trash2 size={20}/>
+                                    <Trash2 size={16}/>
                                 </button>
                             </div>
                         </div>
@@ -287,14 +276,14 @@ export const CouponsPanel: React.FC = () => {
                         setEditingId(null); 
                         setFormData({ code: '', value: '', type: 'percentage', maxUses: '', expiresAt: '' }); 
                     }}
-                    className="bg-slate-800/20 rounded-3xl border-2 border-dashed border-slate-700 p-6 flex flex-col items-center justify-center gap-4 hover:border-slate-500 hover:bg-slate-800/30 transition-all min-h-[350px] group"
+                    className="bg-slate-50 dark:bg-slate-800/20 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-4 flex flex-col items-center justify-center gap-3 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/30 transition-all min-h-[250px] group"
                 >
-                    <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-orange-500 group-hover:scale-110 transition-all">
-                        <Plus size={24} />
+                    <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-400 dark:text-slate-500 group-hover:text-orange-500 group-hover:scale-110 transition-all shadow-sm">
+                        <Plus size={20} />
                     </div>
                     <div className="text-center">
-                        <p className="text-lg font-bold text-white mb-1">Novo Cupom</p>
-                        <p className="text-sm text-slate-500">Crie uma nova regra de promoção</p>
+                        <p className="text-base font-bold text-slate-900 dark:text-white mb-0.5">Novo Cupom</p>
+                        <p className="text-xs text-slate-500">Crie uma nova regra de promoção</p>
                     </div>
                 </button>
             </div>
