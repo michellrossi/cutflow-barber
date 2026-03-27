@@ -10,7 +10,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-white border-slate-200 border p-3 rounded-lg shadow-xl">
-                <p className="text-slate-500 text-xs mb-1 font-bold">{label}</p>
+                <p className="text-[#6b7d99] text-xs mb-1 font-bold">{label}</p>
                 <p className="text-orange-500 font-bold text-sm">
                     R$ {payload[0].value.toFixed(2)}
                 </p>
@@ -249,7 +249,7 @@ export const FinancePanel: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-900">Controle Financeiro</h2>
-                    <p className="text-slate-500">Visão geral de faturamento e desempenho.</p>
+                    <p className="text-[#6b7d99] font-medium">Visão geral de faturamento e desempenho.</p>
                 </div>
                 
                 <button 
@@ -266,7 +266,7 @@ export const FinancePanel: React.FC = () => {
             <div className="bg-white p-1.5 rounded-xl border border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-sm">
                 
                 {/* Abas de Atalho */}
-                <div className="flex bg-slate-50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto hide-scrollbar border border-slate-200">
+                <div className="flex bg-slate-50 p-1 rounded-full w-full lg:w-auto overflow-x-auto hide-scrollbar border border-slate-200">
                     {[
                         { id: '30days', label: '30 Dias' },
                         { id: 'thisMonth', label: 'Este Mês' },
@@ -276,10 +276,10 @@ export const FinancePanel: React.FC = () => {
                         <button
                             key={preset.id}
                             onClick={() => setPreset(preset.id as any)}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-all whitespace-nowrap ${
+                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
                                 activePreset === preset.id 
                                 ? 'bg-white text-slate-900 shadow-sm border border-slate-200' 
-                                : 'text-slate-500 hover:text-slate-900 hover:bg-white'
+                                : 'text-[#6b7d99] hover:text-slate-900 hover:bg-white'
                             }`}
                         >
                             {preset.label}
@@ -288,8 +288,8 @@ export const FinancePanel: React.FC = () => {
                 </div>
 
                 {/* Seletor de Datas Unificado */}
-                <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 focus-within:border-orange-500/50 transition-colors">
-                    <Calendar size={16} className="text-slate-400 shrink-0" />
+                <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-50 px-3 py-2 rounded-full border border-slate-200 focus-within:border-orange-500/50 transition-colors">
+                    <Calendar size={16} className="text-[#6b7d99] shrink-0" />
                     <div className="flex items-center gap-2 flex-1">
                         <input 
                             type="date" 
@@ -297,7 +297,7 @@ export const FinancePanel: React.FC = () => {
                             onChange={e => handleDateChange('start', e.target.value)}
                             className="bg-transparent border-none text-slate-700 text-sm focus:outline-none w-full cursor-pointer font-sans"
                         />
-                        <span className="text-slate-400 font-medium">até</span>
+                        <span className="text-[#6b7d99] font-medium">até</span>
                         <input 
                             type="date" 
                             value={endDate} 
@@ -324,7 +324,7 @@ export const FinancePanel: React.FC = () => {
                             <div className="p-2 bg-blue-50 rounded-lg text-blue-500 border border-blue-100">
                                 <DollarSign size={20} />
                             </div>
-                            <span className="text-slate-500 font-medium text-sm">Faturamento Bruto</span>
+                            <span className="text-[#6b7d99] font-bold text-xs uppercase tracking-wider">Faturamento Bruto</span>
                         </div>
                         <div className="text-2xl font-bold text-slate-900 mt-2">
                             R$ {stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -337,7 +337,7 @@ export const FinancePanel: React.FC = () => {
                             <div className="p-2 bg-green-50 rounded-lg text-green-500 border border-green-100">
                                 <Wallet size={20} />
                             </div>
-                            <span className="text-slate-500 font-medium text-sm">Lucro da Loja</span>
+                            <span className="text-[#6b7d99] font-bold text-xs uppercase tracking-wider">Lucro da Loja</span>
                         </div>
                         <div className="text-2xl font-bold text-green-600 mt-2">
                             R$ {stats.totalOwnerShare.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -350,7 +350,7 @@ export const FinancePanel: React.FC = () => {
                             <div className="p-2 bg-orange-50 rounded-lg text-orange-500 border border-orange-100">
                                 <PieChart size={20} />
                             </div>
-                            <span className="text-slate-500 font-medium text-sm">Comissões (Equipe)</span>
+                            <span className="text-[#6b7d99] font-bold text-xs uppercase tracking-wider">Comissões (Equipe)</span>
                         </div>
                         <div className="text-2xl font-bold text-orange-600 mt-2">
                             R$ {stats.totalCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -363,7 +363,7 @@ export const FinancePanel: React.FC = () => {
                             <div className="p-2 bg-purple-50 rounded-lg text-purple-500 border border-purple-100">
                                 <Award size={20} />
                             </div>
-                            <span className="text-slate-500 font-medium text-sm">Ticket Médio</span>
+                            <span className="text-[#6b7d99] font-bold text-xs uppercase tracking-wider">Ticket Médio</span>
                         </div>
                         <div className="text-2xl font-bold text-slate-900 mt-2">
                             R$ {stats.avgTicket.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -379,7 +379,7 @@ export const FinancePanel: React.FC = () => {
                         <h3 className="text-lg font-bold text-slate-900 mb-6">Evolução do Faturamento</h3>
                         
                         {stats.chartData.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 h-64 border border-dashed border-slate-200 rounded-xl bg-slate-50">
+                            <div className="flex-1 flex flex-col items-center justify-center text-[#6b7d99] h-64 border border-dashed border-slate-200 rounded-xl bg-slate-50">
                                 <TrendingUp size={32} className="mb-2 opacity-50"/>
                                 <p>Sem dados financeiros para o período.</p>
                             </div>
@@ -390,7 +390,7 @@ export const FinancePanel: React.FC = () => {
                                         <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" opacity={0.5} vertical={false} />
                                         <XAxis 
                                             dataKey="displayDate" 
-                                            stroke="#94a3b8" 
+                                            stroke="#6b7d99" 
                                             fontSize={12} 
                                             tickLine={false} 
                                             axisLine={false}
@@ -398,7 +398,7 @@ export const FinancePanel: React.FC = () => {
                                             minTickGap={20}
                                         />
                                         <YAxis 
-                                            stroke="#94a3b8" 
+                                            stroke="#6b7d99" 
                                             fontSize={12} 
                                             tickLine={false} 
                                             axisLine={false}
@@ -428,7 +428,7 @@ export const FinancePanel: React.FC = () => {
                         </h3>
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
                             {stats.sortedPros.length === 0 ? (
-                                <p className="text-slate-400 text-sm text-center py-10">Nenhum dado disponível.</p>
+                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Nenhum dado disponível.</p>
                             ) : (
                                 stats.sortedPros.map((pro, idx) => (
                                     <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0 group">
@@ -451,7 +451,7 @@ export const FinancePanel: React.FC = () => {
                                                     style={{ width: `${(pro.value / (stats.totalRevenue || 1)) * 100}%` }}
                                                 ></div>
                                             </div>
-                                            <div className="mt-1 text-xs text-slate-400 text-right">
+                                            <div className="mt-1 text-xs text-[#6b7d99] text-right font-medium">
                                                 {pro.count} atendimentos
                                             </div>
                                         </div>
@@ -470,7 +470,7 @@ export const FinancePanel: React.FC = () => {
                             Formas de Pagamento
                         </h3>
                         {stats.paymentMethodData.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 h-full border border-dashed border-slate-200 rounded-xl bg-slate-50">
+                            <div className="flex-1 flex flex-col items-center justify-center text-[#6b7d99] h-full border border-dashed border-slate-200 rounded-xl bg-slate-50">
                                 <PieChart size={32} className="mb-2 opacity-50"/>
                                 <p>Sem dados financeiros.</p>
                             </div>
@@ -513,7 +513,7 @@ export const FinancePanel: React.FC = () => {
                                 </ResponsiveContainer>
                                 {/* Centro do Donut */}
                                 <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Total</p>
+                                    <p className="text-[10px] font-bold text-[#6b7d99] uppercase tracking-widest">Total</p>
                                     <p className="text-xl font-bold text-slate-900">R$ {stats.totalRevenue.toFixed(0)}</p>
                                 </div>
                             </div>
@@ -526,7 +526,7 @@ export const FinancePanel: React.FC = () => {
                             Serviços Mais Rentáveis
                         </h3>
                         {stats.serviceData.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-slate-400 h-full border border-dashed border-slate-200 rounded-xl bg-slate-50">
+                            <div className="flex-1 flex flex-col items-center justify-center text-[#6b7d99] h-full border border-dashed border-slate-200 rounded-xl bg-slate-50">
                                 <TrendingUp size={32} className="mb-2 opacity-50"/>
                                 <p>Sem dados de serviços.</p>
                             </div>
@@ -558,7 +558,7 @@ export const FinancePanel: React.FC = () => {
                                 </div>
                                 
                                 <div className="mt-auto pt-8 border-t border-slate-100 flex justify-between items-center">
-                                    <span className="text-slate-500 text-sm font-medium">Total de serviços este mês</span>
+                                    <span className="text-[#6b7d99] text-sm font-bold uppercase tracking-tight">Total de serviços este mês</span>
                                     <span className="text-slate-900 text-xl font-bold">{stats.totalCount}</span>
                                 </div>
                             </div>

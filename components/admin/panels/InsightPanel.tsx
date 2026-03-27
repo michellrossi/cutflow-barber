@@ -93,10 +93,10 @@ export const InsightPanel: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-12rem)] bg-slate-900/50 rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+        <div className="flex flex-col h-[calc(100vh-12rem)] bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
             {/* Header com Stats Rápidos */}
-            <div className="p-4 border-b border-slate-800 bg-slate-900/80 flex flex-wrap gap-4 items-center justify-between">
-                <div className="flex items-center gap-2 text-orange-500">
+            <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-wrap gap-4 items-center justify-between">
+                <div className="flex items-center gap-2 text-orange-600">
                     <Sparkles size={20} />
                     <span className="font-bold">Business Intelligence AI</span>
                 </div>
@@ -113,14 +113,14 @@ export const InsightPanel: React.FC = () => {
             </div>
 
             {/* Chat Area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar bg-white">
                 {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
                         <div className={`max-w-[85%] md:max-w-[70%] flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-primary' : 'bg-slate-800 border border-slate-700'}`}>
-                                {msg.role === 'user' ? <User size={16} /> : <Bot size={16} className="text-orange-500" />}
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-orange-500' : 'bg-slate-100 border border-slate-200'}`}>
+                                {msg.role === 'user' ? <User size={16} className="text-white" /> : <Bot size={16} className="text-orange-600" />}
                             </div>
-                            <div className={`p-4 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-primary text-white rounded-tr-none' : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-tl-none shadow-md'}`}>
+                            <div className={`p-4 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-orange-500 text-white rounded-tr-none' : 'bg-slate-50 text-slate-700 border border-slate-200 rounded-tl-none shadow-sm'}`}>
                                 {msg.content.split('\n').map((line, j) => (
                                     <p key={j} className={line.trim() === '' ? 'h-2' : 'mb-1'}>{line}</p>
                                 ))}
@@ -130,9 +130,9 @@ export const InsightPanel: React.FC = () => {
                 ))}
                 {isLoading && (
                     <div className="flex justify-start animate-pulse">
-                        <div className="flex gap-3 items-center bg-slate-800/50 p-3 rounded-2xl border border-slate-700">
-                            <Loader2 size={16} className="animate-spin text-orange-500" />
-                            <span className="text-xs text-slate-400">Analisando dados da barbearia...</span>
+                        <div className="flex gap-3 items-center bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                            <Loader2 size={16} className="animate-spin text-orange-600" />
+                            <span className="text-xs text-slate-500">Analisando dados da barbearia...</span>
                         </div>
                     </div>
                 )}
@@ -140,25 +140,25 @@ export const InsightPanel: React.FC = () => {
             </div>
 
             {/* Input Area */}
-            <form onSubmit={handleSend} className="p-4 border-t border-slate-800 bg-slate-900/80">
+            <form onSubmit={handleSend} className="p-4 border-t border-slate-200 bg-slate-50">
                 <div className="relative flex items-center">
                     <input
                         type="text"
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder="Pergunte sobre faturamento, barbeiro mais produtivo, clientes..."
-                        className="w-full bg-slate-800 border border-slate-700 rounded-xl py-4 pl-4 pr-14 text-white placeholder:text-slate-500 focus:outline-none focus:border-primary transition-all shadow-inner"
+                        className="w-full bg-white border border-slate-200 rounded-xl py-4 pl-4 pr-14 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-500 transition-all shadow-sm"
                         disabled={isLoading}
                     />
                     <button
                         type="submit"
                         disabled={!input.trim() || isLoading}
-                        className="absolute right-2 p-2 bg-primary hover:bg-orange-600 text-white rounded-lg transition-all disabled:opacity-50 disabled:hover:bg-primary shadow-lg"
+                        className="absolute right-2 p-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all disabled:opacity-50 disabled:hover:bg-orange-500 shadow-md"
                     >
                         <Send size={20} />
                     </button>
                 </div>
-                <p className="text-[10px] text-slate-500 mt-2 text-center">
+                <p className="text-[10px] text-slate-400 mt-2 text-center">
                     A IA analisa dados reais do seu banco de dados para responder.
                 </p>
             </form>
@@ -167,10 +167,10 @@ export const InsightPanel: React.FC = () => {
 };
 
 const StatBadge: React.FC<{ icon: React.ReactNode, label: string, value: string | number }> = ({ icon, label, value }) => (
-    <div className="flex items-center gap-2 bg-slate-800/50 px-3 py-1.5 rounded-lg border border-slate-700/50 text-xs">
+    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs shadow-sm">
         <span className="text-slate-400">{icon}</span>
         <span className="text-slate-500">{label}:</span>
-        <span className="text-white font-bold">{value}</span>
+        <span className="text-slate-900 font-bold">{value}</span>
     </div>
 );
 

@@ -109,7 +109,7 @@ export const CouponsPanel: React.FC = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
                     <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Cupons</h2>
-                    <p className="text-slate-600 text-sm font-medium">Crie e gerencie promoções para fidelizar seus clientes.</p>
+                    <p className="text-[#6b7d99] text-sm font-medium">Crie e gerencie promoções para fidelizar seus clientes.</p>
                 </div>
             </div>
 
@@ -124,7 +124,7 @@ export const CouponsPanel: React.FC = () => {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
                         className={`pb-4 text-sm font-black transition-all relative ${
-                            activeTab === tab.id ? 'text-slate-900' : 'text-slate-500 hover:text-slate-700'
+                            activeTab === tab.id ? 'text-slate-900' : 'text-[#6b7d99] hover:text-slate-700'
                         }`}
                     >
                         {tab.label}
@@ -218,7 +218,7 @@ export const CouponsPanel: React.FC = () => {
 
                             {/* Info de Benefício */}
                             <div className="mb-4">
-                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Valor do Benefício</p>
+                                <p className="text-[9px] font-black text-[#6b7d99] uppercase tracking-widest mb-0.5">Valor do Benefício</p>
                                 <h4 className="text-lg font-black text-slate-900">
                                     {coupon.type === 'percentage' ? `${coupon.value}% de desconto` : `R$ ${coupon.value.toFixed(2)} OFF`}
                                 </h4>
@@ -227,7 +227,7 @@ export const CouponsPanel: React.FC = () => {
                             {/* Progresso de Uso */}
                             <div className="mb-4">
                                 <div className="flex justify-between items-end mb-1.5">
-                                    <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Uso atual</p>
+                                    <p className="text-[9px] font-black text-[#6b7d99] uppercase tracking-widest">Uso atual</p>
                                     <p className="text-[9px] font-black text-slate-900">
                                         {coupon.usageCount}{coupon.maxUses ? `/${coupon.maxUses}` : ' (Ilimitado)'}
                                     </p>
@@ -242,7 +242,7 @@ export const CouponsPanel: React.FC = () => {
 
                             {/* Expiração */}
                             <div className="mb-5">
-                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">
+                                <p className="text-[9px] font-black text-[#6b7d99] uppercase tracking-widest mb-0.5">
                                     {expired ? 'Expirou em' : 'Expira em'}
                                 </p>
                                 <p className="text-xs font-black text-slate-800">
@@ -260,7 +260,7 @@ export const CouponsPanel: React.FC = () => {
                                 </button>
                                 <button 
                                     onClick={() => setDeleteId(coupon.id)} 
-                                    className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-500 hover:text-red-700 hover:bg-red-50 transition-all"
+                                    className="p-2 bg-slate-50 border border-slate-200 rounded-lg text-[#6b7d99] hover:text-red-700 hover:bg-red-50 transition-all"
                                 >
                                     <Trash2 size={16}/>
                                 </button>
@@ -278,12 +278,12 @@ export const CouponsPanel: React.FC = () => {
                     }}
                     className="bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 p-4 flex flex-col items-center justify-center gap-3 hover:border-slate-400 hover:bg-slate-100 transition-all min-h-[250px] group shadow-sm"
                 >
-                    <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-orange-500 group-hover:scale-110 transition-all shadow-md">
+                    <div className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-[#6b7d99] group-hover:text-orange-500 group-hover:scale-110 transition-all shadow-md">
                         <Plus size={20} />
                     </div>
                     <div className="text-center">
                         <p className="text-base font-black text-slate-900 mb-0.5">Novo Cupom</p>
-                        <p className="text-xs text-slate-500 font-medium">Crie uma nova regra de promoção</p>
+                        <p className="text-xs text-[#6b7d99] font-medium">Crie uma nova regra de promoção</p>
                     </div>
                 </button>
             </div>

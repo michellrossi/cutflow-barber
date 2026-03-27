@@ -102,17 +102,17 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   }
 
   return (
-    <div className="flex h-screen bg-slate-900 text-slate-100 overflow-hidden flex-col md:flex-row w-full">
+    <div className="flex h-screen bg-white text-slate-900 overflow-hidden flex-col md:flex-row w-full">
       
       <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
 
       {/* Sidebar */}
-      <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col hidden md:flex admin-sidebar">
-        <div className="p-6 flex items-center gap-3 border-b border-slate-800">
+      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex admin-sidebar">
+        <div className="p-6 flex items-center gap-3 border-b border-slate-200">
           <div className="w-8 h-8 rounded bg-orange-500 flex items-center justify-center text-white font-bold overflow-hidden">
              <img src="https://i.freeimage.host/qD9Rddv.png" alt="Insight Barber Logo" className="w-full h-full object-cover" />
           </div>
-          <span className="font-bold text-lg tracking-tight truncate">INSIGHT BARBER</span>
+          <span className="font-bold text-lg tracking-tight truncate text-slate-900">INSIGHT BARBER</span>
         </div>
         
         <nav className="flex-1 p-4 space-y-1">
@@ -128,10 +128,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                           setIsSettingsOpen(false);
                       }
                   }}
-                  className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-lg transition-all duration-200 text-sm ${activeTab === 'team' ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
-                  style={activeTab === 'team' ? { borderLeft: `4px solid ${settings.primaryColor}` } : {}}
+                  className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${activeTab === 'team' ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
               >
-                  <Users size={20} style={{ color: activeTab === 'team' ? settings.primaryColor : 'inherit' }} />
+                  <Users size={20} className={activeTab === 'team' ? 'text-orange-500' : 'text-slate-400'} />
                   <span className="flex-1 text-left">Equipe</span>
                   <motion.div
                       animate={{ rotate: isTeamOpen ? 180 : 0 }}
@@ -191,10 +190,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                           setIsTeamOpen(false);
                       }
                   }}
-                  className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-lg transition-all duration-200 text-sm ${activeTab === 'settings' ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
-                  style={activeTab === 'settings' ? { borderLeft: `4px solid ${settings.primaryColor}` } : {}}
+                  className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${activeTab === 'settings' ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
               >
-                  <Settings size={20} style={{ color: activeTab === 'settings' ? settings.primaryColor : 'inherit' }} />
+                  <Settings size={20} className={activeTab === 'settings' ? 'text-orange-500' : 'text-slate-400'} />
                   <span className="flex-1 text-left">Configurações</span>
                   <motion.div
                       animate={{ rotate: isSettingsOpen ? 180 : 0 }}
@@ -287,10 +285,10 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           </div>
           
           <div className="pt-4 mt-2">
-              <div className="h-px bg-slate-800 mb-4 mx-2"></div>
+              <div className="h-px bg-slate-100 mb-4 mx-2"></div>
               <button 
                   onClick={onViewClient}
-                  className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-slate-400 hover:bg-slate-900 hover:text-white transition-colors group"
+                  className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-slate-400 hover:bg-slate-50 hover:text-slate-900 transition-colors group"
               >
                   <Smartphone size={20} className="group-hover:text-orange-500 transition-colors" />
                   <span className="flex-1 text-left">Agenda Digital</span>
@@ -299,8 +297,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           </div>
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
-          <button onClick={onLogout} className="flex items-center gap-3 px-4 py-3 w-full text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
+        <div className="p-4 border-t border-slate-100">
+          <button onClick={onLogout} className="flex items-center gap-3 px-4 py-3 w-full text-slate-400 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">
             <LogOut size={20} />
             <span>Sair / Home</span>
           </button>
@@ -328,12 +326,12 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
             </div>
         )}
 
-        <header className="h-16 bg-slate-900 border-b border-slate-800 flex items-center px-4 md:px-8 justify-between shrink-0">
-             <h2 className="text-xl md:text-2xl font-bold">{getTabLabel(activeTab)}</h2>
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center px-4 md:px-8 justify-between shrink-0">
+             <h2 className="text-xl md:text-2xl font-bold text-slate-900">{getTabLabel(activeTab)}</h2>
              <div className="flex items-center gap-4">
                 <button 
                     onClick={toggleTheme}
-                    className="p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                    className="p-2 rounded-full bg-slate-100 text-slate-400 hover:text-slate-900 transition-colors"
                     title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
                 >
                     {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
@@ -345,14 +343,14 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                     <ExternalLink size={16}/> Ver Agenda
                 </button>
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">A</div>
-                    <span className="text-sm text-slate-300 hidden md:inline">Admin</span>
+                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold">A</div>
+                    <span className="text-sm text-slate-600 hidden md:inline font-medium">Admin</span>
                 </div>
              </div>
         </header>
         
         {/* Mobile Nav (Improved) */}
-        <div className="md:hidden bg-slate-950 border-b border-slate-800 shrink-0 sticky top-0 z-30">
+        <div className="md:hidden bg-white border-b border-slate-200 shrink-0 sticky top-0 z-30">
             <div className="relative">
                 <div className="flex overflow-x-auto gap-1 p-2 scrollbar-hide no-scrollbar mask-fade-right">
                     <MobileNavItem icon={<LayoutGrid size={16} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
@@ -378,27 +376,24 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
 };
 
 const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void }> = ({ icon, label, active, onClick }) => {
-    const { settings } = useShop();
     return (
         <button 
             onClick={onClick}
-            className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-lg transition-all duration-200 text-sm ${active ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
-            style={active ? { borderLeft: `4px solid ${settings.primaryColor}` } : {}}
+            className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${active ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'}`}
         >
-            <span className={active ? `text-[${settings.primaryColor}]` : ''} style={{ color: active ? settings.primaryColor : 'inherit' }}>{icon}</span>
+            <span className={active ? 'text-orange-500' : 'text-slate-400'}>{icon}</span>
             <span>{label}</span>
         </button>
     );
 }
 
 const SubSidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void }> = ({ icon, label, active, onClick }) => {
-    const { settings } = useShop();
     return (
         <button 
             onClick={onClick}
-            className={`flex items-center gap-2 px-3 py-2 w-full rounded-lg text-sm transition-all duration-200 ${active ? 'text-white font-bold bg-slate-800/50' : 'text-slate-500 hover:text-slate-300 hover:bg-slate-900/50'}`}
+            className={`flex items-center gap-2 px-3 py-2 w-full rounded-lg text-sm transition-all duration-200 ${active ? 'text-orange-600 font-bold bg-orange-50/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
         >
-            <span style={{ color: active ? settings.primaryColor : 'inherit' }}>{icon}</span>
+            <span className={active ? 'text-orange-500' : 'text-slate-400'}>{icon}</span>
             <span>{label}</span>
         </button>
     );
@@ -409,7 +404,7 @@ const MobileNavItem: React.FC<{ icon: React.ReactNode, label: string, active: bo
     return (
         <button 
             onClick={onClick}
-            className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[64px] ${active ? 'bg-slate-800 text-white shadow-sm' : 'text-slate-500 active:bg-slate-900'}`}
+            className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-xl transition-all min-w-[64px] ${active ? 'bg-slate-100 text-orange-600 shadow-sm' : 'text-slate-500 active:bg-slate-50'}`}
             style={active ? { color: settings.primaryColor } : {}}
         >
             <span className={active ? 'scale-110 transition-transform' : 'opacity-70'}>{icon}</span>

@@ -229,11 +229,11 @@ export const ClientsPanel: React.FC = () => {
       {/* Filters & Search */}
       <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div className="relative flex-1 w-full lg:max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
           <input 
             type="text" 
             placeholder="Buscar por nome, telefone ou email..." 
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:outline-none focus:border-orange-500 transition-colors placeholder:text-slate-400"
+            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:outline-none focus:border-orange-500 transition-colors placeholder:text-[#6b7d99]"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -312,7 +312,7 @@ export const ClientsPanel: React.FC = () => {
                         <div className="font-bold text-slate-900 truncate">{client.name}</div>
                       </div>
                     </td>
-                    <td className="p-4 text-slate-600 text-sm font-medium">
+                    <td className="p-4 text-[#6b7d99] text-sm font-medium">
                       {client.phone}
                     </td>
                     <td className="p-4">
@@ -321,12 +321,12 @@ export const ClientsPanel: React.FC = () => {
                           <div className="text-sm font-bold text-slate-900">
                             {new Date(client.metrics.lastCutDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                           </div>
-                          <div className="text-[10px] font-medium text-slate-500">
+                          <div className="text-[10px] font-medium text-[#6b7d99]">
                             há {client.metrics.daysSinceLastCut} dias
                           </div>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-400 italic">Nunca cortou</span>
+                        <span className="text-xs text-[#6b7d99] italic">Nunca cortou</span>
                       )}
                     </td>
                     <td className="p-4">
@@ -337,7 +337,7 @@ export const ClientsPanel: React.FC = () => {
                     <td className="p-4">
                       <div className="flex flex-col items-center gap-1">
                         {renderStars(client.metrics.frequency)}
-                        <span className="text-[10px] font-bold text-slate-500">{client.metrics.frequency}</span>
+                        <span className="text-[10px] font-bold text-[#6b7d99]">{client.metrics.frequency}</span>
                       </div>
                     </td>
                     <td className="p-4 text-right">
@@ -396,7 +396,7 @@ export const ClientsPanel: React.FC = () => {
       {isFormOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setIsFormOpen(false)}>
           <div className="bg-white p-6 rounded-xl border border-slate-200 w-full max-w-lg shadow-2xl relative animate-scale-up">
-            <button onClick={() => setIsFormOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-900">
+            <button onClick={() => setIsFormOpen(false)} className="absolute top-4 right-4 text-[#6b7d99] hover:text-slate-900 transition-colors">
               <X size={20} />
             </button>
             
@@ -409,7 +409,7 @@ export const ClientsPanel: React.FC = () => {
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Nome Completo</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
                   <input 
                     required
                     type="text" 
@@ -425,7 +425,7 @@ export const ClientsPanel: React.FC = () => {
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Telefone (WhatsApp)</label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
                     <input 
                       required
                       type="tel" 
@@ -439,7 +439,7 @@ export const ClientsPanel: React.FC = () => {
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1">Email (Opcional)</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
                     <input 
                       type="email" 
                       value={formData.email}
@@ -636,11 +636,11 @@ export const ClientsPanel: React.FC = () => {
 
 const FilterButton: React.FC<{ active: boolean, onClick: () => void, label: string, count?: number, color?: 'red' | 'yellow' | 'green' }> = ({ active, onClick, label, count, color }) => {
   const getColorClasses = () => {
-    if (!active) return 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50';
+    if (!active) return 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50';
     if (color === 'red') return 'bg-red-50 border-red-500 text-red-700';
     if (color === 'yellow') return 'bg-yellow-50 border-yellow-500 text-yellow-700';
     if (color === 'green') return 'bg-green-50 border-green-500 text-green-700';
-    return 'bg-slate-900 border-slate-800 text-white';
+    return 'bg-orange-500 border-orange-600 text-white';
   };
 
   const dotColors = {
@@ -652,12 +652,12 @@ const FilterButton: React.FC<{ active: boolean, onClick: () => void, label: stri
   return (
     <button 
       onClick={onClick}
-      className={`px-4 py-2 rounded-lg border text-sm whitespace-nowrap flex items-center gap-2 transition-all ${getColorClasses()}`}
+      className={`px-4 py-1.5 rounded-full border text-sm whitespace-nowrap flex items-center gap-2 transition-all shadow-sm ${getColorClasses()}`}
     >
       {color && <div className={`w-2 h-2 rounded-full ${dotColors[color]}`}></div>}
       {label}
       {count !== undefined && (
-        <span className={`text-xs px-1.5 py-0.5 rounded ${active ? 'bg-black/10' : 'bg-slate-100'} font-bold`}>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${active ? 'bg-white/20' : 'bg-slate-100'} font-bold`}>
           {count}
         </span>
       )}

@@ -405,7 +405,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                             </p>
                                                             <div className="flex items-center gap-1">
                                                                 <div className={`w-1 h-1 rounded-full ${
-                                                                    apt.status === 'completed' ? 'bg-green-500' : 
+                                                                    apt.status === 'completed' ? 'bg-[#1a8a6c]' : 
                                                                     apt.status === 'noshow' ? 'bg-red-400' : 
                                                                     apt.status === 'cancelled' ? 'bg-red-500' :
                                                                     apt.status === 'confirmed' ? 'bg-blue-500' : 'bg-orange-500'
@@ -433,7 +433,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                             </p>
                                                             <div className="flex items-center gap-1">
                                                                 <div className={`w-1 h-1 rounded-full ${
-                                                                    apt.status === 'completed' ? 'bg-green-500' : 
+                                                                    apt.status === 'completed' ? 'bg-[#1a8a6c]' : 
                                                                     apt.status === 'noshow' ? 'bg-red-400' : 
                                                                     apt.status === 'cancelled' ? 'bg-red-500' :
                                                                     apt.status === 'confirmed' ? 'bg-blue-500' : 'bg-orange-500'

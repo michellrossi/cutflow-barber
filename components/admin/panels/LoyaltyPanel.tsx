@@ -31,23 +31,23 @@ export const LoyaltyPanel: React.FC = () => {
 
     return (
         <div className="max-w-4xl space-y-8">
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                     <Award className="text-orange-500" size={24} />
                     <div>
-                        <h3 className="text-lg font-bold">Programa de Fidelidade</h3>
-                        <p className="text-sm text-slate-400 text-balance">Configure como seus clientes ganham recompensas e retornam à sua barbearia.</p>
+                        <h3 className="text-lg font-bold text-slate-900">Programa de Fidelidade</h3>
+                        <p className="text-sm text-slate-500 text-balance">Configure como seus clientes ganham recompensas e retornam à sua barbearia.</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Modo de Fidelidade */}
                     <div className="space-y-4">
-                        <label className="block text-sm font-medium text-slate-300">Modo do Programa</label>
+                        <label className="block text-sm font-bold text-slate-700">Modo do Programa</label>
                         <div className="grid grid-cols-2 gap-3">
                             <button
                                 onClick={() => setFormData({ ...formData, loyaltyMode: 'card' })}
-                                className={`flex flex-col items-center gap-3 p-4 rounded-xl border transition-all ${formData.loyaltyMode === 'card' ? 'bg-orange-500/10 border-orange-500 text-white shadow-lg shadow-orange-500/10' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+                                className={`flex flex-col items-center gap-3 p-4 rounded-xl border transition-all ${formData.loyaltyMode === 'card' ? 'bg-orange-50 border-orange-500 text-orange-600 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'}`}
                             >
                                 <CreditCard size={24} />
                                 <div className="text-center">
@@ -57,7 +57,7 @@ export const LoyaltyPanel: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => setFormData({ ...formData, loyaltyMode: 'points' })}
-                                className={`flex flex-col items-center gap-3 p-4 rounded-xl border transition-all ${formData.loyaltyMode === 'points' ? 'bg-orange-500/10 border-orange-500 text-white shadow-lg shadow-orange-500/10' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-600'}`}
+                                className={`flex flex-col items-center gap-3 p-4 rounded-xl border transition-all ${formData.loyaltyMode === 'points' ? 'bg-orange-50 border-orange-500 text-orange-600 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'}`}
                             >
                                 <Target size={24} />
                                 <div className="text-center">
@@ -72,14 +72,14 @@ export const LoyaltyPanel: React.FC = () => {
                     <div className="space-y-4">
                         {formData.loyaltyMode === 'card' ? (
                             <>
-                                <label className="block text-sm font-medium text-slate-300">Meta de Visitas</label>
+                                <label className="block text-sm font-bold text-slate-700">Meta de Visitas</label>
                                 <div className="relative">
-                                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                    <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                     <input
                                         type="number"
                                         value={formData.loyaltyCardGoal}
                                         onChange={(e) => setFormData({ ...formData, loyaltyCardGoal: parseInt(e.target.value) })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:border-orange-500"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:border-orange-500 text-slate-900"
                                         placeholder="Ex: 10"
                                     />
                                 </div>
@@ -87,26 +87,26 @@ export const LoyaltyPanel: React.FC = () => {
                             </>
                         ) : (
                             <>
-                                <label className="block text-sm font-medium text-slate-300">Meta de Pontos</label>
+                                <label className="block text-sm font-bold text-slate-700">Meta de Pontos</label>
                                 <div className="relative">
-                                    <Target className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                    <Target className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                     <input
                                         type="number"
                                         value={formData.loyaltyPointsGoal}
                                         onChange={(e) => setFormData({ ...formData, loyaltyPointsGoal: parseInt(e.target.value) })}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:border-orange-500"
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:border-orange-500 text-slate-900"
                                         placeholder="Ex: 1000"
                                     />
                                 </div>
                                 <div className="mt-4 space-y-2">
-                                    <label className="block text-sm font-medium text-slate-300">Pontos por Real Gasto (R$ 1,00 = X pontos)</label>
+                                    <label className="block text-sm font-bold text-slate-700">Pontos por Real Gasto (R$ 1,00 = X pontos)</label>
                                     <div className="relative">
-                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                         <input
                                             type="number"
                                             value={formData.loyaltyPointsRatio}
                                             onChange={(e) => setFormData({ ...formData, loyaltyPointsRatio: parseInt(e.target.value) })}
-                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:border-orange-500"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:border-orange-500 text-slate-900"
                                             placeholder="Ex: 1"
                                         />
                                     </div>
@@ -117,22 +117,22 @@ export const LoyaltyPanel: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                     <Percent className="text-orange-500" size={24} />
                     <div>
-                        <h3 className="text-lg font-bold">Recompensa Automática</h3>
-                        <p className="text-sm text-slate-400">Configure o cupom que será gerado quando o cliente atingir a meta.</p>
+                        <h3 className="text-lg font-bold text-slate-900">Recompensa Automática</h3>
+                        <p className="text-sm text-slate-500">Configure o cupom que será gerado quando o cliente atingir a meta.</p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="space-y-2">
-                        <label className="block text-sm font-medium text-slate-300">Tipo de Desconto</label>
+                        <label className="block text-sm font-bold text-slate-700">Tipo de Desconto</label>
                         <select
                             value={formData.loyaltyRewardType}
                             onChange={(e) => setFormData({ ...formData, loyaltyRewardType: e.target.value as 'percentage' | 'fixed' })}
-                            className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 px-4 focus:outline-none focus:border-orange-500"
+                            className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 px-4 focus:outline-none focus:border-orange-500 text-slate-900"
                         >
                             <option value="percentage">Porcentagem (%)</option>
                             <option value="fixed">Valor Fixo (R$)</option>
@@ -140,37 +140,37 @@ export const LoyaltyPanel: React.FC = () => {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="block text-sm font-medium text-slate-300">Valor do Desconto</label>
+                        <label className="block text-sm font-bold text-slate-700">Valor do Desconto</label>
                         <div className="relative">
-                            {formData.loyaltyRewardType === 'fixed' ? <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} /> : <Percent className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />}
+                            {formData.loyaltyRewardType === 'fixed' ? <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} /> : <Percent className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />}
                             <input
                                 type="number"
                                 value={formData.loyaltyRewardValue}
                                 onChange={(e) => setFormData({ ...formData, loyaltyRewardValue: parseFloat(e.target.value) })}
-                                className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:border-orange-500"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:border-orange-500 text-slate-900"
                                 placeholder="Ex: 10"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="block text-sm font-medium text-slate-300">Validade (Dias)</label>
+                        <label className="block text-sm font-bold text-slate-700">Validade (Dias)</label>
                         <div className="relative">
-                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                            <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                             <input
                                 type="number"
                                 value={formData.loyaltyRewardValidityDays}
                                 onChange={(e) => setFormData({ ...formData, loyaltyRewardValidityDays: parseInt(e.target.value) })}
-                                className="w-full bg-slate-900 border border-slate-700 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:border-orange-500"
+                                className="w-full bg-slate-50 border border-slate-200 rounded-lg py-2 pl-10 pr-4 focus:outline-none focus:border-orange-500 text-slate-900"
                                 placeholder="Ex: 90"
                             />
                         </div>
                     </div>
                 </div>
 
-                <div className="mt-6 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg flex gap-3">
-                    <Info className="text-blue-400 shrink-0" size={20} />
-                    <p className="text-xs text-blue-200 leading-relaxed">
+                <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg flex gap-3">
+                    <Info className="text-blue-500 shrink-0" size={20} />
+                    <p className="text-xs text-blue-600 leading-relaxed">
                         Quando o cliente atingir a meta, um cupom de uso único será gerado e vinculado ao perfil dele. 
                         O cupom expirará automaticamente após {formData.loyaltyRewardValidityDays} dias se não for utilizado.
                     </p>

@@ -153,8 +153,8 @@ export const AppointmentsPanel: React.FC = () => {
     const STATUS_COLORS: Record<string, string> = {
         scheduled: 'text-blue-700 bg-blue-50 border-blue-200',
         confirmed: 'text-orange-700 bg-orange-50 border-orange-200',
-        completed: 'text-green-700 bg-green-50 border-green-200',
-        cancelled: 'text-red-700 bg-red-100 border-red-300',
+        completed: 'text-[#1a8a6c] bg-[#f0fdfa] border-[#ccfbf1]',
+        cancelled: 'text-red-700 bg-red-50 border-red-200',
         noshow: 'text-slate-700 bg-slate-50 border-slate-200',
     };
 
@@ -284,16 +284,16 @@ export const AppointmentsPanel: React.FC = () => {
             )}
 
             <div className="flex justify-end items-center mb-4">
-                <div className="bg-white p-1 rounded-lg border border-slate-200 flex gap-1 w-full md:w-auto">
+                <div className="bg-white p-1 rounded-full border border-slate-200 flex gap-1 w-full md:w-auto shadow-sm">
                     <button 
                         onClick={() => setViewMode('calendar')}
-                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'calendar' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-full text-sm font-bold transition-all ${viewMode === 'calendar' ? 'bg-orange-50 text-orange-600 border border-orange-200 shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
                     >
                         <CalendarIcon size={16} /> Agenda
                     </button>
                     <button 
                         onClick={() => setViewMode('list')}
-                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-slate-100 text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'}`}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-full text-sm font-bold transition-all ${viewMode === 'list' ? 'bg-orange-50 text-orange-600 border border-orange-200 shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
                     >
                         <List size={16} /> Lista
                     </button>
@@ -319,9 +319,9 @@ export const AppointmentsPanel: React.FC = () => {
                     </div>
 
                     {/* BARRA DE FILTROS DE DATA (Design Financeiro) */}
-                    <div className="bg-white p-1.5 md:p-2 rounded-xl border border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-sm mb-4">
+                    <div className="bg-white p-1.5 md:p-2 rounded-2xl border border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-sm mb-4">
                         {/* Abas de Atalho */}
-                        <div className="flex bg-slate-50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto py-1 hide-scrollbar no-scrollbar border border-slate-200">
+                        <div className="flex bg-slate-50 p-1 rounded-full w-full lg:w-auto overflow-x-auto py-1 hide-scrollbar no-scrollbar border border-slate-200">
                             {[
                                 { id: 'today', label: 'Hoje' },
                                 { id: 'tomorrow', label: 'Amanhã' },
@@ -332,10 +332,10 @@ export const AppointmentsPanel: React.FC = () => {
                                 <button
                                     key={preset.id}
                                     onClick={() => setPreset(preset.id as any)}
-                                    className={`px-3 md:px-4 py-1.5 md:py-2 rounded-md text-[10px] md:text-sm font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                                    className={`px-4 md:px-6 py-2 rounded-full text-[10px] md:text-sm font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
                                         activePreset === preset.id 
-                                        ? 'bg-white text-slate-900 shadow-sm border border-slate-200' 
-                                        : 'text-slate-500 hover:text-slate-900 hover:bg-white'
+                                        ? 'bg-white text-orange-600 shadow-sm border border-orange-200' 
+                                        : 'text-[#6b7d99] hover:text-slate-900 hover:bg-white'
                                     }`}
                                 >
                                     {preset.label}
@@ -344,42 +344,42 @@ export const AppointmentsPanel: React.FC = () => {
                         </div>
 
                         {/* Seletor de Datas Unificado */}
-                        <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-50 px-3 py-1.5 md:py-2 rounded-lg border border-slate-200 focus-within:border-orange-500/50 transition-colors">
+                        <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-50 px-4 py-2 rounded-full border border-slate-200 focus-within:border-orange-500/50 transition-colors">
                             <Calendar size={14} className="text-slate-400 shrink-0" />
                             <div className="flex items-center gap-2 flex-1">
                                 <input 
                                     type="date" 
                                     value={startDate} 
                                     onChange={e => handleDateChange('start', e.target.value)}
-                                    className="bg-transparent border-none text-slate-700 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans"
+                                    className="bg-transparent border-none text-slate-700 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans font-bold"
                                 />
-                                <span className="text-slate-400 font-medium text-[10px]">até</span>
+                                <span className="text-slate-400 font-bold text-[10px] uppercase">até</span>
                                 <input 
                                     type="date" 
                                     value={endDate} 
                                     onChange={e => handleDateChange('end', e.target.value)}
-                                    className="bg-transparent border-none text-slate-700 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans"
+                                    className="bg-transparent border-none text-slate-700 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans font-bold"
                                 />
                             </div>
                         </div>
                     </div>
 
                     {/* BARRA DE FILTROS DE STATUS E BUSCA */}
-                    <div className="bg-white p-3 md:p-4 rounded-xl border border-slate-200 mb-6 flex flex-col gap-3 md:gap-4">
+                    <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 mb-6 flex flex-col gap-3 md:gap-4 shadow-sm">
                         <div className="flex flex-col md:flex-row gap-3 md:gap-4 justify-between items-center">
                             {/* Busca */}
-                            <div className="bg-slate-50 border border-slate-200 rounded-lg flex items-center px-3 py-1.5 md:py-2 text-slate-500 w-full md:w-96">
-                                <Search size={16} className="mr-2 shrink-0"/>
+                            <div className="bg-slate-50 border border-slate-200 rounded-full flex items-center px-4 py-2 text-slate-500 w-full md:w-96 focus-within:border-orange-500/50 transition-colors">
+                                <Search size={16} className="mr-2 shrink-0 text-slate-400"/>
                                 <input 
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
                                     placeholder="Buscar cliente..." 
-                                    className="bg-transparent border-none outline-none w-full text-[12px] md:text-sm placeholder-slate-400" 
+                                    className="bg-transparent border-none outline-none w-full text-[12px] md:text-sm placeholder-slate-400 font-medium" 
                                 />
                             </div>
 
                             {/* Filtros de Status */}
-                            <div className="flex gap-1.5 overflow-x-auto py-3 px-2 hide-scrollbar no-scrollbar w-full md:w-auto">
+                            <div className="flex gap-2 overflow-x-auto py-1 px-1 hide-scrollbar no-scrollbar w-full md:w-auto">
                                 {[
                                     { id: 'all', label: 'Todos' },
                                     { id: 'scheduled', label: 'Agendados' },
@@ -391,10 +391,10 @@ export const AppointmentsPanel: React.FC = () => {
                                     <button
                                         key={status.id}
                                         onClick={() => setStatusFilter(status.id)}
-                                        className={`px-3 py-1.5 rounded-full text-[9px] md:text-[10px] font-bold whitespace-nowrap transition-colors border uppercase tracking-wider ${
+                                        className={`px-4 py-2 rounded-full text-[9px] md:text-[10px] font-bold whitespace-nowrap transition-all border uppercase tracking-wider ${
                                             statusFilter === status.id 
-                                            ? `bg-slate-100 text-slate-900 border-slate-300` 
-                                            : 'bg-transparent text-slate-500 border-slate-200 hover:border-slate-300 hover:text-slate-700'
+                                            ? `bg-orange-50 text-orange-600 border-orange-200 shadow-sm` 
+                                            : 'bg-white text-[#6b7d99] border-slate-200 hover:border-slate-300 hover:text-slate-700'
                                         }`}
                                     >
                                         {status.label}
@@ -428,78 +428,79 @@ export const AppointmentsPanel: React.FC = () => {
                                         const proColor = professionals.find(p => p.id === apt.professionalId)?.color || '#64748b';
 
                                         return (
-                                        <tr key={apt.id} className="hover:bg-slate-50 transition-colors group border-b border-slate-100 last:border-0 border-l-4" style={{ borderLeftColor: proColor }}>
-                                            <td className="p-4">
-                                                <span className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
-                                                    {STATUS_LABELS[apt.status] || apt.status}
-                                                </span>
-                                            </td>
-                                            <td className="p-4 text-slate-600 whitespace-nowrap">
-                                                <div className="flex items-center gap-2">
-                                                    <Calendar size={14} className="text-slate-400"/>
-                                                    <span>{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
-                                                </div>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <Clock size={14} className="text-slate-400"/>
-                                                    <span className="text-sm font-bold">{apt.time.substring(0, 5)}</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="font-bold text-slate-900 text-base">{apt.clientName}</div>
-                                                <div className="text-xs text-slate-500 mt-0.5">{apt.clientPhone}</div>
-                                            </td>
-                                            <td className="p-4">
-                                                <div className="flex items-center gap-1 text-sm text-slate-600 mb-1">
-                                                    <Scissors size={14} className="text-orange-500"/> 
-                                                    <span className="truncate max-w-[150px] sm:max-w-[200px]" title={getServicesNames(apt.serviceIds)}>{getServicesNames(apt.serviceIds)}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1 text-xs text-slate-400">
-                                                    <User size={12}/> 
-                                                    <span>{getProName(apt.professionalId)}</span>
-                                                </div>
-                                            </td>
-                                            <td className="p-4 text-right font-bold text-lg" style={{ color: settings.primaryColor }}>
-                                                R$ {apt.totalValue.toFixed(2)}
-                                            </td>
-                                            <td className="p-4 text-right">
-                                                {apt.status === 'completed' ? (
+                                            <tr key={apt.id} className="hover:bg-slate-50 transition-colors group border-b border-slate-100 last:border-0 border-l-4" style={{ borderLeftColor: proColor }}>
+                                                <td className="p-4">
+                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
+                                                        {STATUS_LABELS[apt.status] || apt.status}
+                                                    </span>
+                                                </td>
+                                                <td className="p-4 text-[#6b7d99] whitespace-nowrap">
+                                                    <div className="flex items-center gap-2">
+                                                        <Calendar size={14} className="text-slate-400"/>
+                                                        <span className="font-medium">{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 mt-1">
+                                                        <Clock size={14} className="text-slate-400"/>
+                                                        <span className="text-sm font-bold text-slate-900">{apt.time.substring(0, 5)}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="font-bold text-slate-900 text-base">{apt.clientName}</div>
+                                                    <div className="text-xs text-[#6b7d99] mt-0.5 font-medium">{apt.clientPhone}</div>
+                                                </td>
+                                                <td className="p-4">
+                                                    <div className="flex items-center gap-1 text-sm text-slate-700 mb-1 font-medium">
+                                                        <Scissors size={14} className="text-orange-500"/> 
+                                                        <span className="truncate max-w-[150px] sm:max-w-[200px]" title={getServicesNames(apt.serviceIds)}>{getServicesNames(apt.serviceIds)}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1 text-xs text-[#6b7d99] font-medium">
+                                                        <User size={12}/> 
+                                                        <span>{getProName(apt.professionalId)}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="p-4 text-right font-bold text-lg" style={{ color: settings.primaryColor }}>
+                                                    R$ {apt.totalValue.toFixed(2)}
+                                                </td>
+                                                <td className="p-4 text-right">
+                                                    {apt.status === 'completed' ? (
+                                                        <select 
+                                                            value={apt.paymentMethod || 'pix'}
+                                                            onChange={(e) => updateAppointmentPaymentMethod(apt.id, e.target.value)}
+                                                            className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100 transition-colors"
+                                                        >
+                                                            <option value="pix">PIX</option>
+                                                            <option value="credit">Cartão</option>
+                                                            <option value="cash">Dinheiro</option>
+                                                        </select>
+                                                    ) : (
+                                                        <span className="text-slate-400 text-xs">-</span>
+                                                    )}
+                                                </td>
+                                                <td className="p-4 text-right">
                                                     <select 
-                                                        value={apt.paymentMethod || 'pix'}
-                                                        onChange={(e) => updateAppointmentPaymentMethod(apt.id, e.target.value)}
-                                                        className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100"
+                                                        value={apt.status}
+                                                        onChange={(e) => {
+                                                            updateAppointmentStatus(apt.id, e.target.value);
+                                                            if (e.target.value === 'completed' && !apt.paymentMethod) {
+                                                                updateAppointmentPaymentMethod(apt.id, 'pix'); // Default to PIX when completing
+                                                            }
+                                                        }}
+                                                        className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100 transition-colors"
                                                     >
-                                                        <option value="pix">PIX</option>
-                                                        <option value="credit">Cartão</option>
-                                                        <option value="cash">Dinheiro</option>
+                                                        <option value="scheduled">Agendado</option>
+                                                        <option value="confirmed">Confirmado</option>
+                                                        <option value="completed" disabled={isFuture && apt.status !== 'completed'}>
+                                                            Finalizado {isFuture && apt.status !== 'completed' ? '(Aguarde)' : ''}
+                                                        </option>
+                                                        <option value="noshow" disabled={isFuture && apt.status !== 'noshow'}>
+                                                            Não veio {isFuture && apt.status !== 'noshow' ? '(Aguarde)' : ''}
+                                                        </option>
+                                                        <option value="cancelled">Cancelar</option>
                                                     </select>
-                                                ) : (
-                                                    <span className="text-slate-400 text-xs">-</span>
-                                                )}
-                                            </td>
-                                            <td className="p-4 text-right">
-                                                <select 
-                                                    value={apt.status}
-                                                    onChange={(e) => {
-                                                        updateAppointmentStatus(apt.id, e.target.value);
-                                                        if (e.target.value === 'completed' && !apt.paymentMethod) {
-                                                            updateAppointmentPaymentMethod(apt.id, 'pix'); // Default to PIX when completing
-                                                        }
-                                                    }}
-                                                    className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100"
-                                                >
-                                                    <option value="scheduled">Agendado</option>
-                                                    <option value="confirmed">Confirmado</option>
-                                                    <option value="completed" disabled={isFuture && apt.status !== 'completed'}>
-                                                        Finalizado {isFuture && apt.status !== 'completed' ? '(Aguarde horário)' : ''}
-                                                    </option>
-                                                    <option value="noshow" disabled={isFuture && apt.status !== 'noshow'}>
-                                                        Não veio {isFuture && apt.status !== 'noshow' ? '(Aguarde horário)' : ''}
-                                                    </option>
-                                                    <option value="cancelled">Cancelar</option>
-                                                </select>
-                                            </td>
-                                        </tr>
-                                    )})}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -516,30 +517,30 @@ export const AppointmentsPanel: React.FC = () => {
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <div className="font-bold text-slate-900 text-lg">{apt.clientName}</div>
-                                                <div className="text-xs text-slate-500">{apt.clientPhone}</div>
+                                                <div className="text-xs text-[#6b7d99] font-medium">{apt.clientPhone}</div>
                                             </div>
-                                            <span className={`px-2 py-1 rounded text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
+                                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
                                                 {STATUS_LABELS[apt.status] || apt.status}
                                             </span>
                                         </div>
 
                                         <div className="grid grid-cols-2 gap-2 text-sm">
-                                            <div className="flex items-center gap-2 text-slate-600">
+                                            <div className="flex items-center gap-2 text-[#6b7d99] font-medium">
                                                 <Calendar size={14} className="text-slate-400"/>
                                                 <span>{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
                                             </div>
-                                            <div className="flex items-center gap-2 text-slate-600">
+                                            <div className="flex items-center gap-2 text-[#6b7d99]">
                                                 <Clock size={14} className="text-slate-400"/>
-                                                <span className="font-bold">{apt.time.substring(0, 5)}</span>
+                                                <span className="font-bold text-slate-900">{apt.time.substring(0, 5)}</span>
                                             </div>
                                         </div>
 
                                         <div className="space-y-1">
-                                            <div className="flex items-center gap-1 text-sm text-slate-600">
+                                            <div className="flex items-center gap-1 text-sm text-slate-700 font-medium">
                                                 <Scissors size={14} className="text-orange-500 shrink-0"/> 
                                                 <span className="truncate">{getServicesNames(apt.serviceIds)}</span>
                                             </div>
-                                            <div className="flex items-center gap-1 text-xs text-slate-400">
+                                            <div className="flex items-center gap-1 text-xs text-[#6b7d99] font-medium">
                                                 <User size={12} className="shrink-0"/> 
                                                 <span>{getProName(apt.professionalId)}</span>
                                             </div>
@@ -554,7 +555,7 @@ export const AppointmentsPanel: React.FC = () => {
                                                     <select 
                                                         value={apt.paymentMethod || 'pix'}
                                                         onChange={(e) => updateAppointmentPaymentMethod(apt.id, e.target.value)}
-                                                        className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded p-1.5 focus:outline-none focus:border-orange-500"
+                                                        className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded-lg p-1.5 focus:outline-none focus:border-orange-500"
                                                     >
                                                         <option value="pix">PIX</option>
                                                         <option value="credit">Cartão</option>
@@ -569,7 +570,7 @@ export const AppointmentsPanel: React.FC = () => {
                                                             updateAppointmentPaymentMethod(apt.id, 'pix');
                                                         }
                                                     }}
-                                                    className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded p-1.5 focus:outline-none focus:border-orange-500"
+                                                    className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded-lg p-1.5 focus:outline-none focus:border-orange-500"
                                                 >
                                                     <option value="scheduled">Agendado</option>
                                                     <option value="confirmed">Confirmado</option>
