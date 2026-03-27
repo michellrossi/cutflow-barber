@@ -112,7 +112,13 @@ export interface ShopSettings {
   titleColor?: string;
   textColor?: string;
   backgroundColor?: string;
+  cardBackgroundColor?: string;
+  buttonTextColor?: string;
   priceColor?: string;
+  accentColor?: string; // [NOVO] Cor de destaque (ex: badges, ícones)
+  borderColor?: string; // [NOVO] Cor de bordas
+  inputBackgroundColor?: string; // [NOVO] Cor de fundo de inputs
+  inputTextColor?: string; // [NOVO] Cor de texto de inputs
   loyaltyMode?: 'points' | 'card';
   loyaltyCardGoal?: number;
   loyaltyPointsRatio?: number;

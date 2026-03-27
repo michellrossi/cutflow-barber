@@ -21,11 +21,15 @@ export const ProfessionalStep: React.FC<ProfessionalStepProps> = ({ professional
         <div className="space-y-4">
             <div 
                 onClick={() => setSelectedProId(null)}
-                className={`p-5 rounded-xl border cursor-pointer transition-all flex items-center gap-4 ${selectedProId === null ? 'bg-slate-800 border-orange-500 ring-1 ring-orange-500' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'}`}
-                style={selectedProId === null ? { borderColor: settings.primaryColor, '--tw-ring-color': settings.primaryColor } as any : {}}
+                className={`p-5 rounded-xl border cursor-pointer transition-all flex items-center gap-4 ${selectedProId === null ? 'ring-1' : 'hover:brightness-110'}`}
+                style={{ 
+                    backgroundColor: settings.cardBackgroundColor || 'rgba(30, 41, 59, 0.5)', 
+                    borderColor: selectedProId === null ? (settings.accentColor || settings.primaryColor) : (settings.borderColor || '#334155'),
+                    '--tw-ring-color': selectedProId === null ? (settings.accentColor || settings.primaryColor) : 'transparent'
+                } as any}
             >
-                <div className="w-16 h-16 rounded-full bg-slate-700 flex items-center justify-center text-slate-300">
-                    <User size={24}/>
+                <div className="w-16 h-16 rounded-full flex items-center justify-center" style={{ backgroundColor: settings.inputBackgroundColor || '#334155' }}>
+                    <User size={24} style={{ color: settings.textColor || '#94a3b8' }}/>
                 </div>
                 <div>
                     <h3 className="font-bold text-lg" style={{ color: settings.titleColor || '#ffffff' }}>Sem preferência</h3>
@@ -39,8 +43,12 @@ export const ProfessionalStep: React.FC<ProfessionalStepProps> = ({ professional
                     <div 
                         key={pro.id}
                         onClick={() => setSelectedProId(pro.id)}
-                        className={`p-5 rounded-xl border cursor-pointer transition-all flex items-center gap-4 ${isSelected ? 'bg-slate-800 border-orange-500 ring-1 ring-orange-500' : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'}`}
-                        style={isSelected ? { borderColor: settings.primaryColor, '--tw-ring-color': settings.primaryColor } as any : {}}
+                        className={`p-5 rounded-xl border cursor-pointer transition-all flex items-center gap-4 ${isSelected ? 'ring-1' : 'hover:brightness-110'}`}
+                        style={{ 
+                            backgroundColor: settings.cardBackgroundColor || 'rgba(30, 41, 59, 0.5)', 
+                            borderColor: isSelected ? (settings.accentColor || settings.primaryColor) : (settings.borderColor || '#334155'),
+                            '--tw-ring-color': isSelected ? (settings.accentColor || settings.primaryColor) : 'transparent'
+                        } as any}
                     >
                         <img src={pro.photoUrl} alt={pro.name} className="w-16 h-16 rounded-full object-cover" />
                         <div>

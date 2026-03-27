@@ -31,25 +31,25 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     if (sent) {
         return (
-            <div className="max-w-md mx-auto p-6 bg-slate-900 border border-slate-800 rounded-2xl text-center space-y-6 animate-in fade-in zoom-in duration-300">
+            <div className="max-w-md mx-auto p-6 border rounded-2xl text-center space-y-6 animate-in fade-in zoom-in duration-300" style={{ backgroundColor: settings.cardBackgroundColor || '#0f172a', borderColor: settings.borderColor || '#1e293b' }}>
                 <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle2 size={32} />
                 </div>
                 <div className="space-y-2">
-                    <h2 className="text-2xl font-bold text-white">Link Enviado!</h2>
-                    <p className="text-slate-400">
+                    <h2 className="text-2xl font-bold" style={{ color: settings.titleColor || '#ffffff' }}>Link Enviado!</h2>
+                    <p style={{ color: settings.textColor || '#94a3b8' }}>
                         Um link de acesso único foi enviado para o seu WhatsApp. 
                         Por favor, verifique suas mensagens e clique no link para acessar seu perfil.
                     </p>
                 </div>
 
-                <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700">
-                    <p className="text-sm text-slate-300">
+                <div className="p-4 rounded-xl border" style={{ backgroundColor: settings.inputBackgroundColor || 'rgba(30, 41, 59, 0.5)', borderColor: settings.borderColor || '#334155' }}>
+                    <p className="text-sm" style={{ color: settings.textColor || '#cbd5e1' }}>
                         O link expira em 15 minutos por motivos de segurança.
                     </p>
                 </div>
 
-                <button onClick={onBack} className="w-full bg-slate-800 hover:bg-slate-700 text-white py-4 rounded-xl font-bold transition-all">
+                <button onClick={onBack} className="w-full py-4 rounded-xl font-bold transition-all hover:brightness-110" style={{ backgroundColor: settings.cardBackgroundColor || '#1e293b', color: settings.buttonTextColor || '#ffffff', borderColor: settings.borderColor || '#334155' }}>
                     Voltar para o agendamento
                 </button>
             </div>
@@ -57,26 +57,31 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     }
 
     return (
-        <div className="max-w-md mx-auto p-6 bg-slate-900 border border-slate-800 rounded-2xl space-y-8 shadow-2xl">
+        <div className="max-w-md mx-auto p-6 border rounded-2xl space-y-8 shadow-2xl" style={{ backgroundColor: settings.cardBackgroundColor || '#0f172a', borderColor: settings.borderColor || '#1e293b' }}>
             <div className="text-center space-y-2">
-                <div className="w-12 h-12 bg-orange-500/20 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${settings.accentColor || settings.primaryColor}33`, color: settings.accentColor || settings.primaryColor }}>
                     <Smartphone size={24} />
                 </div>
-                <h2 className="text-2xl font-bold text-white">Acesse seu Perfil</h2>
-                <p className="text-slate-400">Entre apenas com seu número de telefone para ver seu histórico e pontos.</p>
+                <h2 className="text-2xl font-bold" style={{ color: settings.titleColor || '#ffffff' }}>Acesse seu Perfil</h2>
+                <p style={{ color: settings.textColor || '#94a3b8' }}>Entre apenas com seu número de telefone para ver seu histórico e pontos.</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-300">Seu WhatsApp</label>
+                    <label className="text-sm font-medium" style={{ color: settings.textColor || '#cbd5e1' }}>Seu WhatsApp</label>
                     <div className="relative">
-                        <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+                        <Smartphone className="absolute left-4 top-1/2 -translate-y-1/2" style={{ color: settings.textColor || '#64748b' }} size={20} />
                         <input
                             type="tel"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
                             placeholder="(00) 00000-0000"
-                            className="w-full bg-slate-950 border border-slate-800 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:border-orange-500 transition-all"
+                            className="w-full border rounded-xl py-4 pl-12 pr-4 focus:outline-none transition-all"
+                            style={{ 
+                                backgroundColor: settings.inputBackgroundColor || '#020617', 
+                                borderColor: settings.borderColor || '#1e293b', 
+                                color: settings.inputTextColor || '#ffffff' 
+                            }}
                             required
                         />
                     </div>
@@ -86,7 +91,12 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-500/20 group"
+                    className="w-full disabled:opacity-50 py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg group"
+                    style={{ 
+                        backgroundColor: settings.accentColor || settings.primaryColor, 
+                        color: settings.buttonTextColor || '#ffffff',
+                        boxShadow: `0 10px 15px -3px ${settings.accentColor || settings.primaryColor}33`
+                    }}
                 >
                     {loading ? <Loader2 className="animate-spin" size={20} /> : (
                         <>
@@ -97,8 +107,8 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 </button>
             </form>
 
-            <div className="pt-4 border-t border-slate-800 text-center">
-                <button onClick={onBack} className="text-slate-500 hover:text-white text-sm transition-colors">
+            <div className="pt-4 border-t text-center" style={{ borderColor: settings.borderColor || '#1e293b' }}>
+                <button onClick={onBack} className="text-sm transition-colors hover:brightness-110" style={{ color: settings.textColor || '#64748b' }}>
                     Voltar para o agendamento
                 </button>
             </div>

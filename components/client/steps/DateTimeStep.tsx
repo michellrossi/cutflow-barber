@@ -185,8 +185,13 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
                             <div 
                                 key={date.full}
                                 onClick={() => setSelectedDate(date.full)}
-                                className={`p-3 rounded-lg border text-center cursor-pointer transition-all ${isSelected ? 'bg-slate-800 text-white' : 'bg-slate-800/30 border-slate-700 text-slate-400 hover:bg-slate-800'}`}
-                                style={isSelected ? { borderColor: settings.primaryColor, borderWidth: '2px' } : {}}
+                                className={`p-3 rounded-lg border text-center cursor-pointer transition-all ${isSelected ? 'text-white' : 'hover:brightness-110'}`}
+                                style={{ 
+                                    backgroundColor: isSelected ? (settings.accentColor || settings.primaryColor) : (settings.cardBackgroundColor || 'rgba(30, 41, 59, 0.3)'), 
+                                    borderColor: isSelected ? (settings.accentColor || settings.primaryColor) : (settings.borderColor || '#334155'),
+                                    color: isSelected ? (settings.buttonTextColor || '#ffffff') : (settings.textColor || '#94a3b8'),
+                                    borderWidth: isSelected ? '2px' : '1px'
+                                }}
                             >
                                 <div className="text-xs uppercase font-bold opacity-60">{date.weekday}</div>
                                 <div className="text-2xl font-bold my-1">{date.day}</div>
@@ -208,8 +213,13 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
                                     <div 
                                         key={time}
                                         onClick={() => setSelectedTime(time)}
-                                        className={`p-3 rounded-lg border text-center cursor-pointer transition-all ${isSelected ? 'bg-slate-800 text-white font-bold' : 'bg-slate-800/30 border-slate-700 text-slate-300 hover:bg-slate-800'}`}
-                                        style={isSelected ? { borderColor: settings.primaryColor, borderWidth: '2px' } : {}}
+                                        className={`p-3 rounded-lg border text-center cursor-pointer transition-all ${isSelected ? 'font-bold' : 'hover:brightness-110'}`}
+                                        style={{ 
+                                            backgroundColor: isSelected ? (settings.accentColor || settings.primaryColor) : (settings.cardBackgroundColor || 'rgba(30, 41, 59, 0.3)'), 
+                                            borderColor: isSelected ? (settings.accentColor || settings.primaryColor) : (settings.borderColor || '#334155'),
+                                            color: isSelected ? (settings.buttonTextColor || '#ffffff') : (settings.textColor || '#94a3b8'),
+                                            borderWidth: isSelected ? '2px' : '1px'
+                                        }}
                                     >
                                             {time}
                                     </div>
@@ -217,7 +227,7 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
                             })}
                         </div>
                     ) : (
-                        <div className="p-6 bg-slate-800/50 rounded-xl border border-slate-700 text-center" style={{ color: settings.textColor || '#94a3b8' }}>
+                        <div className="p-6 rounded-xl border text-center" style={{ backgroundColor: settings.cardBackgroundColor || 'rgba(30, 41, 59, 0.5)', borderColor: settings.borderColor || '#334155', color: settings.textColor || '#94a3b8' }}>
                             Não há horários disponíveis para esta data.
                         </div>
                     )}
@@ -225,7 +235,7 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
                 )}
                 
                 {selectedDate && selectedTime && (
-                    <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 mb-8">
+                    <div className="p-4 rounded-xl border mb-8" style={{ backgroundColor: settings.cardBackgroundColor || '#1e293b', borderColor: settings.borderColor || '#334155' }}>
                     <span className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>Agendamento selecionado</span>
                     <div className="font-bold text-lg" style={{ color: settings.titleColor || '#ffffff' }}>
                         {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })} às {selectedTime}

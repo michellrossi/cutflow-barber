@@ -20,21 +20,21 @@ export const SuccessStep: React.FC<SuccessStepProps> = ({ customerInfo, selected
         <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ color: settings.titleColor || '#ffffff' }}>Agendamento Confirmado!</h2>
         <p className="max-w-md mb-8" style={{ color: settings.textColor || '#94a3b8' }}>Obrigado, {customerInfo.name}. Seu horário foi reservado com sucesso. Te esperamos lá!</p>
         
-        <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 w-full max-w-md mb-8 text-left">
+        <div className="p-6 rounded-xl border w-full max-w-md mb-8 text-left" style={{ backgroundColor: settings.cardBackgroundColor || '#1e293b', borderColor: settings.borderColor || '#334155' }}>
             <div className="flex items-center gap-3 mb-4">
-                <Calendar style={{ color: settings.textColor || '#94a3b8' }} size={20}/>
+                <Calendar style={{ color: settings.accentColor || settings.primaryColor }} size={20}/>
                 <span style={{ color: settings.titleColor || '#ffffff' }}>{new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })} às {selectedTime?.substring(0, 5)}</span>
             </div>
             <div className="flex items-center gap-3">
-                    <User style={{ color: settings.textColor || '#94a3b8' }} size={20}/>
+                    <User style={{ color: settings.accentColor || settings.primaryColor }} size={20}/>
                     <span style={{ color: settings.titleColor || '#ffffff' }}>{selectedProId ? professionals.find(p => p.id === selectedProId)?.name : 'Profissional disponível'}</span>
             </div>
         </div>
 
         <button 
             onClick={onReset}
-            className="px-8 py-3 rounded-full border border-slate-600 hover:bg-slate-800 transition-all"
-            style={{ color: settings.titleColor || '#ffffff' }}
+            className="px-8 py-3 rounded-full border transition-all hover:brightness-110"
+            style={{ backgroundColor: settings.cardBackgroundColor || '#1e293b', borderColor: settings.borderColor || '#334155', color: settings.buttonTextColor || '#ffffff' }}
         >
             Voltar ao início
         </button>

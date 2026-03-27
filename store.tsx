@@ -85,6 +85,16 @@ const INITIAL_STATE: ShopState = {
     logoUrl: null,
     primaryColor: "#f97316",
     secondaryColor: "#1e293b",
+    titleColor: "#ffffff",
+    textColor: "#94a3b8",
+    backgroundColor: "#0f172a",
+    cardBackgroundColor: "#1e293b",
+    buttonTextColor: "#ffffff",
+    priceColor: "#f97316",
+    accentColor: "#f97316",
+    borderColor: "#334155",
+    inputBackgroundColor: "#0f172a",
+    inputTextColor: "#ffffff"
   },
   services: [],
   professionals: [],
@@ -134,10 +144,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       logoUrl: data.logo_url,
       primaryColor: data.primary_color || "#f97316",
       secondaryColor: data.secondary_color || "#1e293b",
-      titleColor: data.title_color,
-      textColor: data.text_color,
-      backgroundColor: data.background_color,
-      priceColor: data.price_color,
+      titleColor: data.title_color || "#ffffff",
+      textColor: data.text_color || "#94a3b8",
+      backgroundColor: data.background_color || "#0f172a",
+      cardBackgroundColor: data.card_background_color || "#1e293b",
+      buttonTextColor: data.button_text_color || "#ffffff",
+      priceColor: data.price_color || "#f97316",
+      accentColor: data.accent_color || "#f97316",
+      borderColor: data.border_color || "#334155",
+      inputBackgroundColor: data.input_background_color || "#0f172a",
+      inputTextColor: data.input_text_color || "#ffffff",
       loyaltyMode: data.loyalty_mode,
       loyaltyCardGoal: data.loyalty_card_goal,
       loyaltyPointsRatio: data.loyalty_points_ratio,
@@ -1212,7 +1228,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.titleColor) payload.title_color = sanitize(updated.titleColor);
         if (updated.textColor) payload.text_color = sanitize(updated.textColor);
         if (updated.backgroundColor) payload.background_color = sanitize(updated.backgroundColor);
+        if (updated.cardBackgroundColor) payload.card_background_color = sanitize(updated.cardBackgroundColor);
+        if (updated.buttonTextColor) payload.button_text_color = sanitize(updated.buttonTextColor);
         if (updated.priceColor) payload.price_color = sanitize(updated.priceColor);
+        if (updated.accentColor) payload.accent_color = sanitize(updated.accentColor);
+        if (updated.borderColor) payload.border_color = sanitize(updated.borderColor);
+        if (updated.inputBackgroundColor) payload.input_background_color = sanitize(updated.inputBackgroundColor);
+        if (updated.inputTextColor) payload.input_text_color = sanitize(updated.inputTextColor);
         
         // Loyalty settings
         if (updated.loyaltyMode) payload.loyalty_mode = updated.loyaltyMode;

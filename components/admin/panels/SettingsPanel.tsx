@@ -485,10 +485,19 @@ const ProfileSettings: React.FC = () => {
     const [titleColor, setTitleColor] = useState(settings.titleColor || '#ffffff');
     const [textColor, setTextColor] = useState(settings.textColor || '#94a3b8');
     const [backgroundColor, setBackgroundColor] = useState(settings.backgroundColor || '#0f172a');
+    const [cardBackgroundColor, setCardBackgroundColor] = useState(settings.cardBackgroundColor || '#1e293b');
+    const [buttonTextColor, setButtonTextColor] = useState(settings.buttonTextColor || '#ffffff');
     const [priceColor, setPriceColor] = useState(settings.priceColor || '#f97316');
+    const [accentColor, setAccentColor] = useState(settings.accentColor || '#f97316');
+    const [borderColor, setBorderColor] = useState(settings.borderColor || '#334155');
+    const [inputBackgroundColor, setInputBackgroundColor] = useState(settings.inputBackgroundColor || '#0f172a');
+    const [inputTextColor, setInputTextColor] = useState(settings.inputTextColor || '#ffffff');
+    
     const [logo, setLogo] = useState<string | null>(settings.logoUrl);
     const [isUploading, setIsUploading] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    
+    const [previewScreen, setPreviewScreen] = useState<'home' | 'services' | 'professional' | 'datetime' | 'confirmation'>('home');
     
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -523,7 +532,13 @@ const ProfileSettings: React.FC = () => {
             titleColor,
             textColor,
             backgroundColor,
+            cardBackgroundColor,
+            buttonTextColor,
             priceColor,
+            accentColor,
+            borderColor,
+            inputBackgroundColor,
+            inputTextColor,
             logoUrl: logo 
         });
         setIsSaving(false);
@@ -536,7 +551,7 @@ const ProfileSettings: React.FC = () => {
     };
 
     return (
-        <div className="max-w-4xl">
+        <div className="max-w-6xl">
             <div className="mb-8">
                 <h3 className="text-xl font-bold text-white mb-2">Personalização da Agenda Digital</h3>
                 <p className="text-slate-400">Personalize a identidade visual que seus clientes verão ao agendar.</p>
@@ -546,11 +561,11 @@ const ProfileSettings: React.FC = () => {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                <div className="lg:col-span-5 space-y-8">
                     {/* Logo Upload */}
-                    <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Logotipo da Barbearia (Página do Cliente)</label>
+                    <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Logotipo da Barbearia</label>
                         <div className="flex items-center gap-4">
                             <div onClick={() => !isUploading && fileInputRef.current?.click()} className={`w-24 h-24 bg-slate-950 rounded-2xl border border-dashed border-slate-700 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative group ${isUploading ? 'cursor-not-allowed opacity-50' : ''}`}>
                                 {isUploading ? (
@@ -574,62 +589,220 @@ const ProfileSettings: React.FC = () => {
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Nome da Barbearia (Página do Cliente)</label>
-                        <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500 font-bold" />
+                    <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Informações Básicas</label>
+                        <input value={name} onChange={e => setName(e.target.value)} placeholder="Nome da Barbearia" className="w-full bg-slate-950 border border-slate-700 rounded-xl p-4 text-white focus:outline-none focus:border-orange-500 font-bold" />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <ColorPicker label="Cor dos Botões" value={primary} onChange={setPrimary} />
-                        <ColorPicker label="Cor de Fundo" value={backgroundColor} onChange={setBackgroundColor} />
-                        <ColorPicker label="Cor dos Títulos" value={titleColor} onChange={setTitleColor} />
-                        <ColorPicker label="Cor do Texto" value={textColor} onChange={setTextColor} />
-                        <ColorPicker label="Cor dos Preços" value={priceColor} onChange={setPriceColor} />
-                        <ColorPicker label="Cor Secundária" value={secondary} onChange={setSecondary} />
+                    <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Cores do Painel</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <ColorPicker label="Cor de Fundo" value={backgroundColor} onChange={setBackgroundColor} />
+                            <ColorPicker label="Cor dos Cards" value={cardBackgroundColor} onChange={setCardBackgroundColor} />
+                            <ColorPicker label="Cor dos Títulos" value={titleColor} onChange={setTitleColor} />
+                            <ColorPicker label="Cor do Texto" value={textColor} onChange={setTextColor} />
+                            <ColorPicker label="Cor de Destaque" value={accentColor} onChange={setAccentColor} />
+                            <ColorPicker label="Cor das Bordas" value={borderColor} onChange={setBorderColor} />
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Cores de Elementos</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <ColorPicker label="Cor do Botão" value={primary} onChange={setPrimary} />
+                            <ColorPicker label="Texto do Botão" value={buttonTextColor} onChange={setButtonTextColor} />
+                            <ColorPicker label="Cor dos Preços" value={priceColor} onChange={setPriceColor} />
+                            <ColorPicker label="Cor Secundária" value={secondary} onChange={setSecondary} />
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Inputs e Formulários</label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <ColorPicker label="Fundo do Input" value={inputBackgroundColor} onChange={setInputBackgroundColor} />
+                            <ColorPicker label="Texto do Input" value={inputTextColor} onChange={setInputTextColor} />
+                        </div>
                     </div>
                     
-                    <div className="pt-6 border-t border-slate-800">
-                        <button onClick={handleSave} className="w-full sm:w-auto px-10 py-4 rounded-xl text-white font-bold shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: primary }} disabled={isUploading || isSaving}>
+                    <div className="pt-6">
+                        <button onClick={handleSave} className="w-full px-10 py-4 rounded-xl text-white font-bold shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: primary }} disabled={isUploading || isSaving}>
                             {(isUploading || isSaving) && <Loader2 size={20} className="animate-spin" />}
-                            Salvar Alterações
+                            Salvar Todas as Alterações
                         </button>
                     </div>
                 </div>
 
                 {/* Live Preview Card */}
-                <div className="space-y-6">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Pré-visualização em Tempo Real</label>
-                    <div className="rounded-3xl p-8 border border-slate-700 shadow-2xl overflow-hidden" style={{ backgroundColor: backgroundColor }}>
-                        <div className="flex flex-col items-center text-center mb-8">
-                            {logo ? (
-                                <img src={logo} alt="Preview Logo" className="w-16 h-16 rounded-2xl object-cover mb-4" />
-                            ) : (
-                                <div className="w-16 h-16 rounded-2xl bg-slate-800 flex items-center justify-center mb-4">
-                                    <Store size={32} className="text-slate-600" />
-                                </div>
-                            )}
-                            <h4 className="text-2xl font-bold mb-2" style={{ color: titleColor }}>{name || 'Nome da Barbearia'}</h4>
-                            <p className="text-sm max-w-xs" style={{ color: textColor }}>Sua barbearia com o melhor estilo e atendimento da região.</p>
+                <div className="lg:col-span-7 space-y-6">
+                    <div className="sticky top-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Pré-visualização em Tempo Real</label>
+                            <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
+                                <button onClick={() => setPreviewScreen('home')} className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${previewScreen === 'home' ? 'bg-orange-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}>Início</button>
+                                <button onClick={() => setPreviewScreen('services')} className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${previewScreen === 'services' ? 'bg-orange-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}>Serviços</button>
+                                <button onClick={() => setPreviewScreen('professional')} className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${previewScreen === 'professional' ? 'bg-orange-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}>Equipe</button>
+                                <button onClick={() => setPreviewScreen('datetime')} className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${previewScreen === 'datetime' ? 'bg-orange-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}>Horário</button>
+                                <button onClick={() => setPreviewScreen('confirmation')} className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-md transition-all ${previewScreen === 'confirmation' ? 'bg-orange-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}>Fim</button>
+                            </div>
                         </div>
 
-                        <div className="bg-slate-800/50 rounded-2xl p-4 border border-white/5 mb-6">
-                            <div className="flex justify-between items-center mb-2">
-                                <span className="font-bold" style={{ color: titleColor }}>Corte Masculino</span>
-                                <span className="font-bold" style={{ color: priceColor }}>R$ 45,00</span>
+                        <div className="rounded-[2.5rem] p-8 border border-slate-800 shadow-2xl overflow-hidden min-h-[600px] flex flex-col relative" style={{ backgroundColor: backgroundColor }}>
+                            {/* Header Preview */}
+                            <div className="flex flex-col items-center text-center mb-8">
+                                {logo ? (
+                                    <img src={logo} alt="Preview Logo" className="w-16 h-16 rounded-2xl object-cover mb-4" />
+                                ) : (
+                                    <div className="w-16 h-16 rounded-2xl bg-slate-800/50 flex items-center justify-center mb-4 border border-white/5">
+                                        <Store size={32} className="text-slate-600" />
+                                    </div>
+                                )}
+                                <h4 className="text-2xl font-bold mb-1" style={{ color: titleColor }}>{name || 'Nome da Barbearia'}</h4>
+                                <div className="h-1 w-12 rounded-full mb-4" style={{ backgroundColor: accentColor }}></div>
                             </div>
-                            <p className="text-xs" style={{ color: textColor }}>Corte degradê moderno com finalização.</p>
-                        </div>
 
-                        <button className="w-full py-4 rounded-xl text-white font-bold shadow-lg transition-all" style={{ backgroundColor: primary }}>
-                            Agendar Horário
-                        </button>
+                            {/* Content Preview based on screen */}
+                            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                                {previewScreen === 'home' && (
+                                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="text-center space-y-2 mb-8">
+                                            <p className="text-sm" style={{ color: textColor }}>Bem-vindo à melhor experiência de barbearia da região.</p>
+                                        </div>
+                                        <div className="p-6 rounded-2xl border" style={{ backgroundColor: cardBackgroundColor, borderColor: borderColor }}>
+                                            <h5 className="font-bold mb-4" style={{ color: titleColor }}>Próximo Passo</h5>
+                                            <p className="text-xs mb-6" style={{ color: textColor }}>Escolha os serviços que deseja realizar hoje.</p>
+                                            <button className="w-full py-4 rounded-xl font-bold shadow-lg transition-all" style={{ backgroundColor: primary, color: buttonTextColor }}>
+                                                Começar Agendamento
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="p-4 rounded-2xl border text-center" style={{ backgroundColor: cardBackgroundColor, borderColor: borderColor }}>
+                                                <Clock size={20} className="mx-auto mb-2" style={{ color: accentColor }} />
+                                                <span className="text-[10px] font-bold uppercase" style={{ color: textColor }}>Rápido</span>
+                                            </div>
+                                            <div className="p-4 rounded-2xl border text-center" style={{ backgroundColor: cardBackgroundColor, borderColor: borderColor }}>
+                                                <Shield size={20} className="mx-auto mb-2" style={{ color: accentColor }} />
+                                                <span className="text-[10px] font-bold uppercase" style={{ color: textColor }}>Seguro</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
 
-                        <div className="mt-6 flex justify-center gap-4">
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: secondary }}>
-                                <Smartphone size={14} className="text-white" />
+                                {previewScreen === 'services' && (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <h5 className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: textColor }}>Selecione os Serviços</h5>
+                                        {[1, 2, 3].map(i => (
+                                            <div key={i} className="p-4 rounded-2xl border flex justify-between items-center" style={{ backgroundColor: cardBackgroundColor, borderColor: i === 1 ? accentColor : borderColor }}>
+                                                <div>
+                                                    <h6 className="font-bold text-sm" style={{ color: titleColor }}>{i === 1 ? 'Corte de Cabelo' : i === 2 ? 'Barba Completa' : 'Combo Premium'}</h6>
+                                                    <p className="text-[10px]" style={{ color: textColor }}>{i === 1 ? '30 min' : i === 2 ? '20 min' : '50 min'}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="font-bold text-sm" style={{ color: priceColor }}>R$ {i === 1 ? '45,00' : i === 2 ? '30,00' : '70,00'}</p>
+                                                    {i === 1 && <CheckCircle2 size={16} className="ml-auto mt-1" style={{ color: accentColor }} />}
+                                                </div>
+                                            </div>
+                                        ))}
+                                        <div className="pt-4">
+                                            <button className="w-full py-4 rounded-xl font-bold shadow-lg" style={{ backgroundColor: primary, color: buttonTextColor }}>
+                                                Continuar (1 serviço)
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {previewScreen === 'professional' && (
+                                    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <h5 className="text-sm font-bold uppercase tracking-widest mb-4" style={{ color: textColor }}>Escolha o Profissional</h5>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            {[1, 2, 3, 4].map(i => (
+                                                <div key={i} className="p-4 rounded-2xl border text-center relative" style={{ backgroundColor: cardBackgroundColor, borderColor: i === 1 ? accentColor : borderColor }}>
+                                                    <div className="w-12 h-12 rounded-full bg-slate-700 mx-auto mb-3 border-2" style={{ borderColor: i === 1 ? accentColor : 'transparent' }}></div>
+                                                    <h6 className="font-bold text-xs" style={{ color: titleColor }}>{i === 1 ? 'João Silva' : i === 2 ? 'Pedro Santos' : i === 3 ? 'Marcos Lima' : 'Qualquer um'}</h6>
+                                                    <p className="text-[9px]" style={{ color: textColor }}>{i === 4 ? 'O primeiro disponível' : 'Barbeiro Sênior'}</p>
+                                                    {i === 1 && <div className="absolute top-2 right-2 w-2 h-2 rounded-full" style={{ backgroundColor: accentColor }}></div>}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {previewScreen === 'datetime' && (
+                                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="p-4 rounded-2xl border" style={{ backgroundColor: cardBackgroundColor, borderColor: borderColor }}>
+                                            <div className="flex justify-between items-center mb-4">
+                                                <h6 className="font-bold text-xs" style={{ color: titleColor }}>Março 2026</h6>
+                                                <div className="flex gap-2">
+                                                    <div className="w-6 h-6 rounded-lg flex items-center justify-center border" style={{ borderColor: borderColor, color: textColor }}>&lt;</div>
+                                                    <div className="w-6 h-6 rounded-lg flex items-center justify-center border" style={{ borderColor: borderColor, color: textColor }}>&gt;</div>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-7 gap-1 text-center mb-2">
+                                                {['D','S','T','Q','Q','S','S'].map(d => <span key={d} className="text-[8px] font-bold" style={{ color: textColor }}>{d}</span>)}
+                                            </div>
+                                            <div className="grid grid-cols-7 gap-1">
+                                                {Array.from({length: 31}).map((_, i) => (
+                                                    <div key={i} className={`aspect-square flex items-center justify-center text-[10px] rounded-lg ${i + 1 === 27 ? 'font-bold' : ''}`} style={{ 
+                                                        backgroundColor: i + 1 === 27 ? accentColor : 'transparent',
+                                                        color: i + 1 === 27 ? buttonTextColor : (i < 10 ? textColor : titleColor),
+                                                        opacity: i < 5 ? 0.3 : 1
+                                                    }}>
+                                                        {i + 1}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            <h6 className="text-[10px] font-bold uppercase" style={{ color: textColor }}>Horários Disponíveis</h6>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                {['09:00', '10:00', '11:00', '14:00', '15:00', '16:00'].map(t => (
+                                                    <div key={t} className="py-2 rounded-lg border text-center text-[10px] font-bold" style={{ 
+                                                        backgroundColor: t === '10:00' ? accentColor : cardBackgroundColor,
+                                                        borderColor: t === '10:00' ? accentColor : borderColor,
+                                                        color: t === '10:00' ? buttonTextColor : titleColor
+                                                    }}>
+                                                        {t}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {previewScreen === 'confirmation' && (
+                                    <div className="space-y-6 text-center animate-in fade-in zoom-in-95 duration-500">
+                                        <div className="w-20 h-20 rounded-full mx-auto flex items-center justify-center mb-4" style={{ backgroundColor: `${accentColor}20` }}>
+                                            <CheckCircle2 size={40} style={{ color: accentColor }} />
+                                        </div>
+                                        <h5 className="text-xl font-bold" style={{ color: titleColor }}>Agendamento Confirmado!</h5>
+                                        <p className="text-sm" style={{ color: textColor }}>Tudo pronto para o seu atendimento.</p>
+                                        
+                                        <div className="p-6 rounded-2xl border text-left space-y-3" style={{ backgroundColor: cardBackgroundColor, borderColor: borderColor }}>
+                                            <div className="flex justify-between border-b pb-2" style={{ borderColor: `${borderColor}40` }}>
+                                                <span className="text-[10px] uppercase font-bold" style={{ color: textColor }}>Data</span>
+                                                <span className="text-xs font-bold" style={{ color: titleColor }}>27/03/2026 às 10:00</span>
+                                            </div>
+                                            <div className="flex justify-between border-b pb-2" style={{ borderColor: `${borderColor}40` }}>
+                                                <span className="text-[10px] uppercase font-bold" style={{ color: textColor }}>Serviço</span>
+                                                <span className="text-xs font-bold" style={{ color: titleColor }}>Corte de Cabelo</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-[10px] uppercase font-bold" style={{ color: textColor }}>Profissional</span>
+                                                <span className="text-xs font-bold" style={{ color: titleColor }}>João Silva</span>
+                                            </div>
+                                        </div>
+
+                                        <button className="w-full py-4 rounded-xl font-bold shadow-lg" style={{ backgroundColor: primary, color: buttonTextColor }}>
+                                            Voltar ao Início
+                                        </button>
+                                    </div>
+                                )}
                             </div>
-                            <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ backgroundColor: secondary }}>
-                                <Globe size={14} className="text-white" />
+
+                            {/* Footer Preview */}
+                            <div className="mt-8 pt-6 border-t flex justify-center gap-6" style={{ borderColor: `${borderColor}40` }}>
+                                <Smartphone size={18} style={{ color: textColor }} />
+                                <Globe size={18} style={{ color: textColor }} />
+                                <MessageSquare size={18} style={{ color: textColor }} />
                             </div>
                         </div>
                     </div>

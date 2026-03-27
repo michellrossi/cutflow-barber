@@ -37,35 +37,60 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Column: Form */}
                 <div className="space-y-6">
-                <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                <div className="p-6 rounded-xl border" style={{ backgroundColor: settings.cardBackgroundColor || 'rgba(30, 41, 59, 0.5)', borderColor: settings.borderColor || '#334155' }}>
                     <h3 className="font-bold text-lg mb-4" style={{ color: settings.titleColor || '#ffffff' }}>Seus dados</h3>
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm mb-1" style={{ color: settings.textColor || '#94a3b8' }}>Nome completo</label>
-                            <input value={customerInfo.name} onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" placeholder="Seu nome" />
+                            <input 
+                                value={customerInfo.name} 
+                                onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})} 
+                                className="w-full border rounded-lg p-3 focus:outline-none" 
+                                style={{ 
+                                    backgroundColor: settings.inputBackgroundColor || '#0f172a', 
+                                    borderColor: settings.borderColor || '#334155', 
+                                    color: settings.inputTextColor || '#ffffff' 
+                                }}
+                                placeholder="Seu nome" 
+                            />
                         </div>
                         <div>
                             <label className="block text-sm mb-1" style={{ color: settings.textColor || '#94a3b8' }}>WhatsApp</label>
-                            <input value={customerInfo.phone} onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" placeholder="(00) 00000-0000" />
+                            <input 
+                                value={customerInfo.phone} 
+                                onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value})} 
+                                className="w-full border rounded-lg p-3 focus:outline-none" 
+                                style={{ 
+                                    backgroundColor: settings.inputBackgroundColor || '#0f172a', 
+                                    borderColor: settings.borderColor || '#334155', 
+                                    color: settings.inputTextColor || '#ffffff' 
+                                }}
+                                placeholder="(00) 00000-0000" 
+                            />
                         </div>
                     </div>
                 </div>
 
-                <div className="bg-slate-800/50 p-6 rounded-xl border border-slate-700">
+                <div className="p-6 rounded-xl border" style={{ backgroundColor: settings.cardBackgroundColor || 'rgba(30, 41, 59, 0.5)', borderColor: settings.borderColor || '#334155' }}>
                     <h3 className="font-bold text-lg mb-4" style={{ color: settings.titleColor || '#ffffff' }}>Cupom de desconto</h3>
                     <div className="flex gap-2">
                         <input 
                             value={couponCode} 
                             onChange={e => setCouponCode(e.target.value)}
                             disabled={!!appliedCoupon}
-                            className="flex-1 bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500 uppercase" 
+                            className="flex-1 border rounded-lg p-3 focus:outline-none uppercase" 
+                            style={{ 
+                                backgroundColor: settings.inputBackgroundColor || '#0f172a', 
+                                borderColor: settings.borderColor || '#334155', 
+                                color: settings.inputTextColor || '#ffffff' 
+                            }}
                             placeholder="Digite o cupom" 
                         />
                         <button 
                             onClick={handleApplyCoupon}
                             disabled={!!appliedCoupon || !couponCode}
-                            className="px-6 rounded-lg font-medium text-slate-900 hover:opacity-90 disabled:opacity-50"
-                            style={{ backgroundColor: settings.primaryColor }}
+                            className="px-6 rounded-lg font-medium hover:opacity-90 disabled:opacity-50"
+                            style={{ backgroundColor: settings.accentColor || settings.primaryColor, color: settings.buttonTextColor || '#ffffff' }}
                         >
                             {appliedCoupon ? <Check size={20}/> : 'Aplicar'}
                         </button>
@@ -75,11 +100,11 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
                 </div>
 
                 {/* Right Column: Summary */}
-                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 h-fit">
+                <div className="p-6 rounded-xl border h-fit" style={{ backgroundColor: settings.cardBackgroundColor || '#1e293b', borderColor: settings.borderColor || '#334155' }}>
                 <h3 className="font-bold text-lg mb-6" style={{ color: settings.titleColor || '#ffffff' }}>Resumo do agendamento</h3>
                 
                 <div className="space-y-4 mb-6">
-                    <div className="flex justify-between items-start pb-4 border-b border-slate-700">
+                    <div className="flex justify-between items-start pb-4 border-b" style={{ borderColor: settings.borderColor || '#334155' }}>
                         <div>
                             <p className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>Serviços</p>
                             <div className="font-medium" style={{ color: settings.titleColor || '#ffffff' }}>
@@ -89,14 +114,14 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
                         <div className="text-right" style={{ color: settings.textColor || '#cbd5e1' }}>R$ {subtotal.toFixed(2)}</div>
                     </div>
 
-                    <div className="pb-4 border-b border-slate-700">
+                    <div className="pb-4 border-b" style={{ borderColor: settings.borderColor || '#334155' }}>
                         <p className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>Profissional</p>
                         <div className="font-medium" style={{ color: settings.titleColor || '#ffffff' }}>
                             {selectedProId ? professionals.find(p => p.id === selectedProId)?.name : 'Sem preferência'}
                         </div>
                     </div>
 
-                    <div className="pb-4 border-b border-slate-700">
+                    <div className="pb-4 border-b" style={{ borderColor: settings.borderColor || '#334155' }}>
                         <p className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>Data e horário</p>
                         <div className="font-medium" style={{ color: settings.titleColor || '#ffffff' }}>
                             {new Date(selectedDate + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })} às {selectedTime?.substring(0, 5)}
@@ -115,7 +140,7 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
                                 <span>- R$ {discountAmount.toFixed(2)}</span>
                             </div>
                         )}
-                        <div className="flex justify-between text-2xl font-bold pt-4 border-t border-slate-700" style={{ color: settings.titleColor || '#ffffff' }}>
+                        <div className="flex justify-between text-2xl font-bold pt-4 border-t" style={{ color: settings.titleColor || '#ffffff', borderColor: settings.borderColor || '#334155' }}>
                             <span>Total</span>
                             <span>R$ {total.toFixed(2)}</span>
                         </div>
@@ -131,8 +156,8 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
                 <button 
                     onClick={handleFinish}
                     disabled={loading}
-                    className="w-full py-4 rounded-lg text-white font-bold text-lg hover:brightness-110 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: settings.primaryColor }}
+                    className="w-full py-4 rounded-lg font-bold text-lg hover:brightness-110 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ backgroundColor: settings.accentColor || settings.primaryColor, color: settings.buttonTextColor || '#ffffff' }}
                 >
                     {loading ? 'Confirmando...' : 'Confirmar Agendamento'}
                 </button>

@@ -40,21 +40,22 @@ export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void 
             {/* Back Button */}
             <button 
                 onClick={onBack}
-                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-4"
+                className="flex items-center gap-2 transition-colors mb-4 hover:brightness-110"
+                style={{ color: settings.textColor || '#94a3b8' }}
             >
                 <ArrowLeft size={20} />
                 <span>Voltar</span>
             </button>
 
             {/* Header */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex items-center justify-between shadow-xl">
+            <div className="border rounded-2xl p-6 flex items-center justify-between shadow-xl" style={{ backgroundColor: settings.cardBackgroundColor || '#0f172a', borderColor: settings.borderColor || '#1e293b' }}>
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-orange-500/20 text-orange-500 rounded-full flex items-center justify-center border-2 border-orange-500/30">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center border-2" style={{ backgroundColor: `${settings.accentColor || settings.primaryColor}33`, color: settings.accentColor || settings.primaryColor, borderColor: `${settings.accentColor || settings.primaryColor}4d` }}>
                         <User size={32} />
                     </div>
                     <div>
-                        <h2 className="text-xl font-bold text-white">{currentClient.name}</h2>
-                        <div className="flex items-center gap-2 text-slate-400 text-sm">
+                        <h2 className="text-xl font-bold" style={{ color: settings.titleColor || '#ffffff' }}>{currentClient.name}</h2>
+                        <div className="flex items-center gap-2 text-sm" style={{ color: settings.textColor || '#94a3b8' }}>
                             <Smartphone size={14} />
                             <span>{currentClient.phone}</span>
                         </div>
@@ -62,7 +63,8 @@ export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void 
                 </div>
                 <button
                     onClick={onLogout}
-                    className="p-3 bg-slate-800 hover:bg-red-500/10 text-slate-400 hover:text-red-500 rounded-xl transition-all"
+                    className="p-3 rounded-xl transition-all hover:bg-red-500/10 hover:text-red-500"
+                    style={{ backgroundColor: settings.inputBackgroundColor || '#1e293b', color: settings.textColor || '#94a3b8' }}
                     title="Sair"
                 >
                     <LogOut size={20} />
@@ -70,7 +72,7 @@ export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void 
             </div>
 
             {/* Loyalty Card */}
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden group">
+            <div className="rounded-2xl p-6 text-white shadow-xl relative overflow-hidden group" style={{ background: `linear-gradient(to bottom right, ${settings.accentColor || settings.primaryColor}, ${settings.accentColor || settings.primaryColor}dd)`, boxShadow: `0 20px 25px -5px ${settings.accentColor || settings.primaryColor}33` }}>
                 <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
                 <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-black/10 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700"></div>
                 
@@ -107,25 +109,25 @@ export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void 
             {/* Available Rewards */}
             {clientCoupons.length > 0 && (
                 <div className="space-y-4">
-                    <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Tag size={20} className="text-orange-500" />
+                    <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: settings.titleColor || '#ffffff' }}>
+                        <Tag size={20} style={{ color: settings.accentColor || settings.primaryColor }} />
                         Suas Recompensas
                     </h3>
                     <div className="grid grid-cols-1 gap-3">
                         {clientCoupons.map(coupon => (
-                            <div key={coupon.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between group hover:border-orange-500/50 transition-all">
+                            <div key={coupon.id} className="border rounded-xl p-4 flex items-center justify-between group transition-all" style={{ backgroundColor: settings.cardBackgroundColor || '#0f172a', borderColor: settings.borderColor || '#1e293b' }}>
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-green-500/10 text-green-500 rounded-lg flex items-center justify-center border border-green-500/20">
                                         <Tag size={24} />
                                     </div>
                                     <div>
-                                        <p className="font-bold text-white">{coupon.type === 'percentage' ? `${coupon.value}% OFF` : `R$ ${coupon.value} OFF`}</p>
-                                        <p className="text-xs text-slate-500 uppercase tracking-widest font-bold">{coupon.code}</p>
+                                        <p className="font-bold" style={{ color: settings.titleColor || '#ffffff' }}>{coupon.type === 'percentage' ? `${coupon.value}% OFF` : `R$ ${coupon.value} OFF`}</p>
+                                        <p className="text-xs uppercase tracking-widest font-bold" style={{ color: settings.textColor || '#64748b' }}>{coupon.code}</p>
                                     </div>
                                 </div>
                                 <div className="text-right">
-                                    <p className="text-[10px] text-slate-500 uppercase font-bold">Expira em:</p>
-                                    <p className="text-xs text-red-400 font-bold">{coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : 'Sem expiração'}</p>
+                                    <p className="text-[10px] uppercase font-bold" style={{ color: settings.textColor || '#64748b' }}>Expira em:</p>
+                                    <p className="text-xs font-bold text-red-400">{coupon.expiresAt ? new Date(coupon.expiresAt).toLocaleDateString() : 'Sem expiração'}</p>
                                 </div>
                             </div>
                         ))}
@@ -135,15 +137,15 @@ export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void 
 
             {/* History */}
             <div className="space-y-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <History size={20} className="text-orange-500" />
+                <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: settings.titleColor || '#ffffff' }}>
+                    <History size={20} style={{ color: settings.accentColor || settings.primaryColor }} />
                     Histórico de Agendamentos
                 </h3>
                 
                 {clientAppointments.length === 0 ? (
-                    <div className="bg-slate-900/50 border border-dashed border-slate-800 rounded-2xl p-12 text-center space-y-3">
-                        <Calendar className="text-slate-700 mx-auto" size={40} />
-                        <p className="text-slate-500">Você ainda não possui agendamentos.</p>
+                    <div className="border border-dashed rounded-2xl p-12 text-center space-y-3" style={{ backgroundColor: `${settings.cardBackgroundColor}80` || 'rgba(15, 23, 42, 0.5)', borderColor: settings.borderColor || '#1e293b' }}>
+                        <Calendar className="mx-auto" style={{ color: settings.textColor || '#334155' }} size={40} />
+                        <p style={{ color: settings.textColor || '#64748b' }}>Você ainda não possui agendamentos.</p>
                     </div>
                 ) : (
                     <div className="space-y-3">
@@ -151,25 +153,25 @@ export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void 
                             const aptServices = services.filter(s => apt.serviceIds.includes(s.id));
                             const professional = professionals.find(p => p.id === apt.professionalId);
                             return (
-                                <div key={apt.id} className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between hover:bg-slate-800/50 transition-all">
+                                <div key={apt.id} className="border rounded-xl p-4 flex items-center justify-between transition-all" style={{ backgroundColor: settings.cardBackgroundColor || '#0f172a', borderColor: settings.borderColor || '#1e293b' }}>
                                     <div className="space-y-1">
                                         <div className="flex items-center gap-2">
-                                            <span className="font-bold text-white">{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
-                                            <span className="text-slate-500 text-xs">•</span>
-                                            <span className="text-slate-400 text-sm">{apt.time.substring(0, 5)}</span>
+                                            <span className="font-bold" style={{ color: settings.titleColor || '#ffffff' }}>{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })}</span>
+                                            <span className="text-xs" style={{ color: settings.textColor || '#64748b' }}>•</span>
+                                            <span className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>{apt.time.substring(0, 5)}</span>
                                         </div>
-                                        <p className="text-sm text-slate-300 truncate max-w-[200px]">
+                                        <p className="text-sm truncate max-w-[200px]" style={{ color: settings.textColor || '#cbd5e1' }}>
                                             {aptServices.map(s => s.name).join(', ')}
                                         </p>
                                         {professional && (
-                                            <p className="text-[10px] text-slate-500 flex items-center gap-1">
+                                            <p className="text-[10px] flex items-center gap-1" style={{ color: settings.textColor || '#64748b' }}>
                                                 <User size={10} />
                                                 {professional.name}
                                             </p>
                                         )}
                                     </div>
                                     <div className="text-right space-y-1">
-                                        <p className="font-bold text-orange-500">R$ {apt.totalValue}</p>
+                                        <p className="font-bold" style={{ color: settings.priceColor || settings.accentColor || settings.primaryColor }}>R$ {apt.totalValue}</p>
                                         <div className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full inline-block ${
                                             apt.status === 'completed' ? 'bg-green-500/10 text-green-500' :
                                             apt.status === 'cancelled' ? 'bg-red-500/10 text-red-500' :
