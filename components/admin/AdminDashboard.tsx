@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info } from 'lucide-react';
+import { DashboardPanel } from './panels/DashboardPanel';
 import { TeamPanel } from './panels/TeamPanel';
 import { ServicesPanel } from './panels/ServicesPanel';
 import { CouponsPanel } from './panels/CouponsPanel';
@@ -15,12 +16,12 @@ import { InsightPanel } from './panels/InsightPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
 import { PaymentModal } from '../billing/PaymentModal';
 
-type AdminTab = 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight';
+type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight';
 
 export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () => void }> = ({ onLogout, onViewClient }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>(() => {
       const saved = localStorage.getItem('adminActiveTab');
-      return (saved as AdminTab) || 'team';
+      return (saved as AdminTab) || 'dashboard';
   });
   
   const [settingsSubTab, setSettingsSubTab] = useState<SettingsTab>(() => {
@@ -50,6 +51,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
 
   const renderContent = () => {
     switch (activeTab) {
+      case 'dashboard': return <DashboardPanel />;
       case 'team': return <TeamPanel />;
       case 'services': return <ServicesPanel />;
       case 'coupons': return <CouponsPanel />;
@@ -59,12 +61,13 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'loyalty': return <LoyaltyPanel />;
       case 'settings': return <SettingsPanel initialTab={settingsSubTab} onTabChange={setSettingsSubTab} />;
       case 'insight': return <InsightPanel />;
-      default: return <TeamPanel />;
+      default: return <DashboardPanel />;
     }
   };
 
   const getTabLabel = (tab: AdminTab) => {
       switch(tab) {
+          case 'dashboard': return 'Dashboard';
           case 'team': return 'Gerenciar Equipe';
           case 'services': return 'Gerenciar Serviços';
           case 'coupons': return 'Gerenciar Cupons';
@@ -92,6 +95,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
         </div>
         
         <nav className="flex-1 p-4 space-y-2">
+          <SidebarItem icon={<LayoutGrid size={20} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
           <SidebarItem icon={<Users size={20} />} label="Equipe" active={activeTab === 'team'} onClick={() => setActiveTab('team')} />
           <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => setActiveTab('services')} />
           <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => setActiveTab('coupons')} />
@@ -271,6 +275,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
         <div className="md:hidden bg-slate-950 border-b border-slate-800 shrink-0 sticky top-0 z-30">
             <div className="relative">
                 <div className="flex overflow-x-auto gap-1 p-2 scrollbar-hide no-scrollbar mask-fade-right">
+                    <MobileNavItem icon={<LayoutGrid size={16} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
                     <MobileNavItem icon={<Users size={16} />} label="Equipe" active={activeTab === 'team'} onClick={() => setActiveTab('team')} />
                     <MobileNavItem icon={<CalendarCheck size={16} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => setActiveTab('appointments')} />
                     <MobileNavItem icon={<UserCircle size={16} />} label="Clientes" active={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
