@@ -78,36 +78,42 @@ export const DashboardPanel: React.FC = () => {
                 <div className="divide-y divide-slate-700/50">
                     {todayAgenda.length > 0 ? (
                         todayAgenda.map((apt) => (
-                            <div key={apt.id} className="p-4 hover:bg-slate-700/30 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                <div className="flex items-center gap-4">
-                                    <div className="flex flex-col items-center justify-center bg-slate-900 border border-slate-700 rounded-xl p-2 min-w-[70px]">
-                                        <span className="text-lg font-bold text-white">{apt.time.substring(0, 5)}</span>
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Horário</span>
-                                    </div>
-                                    <div>
-                                        <h4 className="font-bold text-white text-base">{apt.clientName}</h4>
-                                        <div className="flex items-center gap-2 text-slate-400 text-xs mt-1">
-                                            <Phone size={12} />
-                                            <span>{apt.clientPhone}</span>
-                                        </div>
+                            <div key={apt.id} className="p-4 hover:bg-slate-700/30 transition-colors grid grid-cols-1 sm:grid-cols-12 items-center gap-4">
+                                {/* Horário */}
+                                <div className="sm:col-span-1 flex flex-col items-center justify-center bg-slate-900 border border-slate-700 rounded-xl p-2 min-w-[70px]">
+                                    <span className="text-lg font-bold text-white">{apt.time.substring(0, 5)}</span>
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tighter">Horário</span>
+                                </div>
+
+                                {/* Cliente */}
+                                <div className="sm:col-span-3">
+                                    <h4 className="font-bold text-white text-base">{apt.clientName}</h4>
+                                    <div className="flex items-center gap-2 text-slate-400 text-xs mt-1">
+                                        <Phone size={12} />
+                                        <span>{apt.clientPhone}</span>
                                     </div>
                                 </div>
 
-                                <div className="flex flex-wrap items-center gap-6">
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Profissional</span>
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: professionals.find(p => p.id === apt.professionalId)?.color || '#64748b' }} />
-                                            <span className="text-sm text-slate-300 font-medium">{getProName(apt.professionalId)}</span>
-                                        </div>
+                                {/* Profissional */}
+                                <div className="sm:col-span-2 flex flex-col">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Profissional</span>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: professionals.find(p => p.id === apt.professionalId)?.color || '#64748b' }} />
+                                        <span className="text-sm text-slate-300 font-medium">{getProName(apt.professionalId)}</span>
                                     </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Serviços</span>
-                                        <div className="flex items-center gap-2 text-sm text-slate-300">
-                                            <Scissors size={14} className="text-orange-500" />
-                                            <span className="truncate max-w-[200px]">{getServicesNames(apt.serviceIds)}</span>
-                                        </div>
+                                </div>
+
+                                {/* Serviços */}
+                                <div className="sm:col-span-4 flex flex-col">
+                                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Serviços</span>
+                                    <div className="flex items-center gap-2 text-sm text-slate-300">
+                                        <Scissors size={14} className="text-orange-500" />
+                                        <span className="truncate max-w-[250px]">{getServicesNames(apt.serviceIds)}</span>
                                     </div>
+                                </div>
+
+                                {/* Status */}
+                                <div className="sm:col-span-2 flex justify-end">
                                     <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getStatusStyles(apt.status)}`}>
                                         {getStatusLabel(apt.status)}
                                     </div>
