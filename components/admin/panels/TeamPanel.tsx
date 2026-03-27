@@ -3,7 +3,7 @@ import { useShop } from '../../../store';
 import { supabase } from '../../../supabaseClient';
 import { Professional, WorkSchedule, DaySchedule } from '../../../types';
 import { ConfirmationModal } from '../../ui/ConfirmationModal';
-import { Plus, Trash2, Edit2, Upload, Loader2, Clock, X, UserPlus } from 'lucide-react';
+import { Plus, Trash2, Edit2, Upload, Loader2, Clock, X, UserPlus, CalendarX } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 
 const DEFAULT_DAY: DaySchedule = { start: '09:00', end: '19:00', lunchStart: '12:00', lunchEnd: '13:00', active: true };
@@ -250,18 +250,15 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                 <>
                     <div className="flex justify-between mb-8">
                         <p className="text-slate-400">Adicione, edite ou remova profissionais da sua equipe.</p>
-                        <button onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setPhone(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity" style={{ backgroundColor: settings.primaryColor }}>
-                            <Plus size={18} /> Adicionar Profissional
-                        </button>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
                         {professionals.map(pro => {
                             const isMaster = pro.role.toLowerCase().includes('master');
                             return (
-                                <div key={pro.id} className="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all w-full max-w-[190px] shadow-lg">
+                                <div key={pro.id} className="bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden group hover:border-slate-300 dark:hover:border-slate-600 transition-all w-full max-w-[210px] shadow-lg">
                                     {/* Top Half: Photo */}
-                                    <div className="relative h-56 w-full overflow-hidden">
+                                    <div className="relative h-64 w-full overflow-hidden">
                                         <img 
                                             src={pro.photoUrl} 
                                             alt={pro.name} 
@@ -286,7 +283,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                     {/* Bottom Half: Info */}
                                     <div className="p-3 flex flex-col flex-1">
                                         <div className="mb-3 text-center">
-                                            <h3 className="font-bold text-white text-sm leading-tight truncate">{pro.name}</h3>
+                                            <h3 className="font-bold text-slate-900 dark:text-white text-sm leading-tight truncate">{pro.name}</h3>
                                             <p className="text-[9px] font-bold tracking-wider uppercase text-orange-500 mt-1">
                                                 {pro.role}
                                             </p>
@@ -294,7 +291,11 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                         
                                         {/* Actions */}
                                         <div className="mt-auto flex gap-1.5 justify-center">
-                                            <button onClick={() => handleEdit(pro)} className="p-2 bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors">
+                                            <button 
+                                                onClick={() => handleEdit(pro)} 
+                                                className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                                title="Editar"
+                                            >
                                                 <Edit2 size={14}/>
                                             </button>
                                             <button 
@@ -303,12 +304,23 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                                     setSchedule(pro.workSchedule || DEFAULT_SCHEDULE);
                                                     handleSubTabChange('schedules');
                                                 }} 
-                                                className="p-2 bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors"
+                                                className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-white transition-colors"
                                                 title="Ver Horários"
                                             >
                                                 <Clock size={14}/>
                                             </button>
-                                            <button onClick={() => setDeleteId(pro.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors">
+                                            <button 
+                                                onClick={() => {
+                                                    setSelectedProId(pro.id);
+                                                    setBlockDate(new Date().toISOString().split('T')[0]);
+                                                    handleSubTabChange('blocks');
+                                                }} 
+                                                className="p-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-white transition-colors"
+                                                title="Bloquear Horário"
+                                            >
+                                                <CalendarX size={14}/>
+                                            </button>
+                                            <button onClick={() => setDeleteId(pro.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors" title="Remover">
                                                 <Trash2 size={14}/>
                                             </button>
                                         </div>
@@ -320,7 +332,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                         {/* Add New Card */}
                         <button 
                             onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setPhone(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }}
-                            className="bg-transparent rounded-2xl border-2 border-dashed border-slate-700 hover:border-slate-500 hover:bg-slate-800/30 transition-all flex flex-col items-center justify-center text-center w-full max-w-[190px] min-h-[310px] group"
+                            className="bg-transparent rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/30 transition-all flex flex-col items-center justify-center text-center w-full max-w-[210px] min-h-[350px] group"
                         >
                             <div className="w-12 h-12 rounded-full bg-[#27272a] group-hover:bg-[#3f3f46] flex items-center justify-center mb-4 transition-colors">
                                 <UserPlus size={20} className="text-zinc-400 group-hover:text-zinc-300" />
@@ -598,41 +610,6 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                 <input type="file" ref={fileInputRef} onChange={handleImageUpload} className="hidden" accept="image/*" disabled={isUploading} />
                                 <span className="text-sm text-slate-500">{isUploading ? 'Enviando...' : 'Clique para carregar uma foto'}</span>
                             </div>
-                        </div>
-                        
-                        <div className="border border-slate-700 rounded-lg overflow-hidden">
-                             <button type="button" onClick={() => setIsScheduleOpen(!isScheduleOpen)} className="w-full bg-slate-800/50 p-3 flex justify-between items-center text-left hover:bg-slate-700 transition-colors">
-                                 <span className="font-medium flex items-center gap-2"><Clock size={16} /> Horários de Atendimento</span>
-                                 <span className="text-xs text-slate-400">{isScheduleOpen ? 'Recolher' : 'Configurar'}</span>
-                             </button>
-                             {isScheduleOpen && (
-                                 <div className="p-4 bg-slate-900/50 space-y-3">
-                                     {Object.entries(schedule).map(([key, val]) => {
-                                         const day = val as DaySchedule;
-                                         return (
-                                             <div key={key} className="flex flex-col md:flex-row md:items-center gap-3 pb-3 border-b border-slate-800 last:border-0">
-                                                 <div className="w-24">
-                                                     <label className="flex items-center gap-2 cursor-pointer">
-                                                         <input type="checkbox" checked={day.active} onChange={() => toggleDay(key as keyof WorkSchedule)} className="rounded border-slate-600 text-orange-500 focus:ring-orange-500 bg-slate-800" />
-                                                         <span className={day.active ? 'text-white' : 'text-slate-500'}>{daysMap[key]}</span>
-                                                     </label>
-                                                 </div>
-                                                 {day.active && (
-                                                    <div className="flex flex-wrap items-center gap-2 text-sm">
-                                                        <input type="time" value={day.start} onChange={e => updateDayTime(key as keyof WorkSchedule, 'start', e.target.value)} className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" />
-                                                        <span className="text-slate-500">até</span>
-                                                        <input type="time" value={day.end} onChange={e => updateDayTime(key as keyof WorkSchedule, 'end', e.target.value)} className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" />
-                                                        <span className="text-slate-500 ml-2">Almoço:</span>
-                                                        <input type="time" value={day.lunchStart} onChange={e => updateDayTime(key as keyof WorkSchedule, 'lunchStart', e.target.value)} className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" />
-                                                        <span className="text-slate-500">-</span>
-                                                        <input type="time" value={day.lunchEnd} onChange={e => updateDayTime(key as keyof WorkSchedule, 'lunchEnd', e.target.value)} className="bg-slate-800 border border-slate-700 rounded px-2 py-1 text-white" />
-                                                    </div>
-                                                 )}
-                                             </div>
-                                         );
-                                     })}
-                                 </div>
-                             )}
                         </div>
 
                         <div className="flex gap-2 justify-end pt-2">
