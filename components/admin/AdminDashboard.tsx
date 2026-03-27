@@ -18,15 +18,26 @@ import { PaymentModal } from '../billing/PaymentModal';
 
 type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight';
 
+type TeamSubTab = 'list' | 'schedules' | 'blocks';
+
 export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () => void }> = ({ onLogout, onViewClient }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>(() => {
       const saved = localStorage.getItem('adminActiveTab');
       return (saved as AdminTab) || 'dashboard';
   });
   
+  const [teamSubTab, setTeamSubTab] = useState<TeamSubTab>(() => {
+      const saved = localStorage.getItem('adminTeamSubTab');
+      return (saved as TeamSubTab) || 'list';
+  });
+
   const [settingsSubTab, setSettingsSubTab] = useState<SettingsTab>(() => {
       const saved = localStorage.getItem('adminSettingsSubTab');
       return (saved as SettingsTab) || 'profile';
+  });
+
+  const [isTeamOpen, setIsTeamOpen] = useState(() => {
+      return activeTab === 'team';
   });
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(() => {
@@ -41,6 +52,10 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   }, [activeTab]);
 
   useEffect(() => {
+      localStorage.setItem('adminTeamSubTab', teamSubTab);
+  }, [teamSubTab]);
+
+  useEffect(() => {
       localStorage.setItem('adminSettingsSubTab', settingsSubTab);
   }, [settingsSubTab]);
 
@@ -52,7 +67,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard': return <DashboardPanel />;
-      case 'team': return <TeamPanel />;
+      case 'team': return <TeamPanel initialTab={teamSubTab} onTabChange={setTeamSubTab} />;
       case 'services': return <ServicesPanel />;
       case 'coupons': return <CouponsPanel />;
       case 'appointments': return <AppointmentsPanel />;
@@ -96,7 +111,58 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
         
         <nav className="flex-1 p-4 space-y-2">
           <SidebarItem icon={<LayoutGrid size={20} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
-          <SidebarItem icon={<Users size={20} />} label="Equipe" active={activeTab === 'team'} onClick={() => setActiveTab('team')} />
+          
+          <div className="space-y-1">
+              <button 
+                  onClick={() => {
+                      setIsTeamOpen(!isTeamOpen);
+                      if (!isTeamOpen) setActiveTab('team');
+                  }}
+                  className={`flex items-center gap-3 px-4 py-3 w-full rounded-lg transition-all duration-200 ${activeTab === 'team' ? 'bg-slate-800 text-white font-medium shadow-md' : 'text-slate-400 hover:bg-slate-900 hover:text-slate-200'}`}
+                  style={activeTab === 'team' ? { borderLeft: `4px solid ${settings.primaryColor}` } : {}}
+              >
+                  <Users size={20} style={{ color: activeTab === 'team' ? settings.primaryColor : 'inherit' }} />
+                  <span className="flex-1 text-left">Equipe</span>
+                  <motion.div
+                      animate={{ rotate: isTeamOpen ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                  >
+                      <ChevronDown size={16} />
+                  </motion.div>
+              </button>
+
+              <AnimatePresence>
+                  {isTeamOpen && (
+                      <motion.div 
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="pl-4 space-y-1 overflow-hidden"
+                      >
+                          <SubSidebarItem 
+                              icon={<Users size={16} />} 
+                              label="Profissionais" 
+                              active={activeTab === 'team' && teamSubTab === 'list'} 
+                              onClick={() => { setActiveTab('team'); setTeamSubTab('list'); }} 
+                          />
+                          <SubSidebarItem 
+                              icon={<Clock size={16} />} 
+                              label="Horários" 
+                              active={activeTab === 'team' && teamSubTab === 'schedules'} 
+                              onClick={() => { setActiveTab('team'); setTeamSubTab('schedules'); }} 
+                          />
+                          <SubSidebarItem 
+                              icon={<Lock size={16} />} 
+                              label="Bloqueios" 
+                              active={activeTab === 'team' && teamSubTab === 'blocks'} 
+                              onClick={() => { setActiveTab('team'); setTeamSubTab('blocks'); }} 
+                          />
+                      </motion.div>
+                  )}
+              </AnimatePresence>
+          </div>
+
           <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => setActiveTab('services')} />
           <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => setActiveTab('coupons')} />
           <SidebarItem icon={<CalendarCheck size={20} />} label="Agendamentos" active={activeTab === 'appointments'} onClick={() => setActiveTab('appointments')} />

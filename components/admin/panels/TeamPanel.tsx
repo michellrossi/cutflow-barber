@@ -7,10 +7,32 @@ import { Plus, Trash2, Edit2, Upload, Loader2, Clock, X, UserPlus } from 'lucide
 import { useToast } from '../../ui/ToastContext';
 
 const DEFAULT_DAY: DaySchedule = { start: '09:00', end: '19:00', lunchStart: '12:00', lunchEnd: '13:00', active: true };
+const DEFAULT_SCHEDULE: WorkSchedule = {
+    monday: {...DEFAULT_DAY}, tuesday: {...DEFAULT_DAY}, wednesday: {...DEFAULT_DAY},
+    thursday: {...DEFAULT_DAY}, friday: {...DEFAULT_DAY}, saturday: {...DEFAULT_DAY},
+    sunday: {...DEFAULT_DAY, active: false}
+};
 
-export const TeamPanel: React.FC = () => {
+interface TeamPanelProps {
+    initialTab?: 'list' | 'schedules' | 'blocks';
+    onTabChange?: (tab: 'list' | 'schedules' | 'blocks') => void;
+}
+
+export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTabChange }) => {
     const { professionals, addProfessional, updateProfessional, removeProfessional, blockedSlots, addBlockedSlot, removeBlockedSlot, settings } = useShop();
     const { showToast } = useToast();
+    
+    const [subTab, setSubTab] = React.useState<'list' | 'schedules' | 'blocks'>(initialTab);
+    const [selectedProId, setSelectedProId] = useState<string>('');
+
+    React.useEffect(() => {
+        setSubTab(initialTab);
+    }, [initialTab]);
+
+    const handleSubTabChange = (tab: 'list' | 'schedules' | 'blocks') => {
+        setSubTab(tab);
+        if (onTabChange) onTabChange(tab);
+    };
     
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -154,6 +176,18 @@ export const TeamPanel: React.FC = () => {
         }
     }
 
+    const handleSaveSchedule = async () => {
+        if (!selectedProId) return;
+        setIsSaving(true);
+        const result = await updateProfessional(selectedProId, { workSchedule: schedule });
+        setIsSaving(false);
+        if (result.success) {
+            showToast('Horários atualizados com sucesso!');
+        } else {
+            showToast(result.error || 'Erro ao salvar horários.', 'error');
+        }
+    };
+
     const toggleDay = (day: keyof WorkSchedule) => {
         setSchedule(prev => ({ ...prev, [day]: { ...prev[day], active: !prev[day].active } }));
     };
@@ -168,7 +202,7 @@ export const TeamPanel: React.FC = () => {
     };
 
     return (
-        <div>
+        <div className="space-y-6">
             <ConfirmationModal 
                 isOpen={!!deleteId}
                 onClose={() => setDeleteId(null)}
@@ -179,56 +213,296 @@ export const TeamPanel: React.FC = () => {
                 isDestructive
             />
 
-            {/* Modal de Bloqueios */}
-            {isBlockModalOpen && selectedProForBlock && (
-                <div 
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
-                    onClick={(e) => e.target === e.currentTarget && setIsBlockModalOpen(false)}
+            {/* Sub-tabs Navigation */}
+            <div className="flex border-b border-slate-700 mb-6 overflow-x-auto">
+                <button 
+                    onClick={() => handleSubTabChange('list')}
+                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${subTab === 'list' ? 'border-orange-500 text-orange-500' : 'border-transparent text-slate-400 hover:text-white'}`}
                 >
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 w-full max-w-md shadow-2xl relative animate-scale-up">
-                        <button onClick={() => setIsBlockModalOpen(false)} className="absolute top-4 right-4 text-slate-500 hover:text-white"><X size={20} /></button>
-                        <h3 className="text-lg font-bold text-white mb-4">Gerenciar Bloqueios: {selectedProForBlock.name.split(' ')[0]}</h3>
-                        
-                        <div className="mb-6 bg-slate-900/50 rounded-lg p-3 max-h-40 overflow-y-auto border border-slate-700">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase mb-2">Bloqueios Ativos</h4>
-                            {blockedSlots.filter(b => b.professionalId === selectedProForBlock.id).length === 0 ? (
-                                <p className="text-sm text-slate-500 italic">Nenhum bloqueio cadastrado.</p>
-                            ) : (
-                                <div className="space-y-2">
-                                    {blockedSlots.filter(b => b.professionalId === selectedProForBlock.id).map(b => (
-                                        <div key={b.id} className="flex justify-between items-center bg-slate-800 p-2 rounded border border-slate-700">
-                                            <div>
-                                                <div className="text-sm text-white font-medium">{new Date(b.date + 'T12:00:00').toLocaleDateString('pt-BR')}</div>
-                                                <div className="text-xs text-slate-400">{b.startTime} - {b.endTime} • {b.reason}</div>
-                                            </div>
-                                            <button onClick={() => handleRemoveBlock(b.id)} className="text-red-500 hover:text-red-400 p-1"><Trash2 size={16}/></button>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                    Profissionais
+                </button>
+                <button 
+                    onClick={() => {
+                        handleSubTabChange('schedules');
+                        if (professionals.length > 0 && !selectedProId) {
+                            setSelectedProId(professionals[0].id);
+                            setSchedule(professionals[0].workSchedule || DEFAULT_SCHEDULE);
+                        }
+                    }}
+                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${subTab === 'schedules' ? 'border-orange-500 text-orange-500' : 'border-transparent text-slate-400 hover:text-white'}`}
+                >
+                    Horários
+                </button>
+                <button 
+                    onClick={() => {
+                        handleSubTabChange('blocks');
+                        if (professionals.length > 0 && !selectedProId) {
+                            setSelectedProId(professionals[0].id);
+                        }
+                    }}
+                    className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${subTab === 'blocks' ? 'border-orange-500 text-orange-500' : 'border-transparent text-slate-400 hover:text-white'}`}
+                >
+                    Bloqueio de Horários
+                </button>
+            </div>
 
-                        <form onSubmit={handleAddBlock} className="space-y-3">
-                            <h4 className="text-xs font-bold text-slate-400 uppercase">Adicionar Novo</h4>
-                            <input required type="date" value={blockDate} onChange={e => setBlockDate(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm" />
-                            <div className="flex gap-2">
-                                <input required type="time" value={blockStart} onChange={e => setBlockStart(e.target.value)} className="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm" />
-                                <span className="text-slate-400 self-center">-</span>
-                                <input required type="time" value={blockEnd} onChange={e => setBlockEnd(e.target.value)} className="flex-1 bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm" />
-                            </div>
-                            <input required type="text" value={blockReason} onChange={e => setBlockReason(e.target.value)} placeholder="Motivo (ex: Médico)" className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-sm" />
-                            <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 rounded-lg text-sm">Adicionar Bloqueio</button>
-                        </form>
+            {subTab === 'list' && (
+                <>
+                    <div className="flex justify-between mb-8">
+                        <p className="text-slate-400">Adicione, edite ou remova profissionais da sua equipe.</p>
+                        <button onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setPhone(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity" style={{ backgroundColor: settings.primaryColor }}>
+                            <Plus size={18} /> Adicionar Profissional
+                        </button>
                     </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
+                        {professionals.map(pro => {
+                            const isMaster = pro.role.toLowerCase().includes('master');
+                            return (
+                                <div key={pro.id} className="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all w-full max-w-[190px] shadow-lg">
+                                    {/* Top Half: Photo */}
+                                    <div className="relative h-56 w-full overflow-hidden">
+                                        <img 
+                                            src={pro.photoUrl} 
+                                            alt={pro.name} 
+                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                                            referrerPolicy="no-referrer" 
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
+                                        
+                                        {isMaster && (
+                                            <div className="absolute top-2 right-2 bg-yellow-500 text-black text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg">
+                                                MASTER
+                                            </div>
+                                        )}
+
+                                        <div 
+                                            className="absolute bottom-2 right-2 w-4 h-4 rounded-full border-2 border-white shadow-lg" 
+                                            style={{ backgroundColor: pro.color }}
+                                            title="Cor na agenda"
+                                        />
+                                    </div>
+                                    
+                                    {/* Bottom Half: Info */}
+                                    <div className="p-3 flex flex-col flex-1">
+                                        <div className="mb-3 text-center">
+                                            <h3 className="font-bold text-white text-sm leading-tight truncate">{pro.name}</h3>
+                                            <p className="text-[9px] font-bold tracking-wider uppercase text-orange-500 mt-1">
+                                                {pro.role}
+                                            </p>
+                                        </div>
+                                        
+                                        {/* Actions */}
+                                        <div className="mt-auto flex gap-1.5 justify-center">
+                                            <button onClick={() => handleEdit(pro)} className="p-2 bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors">
+                                                <Edit2 size={14}/>
+                                            </button>
+                                            <button 
+                                                onClick={() => { 
+                                                    setSelectedProId(pro.id);
+                                                    setSchedule(pro.workSchedule || DEFAULT_SCHEDULE);
+                                                    handleSubTabChange('schedules');
+                                                }} 
+                                                className="p-2 bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors"
+                                                title="Ver Horários"
+                                            >
+                                                <Clock size={14}/>
+                                            </button>
+                                            <button onClick={() => setDeleteId(pro.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors">
+                                                <Trash2 size={14}/>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                        {/* Add New Card */}
+                        <button 
+                            onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setPhone(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }}
+                            className="bg-transparent rounded-2xl border-2 border-dashed border-slate-700 hover:border-slate-500 hover:bg-slate-800/30 transition-all flex flex-col items-center justify-center text-center w-full max-w-[190px] min-h-[310px] group"
+                        >
+                            <div className="w-12 h-12 rounded-full bg-[#27272a] group-hover:bg-[#3f3f46] flex items-center justify-center mb-4 transition-colors">
+                                <UserPlus size={20} className="text-zinc-400 group-hover:text-zinc-300" />
+                            </div>
+                            <h3 className="font-medium text-blue-400/80 group-hover:text-blue-400 mb-2 transition-colors">Novo Profissional</h3>
+                            <p className="text-xs text-zinc-500 max-w-[140px]">Adicione mais membros para sua equipe</p>
+                        </button>
+                    </div>
+                </>
+            )}
+
+            {subTab === 'schedules' && (
+                <div className="max-w-4xl">
+                    <div className="mb-6">
+                        <label className="block text-sm text-slate-400 mb-2">Selecione o Profissional</label>
+                        <select 
+                            value={selectedProId} 
+                            onChange={(e) => {
+                                setSelectedProId(e.target.value);
+                                const pro = professionals.find(p => p.id === e.target.value);
+                                if (pro) setSchedule(pro.workSchedule || DEFAULT_SCHEDULE);
+                            }}
+                            className="w-full max-w-md bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500"
+                        >
+                            <option value="">Selecione um profissional...</option>
+                            {professionals.map(pro => (
+                                <option key={pro.id} value={pro.id}>{pro.name}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {selectedProId ? (
+                        <div className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+                            <div className="p-4 border-b border-slate-700 bg-slate-800/80 flex justify-between items-center">
+                                <h3 className="font-bold flex items-center gap-2"><Clock size={18} /> Horários de Atendimento</h3>
+                                <button 
+                                    onClick={handleSaveSchedule}
+                                    disabled={isSaving}
+                                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-bold flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {isSaving ? <Loader2 size={16} className="animate-spin" /> : 'Salvar Alterações'}
+                                </button>
+                            </div>
+                            <div className="p-6 space-y-4">
+                                {Object.entries(schedule).map(([key, val]) => {
+                                    const day = val as DaySchedule;
+                                    return (
+                                        <div key={key} className="flex flex-col md:flex-row md:items-center gap-4 pb-4 border-b border-slate-700/50 last:border-0">
+                                            <div className="w-32">
+                                                <label className="flex items-center gap-3 cursor-pointer">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={day.active} 
+                                                        onChange={() => toggleDay(key as keyof WorkSchedule)} 
+                                                        className="w-5 h-5 rounded border-slate-600 text-orange-500 focus:ring-orange-500 bg-slate-900" 
+                                                    />
+                                                    <span className={`font-medium ${day.active ? 'text-white' : 'text-slate-500'}`}>{daysMap[key]}</span>
+                                                </label>
+                                            </div>
+                                            {day.active ? (
+                                                <div className="flex flex-wrap items-center gap-3 text-sm">
+                                                    <div className="flex items-center gap-2">
+                                                        <input type="time" value={day.start} onChange={e => updateDayTime(key as keyof WorkSchedule, 'start', e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-orange-500 outline-none" />
+                                                        <span className="text-slate-500">até</span>
+                                                        <input type="time" value={day.end} onChange={e => updateDayTime(key as keyof WorkSchedule, 'end', e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-orange-500 outline-none" />
+                                                    </div>
+                                                    <div className="flex items-center gap-2 ml-0 md:ml-4">
+                                                        <span className="text-slate-500">Almoço:</span>
+                                                        <input type="time" value={day.lunchStart} onChange={e => updateDayTime(key as keyof WorkSchedule, 'lunchStart', e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-orange-500 outline-none" />
+                                                        <span className="text-slate-500">-</span>
+                                                        <input type="time" value={day.lunchEnd} onChange={e => updateDayTime(key as keyof WorkSchedule, 'lunchEnd', e.target.value)} className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white focus:border-orange-500 outline-none" />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span className="text-slate-600 text-sm italic">Não atende neste dia</span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-slate-800/30 border-2 border-dashed border-slate-700 rounded-xl p-12 text-center">
+                            <Clock size={48} className="text-slate-600 mx-auto mb-4" />
+                            <p className="text-slate-400">Selecione um profissional para gerenciar seus horários.</p>
+                        </div>
+                    )}
                 </div>
             )}
 
-            <div className="flex justify-between mb-8">
-                <p className="text-slate-400">Adicione, edite ou remova profissionais da sua equipe.</p>
-                <button onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setPhone(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }} className="flex items-center gap-2 px-4 py-2 rounded-lg text-white font-medium hover:opacity-90 transition-opacity" style={{ backgroundColor: settings.primaryColor }}>
-                    <Plus size={18} /> Adicionar Profissional
-                </button>
-            </div>
+            {subTab === 'blocks' && (
+                <div className="max-w-4xl">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* Form Column */}
+                        <div className="space-y-6">
+                            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                                <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><X size={18} className="text-red-500" /> Adicionar Bloqueio</h3>
+                                <form onSubmit={handleAddBlock} className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm text-slate-400 mb-1">Profissional</label>
+                                        <select 
+                                            required
+                                            value={selectedProId} 
+                                            onChange={(e) => setSelectedProId(e.target.value)}
+                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500"
+                                        >
+                                            <option value="">Selecione um profissional...</option>
+                                            {professionals.map(pro => (
+                                                <option key={pro.id} value={pro.id}>{pro.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-slate-400 mb-1">Data</label>
+                                        <input required type="date" value={blockDate} onChange={e => setBlockDate(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Início</label>
+                                            <input required type="time" value={blockStart} onChange={e => setBlockStart(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-slate-400 mb-1">Fim</label>
+                                            <input required type="time" value={blockEnd} onChange={e => setBlockEnd(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-slate-400 mb-1">Motivo</label>
+                                        <input required type="text" value={blockReason} onChange={e => setBlockReason(e.target.value)} placeholder="Ex: Folga, Médico, Almoço estendido" className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500" />
+                                    </div>
+                                    <button type="submit" className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-lg transition-colors">
+                                        Bloquear Horário
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        {/* List Column */}
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-bold flex items-center gap-2"><Trash2 size={18} className="text-slate-400" /> Bloqueios Ativos</h3>
+                            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                                {blockedSlots.length === 0 ? (
+                                    <div className="bg-slate-800/30 border border-slate-700 rounded-xl p-8 text-center">
+                                        <p className="text-slate-500 italic">Nenhum horário bloqueado no momento.</p>
+                                    </div>
+                                ) : (
+                                    blockedSlots
+                                        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                                        .map(b => {
+                                            const pro = professionals.find(p => p.id === b.professionalId);
+                                            return (
+                                                <div key={b.id} className="bg-slate-800/50 border border-slate-700 p-4 rounded-xl flex justify-between items-center group hover:border-slate-600 transition-all">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center overflow-hidden border border-slate-600">
+                                                            {pro?.photoUrl ? <img src={pro.photoUrl} className="w-full h-full object-cover" /> : <Loader2 size={16} className="text-slate-500" />}
+                                                        </div>
+                                                        <div>
+                                                            <div className="text-sm font-bold text-white">{pro?.name || 'Profissional Removido'}</div>
+                                                            <div className="text-xs text-orange-500 font-medium">
+                                                                {new Date(b.date + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                                                            </div>
+                                                            <div className="text-xs text-slate-400 mt-1">
+                                                                {b.startTime} às {b.endTime} • <span className="italic">{b.reason}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => handleRemoveBlock(b.id)} 
+                                                        className="p-2 text-slate-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                                                        title="Remover Bloqueio"
+                                                    >
+                                                        <Trash2 size={18}/>
+                                                    </button>
+                                                </div>
+                                            );
+                                        })
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {isFormOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setIsFormOpen(false)}>
@@ -371,73 +645,6 @@ export const TeamPanel: React.FC = () => {
                 </div>
                 </div>
             )}
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
-                {professionals.map(pro => {
-                    const isMaster = pro.role.toLowerCase().includes('master');
-                    return (
-                        <div key={pro.id} className="bg-slate-800/50 rounded-2xl border border-slate-700 flex flex-col overflow-hidden group hover:border-slate-600 transition-all w-full max-w-[190px] shadow-lg">
-                            {/* Top Half: Photo */}
-                            <div className="relative h-56 w-full overflow-hidden">
-                                <img 
-                                    src={pro.photoUrl} 
-                                    alt={pro.name} 
-                                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
-                                    referrerPolicy="no-referrer" 
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent" />
-                                
-                                {isMaster && (
-                                    <div className="absolute top-2 right-2 bg-yellow-500 text-black text-[9px] font-bold px-2 py-0.5 rounded-full shadow-lg">
-                                        MASTER
-                                    </div>
-                                )}
-
-                                <div 
-                                    className="absolute bottom-2 right-2 w-4 h-4 rounded-full border-2 border-white shadow-lg" 
-                                    style={{ backgroundColor: pro.color }}
-                                    title="Cor na agenda"
-                                />
-                            </div>
-                            
-                            {/* Bottom Half: Info */}
-                            <div className="p-3 flex flex-col flex-1">
-        <div className="mb-3 text-center">
-            <h3 className="font-bold text-white text-sm leading-tight truncate">{pro.name}</h3>
-            <p className="text-[9px] font-bold tracking-wider uppercase text-orange-500 mt-1">
-                {pro.role}
-            </p>
-        </div>
-                                
-                                {/* Actions */}
-                                <div className="mt-auto flex gap-1.5 justify-center">
-            <button onClick={() => handleEdit(pro)} className="p-2 bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors">
-                <Edit2 size={14}/>
-            </button>
-            <button onClick={() => { setSelectedProForBlock(pro); setIsBlockModalOpen(true); }} className="p-2 bg-slate-700 rounded-lg text-slate-300 hover:text-white transition-colors">
-                <Clock size={14}/>
-            </button>
-            <button onClick={() => setDeleteId(pro.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors">
-                <Trash2 size={14}/>
-            </button>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-
-                {/* Add New Card */}
-                <button 
-                    onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setPhone(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }}
-                    className="bg-transparent rounded-2xl border-2 border-dashed border-slate-700 hover:border-slate-500 hover:bg-slate-800/30 transition-all flex flex-col items-center justify-center text-center w-full max-w-[190px] min-h-[310px] group"
-                >
-                    <div className="w-12 h-12 rounded-full bg-[#27272a] group-hover:bg-[#3f3f46] flex items-center justify-center mb-4 transition-colors">
-                        <UserPlus size={20} className="text-zinc-400 group-hover:text-zinc-300" />
-                    </div>
-                    <h3 className="font-medium text-blue-400/80 group-hover:text-blue-400 mb-2 transition-colors">Novo Profissional</h3>
-                    <p className="text-xs text-zinc-500 max-w-[140px]">Adicione mais membros para sua equipe</p>
-                </button>
-            </div>
         </div>
     );
 };
