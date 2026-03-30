@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useShop } from '../../../store';
-import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader2, List, Calendar as CalendarIcon, Phone } from 'lucide-react';
+import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader2, List, Calendar as CalendarIcon, Phone, MessageCircle } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 import { WeeklyCalendar } from './WeeklyCalendar';
 
@@ -15,13 +15,17 @@ export const AppointmentsPanel: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
 
     // Filtros de Data (Design Financeiro)
-    const [startDate, setStartDate] = useState(() => new Date().toISOString().split('T')[0]); // Default: Hoje
-    const [endDate, setEndDate] = useState(() => {
+    const [startDate, setStartDate] = useState(() => {
         const d = new Date();
-        d.setDate(d.getDate() + 7); // Default: +7 dias
+        d.setFullYear(2023); // Default: Tudo (como o preset 'all')
         return d.toISOString().split('T')[0];
     });
-    const [activePreset, setActivePreset] = useState<string>('week');
+    const [endDate, setEndDate] = useState(() => {
+        const d = new Date();
+        d.setFullYear(2030);
+        return d.toISOString().split('T')[0];
+    });
+    const [activePreset, setActivePreset] = useState<string>('all');
 
     // Modal de Novo Agendamento
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -487,7 +491,7 @@ export const AppointmentsPanel: React.FC = () => {
                                                             className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                                                             title="Enviar lembrete WhatsApp"
                                                         >
-                                                            <Phone size={16} />
+                                                            <MessageCircle size={16} />
                                                         </button>
                                                         <select 
                                                             value={apt.status}
@@ -570,7 +574,7 @@ export const AppointmentsPanel: React.FC = () => {
                                                     className="p-2 text-green-600 bg-green-50 rounded-lg transition-colors"
                                                     title="Enviar lembrete WhatsApp"
                                                 >
-                                                    <Phone size={16} />
+                                                    <MessageCircle size={16} />
                                                 </button>
                                                 <div className="font-bold text-lg" style={{ color: settings.primaryColor }}>
                                                     R$ {apt.totalValue.toFixed(2)}

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { useShop } from '../../../store';
-import { Users, Scissors, Calendar, UserCheck, Clock, Phone, User, ChevronRight } from 'lucide-react';
+import { Users, Scissors, Calendar, UserCheck, Clock, Phone, User, ChevronRight, DollarSign, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) => void }> = ({ onNavigate }) => {
@@ -34,6 +34,38 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
     const activeClientsCount = useMemo(() => clients.length, [clients]);
     const professionalsCount = useMemo(() => professionals.length, [professionals]);
     const servicesCount = useMemo(() => services.length, [services]);
+    
+    // Revenue calculations
+    const revenueStats = useMemo(() => {
+        const now = new Date();
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        
+        // Start of week (Sunday)
+        const startOfWeek = new Date(startOfToday);
+        startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
+        
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        
+        let today = 0;
+        let week = 0;
+        let month = 0;
+        let year = 0;
+        
+        appointments.forEach(apt => {
+            if (apt.status !== 'completed') return;
+            
+            const aptDate = new Date(apt.date + 'T12:00:00');
+            const value = apt.totalValue;
+            
+            if (aptDate >= startOfToday) today += value;
+            if (aptDate >= startOfWeek) week += value;
+            if (aptDate >= startOfMonth) month += value;
+            if (aptDate >= startOfYear) year += value;
+        });
+        
+        return { today, week, month, year };
+    }, [appointments]);
 
     // Today's agenda summary
     const todayAgenda = useMemo(() => {
@@ -54,14 +86,14 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
             {/* Top Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard 
-                    icon={<Calendar className="text-blue-500" size={24} />} 
+                    icon={<Calendar className="text-[#c55f18]" size={24} />} 
                     label="Agendamentos Hoje" 
                     value={todayAppointments.length.toString()} 
                     trend="Hoje"
                     onClick={() => onNavigate('appointments')}
                 />
                 <StatCard 
-                    icon={<Users className="text-orange-500" size={24} />} 
+                    icon={<Users className="text-[#c55f18]" size={24} />} 
                     label="Clientes Inativos (+30d)" 
                     value={inactiveClientsCount.toString()} 
                     trend="Alerta"
@@ -69,18 +101,50 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                     onClick={() => onNavigate('clients', 'inactive')}
                 />
                 <StatCard 
-                    icon={<User className="text-purple-500" size={24} />} 
+                    icon={<User className="text-[#c55f18]" size={24} />} 
                     label="Profissionais" 
                     value={professionalsCount.toString()} 
                     trend="Equipe"
                     onClick={() => onNavigate('team')}
                 />
                 <StatCard 
-                    icon={<Scissors className="text-orange-500" size={24} />} 
+                    icon={<Scissors className="text-[#c55f18]" size={24} />} 
                     label="Serviços" 
                     value={servicesCount.toString()} 
                     trend="Catálogo"
                     onClick={() => onNavigate('services')}
+                />
+            </div>
+
+            {/* Revenue Stats Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard 
+                    icon={<DollarSign className="text-[#c55f18]" size={24} />} 
+                    label="Receita Hoje" 
+                    value={`R$ ${revenueStats.today.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} 
+                    trend="Hoje"
+                    onClick={() => onNavigate('finance')}
+                />
+                <StatCard 
+                    icon={<TrendingUp className="text-[#c55f18]" size={24} />} 
+                    label="Receita da Semana" 
+                    value={`R$ ${revenueStats.week.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} 
+                    trend="Semana"
+                    onClick={() => onNavigate('finance')}
+                />
+                <StatCard 
+                    icon={<DollarSign className="text-[#c55f18]" size={24} />} 
+                    label="Receita do Mês" 
+                    value={`R$ ${revenueStats.month.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} 
+                    trend="Mês"
+                    onClick={() => onNavigate('finance')}
+                />
+                <StatCard 
+                    icon={<TrendingUp className="text-[#c55f18]" size={24} />} 
+                    label="Receita do Ano" 
+                    value={`R$ ${revenueStats.year.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} 
+                    trend="Ano"
+                    onClick={() => onNavigate('finance')}
                 />
             </div>
 

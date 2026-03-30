@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useShop } from '../../../store';
-import { DollarSign, TrendingUp, Users, Calendar, Award, ArrowUpRight, PieChart, Wallet, Filter, Loader2, RefreshCw, Download, ChevronRight } from 'lucide-react';
+import { DollarSign, TrendingUp, Users, Calendar, Award, ArrowUpRight, PieChart, Wallet, Filter, Loader2, RefreshCw, Download, ChevronRight, Scissors } from 'lucide-react';
 import { Appointment } from '../../../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart as RechartsPieChart, Pie, Legend, LineChart, Line } from 'recharts';
 import { useToast } from '../../ui/ToastContext';
@@ -215,19 +215,28 @@ export const FinancePanel: React.FC = () => {
             { name: 'Não Informado', value: paymentMethods.unknown, color: '#64748b' } // slate-500
         ].filter(item => item.value > 0);
 
-        // 6. Service Profitability
+        // 6. Service Revenue (Profitability)
         const serviceRevenue: Record<string, number> = {};
+        // 6b. Service Count (Most Performed)
+        const serviceCount: Record<string, number> = {};
+
         completed.forEach(app => {
             app.serviceIds.forEach(sid => {
                 const service = services.find(s => s.id === sid);
                 const name = service ? service.name : 'Serviço Deletado';
                 serviceRevenue[name] = (serviceRevenue[name] || 0) + (service ? service.price : 0);
+                serviceCount[name] = (serviceCount[name] || 0) + 1;
             });
         });
 
         const serviceData = Object.entries(serviceRevenue)
             .map(([name, value]) => ({ name, value }))
             .sort((a, b) => b.value - a.value)
+            .slice(0, 8); // Top 8 services
+
+        const serviceCountData = Object.entries(serviceCount)
+            .map(([name, count]) => ({ name, count }))
+            .sort((a, b) => b.count - a.count)
             .slice(0, 8); // Top 8 services
 
         // 7. Client Ranking
@@ -260,6 +269,7 @@ export const FinancePanel: React.FC = () => {
             sortedPros,
             paymentMethodData,
             serviceData,
+            serviceCountData,
             sortedClients
         };
 
@@ -342,7 +352,7 @@ export const FinancePanel: React.FC = () => {
                     {/* Faturamento Total */}
                     <div className="bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-blue-50 rounded-lg text-blue-500 border border-blue-100">
+                            <div className="p-2 bg-orange-50 rounded-lg text-[#c55f18] border border-orange-100">
                                 <DollarSign size={20} />
                             </div>
                             <span className="text-[#6b7d99] font-bold text-xs uppercase tracking-wider">Faturamento Bruto</span>
@@ -355,12 +365,12 @@ export const FinancePanel: React.FC = () => {
                     {/* Lucro da Loja (Owner Share) */}
                     <div className="bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-green-50 rounded-lg text-green-500 border border-green-100">
+                            <div className="p-2 bg-orange-50 rounded-lg text-[#c55f18] border border-orange-100">
                                 <Wallet size={20} />
                             </div>
                             <span className="text-[#6b7d99] font-bold text-xs uppercase tracking-wider">Lucro da Loja</span>
                         </div>
-                        <div className="text-2xl font-bold text-green-600 mt-2">
+                        <div className="text-2xl font-bold text-[#c55f18] mt-2">
                             R$ {stats.totalOwnerShare.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
@@ -368,12 +378,12 @@ export const FinancePanel: React.FC = () => {
                     {/* Comissões a Pagar */}
                     <div className="bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-orange-50 rounded-lg text-orange-500 border border-orange-100">
+                            <div className="p-2 bg-orange-50 rounded-lg text-[#c55f18] border border-orange-100">
                                 <PieChart size={20} />
                             </div>
                             <span className="text-[#6b7d99] font-bold text-xs uppercase tracking-wider">Comissões (Equipe)</span>
                         </div>
-                        <div className="text-2xl font-bold text-orange-600 mt-2">
+                        <div className="text-2xl font-bold text-[#c55f18] mt-2">
                             R$ {stats.totalCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
@@ -381,7 +391,7 @@ export const FinancePanel: React.FC = () => {
                     {/* Ticket Médio */}
                     <div className="bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 bg-purple-50 rounded-lg text-purple-500 border border-purple-100">
+                            <div className="p-2 bg-orange-50 rounded-lg text-[#c55f18] border border-orange-100">
                                 <Award size={20} />
                             </div>
                             <span className="text-[#6b7d99] font-bold text-xs uppercase tracking-wider">Ticket Médio</span>
@@ -500,11 +510,11 @@ export const FinancePanel: React.FC = () => {
                 </div>
 
                 {/* Rankings em Linha */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     {/* Ranking de Profissionais */}
                     <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-[450px] shadow-sm">
                         <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <Award size={18} className="text-yellow-500"/>
+                            <Award size={18} className="text-[#c55f18]"/>
                             Top Profissionais
                         </h3>
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
@@ -524,11 +534,11 @@ export const FinancePanel: React.FC = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-center mb-1">
                                                 <span className="text-sm font-medium text-slate-900 truncate">{pro.name}</span>
-                                                <span className="text-sm font-bold text-green-600">R$ {pro.value.toFixed(0)}</span>
+                                                <span className="text-sm font-bold text-[#c55f18]">R$ {pro.value.toFixed(0)}</span>
                                             </div>
                                             <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                                                 <div 
-                                                    className="bg-green-500 h-full rounded-full transition-all duration-1000" 
+                                                    className="bg-[#c55f18] h-full rounded-full transition-all duration-1000" 
                                                     style={{ width: `${(pro.value / (stats.totalRevenue || 1)) * 100}%` }}
                                                 ></div>
                                             </div>
@@ -545,7 +555,7 @@ export const FinancePanel: React.FC = () => {
                     {/* Ranking de Clientes */}
                     <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-[450px] shadow-sm">
                         <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <Users size={18} className="text-orange-500"/>
+                            <Users size={18} className="text-[#c55f18]"/>
                             Top Clientes
                         </h3>
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
@@ -560,11 +570,11 @@ export const FinancePanel: React.FC = () => {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex justify-between items-center mb-1">
                                                 <span className="text-sm font-medium text-slate-900 truncate">{client.name}</span>
-                                                <span className="text-sm font-bold text-orange-600">R$ {client.value.toFixed(0)}</span>
+                                                <span className="text-sm font-bold text-[#c55f18]">R$ {client.value.toFixed(0)}</span>
                                             </div>
                                             <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
                                                 <div 
-                                                    className="bg-orange-500 h-full rounded-full transition-all duration-1000" 
+                                                    className="bg-[#c55f18] h-full rounded-full transition-all duration-1000" 
                                                     style={{ width: `${(client.value / (stats.totalRevenue || 1)) * 100}%` }}
                                                 ></div>
                                             </div>
@@ -578,11 +588,11 @@ export const FinancePanel: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Ranking de Serviços */}
+                    {/* Ranking de Rentabilidade de Serviços */}
                     <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-[450px] shadow-sm">
                         <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <TrendingUp size={18} className="text-green-500"/>
-                            Top Serviços
+                            <TrendingUp size={18} className="text-[#c55f18]"/>
+                            Serviços Lucrativos
                         </h3>
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
                             {stats.serviceData.length === 0 ? (
@@ -603,7 +613,43 @@ export const FinancePanel: React.FC = () => {
                                                     className="h-full rounded-full transition-all duration-1000"
                                                     style={{ 
                                                         width: `${percentage}%`,
-                                                        backgroundColor: settings.primaryColor 
+                                                        backgroundColor: '#c55f18' 
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Ranking de Serviços Mais Realizados */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-[450px] shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <Scissors size={18} className="text-[#c55f18]"/>
+                            Serviços Mais Realizados
+                        </h3>
+                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                            {stats.serviceCountData.length === 0 ? (
+                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Nenhum dado disponível.</p>
+                            ) : (
+                                stats.serviceCountData.map((item, index) => {
+                                    const maxCount = Math.max(...stats.serviceCountData.map(d => d.count));
+                                    const percentage = (item.count / maxCount) * 100;
+                                    
+                                    return (
+                                        <div key={index} className="space-y-2 pb-3 border-b border-slate-100 last:border-0 last:pb-0">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm font-medium text-slate-700 truncate">{item.name}</span>
+                                                <span className="text-sm font-bold text-slate-900">{item.count} execuções</span>
+                                            </div>
+                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full rounded-full transition-all duration-1000"
+                                                    style={{ 
+                                                        width: `${percentage}%`,
+                                                        backgroundColor: '#c55f18' 
                                                     }}
                                                 />
                                             </div>
