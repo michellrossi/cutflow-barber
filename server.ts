@@ -479,6 +479,9 @@ async function startServer() {
             res.status(500).json({ success: false, error: error.message });
         }
     });
+    
+    // Rota para enviar link de login via WhatsApp
+    app.post('/api/notify/login-link', async (req, res) => {
         const { phone, url, shopId } = req.body;
         
         const { data: shop, error: shopError } = await supabase
