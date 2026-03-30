@@ -52,6 +52,8 @@ async function generateWhatsAppMessage(trigger: string, data: any, shopId: strin
             content = `Olá [CLIENTE], notamos que você não conseguiu comparecer ao seu horário de [SERVICO]. Gostaria de escolher uma nova data para seu atendimento na [BARBEARIA]?`;
         } else if (trigger === 'post_sale') {
             content = `Olá [CLIENTE]! O que achou do seu atendimento hoje com [BARBEIRO]? Sua opinião é muito importante para nós da [BARBEARIA].`;
+        } else if (trigger === 'retention_30d') {
+            content = `Olá [CLIENTE]! Faz um tempo que não nos vemos na [BARBEARIA]. Que tal agendar um novo horário para manter o visual em dia? ✂️💈`;
         } else {
             content = `Olá [CLIENTE]! Passando para confirmar seu horário de [SERVICO] com [BARBEIRO] no dia [DATA] às [HORA]. Até logo! ✂️💈`;
         }
@@ -119,8 +121,11 @@ async function runCronLogic() {
     console.log("[Cron] Iniciando verificação de lembretes...");
     
     const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
 
     // 1. Lembretes de 24 Horas
     const { data: apts24h } = await supabase
@@ -129,7 +134,7 @@ async function runCronLogic() {
         .in('status', ['confirmed', 'scheduled'])
         .eq('confirmation_sent', true)
         .eq('reminder_24h_sent', false)
-        .lte('date', tomorrow.toISOString().split('T')[0]);
+        .lte('date', tomorrowStr);
 
     if (apts24h) {
         for (const apt of apts24h) {
@@ -156,7 +161,8 @@ async function runCronLogic() {
 
                 const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
                 if (ok) {
-                    await supabase.from('appointments').update({ reminder_24h_sent: true }).eq('id', apt.id);
+                    const { error } = await supabase.from('appointments').update({ reminder_24h_sent: true }).eq('id', apt.id);
+                    if (error) console.error(`[Cron] Erro ao atualizar reminder_24h_sent para ${apt.id}:`, error);
                 }
             }
         }
@@ -169,7 +175,7 @@ async function runCronLogic() {
         .in('status', ['confirmed', 'scheduled'])
         .eq('confirmation_sent', true)
         .eq('reminder_1h_sent', false)
-        .eq('date', now.toISOString().split('T')[0]);
+        .eq('date', todayStr);
 
     if (apts1h) {
         for (const apt of apts1h) {
@@ -196,7 +202,8 @@ async function runCronLogic() {
 
                 const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
                 if (ok) {
-                    await supabase.from('appointments').update({ reminder_1h_sent: true }).eq('id', apt.id);
+                    const { error } = await supabase.from('appointments').update({ reminder_1h_sent: true }).eq('id', apt.id);
+                    if (error) console.error(`[Cron] Erro ao atualizar reminder_1h_sent para ${apt.id}:`, error);
                 }
             }
         }
@@ -230,13 +237,13 @@ async function runCronLogic() {
 
             const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
             if (ok) {
-                await supabase.from('appointments').update({ rescheduling_sent: true }).eq('id', apt.id);
+                const { error } = await supabase.from('appointments').update({ rescheduling_sent: true }).eq('id', apt.id);
+                if (error) console.error(`[Cron] Erro ao atualizar rescheduling_sent para ${apt.id}:`, error);
             }
         }
     }
 
     // 4. Pós-venda e Avaliação (Concluído)
-    // Envia 2 horas após o horário do agendamento
     const { data: aptsPostSale } = await supabase
         .from('appointments')
         .select('*, professionals(name), shops(id, name, whatsapp_instance)')
@@ -269,8 +276,34 @@ async function runCronLogic() {
 
                 const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
                 if (ok) {
-                    await supabase.from('appointments').update({ post_sale_sent: true }).eq('id', apt.id);
+                    const { error } = await supabase.from('appointments').update({ post_sale_sent: true }).eq('id', apt.id);
+                    if (error) console.error(`[Cron] Erro ao atualizar post_sale_sent para ${apt.id}:`, error);
                 }
+            }
+        }
+    }
+
+    // 5. Retenção 30 Dias (Clientes que não agendaram há 30 dias)
+    const { data: apts30d } = await supabase
+        .from('appointments')
+        .select('*, shops(id, name, whatsapp_instance)')
+        .eq('status', 'completed')
+        .eq('reminder_30d_sent', false)
+        .eq('date', thirtyDaysAgoStr);
+
+    if (apts30d) {
+        for (const apt of apts30d) {
+            console.log(`[Cron] Enviando lembrete de 30 dias para ${apt.client_name}`);
+            
+            const msg = await generateWhatsAppMessage('retention_30d', {
+                clientName: apt.client_name,
+                shopName: apt.shops?.name
+            }, apt.shop_id, 30, 'days');
+
+            const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
+            if (ok) {
+                const { error } = await supabase.from('appointments').update({ reminder_30d_sent: true }).eq('id', apt.id);
+                if (error) console.error(`[Cron] Erro ao atualizar reminder_30d_sent para ${apt.id}:`, error);
             }
         }
     }
@@ -449,6 +482,11 @@ async function startServer() {
 
         if (error || !apt) return res.status(404).json({ error: "Agendamento não encontrado" });
 
+        // Evita envio duplicado
+        if (apt.confirmation_sent) {
+            return res.json({ success: true, alreadySent: true });
+        }
+
         // Busca os nomes dos serviços
         const { data: servicesData } = await supabase
             .from('services')
@@ -479,7 +517,8 @@ async function startServer() {
         }
 
         if (clientOk) {
-            await supabase.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
+            const { error: updateError } = await supabase.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
+            if (updateError) console.error(`[API] Erro ao atualizar confirmation_sent para ${appointmentId}:`, updateError);
         }
         
         res.json({ success: clientOk });
