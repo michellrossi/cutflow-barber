@@ -29,10 +29,18 @@ export const RemindersPanel: React.FC = () => {
             active: true
         },
         {
-            title: 'Lembrete de Agendamento',
+            title: 'Lembrete (24 horas)',
             trigger: 'appointment_reminder',
-            content: 'Olá [CLIENTE], passando para lembrar do seu horário hoje às [HORA] na [BARBEARIA] para o serviço [SERVICO]. Até logo!',
-            delayValue: 2,
+            content: 'Olá [CLIENTE], passando para lembrar do seu horário amanhã às [HORA] na [BARBEARIA] para o serviço [SERVICO]. Até logo!',
+            delayValue: 24,
+            delayUnit: 'hours',
+            active: true
+        },
+        {
+            title: 'Lembrete (1 hora)',
+            trigger: 'appointment_reminder',
+            content: 'Olá [CLIENTE], seu horário na [BARBEARIA] é daqui a pouco, às [HORA]! Estamos te aguardando. 💈✂️',
+            delayValue: 1,
             delayUnit: 'hours',
             active: true
         },
@@ -40,8 +48,8 @@ export const RemindersPanel: React.FC = () => {
             title: 'Solicitação de Reagendamento',
             trigger: 'rescheduling_request',
             content: 'Olá [CLIENTE], notamos que você não conseguiu comparecer ao seu horário de [SERVICO]. Gostaria de escolher uma nova data para seu atendimento na [BARBEARIA]?',
-            delayValue: 1,
-            delayUnit: 'hours',
+            delayValue: 0,
+            delayUnit: 'minutes',
             active: true
         },
         {
@@ -99,6 +107,32 @@ export const RemindersPanel: React.FC = () => {
         }
     };
 
+    const [testPhone, setTestPhone] = useState('');
+    const [isTesting, setIsTesting] = useState(false);
+
+    const handleTest = async (templateId: string) => {
+        if (!testPhone) {
+            alert('Por favor, insira um número de telefone para teste.');
+            return;
+        }
+
+        setIsTesting(true);
+        try {
+            const response = await fetch('/api/notify/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: testPhone, templateId })
+            });
+            const data = await response.json();
+            alert(data.message || (data.success ? 'Teste enviado!' : 'Falha no teste.'));
+        } catch (error) {
+            console.error('Erro no teste:', error);
+            alert('Erro ao enviar teste.');
+        } finally {
+            setIsTesting(false);
+        }
+    };
+
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-8">
             <div className="flex justify-between items-center">
@@ -107,6 +141,16 @@ export const RemindersPanel: React.FC = () => {
                     <p className="text-slate-500">Gerencie suas mensagens automáticas do WhatsApp</p>
                 </div>
                 <div className="flex gap-3">
+                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-xl border border-slate-200">
+                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Testar em:</span>
+                        <input 
+                            type="text" 
+                            placeholder="5511999999999"
+                            value={testPhone}
+                            onChange={(e) => setTestPhone(e.target.value)}
+                            className="bg-transparent border-none outline-none text-sm font-medium text-slate-700 w-32"
+                        />
+                    </div>
                     {messageTemplates.length === 0 && (
                         <button 
                             onClick={handleCreateDefaults}
@@ -143,6 +187,14 @@ export const RemindersPanel: React.FC = () => {
                                 <MessageSquare size={24} />
                             </div>
                             <div className="flex items-center gap-2">
+                                <button 
+                                    onClick={() => handleTest(template.id)}
+                                    disabled={isTesting}
+                                    className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="Enviar Teste"
+                                >
+                                    <Copy size={18} />
+                                </button>
                                 <button 
                                     onClick={() => {
                                         setEditingTemplate(template);

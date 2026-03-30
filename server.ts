@@ -21,22 +21,51 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 /**
  * GERA MENSAGEM (TEMPLATE)
- * Removido Gemini do backend conforme diretrizes
+ * Agora busca do banco de dados se disponível, caso contrário usa o padrão
  */
-async function generateWhatsAppMessage(type: string, data: any) {
-    if (type === 'link de acesso') {
-        return `Olá ${data.clientName}! Aqui está seu link de acesso único para a barbearia: ${data.url}. Ele expira em 15 minutos e não deve ser compartilhado. 🔐💈`;
-    }
+async function generateWhatsAppMessage(trigger: string, data: any, shopId: string, delayValue?: number, delayUnit?: string) {
+    // Busca o template ativo para o gatilho e loja específicos
+    let query = supabase
+        .from('message_templates')
+        .select('content')
+        .eq('shop_id', shopId)
+        .eq('trigger', trigger)
+        .eq('active', true);
     
-    if (type === 'lembrete de 24 horas') {
-        return `Olá ${data.clientName}! Passando para lembrar do seu horário de ${data.services} com ${data.proName} amanhã, dia ${data.date} às ${data.time}. Nos vemos lá! ✂️💈`;
+    if (delayValue !== undefined) query = query.eq('delay_value', delayValue);
+    if (delayUnit !== undefined) query = query.eq('delay_unit', delayUnit);
+
+    const { data: templateData } = await query
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+    let content = templateData?.content;
+
+    // Fallbacks caso não encontre template no banco
+    if (!content) {
+        if (trigger === 'link de acesso') {
+            content = `Olá [CLIENTE]! Aqui está seu link de acesso único para a barbearia: [URL]. Ele expira em 15 minutos e não deve ser compartilhado. 🔐💈`;
+        } else if (trigger === 'appointment_reminder' || trigger === 'lembrete de 24 horas' || trigger === 'lembrete de 1 hora') {
+            content = `Olá [CLIENTE]! Passando para lembrar do seu horário de [SERVICO] com [BARBEIRO] em [DATA] às [HORA]. Nos vemos lá! ✂️💈`;
+        } else if (trigger === 'rescheduling_request') {
+            content = `Olá [CLIENTE], notamos que você não conseguiu comparecer ao seu horário de [SERVICO]. Gostaria de escolher uma nova data para seu atendimento na [BARBEARIA]?`;
+        } else if (trigger === 'post_sale') {
+            content = `Olá [CLIENTE]! O que achou do seu atendimento hoje com [BARBEIRO]? Sua opinião é muito importante para nós da [BARBEARIA].`;
+        } else {
+            content = `Olá [CLIENTE]! Passando para confirmar seu horário de [SERVICO] com [BARBEIRO] no dia [DATA] às [HORA]. Até logo! ✂️💈`;
+        }
     }
 
-    if (type === 'lembrete de 1 hora') {
-        return `Olá ${data.clientName}! Seu horário de ${data.services} com ${data.proName} é daqui a pouco, às ${data.time}. Já estamos te esperando! ✂️💈`;
-    }
-
-    return `Olá ${data.clientName}! Passando para confirmar seu horário de ${data.services} com ${data.proName} no dia ${data.date} às ${data.time}. Até logo! ✂️💈`;
+    // Substituição de variáveis
+    return content
+        .replace(/\[CLIENTE\]/g, data.clientName || 'Cliente')
+        .replace(/\[SERVICO\]/g, data.services || 'serviço')
+        .replace(/\[DATA\]/g, data.date || '')
+        .replace(/\[HORA\]/g, data.time || '')
+        .replace(/\[BARBEIRO\]/g, data.proName || 'um de nossos profissionais')
+        .replace(/\[BARBEARIA\]/g, data.shopName || 'nossa barbearia')
+        .replace(/\[URL\]/g, data.url || '');
 }
 
 /**
@@ -48,13 +77,15 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
     const apiKey = process.env.WHATSAPP_API_KEY;
     const instance = instanceName || process.env.WHATSAPP_INSTANCE || 'cutflow';
 
-    if (!apiUrl || !apiKey) return false;
+    if (!apiUrl || !apiKey) {
+        console.warn("[WhatsApp] API não configurada (WHATSAPP_API_URL ou WHATSAPP_API_KEY ausente)");
+        return false;
+    }
 
     // 1. Limpeza do número
     let cleanPhone = phone.replace(/\D/g, '');
     if (!cleanPhone.startsWith('55')) cleanPhone = `55${cleanPhone}`;
     
-    // 2. Lógica do 9º dígito para DDDs 11-28 (Evita ficar PENDING)
     const phoneToSubmit = cleanPhone;
 
     try {
@@ -75,11 +106,173 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
             })
         });
         
-        console.log(`[WhatsApp] Status: ${response.status} | Destino: ${phoneToSubmit}`);
+        const resData = await response.json().catch(() => ({}));
+        console.log(`[WhatsApp] Status: ${response.status} | Destino: ${phoneToSubmit} | Resposta:`, resData);
         return response.ok;
     } catch (error) {
         console.error("Erro na Evolution API:", error);
         return false;
+    }
+}
+
+async function runCronLogic() {
+    console.log("[Cron] Iniciando verificação de lembretes...");
+    
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
+
+    // 1. Lembretes de 24 Horas
+    const { data: apts24h } = await supabase
+        .from('appointments')
+        .select('*, professionals(name), shops(id, name, whatsapp_instance)')
+        .in('status', ['confirmed', 'scheduled'])
+        .eq('confirmation_sent', true)
+        .eq('reminder_24h_sent', false)
+        .lte('date', tomorrow.toISOString().split('T')[0]);
+
+    if (apts24h) {
+        for (const apt of apts24h) {
+            const aptDateTime = new Date(`${apt.date}T${apt.time}`);
+            const diffHours = (aptDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+            if (diffHours <= 24 && diffHours > 1) {
+                console.log(`[Cron] Enviando lembrete 24h para ${apt.client_name}`);
+                
+                const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
+                const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
+
+                const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                const formattedTime = apt.time.substring(0, 5);
+
+                const msg = await generateWhatsAppMessage('appointment_reminder', {
+                    clientName: apt.client_name,
+                    services: servicesNames,
+                    date: formattedDate,
+                    time: formattedTime,
+                    proName: apt.professionals?.name || "seu barbeiro",
+                    shopName: apt.shops?.name
+                }, apt.shop_id, 24, 'hours');
+
+                const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
+                if (ok) {
+                    await supabase.from('appointments').update({ reminder_24h_sent: true }).eq('id', apt.id);
+                }
+            }
+        }
+    }
+
+    // 2. Lembretes de 1 Hora
+    const { data: apts1h } = await supabase
+        .from('appointments')
+        .select('*, professionals(name), shops(id, name, whatsapp_instance)')
+        .in('status', ['confirmed', 'scheduled'])
+        .eq('confirmation_sent', true)
+        .eq('reminder_1h_sent', false)
+        .eq('date', now.toISOString().split('T')[0]);
+
+    if (apts1h) {
+        for (const apt of apts1h) {
+            const aptDateTime = new Date(`${apt.date}T${apt.time}`);
+            const diffMinutes = (aptDateTime.getTime() - now.getTime()) / (1000 * 60);
+
+            if (diffMinutes <= 65 && diffMinutes > 0) {
+                console.log(`[Cron] Enviando lembrete 1h para ${apt.client_name}`);
+                
+                const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
+                const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
+
+                const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                const formattedTime = apt.time.substring(0, 5);
+
+                const msg = await generateWhatsAppMessage('appointment_reminder', {
+                    clientName: apt.client_name,
+                    services: servicesNames,
+                    date: formattedDate,
+                    time: formattedTime,
+                    proName: apt.professionals?.name || "seu barbeiro",
+                    shopName: apt.shops?.name
+                }, apt.shop_id, 1, 'hours');
+
+                const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
+                if (ok) {
+                    await supabase.from('appointments').update({ reminder_1h_sent: true }).eq('id', apt.id);
+                }
+            }
+        }
+    }
+
+    // 3. Solicitação de Reagendamento (No-show ou Cancelado)
+    const { data: aptsReschedule } = await supabase
+        .from('appointments')
+        .select('*, professionals(name), shops(id, name, whatsapp_instance)')
+        .in('status', ['cancelled', 'noshow'])
+        .eq('rescheduling_sent', false);
+
+    if (aptsReschedule) {
+        for (const apt of aptsReschedule) {
+            console.log(`[Cron] Enviando solicitação de reagendamento para ${apt.client_name}`);
+            
+            const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
+            const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
+
+            const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+            const formattedTime = apt.time.substring(0, 5);
+
+            const msg = await generateWhatsAppMessage('rescheduling_request', {
+                clientName: apt.client_name,
+                services: servicesNames,
+                date: formattedDate,
+                time: formattedTime,
+                proName: apt.professionals?.name || "seu barbeiro",
+                shopName: apt.shops?.name
+            }, apt.shop_id, 0, 'minutes');
+
+            const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
+            if (ok) {
+                await supabase.from('appointments').update({ rescheduling_sent: true }).eq('id', apt.id);
+            }
+        }
+    }
+
+    // 4. Pós-venda e Avaliação (Concluído)
+    // Envia 2 horas após o horário do agendamento
+    const { data: aptsPostSale } = await supabase
+        .from('appointments')
+        .select('*, professionals(name), shops(id, name, whatsapp_instance)')
+        .eq('status', 'completed')
+        .eq('post_sale_sent', false);
+
+    if (aptsPostSale) {
+        for (const apt of aptsPostSale) {
+            const aptDateTime = new Date(`${apt.date}T${apt.time}`);
+            const diffMinutes = (now.getTime() - aptDateTime.getTime()) / (1000 * 60);
+
+            // Se passou mais de 2 horas (120 min) e menos de 24 horas
+            if (diffMinutes >= 120 && diffMinutes < 1440) {
+                console.log(`[Cron] Enviando pós-venda para ${apt.client_name}`);
+                
+                const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
+                const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
+
+                const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                const formattedTime = apt.time.substring(0, 5);
+
+                const msg = await generateWhatsAppMessage('post_sale', {
+                    clientName: apt.client_name,
+                    services: servicesNames,
+                    date: formattedDate,
+                    time: formattedTime,
+                    proName: apt.professionals?.name || "seu barbeiro",
+                    shopName: apt.shops?.name
+                }, apt.shop_id, 2, 'hours');
+
+                const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
+                if (ok) {
+                    await supabase.from('appointments').update({ post_sale_sent: true }).eq('id', apt.id);
+                }
+            }
+        }
     }
 }
 
@@ -200,7 +393,7 @@ async function startServer() {
         
         const { data: apt, error } = await supabase
             .from('appointments')
-            .select('*, professionals(name, phone), shops(whatsapp_instance)')
+            .select('*, professionals(name, phone), shops(id, name, whatsapp_instance)')
             .eq('id', appointmentId)
             .single();
 
@@ -217,13 +410,14 @@ async function startServer() {
         const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
         const formattedTime = apt.time.substring(0, 5);
 
-        const clientMessage = await generateWhatsAppMessage('confirmação', {
+        const clientMessage = await generateWhatsAppMessage('immediate_confirmation', {
             clientName: apt.client_name,
             services: servicesNames,
             date: formattedDate,
             time: formattedTime,
-            proName: apt.professionals?.name || "um de nossos profissionais"
-        });
+            proName: apt.professionals?.name || "um de nossos profissionais",
+            shopName: apt.shops?.name
+        }, apt.shop_id);
 
         // Notifica o Cliente
         const clientOk = await sendWhatsApp(apt.client_phone, clientMessage, apt.shops?.whatsapp_instance);
@@ -241,8 +435,50 @@ async function startServer() {
         res.json({ success: clientOk });
     });
 
-    // Rota para enviar link de login via WhatsApp
-    app.post('/api/notify/login-link', async (req, res) => {
+    // Rota para Testar Notificação
+    app.post('/api/notify/test', async (req, res) => {
+        const { phone, templateId } = req.body;
+        
+        if (!phone || !templateId) {
+            return res.status(400).json({ error: "Telefone e ID do modelo são obrigatórios" });
+        }
+
+        try {
+            const { data: template, error: templateError } = await supabase
+                .from('message_templates')
+                .select('*')
+                .eq('id', templateId)
+                .single();
+
+            if (templateError || !template) {
+                return res.status(404).json({ error: "Modelo não encontrado" });
+            }
+
+            const { data: shop } = await supabase
+                .from('shops')
+                .select('name, whatsapp_instance')
+                .eq('id', template.shop_id)
+                .single();
+
+            const testData = {
+                clientName: "Cliente de Teste",
+                services: "Corte e Barba (Teste)",
+                date: new Date().toLocaleDateString('pt-BR'),
+                time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                proName: "Barbeiro de Teste",
+                shopName: shop?.name || "Minha Barbearia",
+                url: "https://google.com"
+            };
+
+            const message = await generateWhatsAppMessage(template.trigger, testData, template.shop_id, template.delay_value, template.delay_unit);
+            const ok = await sendWhatsApp(phone, message, shop?.whatsapp_instance);
+
+            res.json({ success: ok, message: ok ? "Mensagem de teste enviada!" : "Falha ao enviar mensagem de teste." });
+        } catch (error: any) {
+            console.error("Erro ao testar notificação:", error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
         const { phone, url, shopId } = req.body;
         
         const { data: shop, error: shopError } = await supabase
@@ -262,8 +498,9 @@ async function startServer() {
 
         const msg = await generateWhatsAppMessage('link de acesso', {
             clientName: client?.name || "Cliente",
-            url: url
-        });
+            url: url,
+            shopName: shop.name
+        }, shopId);
 
         const ok = await sendWhatsApp(phone, msg, shop.whatsapp_instance);
         res.json({ success: ok });
@@ -271,94 +508,13 @@ async function startServer() {
 
     // Rota do CRON para Lembretes (24h e 1h)
     app.get('/api/notify/cron', async (req, res) => {
-        console.log("[Cron] Iniciando verificação de lembretes...");
-        
-        const now = new Date();
-        const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-        const inOneHour = new Date(now.getTime() + 60 * 60 * 1000);
-
-        // 1. Lembretes de 24 Horas
-        // Agendamentos para amanhã que ainda não receberam o lembrete de 24h
-        const { data: apts24h } = await supabase
-            .from('appointments')
-            .select('*, professionals(name), shops(whatsapp_instance)')
-            .in('status', ['confirmed', 'scheduled'])
-            .eq('confirmation_sent', true)
-            .eq('reminder_24h_sent', false)
-            .lte('date', tomorrow.toISOString().split('T')[0]);
-
-        if (apts24h) {
-            for (const apt of apts24h) {
-                // Verifica se falta aproximadamente 24h ou menos
-                const aptDateTime = new Date(`${apt.date}T${apt.time}`);
-                const diffHours = (aptDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-
-                if (diffHours <= 24 && diffHours > 1) {
-                    console.log(`[Cron] Enviando lembrete 24h para ${apt.client_name}`);
-                    
-                    const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
-                    const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
-
-                    const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-                    const formattedTime = apt.time.substring(0, 5);
-
-                    const msg = await generateWhatsAppMessage('lembrete de 24 horas', {
-                        clientName: apt.client_name,
-                        services: servicesNames,
-                        date: formattedDate,
-                        time: formattedTime,
-                        proName: apt.professionals?.name || "seu barbeiro"
-                    });
-
-                    const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
-                    if (ok) {
-                        await supabase.from('appointments').update({ reminder_24h_sent: true }).eq('id', apt.id);
-                    }
-                }
-            }
+        try {
+            await runCronLogic();
+            res.json({ status: "Cron executado com sucesso" });
+        } catch (err: any) {
+            console.error("[Cron] Erro ao executar:", err);
+            res.status(500).json({ error: err.message });
         }
-
-        // 2. Lembretes de 1 Hora
-        // Agendamentos para hoje que ainda não receberam o lembrete de 1h
-        const { data: apts1h } = await supabase
-            .from('appointments')
-            .select('*, professionals(name), shops(whatsapp_instance)')
-            .in('status', ['confirmed', 'scheduled'])
-            .eq('confirmation_sent', true)
-            .eq('reminder_1h_sent', false)
-            .eq('date', now.toISOString().split('T')[0]);
-
-        if (apts1h) {
-            for (const apt of apts1h) {
-                const aptDateTime = new Date(`${apt.date}T${apt.time}`);
-                const diffMinutes = (aptDateTime.getTime() - now.getTime()) / (1000 * 60);
-
-                if (diffMinutes <= 65 && diffMinutes > 0) {
-                    console.log(`[Cron] Enviando lembrete 1h para ${apt.client_name}`);
-                    
-                    const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
-                    const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
-
-                    const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-                    const formattedTime = apt.time.substring(0, 5);
-
-                    const msg = await generateWhatsAppMessage('lembrete de 1 hora', {
-                        clientName: apt.client_name,
-                        services: servicesNames,
-                        date: formattedDate,
-                        time: formattedTime,
-                        proName: apt.professionals?.name || "seu barbeiro"
-                    });
-
-                    const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
-                    if (ok) {
-                        await supabase.from('appointments').update({ reminder_1h_sent: true }).eq('id', apt.id);
-                    }
-                }
-            }
-        }
-
-        res.json({ status: "Cron executado com sucesso" });
     });
 
     // --- WhatsApp Multi-Instance Endpoints ---

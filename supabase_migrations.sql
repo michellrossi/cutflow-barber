@@ -69,7 +69,9 @@ ADD COLUMN IF NOT EXISTS client_id uuid REFERENCES clients(id) ON DELETE CASCADE
 ALTER TABLE appointments 
 ADD COLUMN IF NOT EXISTS confirmation_sent boolean DEFAULT false,
 ADD COLUMN IF NOT EXISTS reminder_24h_sent boolean DEFAULT false,
-ADD COLUMN IF NOT EXISTS reminder_1h_sent boolean DEFAULT false;
+ADD COLUMN IF NOT EXISTS reminder_1h_sent boolean DEFAULT false,
+ADD COLUMN IF NOT EXISTS rescheduling_sent boolean DEFAULT false,
+ADD COLUMN IF NOT EXISTS post_sale_sent boolean DEFAULT false;
 
 -- 12. Celular do Profissional para Notificações
 ALTER TABLE professionals 

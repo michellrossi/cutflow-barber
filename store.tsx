@@ -641,6 +641,56 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           secondary_color: '#1e293b'
       });
 
+      // Default message templates
+      const defaultTemplates = [
+        {
+            shop_id: shopData.id,
+            title: 'Confirmação Imediata',
+            trigger: 'immediate_confirmation',
+            content: 'Olá [CLIENTE]! Seu agendamento para [SERVICO] na [BARBEARIA] foi realizado com sucesso para o dia [DATA] às [HORA] com o profissional [BARBEIRO]. Te esperamos!',
+            delay_value: 0,
+            delay_unit: 'minutes',
+            active: true
+        },
+        {
+            shop_id: shopData.id,
+            title: 'Lembrete de Agendamento (24h)',
+            trigger: 'appointment_reminder',
+            content: 'Olá [CLIENTE], passando para lembrar do seu horário amanhã às [HORA] na [BARBEARIA] para o serviço [SERVICO]. Até logo!',
+            delay_value: 24,
+            delay_unit: 'hours',
+            active: true
+        },
+        {
+            shop_id: shopData.id,
+            title: 'Lembrete de Agendamento (1h)',
+            trigger: 'appointment_reminder',
+            content: 'Olá [CLIENTE], seu horário na [BARBEARIA] é daqui a pouco, às [HORA]. Já estamos te esperando para o seu [SERVICO]!',
+            delay_value: 1,
+            delay_unit: 'hours',
+            active: true
+        },
+        {
+            shop_id: shopData.id,
+            title: 'Solicitação de Reagendamento',
+            trigger: 'rescheduling_request',
+            content: 'Olá [CLIENTE], notamos que você não conseguiu comparecer ao seu horário de [SERVICO]. Gostaria de escolher uma nova data para seu atendimento na [BARBEARIA]?',
+            delay_value: 1,
+            delay_unit: 'hours',
+            active: true
+        },
+        {
+            shop_id: shopData.id,
+            title: 'Pós-venda e Avaliação',
+            trigger: 'post_sale',
+            content: 'Olá [CLIENTE]! O que achou do seu atendimento hoje com [BARBEIRO]? Sua opinião é muito importante para nós da [BARBEARIA]. Se puder, nos avalie no Google!',
+            delay_value: 2,
+            delay_unit: 'hours',
+            active: true
+        }
+      ];
+      await supabase.from('message_templates').insert(defaultTemplates);
+
       // Default services
       const defaultServices = [
         { name: 'Corte Masculino', price: 30, duration: 30, category: 'Cortes' },
