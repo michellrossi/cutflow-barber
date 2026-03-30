@@ -13,6 +13,24 @@ export const DashboardPanel: React.FC = () => {
         appointments.filter(apt => apt.date === today && apt.status !== 'cancelled'),
     [appointments, today]);
 
+    const inactiveClientsCount = useMemo(() => {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        
+        // Agrupar agendamentos por cliente para pegar o último
+        const lastAppByClient: Record<string, Date> = {};
+        appointments.forEach(app => {
+            if (app.clientId && app.status === 'completed') {
+                const appDate = new Date(app.date + 'T12:00:00');
+                if (!lastAppByClient[app.clientId] || appDate > lastAppByClient[app.clientId]) {
+                    lastAppByClient[app.clientId] = appDate;
+                }
+            }
+        });
+
+        return Object.values(lastAppByClient).filter(lastDate => lastDate < thirtyDaysAgo).length;
+    }, [appointments]);
+
     const activeClientsCount = useMemo(() => clients.length, [clients]);
     const professionalsCount = useMemo(() => professionals.length, [professionals]);
     const servicesCount = useMemo(() => services.length, [services]);
@@ -42,10 +60,11 @@ export const DashboardPanel: React.FC = () => {
                     trend="Hoje"
                 />
                 <StatCard 
-                    icon={<UserCheck className="text-green-500" size={24} />} 
-                    label="Clientes Ativos" 
-                    value={activeClientsCount.toString()} 
-                    trend="Total"
+                    icon={<Users className="text-orange-500" size={24} />} 
+                    label="Clientes Inativos (+30d)" 
+                    value={inactiveClientsCount.toString()} 
+                    trend="Alerta"
+                    subtitle="Não aparecem há mais de 30 dias"
                 />
                 <StatCard 
                     icon={<User className="text-purple-500" size={24} />} 
@@ -133,7 +152,7 @@ export const DashboardPanel: React.FC = () => {
     );
 };
 
-const StatCard: React.FC<{ icon: React.ReactNode, label: string, value: string, trend: string }> = ({ icon, label, value, trend }) => (
+const StatCard: React.FC<{ icon: React.ReactNode, label: string, value: string, trend: string, subtitle?: string }> = ({ icon, label, value, trend, subtitle }) => (
     <motion.div 
         whileHover={{ y: -4 }}
         className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all"
@@ -148,6 +167,7 @@ const StatCard: React.FC<{ icon: React.ReactNode, label: string, value: string, 
         </div>
         <h3 className="text-[#6b7d99] text-sm font-medium mb-1">{label}</h3>
         <p className="text-3xl font-bold text-slate-900">{value}</p>
+        {subtitle && <p className="text-[10px] text-orange-500 font-medium mt-1">{subtitle}</p>}
     </motion.div>
 );
 

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useShop } from '../../../store';
-import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader2, List, Calendar as CalendarIcon } from 'lucide-react';
+import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader2, List, Calendar as CalendarIcon, Phone } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 import { WeeklyCalendar } from './WeeklyCalendar';
 
@@ -477,26 +477,39 @@ export const AppointmentsPanel: React.FC = () => {
                                                     )}
                                                 </td>
                                                 <td className="p-4 text-right">
-                                                    <select 
-                                                        value={apt.status}
-                                                        onChange={(e) => {
-                                                            updateAppointmentStatus(apt.id, e.target.value);
-                                                            if (e.target.value === 'completed' && !apt.paymentMethod) {
-                                                                updateAppointmentPaymentMethod(apt.id, 'pix'); // Default to PIX when completing
-                                                            }
-                                                        }}
-                                                        className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100 transition-colors"
-                                                    >
-                                                        <option value="scheduled">Agendado</option>
-                                                        <option value="confirmed">Confirmado</option>
-                                                        <option value="completed" disabled={isFuture && apt.status !== 'completed'}>
-                                                            Finalizado {isFuture && apt.status !== 'completed' ? '(Aguarde)' : ''}
-                                                        </option>
-                                                        <option value="noshow" disabled={isFuture && apt.status !== 'noshow'}>
-                                                            Não veio {isFuture && apt.status !== 'noshow' ? '(Aguarde)' : ''}
-                                                        </option>
-                                                        <option value="cancelled">Cancelar</option>
-                                                    </select>
+                                                    <div className="flex items-center justify-end gap-2">
+                                                        <button 
+                                                            onClick={() => {
+                                                                const message = `Olá ${apt.clientName}, lembrete do seu agendamento na ${settings.shopName || 'Barbearia'} dia ${new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR')} às ${apt.time.substring(0, 5)}. Confirmado?`;
+                                                                const phone = apt.clientPhone.replace(/\D/g, '');
+                                                                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+                                                            }}
+                                                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                            title="Enviar lembrete WhatsApp"
+                                                        >
+                                                            <Phone size={16} />
+                                                        </button>
+                                                        <select 
+                                                            value={apt.status}
+                                                            onChange={(e) => {
+                                                                updateAppointmentStatus(apt.id, e.target.value);
+                                                                if (e.target.value === 'completed' && !apt.paymentMethod) {
+                                                                    updateAppointmentPaymentMethod(apt.id, 'pix'); // Default to PIX when completing
+                                                                }
+                                                            }}
+                                                            className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100 transition-colors"
+                                                        >
+                                                            <option value="scheduled">Agendado</option>
+                                                            <option value="confirmed">Confirmado</option>
+                                                            <option value="completed" disabled={isFuture && apt.status !== 'completed'}>
+                                                                Finalizado {isFuture && apt.status !== 'completed' ? '(Aguarde)' : ''}
+                                                            </option>
+                                                            <option value="noshow" disabled={isFuture && apt.status !== 'noshow'}>
+                                                                Não veio {isFuture && apt.status !== 'noshow' ? '(Aguarde)' : ''}
+                                                            </option>
+                                                            <option value="cancelled">Cancelar</option>
+                                                        </select>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
@@ -547,8 +560,21 @@ export const AppointmentsPanel: React.FC = () => {
                                         </div>
 
                                         <div className="flex justify-between items-center pt-2 border-t border-slate-100">
-                                            <div className="font-bold text-lg" style={{ color: settings.primaryColor }}>
-                                                R$ {apt.totalValue.toFixed(2)}
+                                            <div className="flex items-center gap-2">
+                                                <button 
+                                                    onClick={() => {
+                                                        const message = `Olá ${apt.clientName}, lembrete do seu agendamento na ${settings.shopName || 'Barbearia'} dia ${new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR')} às ${apt.time.substring(0, 5)}. Confirmado?`;
+                                                        const phone = apt.clientPhone.replace(/\D/g, '');
+                                                        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+                                                    }}
+                                                    className="p-2 text-green-600 bg-green-50 rounded-lg transition-colors"
+                                                    title="Enviar lembrete WhatsApp"
+                                                >
+                                                    <Phone size={16} />
+                                                </button>
+                                                <div className="font-bold text-lg" style={{ color: settings.primaryColor }}>
+                                                    R$ {apt.totalValue.toFixed(2)}
+                                                </div>
                                             </div>
                                             <div className="flex gap-2">
                                                 {apt.status === 'completed' && (

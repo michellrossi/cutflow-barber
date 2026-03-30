@@ -576,7 +576,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
 
                         <div>
                             <label className="block text-sm text-slate-500 mb-2">Cor na Agenda</label>
-                            <div className="flex flex-wrap gap-2">
+                            <div className="flex flex-wrap gap-3">
                                 {[
                                     '#f97316', '#3b82f6', '#10b981', '#8b5cf6', 
                                     '#ec4899', '#06b6d4', '#f59e0b', '#ef4444',
@@ -586,16 +586,20 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                         key={c}
                                         type="button"
                                         onClick={() => setColor(c)}
-                                        className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${color === c ? 'border-slate-900 scale-110 shadow-lg' : 'border-transparent'}`}
+                                        className={`w-10 h-10 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center ${color === c ? 'border-slate-900 scale-110 shadow-md' : 'border-slate-200'}`}
                                         style={{ backgroundColor: c }}
-                                    />
+                                    >
+                                        {color === c && <div className="w-2 h-2 rounded-full bg-white shadow-sm" />}
+                                    </button>
                                 ))}
-                                <input 
-                                    type="color" 
-                                    value={color} 
-                                    onChange={e => setColor(e.target.value)}
-                                    className="w-8 h-8 rounded-full bg-transparent border-none cursor-pointer"
-                                />
+                                <div className="relative">
+                                    <input 
+                                        type="color" 
+                                        value={color} 
+                                        onChange={e => setColor(e.target.value)}
+                                        className="w-10 h-10 rounded-full bg-transparent border-2 border-slate-200 cursor-pointer overflow-hidden p-0"
+                                    />
+                                </div>
                             </div>
                         </div>
 

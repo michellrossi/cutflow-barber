@@ -230,6 +230,26 @@ export const FinancePanel: React.FC = () => {
             .sort((a, b) => b.value - a.value)
             .slice(0, 8); // Top 8 services
 
+        // 7. Client Ranking
+        const clientRevenue: Record<string, { name: string, value: number, count: number, phone: string }> = {};
+        completed.forEach(app => {
+            const clientId = app.clientId || app.clientPhone; // Fallback to phone if no ID
+            if (!clientRevenue[clientId]) {
+                clientRevenue[clientId] = {
+                    name: app.clientName,
+                    phone: app.clientPhone,
+                    value: 0,
+                    count: 0
+                };
+            }
+            clientRevenue[clientId].value += app.totalValue;
+            clientRevenue[clientId].count += 1;
+        });
+
+        const sortedClients = Object.values(clientRevenue)
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 10); // Top 10 clients
+
         return {
             totalRevenue,
             totalCommission,
@@ -239,7 +259,8 @@ export const FinancePanel: React.FC = () => {
             chartData,
             sortedPros,
             paymentMethodData,
-            serviceData
+            serviceData,
+            sortedClients
         };
 
     }, [reportAppointments, professionals, services]);
@@ -463,7 +484,7 @@ export const FinancePanel: React.FC = () => {
                 </div>
 
                 {/* Gráfico de Formas de Pagamento e Serviços */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-slate-200 flex flex-col min-h-[350px] shadow-sm">
                         <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                             <PieChart size={18} className="text-blue-500"/>
@@ -562,6 +583,36 @@ export const FinancePanel: React.FC = () => {
                                     <span className="text-slate-900 text-xl font-bold">{stats.totalCount}</span>
                                 </div>
                             </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Ranking de Clientes */}
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <Users size={18} className="text-orange-500"/>
+                        Ranking de Clientes (Mais Lucrativos)
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {stats.sortedClients.length === 0 ? (
+                            <div className="col-span-full py-12 text-center text-[#6b7d99] italic">
+                                Nenhum dado de cliente disponível para este período.
+                            </div>
+                        ) : (
+                            stats.sortedClients.map((client, idx) => (
+                                <div key={idx} className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-orange-200 transition-all group">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-orange-700' : 'bg-slate-300'}`}>
+                                        {idx + 1}º
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h4 className="font-bold text-slate-900 truncate">{client.name}</h4>
+                                        <div className="flex justify-between items-center mt-1">
+                                            <span className="text-xs text-[#6b7d99]">{client.count} visitas</span>
+                                            <span className="text-sm font-bold text-orange-600">R$ {client.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
                         )}
                     </div>
                 </div>
