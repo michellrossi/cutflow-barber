@@ -470,6 +470,56 @@ async function startServer() {
         }
     });
 
+    // Rota para Gerar Texto de Modelo de Mensagem com IA
+    app.post('/api/ai/generate-template', async (req, res) => {
+        const { trigger, shopName, tone } = req.body;
+
+        try {
+            const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+            
+            const triggerDescriptions: Record<string, string> = {
+                'immediate_confirmation': 'confirmação imediata após o agendamento',
+                'appointment_reminder': 'lembrete de agendamento (pode ser 24h ou 1h antes)',
+                'rescheduling_request': 'solicitação de reagendamento para quem faltou ou cancelou',
+                'post_sale': 'pós-venda e pedido de avaliação após o serviço',
+                'retention_30d': 'lembrete de retorno após 30 dias sem agendar',
+                'custom': 'mensagem personalizada para clientes'
+            };
+
+            const systemInstruction = `Você é um especialista em marketing para barbearias premium. 
+            Sua tarefa é escrever uma mensagem de WhatsApp curta, amigável e profissional.
+            Use emojis de forma moderada e estratégica.
+            
+            VARIÁVEIS OBRIGATÓRIAS (Use exatamente estas tags):
+            - [CLIENTE] para o nome do cliente
+            - [SERVICO] para o nome do serviço
+            - [DATA] para a data
+            - [HORA] para o horário
+            - [BARBEIRO] para o nome do profissional
+            - [BARBEARIA] para o nome da barbearia
+            
+            REGRAS:
+            1. Retorne APENAS o texto da mensagem, sem explicações.
+            2. A mensagem deve ser curta (máximo 250 caracteres).
+            3. Use o tom solicitado: ${tone || 'amigável e profissional'}.
+            4. O contexto é: ${triggerDescriptions[trigger] || 'comunicação geral'}.
+            5. Nome da barbearia: ${shopName || 'nossa barbearia'}.`;
+
+            const response = await genAI.models.generateContent({
+                model: "gemini-3-flash-preview",
+                contents: [{ role: 'user', parts: [{ text: `Gere uma mensagem para o gatilho: ${trigger}` }] }],
+                config: {
+                    systemInstruction: systemInstruction
+                }
+            });
+
+            res.json({ success: true, text: response.text });
+        } catch (error: any) {
+            console.error("Erro ao gerar template com IA:", error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
     // Rota da API de Confirmação Imediata
     app.post('/api/notify/confirmation', async (req, res) => {
         const { appointmentId } = req.body;

@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useShop } from '../../../store';
-import { MessageSquare, Plus, Save, Trash2, Bell, Clock, CheckCircle, RefreshCw, Eye, Copy, Info } from 'lucide-react';
+import { MessageSquare, Plus, Save, Trash2, Bell, Clock, CheckCircle, RefreshCw, Eye, Copy, Info, Sparkles } from 'lucide-react';
 import { MessageTemplate } from '../../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -109,6 +109,39 @@ export const RemindersPanel: React.FC = () => {
 
     const [testPhone, setTestPhone] = useState('');
     const [isTesting, setIsTesting] = useState(false);
+    const [isGeneratingAI, setIsGeneratingAI] = useState(false);
+
+    const handleGenerateAI = async () => {
+        if (!editingTemplate?.trigger) return;
+        
+        setIsGeneratingAI(true);
+        try {
+            const response = await fetch('/api/ai/generate-template', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    trigger: editingTemplate.trigger,
+                    shopName: settings.name || 'Nossa Barbearia',
+                    tone: 'amigável e profissional'
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                setEditingTemplate(prev => ({
+                    ...prev,
+                    content: data.text
+                }));
+            } else {
+                throw new Error(data.error);
+            }
+        } catch (error) {
+            console.error('Erro ao gerar template com IA:', error);
+            alert('Erro ao gerar mensagem com IA. Tente novamente.');
+        } finally {
+            setIsGeneratingAI(false);
+        }
+    };
 
     const handleTest = async (templateId: string) => {
         if (!testPhone) {
@@ -316,7 +349,14 @@ export const RemindersPanel: React.FC = () => {
                                     <div>
                                         <div className="flex justify-between items-end mb-2">
                                             <label className="block text-sm font-bold text-slate-700">Conteúdo da Mensagem</label>
-                                            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Variáveis Disponíveis</span>
+                                            <button 
+                                                onClick={handleGenerateAI}
+                                                disabled={isGeneratingAI}
+                                                className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded-lg border border-orange-200 transition-all disabled:opacity-50"
+                                            >
+                                                <Sparkles size={12} className={isGeneratingAI ? 'animate-pulse' : ''} />
+                                                {isGeneratingAI ? 'GERANDO...' : 'GERAR COM IA'}
+                                            </button>
                                         </div>
                                         <div className="flex flex-wrap gap-2 mb-3">
                                             {variables.map(v => (
