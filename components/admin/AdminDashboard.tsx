@@ -26,6 +26,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       return (saved as AdminTab) || 'dashboard';
   });
   
+  const [clientFilter, setClientFilter] = useState<string>('all');
+
   const [teamSubTab, setTeamSubTab] = useState<TeamSubTab>(() => {
       const saved = localStorage.getItem('adminTeamSubTab');
       return (saved as TeamSubTab) || 'list';
@@ -47,8 +49,11 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   const { settings, trialStatus, daysRemaining, theme, toggleTheme } = useShop();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
-  const handleTabChange = (tab: AdminTab) => {
+  const handleTabChange = (tab: AdminTab, filter?: string) => {
       setActiveTab(tab);
+      if (filter && tab === 'clients') {
+          setClientFilter(filter);
+      }
       if (tab !== 'team') setIsTeamOpen(false);
       if (tab !== 'settings') setIsSettingsOpen(false);
   };
@@ -72,13 +77,13 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard': return <DashboardPanel />;
+      case 'dashboard': return <DashboardPanel onNavigate={handleTabChange} />;
       case 'team': return <TeamPanel initialTab={teamSubTab} onTabChange={setTeamSubTab} />;
       case 'services': return <ServicesPanel />;
       case 'coupons': return <CouponsPanel />;
       case 'appointments': return <AppointmentsPanel />;
       case 'finance': return <FinancePanel />;
-      case 'clients': return <ClientsPanel />;
+      case 'clients': return <ClientsPanel initialFilter={clientFilter as any} />;
       case 'loyalty': return <LoyaltyPanel />;
       case 'settings': return <SettingsPanel initialTab={settingsSubTab} onTabChange={setSettingsSubTab} />;
       case 'insight': return <InsightPanel />;

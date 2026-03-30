@@ -3,7 +3,7 @@ import { useShop } from '../../../store';
 import { Users, Scissors, Calendar, UserCheck, Clock, Phone, User, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export const DashboardPanel: React.FC = () => {
+export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) => void }> = ({ onNavigate }) => {
     const { appointments, clients, professionals, services, settings } = useShop();
 
     const today = new Date().toISOString().split('T')[0];
@@ -58,6 +58,7 @@ export const DashboardPanel: React.FC = () => {
                     label="Agendamentos Hoje" 
                     value={todayAppointments.length.toString()} 
                     trend="Hoje"
+                    onClick={() => onNavigate('appointments')}
                 />
                 <StatCard 
                     icon={<Users className="text-orange-500" size={24} />} 
@@ -65,18 +66,21 @@ export const DashboardPanel: React.FC = () => {
                     value={inactiveClientsCount.toString()} 
                     trend="Alerta"
                     subtitle="Não aparecem há mais de 30 dias"
+                    onClick={() => onNavigate('clients', 'inactive')}
                 />
                 <StatCard 
                     icon={<User className="text-purple-500" size={24} />} 
                     label="Profissionais" 
                     value={professionalsCount.toString()} 
                     trend="Equipe"
+                    onClick={() => onNavigate('team')}
                 />
                 <StatCard 
                     icon={<Scissors className="text-orange-500" size={24} />} 
                     label="Serviços" 
                     value={servicesCount.toString()} 
                     trend="Catálogo"
+                    onClick={() => onNavigate('services')}
                 />
             </div>
 
@@ -152,10 +156,11 @@ export const DashboardPanel: React.FC = () => {
     );
 };
 
-const StatCard: React.FC<{ icon: React.ReactNode, label: string, value: string, trend: string, subtitle?: string }> = ({ icon, label, value, trend, subtitle }) => (
+const StatCard: React.FC<{ icon: React.ReactNode, label: string, value: string, trend: string, subtitle?: string, onClick?: () => void }> = ({ icon, label, value, trend, subtitle, onClick }) => (
     <motion.div 
         whileHover={{ y: -4 }}
-        className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all"
+        onClick={onClick}
+        className={`bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all ${onClick ? 'cursor-pointer' : ''}`}
     >
         <div className="flex justify-between items-start mb-4">
             <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">

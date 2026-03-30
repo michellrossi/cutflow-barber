@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { Client, Appointment } from '../../../types';
 import { Search, Filter, ChevronRight, MessageCircle, Plus, Star, Edit2, Trash2, X, Save, Phone, Mail, User, Loader2, Eye, Calendar, Clock, DollarSign } from 'lucide-react';
@@ -18,13 +18,19 @@ interface ProcessedClient extends Client {
   metrics: ClientMetrics;
 }
 
-export const ClientsPanel: React.FC = () => {
+export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'medium_risk' | 'vip' | 'new' | 'inactive' }> = ({ initialFilter }) => {
   const { clients, appointments, addClient, updateClient, removeClient, settings } = useShop();
   const { showToast } = useToast();
 
   // State
   const [searchTerm, setSearchTerm] = useState('');
-  const [filter, setFilter] = useState<'all' | 'high_risk' | 'medium_risk' | 'vip' | 'new'>('all');
+  const [filter, setFilter] = useState<'all' | 'high_risk' | 'medium_risk' | 'vip' | 'new' | 'inactive'>(initialFilter || 'all');
+
+  useEffect(() => {
+    if (initialFilter) {
+      setFilter(initialFilter);
+    }
+  }, [initialFilter]);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -119,6 +125,7 @@ export const ClientsPanel: React.FC = () => {
       if (filter === 'medium_risk') return client.metrics.risk === 'Médio';
       if (filter === 'vip') return client.metrics.frequency === 'VIP';
       if (filter === 'new') return client.metrics.risk === 'Novo';
+      if (filter === 'inactive') return client.metrics.daysSinceLastCut > 30;
 
       return true;
     });
@@ -273,6 +280,13 @@ export const ClientsPanel: React.FC = () => {
             onClick={() => setFilter('new')} 
             label="Novos" 
             count={processedClients.filter(c => c.metrics.risk === 'Novo').length}
+          />
+          <FilterButton 
+            active={filter === 'inactive'} 
+            onClick={() => setFilter('inactive')} 
+            label="Sumidos" 
+            color="red"
+            count={processedClients.filter(c => c.metrics.daysSinceLastCut > 30).length}
           />
         </div>
       </div>

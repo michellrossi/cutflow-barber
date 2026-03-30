@@ -392,7 +392,7 @@ export const FinancePanel: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Gráfico de Barras e Ranking */}
+                {/* Gráficos Principais */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     
                     {/* Gráfico de Evolução Diária */}
@@ -441,51 +441,8 @@ export const FinancePanel: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Ranking de Profissionais */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-full max-h-[400px] shadow-sm">
-                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                            <Award size={18} className="text-yellow-500"/>
-                            Top Profissionais
-                        </h3>
-                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
-                            {stats.sortedPros.length === 0 ? (
-                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Nenhum dado disponível.</p>
-                            ) : (
-                                stats.sortedPros.map((pro, idx) => (
-                                    <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0 group">
-                                        <div className="relative shrink-0">
-                                            <img src={pro.photo || 'https://via.placeholder.com/40'} alt={pro.name} className="w-10 h-10 rounded-full object-cover border border-slate-200 group-hover:border-slate-300 transition-colors" referrerPolicy="no-referrer" />
-                                            {idx < 3 && (
-                                                <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : 'bg-orange-700'}`}>
-                                                    {idx + 1}
-                                                </div>
-                                            )}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex justify-between items-center mb-1">
-                                                <span className="text-sm font-medium text-slate-900 truncate">{pro.name}</span>
-                                                <span className="text-sm font-bold text-green-600">R$ {pro.value.toFixed(0)}</span>
-                                            </div>
-                                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
-                                                <div 
-                                                    className="bg-green-500 h-full rounded-full transition-all duration-1000" 
-                                                    style={{ width: `${(pro.value / (stats.totalRevenue || 1)) * 100}%` }}
-                                                ></div>
-                                            </div>
-                                            <div className="mt-1 text-xs text-[#6b7d99] text-right font-medium">
-                                                {pro.count} atendimentos
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Gráfico de Formas de Pagamento e Serviços */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-                    <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-slate-200 flex flex-col min-h-[350px] shadow-sm">
+                    {/* Formas de Pagamento */}
+                    <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-slate-200 flex flex-col min-h-[400px] shadow-sm">
                         <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                             <PieChart size={18} className="text-blue-500"/>
                             Formas de Pagamento
@@ -540,80 +497,121 @@ export const FinancePanel: React.FC = () => {
                             </div>
                         )}
                     </div>
-
-                    <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 flex flex-col min-h-[350px] shadow-sm">
-                        <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-                            <TrendingUp size={18} className="text-green-500"/>
-                            Serviços Mais Rentáveis
-                        </h3>
-                        {stats.serviceData.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-[#6b7d99] h-full border border-dashed border-slate-200 rounded-xl bg-slate-50">
-                                <TrendingUp size={32} className="mb-2 opacity-50"/>
-                                <p>Sem dados de serviços.</p>
-                            </div>
-                        ) : (
-                            <div className="flex-1 flex flex-col justify-between">
-                                <div className="space-y-6">
-                                    {stats.serviceData.map((item, index) => {
-                                        const maxVal = Math.max(...stats.serviceData.map(d => d.value));
-                                        const percentage = (item.value / maxVal) * 100;
-                                        
-                                        return (
-                                            <div key={index} className="space-y-2">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-slate-700 font-medium">{item.name}</span>
-                                                    <span className="text-slate-900 font-bold">R$ {item.value.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</span>
-                                                </div>
-                                                <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                                    <div 
-                                                        className="h-full rounded-full transition-all duration-1000"
-                                                        style={{ 
-                                                            width: `${percentage}%`,
-                                                            backgroundColor: settings.primaryColor 
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                
-                                <div className="mt-auto pt-8 border-t border-slate-100 flex justify-between items-center">
-                                    <span className="text-[#6b7d99] text-sm font-bold uppercase tracking-tight">Total de serviços este mês</span>
-                                    <span className="text-slate-900 text-xl font-bold">{stats.totalCount}</span>
-                                </div>
-                            </div>
-                        )}
-                    </div>
                 </div>
 
-                {/* Ranking de Clientes */}
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-                        <Users size={18} className="text-orange-500"/>
-                        Ranking de Clientes (Mais Lucrativos)
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {stats.sortedClients.length === 0 ? (
-                            <div className="col-span-full py-12 text-center text-[#6b7d99] italic">
-                                Nenhum dado de cliente disponível para este período.
-                            </div>
-                        ) : (
-                            stats.sortedClients.map((client, idx) => (
-                                <div key={idx} className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-orange-200 transition-all group">
-                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-orange-700' : 'bg-slate-300'}`}>
-                                        {idx + 1}º
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                        <h4 className="font-bold text-slate-900 truncate">{client.name}</h4>
-                                        <div className="flex justify-between items-center mt-1">
-                                            <span className="text-xs text-[#6b7d99]">{client.count} visitas</span>
-                                            <span className="text-sm font-bold text-orange-600">R$ {client.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                {/* Rankings em Linha */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+                    {/* Ranking de Profissionais */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-[450px] shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <Award size={18} className="text-yellow-500"/>
+                            Top Profissionais
+                        </h3>
+                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                            {stats.sortedPros.length === 0 ? (
+                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Nenhum dado disponível.</p>
+                            ) : (
+                                stats.sortedPros.map((pro, idx) => (
+                                    <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0 group">
+                                        <div className="relative shrink-0">
+                                            <img src={pro.photo || 'https://via.placeholder.com/40'} alt={pro.name} className="w-10 h-10 rounded-full object-cover border border-slate-200 group-hover:border-slate-300 transition-colors" referrerPolicy="no-referrer" />
+                                            {idx < 3 && (
+                                                <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : 'bg-orange-700'}`}>
+                                                    {idx + 1}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-sm font-medium text-slate-900 truncate">{pro.name}</span>
+                                                <span className="text-sm font-bold text-green-600">R$ {pro.value.toFixed(0)}</span>
+                                            </div>
+                                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                                <div 
+                                                    className="bg-green-500 h-full rounded-full transition-all duration-1000" 
+                                                    style={{ width: `${(pro.value / (stats.totalRevenue || 1)) * 100}%` }}
+                                                ></div>
+                                            </div>
+                                            <div className="mt-1 text-xs text-[#6b7d99] text-right font-medium">
+                                                {pro.count} atendimentos
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))
-                        )}
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Ranking de Clientes */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-[450px] shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <Users size={18} className="text-orange-500"/>
+                            Top Clientes
+                        </h3>
+                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                            {stats.sortedClients.length === 0 ? (
+                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Nenhum dado disponível.</p>
+                            ) : (
+                                stats.sortedClients.map((client, idx) => (
+                                    <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0 group">
+                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm shrink-0 ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-orange-700' : 'bg-slate-300'}`}>
+                                            {idx + 1}º
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-sm font-medium text-slate-900 truncate">{client.name}</span>
+                                                <span className="text-sm font-bold text-orange-600">R$ {client.value.toFixed(0)}</span>
+                                            </div>
+                                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                                <div 
+                                                    className="bg-orange-500 h-full rounded-full transition-all duration-1000" 
+                                                    style={{ width: `${(client.value / (stats.totalRevenue || 1)) * 100}%` }}
+                                                ></div>
+                                            </div>
+                                            <div className="mt-1 text-xs text-[#6b7d99] text-right font-medium">
+                                                {client.count} visitas
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Ranking de Serviços */}
+                    <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-[450px] shadow-sm">
+                        <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+                            <TrendingUp size={18} className="text-green-500"/>
+                            Top Serviços
+                        </h3>
+                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                            {stats.serviceData.length === 0 ? (
+                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Nenhum dado disponível.</p>
+                            ) : (
+                                stats.serviceData.map((item, index) => {
+                                    const maxVal = Math.max(...stats.serviceData.map(d => d.value));
+                                    const percentage = (item.value / maxVal) * 100;
+                                    
+                                    return (
+                                        <div key={index} className="space-y-2 pb-3 border-b border-slate-100 last:border-0 last:pb-0">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm font-medium text-slate-700 truncate">{item.name}</span>
+                                                <span className="text-sm font-bold text-slate-900">R$ {item.value.toFixed(0)}</span>
+                                            </div>
+                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full rounded-full transition-all duration-1000"
+                                                    style={{ 
+                                                        width: `${percentage}%`,
+                                                        backgroundColor: settings.primaryColor 
+                                                    }}
+                                                />
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
