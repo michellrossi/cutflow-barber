@@ -281,6 +281,56 @@ async function startServer() {
     app.use(cors());
     app.use(express.json());
 
+    app.get('/api/health', (req, res) => {
+        res.json({ status: 'ok' });
+    });
+
+    // Rota para Testar Notificação
+    app.post('/api/notify/test', async (req, res) => {
+        console.log("[API] Recebida solicitação de teste:", req.body);
+        const { phone, templateId } = req.body;
+        
+        if (!phone || !templateId) {
+            return res.status(400).json({ error: "Telefone e ID do modelo são obrigatórios" });
+        }
+
+        try {
+            const { data: template, error: templateError } = await supabase
+                .from('message_templates')
+                .select('*')
+                .eq('id', templateId)
+                .single();
+
+            if (templateError || !template) {
+                return res.status(404).json({ error: "Modelo não encontrado" });
+            }
+
+            const { data: shop } = await supabase
+                .from('shops')
+                .select('name, whatsapp_instance')
+                .eq('id', template.shop_id)
+                .single();
+
+            const testData = {
+                clientName: "Cliente de Teste",
+                services: "Corte e Barba (Teste)",
+                date: new Date().toLocaleDateString('pt-BR'),
+                time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+                proName: "Barbeiro de Teste",
+                shopName: shop?.name || "Minha Barbearia",
+                url: "https://google.com"
+            };
+
+            const message = await generateWhatsAppMessage(template.trigger, testData, template.shop_id, template.delay_value, template.delay_unit);
+            const ok = await sendWhatsApp(phone, message, shop?.whatsapp_instance);
+
+            res.json({ success: ok, message: ok ? "Mensagem de teste enviada!" : "Falha ao enviar mensagem de teste." });
+        } catch (error: any) {
+            console.error("Erro ao testar notificação:", error);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
     // Rota para Insights da IA (Admin)
     app.post('/api/admin/insights', async (req, res) => {
         const { prompt, context, history } = req.body;
@@ -435,50 +485,6 @@ async function startServer() {
         res.json({ success: clientOk });
     });
 
-    // Rota para Testar Notificação
-    app.post('/api/notify/test', async (req, res) => {
-        const { phone, templateId } = req.body;
-        
-        if (!phone || !templateId) {
-            return res.status(400).json({ error: "Telefone e ID do modelo são obrigatórios" });
-        }
-
-        try {
-            const { data: template, error: templateError } = await supabase
-                .from('message_templates')
-                .select('*')
-                .eq('id', templateId)
-                .single();
-
-            if (templateError || !template) {
-                return res.status(404).json({ error: "Modelo não encontrado" });
-            }
-
-            const { data: shop } = await supabase
-                .from('shops')
-                .select('name, whatsapp_instance')
-                .eq('id', template.shop_id)
-                .single();
-
-            const testData = {
-                clientName: "Cliente de Teste",
-                services: "Corte e Barba (Teste)",
-                date: new Date().toLocaleDateString('pt-BR'),
-                time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-                proName: "Barbeiro de Teste",
-                shopName: shop?.name || "Minha Barbearia",
-                url: "https://google.com"
-            };
-
-            const message = await generateWhatsAppMessage(template.trigger, testData, template.shop_id, template.delay_value, template.delay_unit);
-            const ok = await sendWhatsApp(phone, message, shop?.whatsapp_instance);
-
-            res.json({ success: ok, message: ok ? "Mensagem de teste enviada!" : "Falha ao enviar mensagem de teste." });
-        } catch (error: any) {
-            console.error("Erro ao testar notificação:", error);
-            res.status(500).json({ success: false, error: error.message });
-        }
-    });
     
     // Rota para enviar link de login via WhatsApp
     app.post('/api/notify/login-link', async (req, res) => {
