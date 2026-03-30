@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate } from './types';
+import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription } from './types';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import DOMPurify from 'dompurify';
@@ -38,7 +38,7 @@ interface ShopContextType extends ShopState {
   addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
   createManualAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
   updateAppointmentStatus: (id: string, status: string) => MutationResult;
-  updateAppointmentPaymentMethod: (id: string, paymentMethod: string) => MutationResult;
+  updateAppointmentPaymentMethod: (id: string, paymentMethod: string, usedSubscriptionId?: string) => MutationResult;
   
   addBlockedSlot: (block: Omit<BlockedSlot, 'id' | 'shopId'>) => MutationResult;
   removeBlockedSlot: (id: string) => MutationResult;
@@ -50,6 +50,15 @@ interface ShopContextType extends ShopState {
   addMessageTemplate: (template: Omit<MessageTemplate, 'id' | 'shopId'>) => MutationResult;
   updateMessageTemplate: (id: string, template: Partial<MessageTemplate>) => MutationResult;
   removeMessageTemplate: (id: string) => MutationResult;
+
+  // Subscription Actions
+  addSubscriptionPlan: (plan: Omit<SubscriptionPlan, 'id' | 'shopId'>) => MutationResult;
+  updateSubscriptionPlan: (id: string, plan: Partial<SubscriptionPlan>) => MutationResult;
+  removeSubscriptionPlan: (id: string) => MutationResult;
+  
+  addClientSubscription: (sub: Omit<ClientSubscription, 'id' | 'shopId'>) => MutationResult;
+  updateClientSubscription: (id: string, sub: Partial<ClientSubscription>) => MutationResult;
+  removeClientSubscription: (id: string) => MutationResult;
 
   updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
   
@@ -106,6 +115,8 @@ const INITIAL_STATE: ShopState = {
   appointments: [],
   clients: [],
   messageTemplates: [],
+  subscriptionPlans: [],
+  clientSubscriptions: [],
   blockedSlots: [],
   currentClient: null,
   clientSession: null,
@@ -240,6 +251,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       time: data.time,
       totalValue: data.total_value,
       couponCode: data.coupon_code,
+      usedSubscriptionId: data.used_subscription_id,
       createdAt: data.created_at,
       status: data.status || 'scheduled',
       paymentMethod: data.payment_method
@@ -264,6 +276,29 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       delayValue: data.delay_value || 0,
       delayUnit: data.delay_unit || 'minutes',
       active: data.active
+  });
+
+  const mapSubscriptionPlan = (data: any): SubscriptionPlan => ({
+      id: data.id,
+      shopId: data.shop_id,
+      name: data.name,
+      description: data.description,
+      price: data.price,
+      servicesPerMonth: data.services_per_month,
+      active: data.active,
+      createdAt: data.created_at
+  });
+
+  const mapClientSubscription = (data: any): ClientSubscription => ({
+      id: data.id,
+      shopId: data.shop_id,
+      clientId: data.client_id,
+      planId: data.plan_id,
+      status: data.status,
+      startDate: data.start_date,
+      nextBillingDate: data.next_billing_date,
+      servicesUsedThisMonth: data.services_used_this_month || 0,
+      createdAt: data.created_at
   });
 
   // --- Logic for Trial Calculation ---
@@ -414,14 +449,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Executa queries de configurações e dados estáticos em paralelo
-        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes] = await Promise.all([
+        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, plansRes, subsRes] = await Promise.all([
             supabase.from('settings').select('*').eq('shop_id', shopId).single(),
             supabase.from('services').select('*').eq('shop_id', shopId),
             supabase.from('professionals').select('*').eq('shop_id', shopId),
             supabase.from('coupons').select('*').eq('shop_id', shopId),
             supabase.from('blocked_slots').select('*').eq('shop_id', shopId),
             supabase.from('clients').select('*').eq('shop_id', shopId),
-            supabase.from('message_templates').select('*').eq('shop_id', shopId)
+            supabase.from('message_templates').select('*').eq('shop_id', shopId),
+            supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
+            supabase.from('client_subscriptions').select('*').eq('shop_id', shopId)
         ]);
 
         // OTIMIZAÇÃO: Carregar apenas agendamentos recentes e futuros
@@ -443,6 +480,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         const mappedProfessionals = (prosRes.data || []).map((p: any, i: number) => mapProfessional(p, i));
         const mappedClients = (clientsRes.data || []).map(mapClient);
+        const mappedPlans = (plansRes.data || []).map(mapSubscriptionPlan);
+        const mappedSubs = (subsRes.data || []).map(mapClientSubscription);
 
         // --- LÓGICA DE ROLES ---
         if (currentSession?.user) {
@@ -482,6 +521,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             coupons: (couponsRes.data || []).map(mapCoupon),
             appointments: appointmentsData,
             clients: mappedClients,
+            subscriptionPlans: mappedPlans,
+            clientSubscriptions: mappedSubs,
             messageTemplates: (templatesRes.data || []).map(mapMessageTemplate),
             blockedSlots: (blocksRes.data || []).map(mapBlockedSlot),
             trialStatus: trialInfo.status,
@@ -1016,6 +1057,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               time: apt.time,
               total_value: apt.totalValue,
               coupon_code: null,
+              used_subscription_id: apt.usedSubscriptionId,
               status: apt.status || 'confirmed',
               payment_method: apt.paymentMethod
           }).select().single();
@@ -1058,9 +1100,18 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             throw error;
         }
 
-        // Se o status mudou para 'completed', processar fidelidade
+        // Se o status mudou para 'completed', processar fidelidade e assinaturas
         if (status === 'completed' && appointment) {
             await processLoyalty(appointment);
+            
+            if (appointment.usedSubscriptionId) {
+                const sub = state.clientSubscriptions.find(s => s.id === appointment.usedSubscriptionId);
+                if (sub) {
+                    await updateClientSubscription(sub.id, { 
+                        servicesUsedThisMonth: (sub.servicesUsedThisMonth || 0) + 1 
+                    });
+                }
+            }
         }
 
         return { success: true };
@@ -1145,7 +1196,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log(`Recompensa gerada para ${client.name}: ${code}`);
   };
 
-  const updateAppointmentPaymentMethod = async (id: string, paymentMethod: string): MutationResult => {
+  const updateAppointmentPaymentMethod = async (id: string, paymentMethod: string, usedSubscriptionId?: string): MutationResult => {
     try {
         const shopId = ensureShopId();
         
@@ -1153,11 +1204,18 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setState(prev => ({
             ...prev,
             appointments: prev.appointments.map(a => 
-                a.id === id ? { ...a, paymentMethod: paymentMethod as any } : a
+                a.id === id ? { 
+                    ...a, 
+                    paymentMethod: paymentMethod as any,
+                    usedSubscriptionId: usedSubscriptionId || a.usedSubscriptionId
+                } : a
             )
         }));
 
-        const { error } = await supabase.from('appointments').update({ payment_method: paymentMethod }).eq('id', id);
+        const { error } = await supabase.from('appointments').update({ 
+            payment_method: paymentMethod,
+            used_subscription_id: usedSubscriptionId || null
+        }).eq('id', id);
         
         if (error) {
             // Rollback on error
@@ -1300,6 +1358,128 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setState(prev => ({
             ...prev,
             messageTemplates: prev.messageTemplates.filter(t => t.id !== id)
+        }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const addSubscriptionPlan = async (plan: Omit<SubscriptionPlan, 'id' | 'shopId'>): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { data, error } = await supabase.from('subscription_plans').insert({
+            shop_id: shopId,
+            name: sanitize(plan.name),
+            description: plan.description ? sanitize(plan.description) : null,
+            price: plan.price,
+            services_per_month: plan.servicesPerMonth,
+            active: plan.active
+        }).select().single();
+
+        if (error) throw error;
+        
+        const newPlan = mapSubscriptionPlan(data);
+        setState(prev => ({ ...prev, subscriptionPlans: [...prev.subscriptionPlans, newPlan] }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const updateSubscriptionPlan = async (id: string, plan: Partial<SubscriptionPlan>): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const updateData: any = {};
+        if (plan.name !== undefined) updateData.name = sanitize(plan.name);
+        if (plan.description !== undefined) updateData.description = plan.description ? sanitize(plan.description) : null;
+        if (plan.price !== undefined) updateData.price = plan.price;
+        if (plan.servicesPerMonth !== undefined) updateData.services_per_month = plan.servicesPerMonth;
+        if (plan.active !== undefined) updateData.active = plan.active;
+
+        const { error } = await supabase.from('subscription_plans').update(updateData).eq('id', id).eq('shop_id', shopId);
+        if (error) throw error;
+
+        setState(prev => ({
+            ...prev,
+            subscriptionPlans: prev.subscriptionPlans.map(p => p.id === id ? { ...p, ...plan } : p)
+        }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const removeSubscriptionPlan = async (id: string): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { error } = await supabase.from('subscription_plans').delete().eq('id', id).eq('shop_id', shopId);
+        if (error) throw error;
+
+        setState(prev => ({
+            ...prev,
+            subscriptionPlans: prev.subscriptionPlans.filter(p => p.id !== id)
+        }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const addClientSubscription = async (sub: Omit<ClientSubscription, 'id' | 'shopId'>): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { data, error } = await supabase.from('client_subscriptions').insert({
+            shop_id: shopId,
+            client_id: sub.clientId,
+            plan_id: sub.planId,
+            status: sub.status,
+            start_date: sub.startDate,
+            next_billing_date: sub.nextBillingDate,
+            services_used_this_month: sub.servicesUsedThisMonth
+        }).select().single();
+
+        if (error) throw error;
+        
+        const newSub = mapClientSubscription(data);
+        setState(prev => ({ ...prev, clientSubscriptions: [...prev.clientSubscriptions, newSub] }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const updateClientSubscription = async (id: string, sub: Partial<ClientSubscription>): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const updateData: any = {};
+        if (sub.status !== undefined) updateData.status = sub.status;
+        if (sub.startDate !== undefined) updateData.start_date = sub.startDate;
+        if (sub.nextBillingDate !== undefined) updateData.next_billing_date = sub.nextBillingDate;
+        if (sub.servicesUsedThisMonth !== undefined) updateData.services_used_this_month = sub.servicesUsedThisMonth;
+
+        const { error } = await supabase.from('client_subscriptions').update(updateData).eq('id', id).eq('shop_id', shopId);
+        if (error) throw error;
+
+        setState(prev => ({
+            ...prev,
+            clientSubscriptions: prev.clientSubscriptions.map(s => s.id === id ? { ...s, ...sub } : s)
+        }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const removeClientSubscription = async (id: string): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { error } = await supabase.from('client_subscriptions').delete().eq('id', id).eq('shop_id', shopId);
+        if (error) throw error;
+
+        setState(prev => ({
+            ...prev,
+            clientSubscriptions: prev.clientSubscriptions.filter(s => s.id !== id)
         }));
         return { success: true };
     } catch (e: any) {
@@ -1589,6 +1769,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateAppointmentPaymentMethod,
       addClient, updateClient, removeClient,
       addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
+      addSubscriptionPlan, updateSubscriptionPlan, removeSubscriptionPlan,
+      addClientSubscription, updateClientSubscription, removeClientSubscription,
       addBlockedSlot, removeBlockedSlot,
       updateSettings,
       getWhatsAppQRCode,

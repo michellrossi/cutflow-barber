@@ -106,7 +106,49 @@ CREATE TABLE IF NOT EXISTS message_templates (
     created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- 16. Tabelas de Assinaturas
+CREATE TABLE IF NOT EXISTS subscription_plans (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    shop_id uuid REFERENCES shops(id) ON DELETE CASCADE,
+    name text NOT NULL,
+    description text,
+    price numeric NOT NULL,
+    services_per_month integer NOT NULL,
+    active boolean DEFAULT true,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS client_subscriptions (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    shop_id uuid REFERENCES shops(id) ON DELETE CASCADE,
+    client_id uuid REFERENCES clients(id) ON DELETE CASCADE,
+    plan_id uuid REFERENCES subscription_plans(id) ON DELETE CASCADE,
+    status text DEFAULT 'pending', -- 'active', 'pending', 'inactive', 'cancelled'
+    start_date date,
+    next_billing_date date,
+    services_used_this_month integer DEFAULT 0,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Adicionar campo de pagamento via assinatura nos agendamentos
+ALTER TABLE appointments 
+ADD COLUMN IF NOT EXISTS used_subscription_id uuid REFERENCES client_subscriptions(id) ON DELETE SET NULL;
+
 ALTER TABLE message_templates ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subscription_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE client_subscriptions ENABLE ROW LEVEL SECURITY;
+
+-- Políticas para subscription_plans
+CREATE POLICY "Permitir leitura de planos por qualquer um" ON subscription_plans FOR SELECT USING (true);
+CREATE POLICY "Permitir inserção de planos por qualquer um" ON subscription_plans FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permitir atualização de planos por qualquer um" ON subscription_plans FOR UPDATE USING (true);
+CREATE POLICY "Permitir deleção de planos por qualquer um" ON subscription_plans FOR DELETE USING (true);
+
+-- Políticas para client_subscriptions
+CREATE POLICY "Permitir leitura de assinaturas por qualquer um" ON client_subscriptions FOR SELECT USING (true);
+CREATE POLICY "Permitir inserção de assinaturas por qualquer um" ON client_subscriptions FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permitir atualização de assinaturas por qualquer um" ON client_subscriptions FOR UPDATE USING (true);
+CREATE POLICY "Permitir deleção de assinaturas por qualquer um" ON client_subscriptions FOR DELETE USING (true);
 
 -- Políticas para client_auth_tokens
 CREATE POLICY "Permitir inserção de token por qualquer um" ON client_auth_tokens FOR INSERT WITH CHECK (true);

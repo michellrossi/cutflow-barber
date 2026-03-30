@@ -6,7 +6,19 @@ import { WeeklyCalendar } from './WeeklyCalendar';
 import { formatMessage, getWhatsAppLink } from '../../../utils/messageFormatter';
 
 export const AppointmentsPanel: React.FC = () => {
-    const { appointments, professionals, services, updateAppointmentStatus, updateAppointmentPaymentMethod, createManualAppointment, settings, messageTemplates } = useShop();
+    const { 
+        appointments, 
+        professionals, 
+        services, 
+        updateAppointmentStatus, 
+        updateAppointmentPaymentMethod, 
+        createManualAppointment, 
+        settings, 
+        messageTemplates,
+        clients,
+        clientSubscriptions,
+        subscriptionPlans
+    } = useShop();
     const { showToast } = useToast();
 
     const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
@@ -41,7 +53,8 @@ export const AppointmentsPanel: React.FC = () => {
         date: new Date().toISOString().split('T')[0],
         time: '12:00',
         status: 'confirmed',
-        paymentMethod: 'pix'
+        paymentMethod: 'pix',
+        usedSubscriptionId: ''
     });
 
     // --- Lógica de Filtros de Data ---
@@ -115,6 +128,20 @@ export const AppointmentsPanel: React.FC = () => {
         });
     };
 
+    const availableSubscriptions = useMemo(() => {
+        if (!formData.clientPhone && !formData.clientName) return [];
+        
+        // Tentar achar o cliente pelo telefone primeiro
+        const client = clients.find(c => 
+            (formData.clientPhone && c.phone === formData.clientPhone) || 
+            (formData.clientName && c.name.toLowerCase() === formData.clientName.toLowerCase())
+        );
+        
+        if (!client) return [];
+        
+        return clientSubscriptions.filter(s => s.clientId === client.id && s.status === 'active');
+    }, [formData.clientPhone, formData.clientName, clients, clientSubscriptions]);
+
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         
@@ -132,6 +159,7 @@ export const AppointmentsPanel: React.FC = () => {
             date: formData.date,
             time: formData.time,
             totalValue: calculateTotal(),
+            usedSubscriptionId: formData.usedSubscriptionId || undefined,
             status: formData.status as 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'noshow',
             paymentMethod: formData.status === 'completed' ? formData.paymentMethod as any : undefined
         });
@@ -153,6 +181,15 @@ export const AppointmentsPanel: React.FC = () => {
         } else {
             showToast(error || 'Erro ao criar agendamento.', 'error');
         }
+    };
+
+    const getClientActiveSubscription = (clientPhone: string, clientName: string) => {
+        const client = clients.find(c => 
+            (clientPhone && c.phone === clientPhone) || 
+            (clientName && c.name.toLowerCase() === clientName.toLowerCase())
+        );
+        if (!client) return null;
+        return clientSubscriptions.find(s => s.clientId === client.id && s.status === 'active');
     };
 
     const STATUS_COLORS: Record<string, string> = {
@@ -271,6 +308,30 @@ export const AppointmentsPanel: React.FC = () => {
                                             <option value="pix">PIX</option>
                                             <option value="credit">Cartão de Crédito</option>
                                             <option value="cash">Dinheiro</option>
+                                            {availableSubscriptions.length > 0 && (
+                                                <option value="subscription">Assinatura</option>
+                                            )}
+                                        </select>
+                                    </div>
+                                )}
+                                {formData.paymentMethod === 'subscription' && availableSubscriptions.length > 0 && (
+                                    <div className="flex-1 w-full">
+                                        <label className="block text-sm text-slate-500 mb-1">Qual Assinatura?</label>
+                                        <select 
+                                            value={formData.usedSubscriptionId} 
+                                            onChange={e => setFormData({...formData, usedSubscriptionId: e.target.value})} 
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-orange-500"
+                                            required
+                                        >
+                                            <option value="">Selecione a assinatura</option>
+                                            {availableSubscriptions.map(sub => {
+                                                const plan = subscriptionPlans.find(p => p.id === sub.planId);
+                                                return (
+                                                    <option key={sub.id} value={sub.id}>
+                                                        {plan?.name} ({sub.servicesUsedThisMonth}/{plan?.servicesPerMonth} usados)
+                                                    </option>
+                                                );
+                                            })}
                                         </select>
                                     </div>
                                 )}
@@ -470,12 +531,23 @@ export const AppointmentsPanel: React.FC = () => {
                                                     {apt.status === 'completed' ? (
                                                         <select 
                                                             value={apt.paymentMethod || 'pix'}
-                                                            onChange={(e) => updateAppointmentPaymentMethod(apt.id, e.target.value)}
+                                                            onChange={(e) => {
+                                                                const method = e.target.value;
+                                                                let subId = undefined;
+                                                                if (method === 'subscription') {
+                                                                    const sub = getClientActiveSubscription(apt.clientPhone, apt.clientName);
+                                                                    subId = sub?.id;
+                                                                }
+                                                                updateAppointmentPaymentMethod(apt.id, method, subId);
+                                                            }}
                                                             className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100 transition-colors"
                                                         >
                                                             <option value="pix">PIX</option>
                                                             <option value="credit">Cartão</option>
                                                             <option value="cash">Dinheiro</option>
+                                                            {getClientActiveSubscription(apt.clientPhone, apt.clientName) && (
+                                                                <option value="subscription">Assinatura</option>
+                                                            )}
                                                         </select>
                                                     ) : (
                                                         <span className="text-slate-400 text-xs">-</span>
@@ -611,12 +683,23 @@ export const AppointmentsPanel: React.FC = () => {
                                                 {apt.status === 'completed' && (
                                                     <select 
                                                         value={apt.paymentMethod || 'pix'}
-                                                        onChange={(e) => updateAppointmentPaymentMethod(apt.id, e.target.value)}
+                                                        onChange={(e) => {
+                                                            const method = e.target.value;
+                                                            let subId = undefined;
+                                                            if (method === 'subscription') {
+                                                                const sub = getClientActiveSubscription(apt.clientPhone, apt.clientName);
+                                                                subId = sub?.id;
+                                                            }
+                                                            updateAppointmentPaymentMethod(apt.id, method, subId);
+                                                        }}
                                                         className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded-lg p-1.5 focus:outline-none focus:border-orange-500"
                                                     >
                                                         <option value="pix">PIX</option>
                                                         <option value="credit">Cartão</option>
                                                         <option value="cash">Dinheiro</option>
+                                                        {getClientActiveSubscription(apt.clientPhone, apt.clientName) && (
+                                                            <option value="subscription">Assinatura</option>
+                                                        )}
                                                     </select>
                                                 )}
                                                 <select 

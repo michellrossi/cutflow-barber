@@ -97,9 +97,10 @@ export interface Appointment {
   time: string; // HH:mm
   totalValue: number;
   couponCode?: string;
+  usedSubscriptionId?: string;
   createdAt: string;
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'noshow';
-  paymentMethod?: 'pix' | 'credit' | 'cash';
+  paymentMethod?: 'pix' | 'credit' | 'cash' | 'subscription';
 }
 
 export interface ShopSettings {
@@ -149,6 +150,29 @@ export interface MessageTemplate {
   active: boolean;
 }
 
+export interface SubscriptionPlan {
+  id: string;
+  shopId: string;
+  name: string;
+  description: string;
+  price: number;
+  servicesPerMonth: number;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface ClientSubscription {
+  id: string;
+  shopId: string;
+  clientId: string;
+  planId: string;
+  status: 'active' | 'pending' | 'inactive' | 'cancelled';
+  startDate: string;
+  nextBillingDate: string;
+  servicesUsedThisMonth: number;
+  createdAt: string;
+}
+
 export interface ShopState {
   shop: Shop | null;
   services: Service[];
@@ -156,6 +180,8 @@ export interface ShopState {
   coupons: Coupon[];
   appointments: Appointment[];
   clients: Client[]; // Nova lista de clientes
+  subscriptionPlans: SubscriptionPlan[]; // [NOVO] Planos de Assinatura
+  clientSubscriptions: ClientSubscription[]; // [NOVO] Assinaturas de Clientes
   messageTemplates: MessageTemplate[]; // [NOVO] Modelos de Mensagem
   blockedSlots: BlockedSlot[];
   settings: ShopSettings;

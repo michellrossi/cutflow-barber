@@ -14,10 +14,11 @@ import { SettingsPanel, SettingsTab } from './panels/SettingsPanel';
 import { LoyaltyPanel } from './panels/LoyaltyPanel';
 import { InsightPanel } from './panels/InsightPanel';
 import { RemindersPanel } from './panels/RemindersPanel';
+import { SubscriptionsPanel } from './panels/SubscriptionsPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
 import { PaymentModal } from '../billing/PaymentModal';
 
-type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders';
+type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions';
 
 type TeamSubTab = 'list' | 'schedules' | 'blocks';
 
@@ -89,6 +90,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'settings': return <SettingsPanel initialTab={settingsSubTab} onTabChange={setSettingsSubTab} />;
       case 'insight': return <InsightPanel />;
       case 'reminders': return <RemindersPanel />;
+      case 'subscriptions': return <SubscriptionsPanel />;
       default: return <DashboardPanel />;
     }
   };
@@ -106,6 +108,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'settings': return 'Configurações';
           case 'insight': return 'Insights com IA';
           case 'reminders': return 'Lembretes';
+          case 'subscriptions': return 'Assinaturas';
       }
   }
 
@@ -183,6 +186,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} />
           <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => handleTabChange('coupons')} />
           <SidebarItem icon={<CalendarCheck size={20} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} />
+          <SidebarItem icon={<CreditCard size={20} />} label="Assinaturas" active={activeTab === 'subscriptions'} onClick={() => handleTabChange('subscriptions')} />
           <SidebarItem icon={<MessageSquare size={20} />} label="Lembretes" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} />
           <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} />
           <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => handleTabChange('loyalty')} />
