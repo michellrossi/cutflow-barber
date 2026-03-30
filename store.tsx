@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client } from './types';
+import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate } from './types';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import DOMPurify from 'dompurify';
@@ -46,6 +46,10 @@ interface ShopContextType extends ShopState {
   addClient: (client: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
   updateClient: (id: string, client: Partial<Client>) => MutationResult;
   removeClient: (id: string) => MutationResult;
+
+  addMessageTemplate: (template: Omit<MessageTemplate, 'id' | 'shopId'>) => MutationResult;
+  updateMessageTemplate: (id: string, template: Partial<MessageTemplate>) => MutationResult;
+  removeMessageTemplate: (id: string) => MutationResult;
 
   updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
   
@@ -101,6 +105,7 @@ const INITIAL_STATE: ShopState = {
   coupons: [],
   appointments: [],
   clients: [],
+  messageTemplates: [],
   blockedSlots: [],
   currentClient: null,
   clientSession: null,
@@ -248,6 +253,17 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       startTime: data.start_time,
       endTime: data.end_time,
       reason: data.reason
+  });
+
+  const mapMessageTemplate = (data: any): MessageTemplate => ({
+      id: data.id,
+      shopId: data.shop_id,
+      title: data.title,
+      content: data.content,
+      trigger: data.trigger,
+      delayValue: data.delay_value || 0,
+      delayUnit: data.delay_unit || 'minutes',
+      active: data.active
   });
 
   // --- Logic for Trial Calculation ---
@@ -398,13 +414,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Executa queries de configurações e dados estáticos em paralelo
-        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes] = await Promise.all([
+        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes] = await Promise.all([
             supabase.from('settings').select('*').eq('shop_id', shopId).single(),
             supabase.from('services').select('*').eq('shop_id', shopId),
             supabase.from('professionals').select('*').eq('shop_id', shopId),
             supabase.from('coupons').select('*').eq('shop_id', shopId),
             supabase.from('blocked_slots').select('*').eq('shop_id', shopId),
-            supabase.from('clients').select('*').eq('shop_id', shopId)
+            supabase.from('clients').select('*').eq('shop_id', shopId),
+            supabase.from('message_templates').select('*').eq('shop_id', shopId)
         ]);
 
         // OTIMIZAÇÃO: Carregar apenas agendamentos recentes e futuros
@@ -465,6 +482,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             coupons: (couponsRes.data || []).map(mapCoupon),
             appointments: appointmentsData,
             clients: mappedClients,
+            messageTemplates: (templatesRes.data || []).map(mapMessageTemplate),
             blockedSlots: (blocksRes.data || []).map(mapBlockedSlot),
             trialStatus: trialInfo.status,
             daysRemaining: trialInfo.days
@@ -1176,6 +1194,69 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const addMessageTemplate = async (template: Omit<MessageTemplate, 'id' | 'shopId'>): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { data, error } = await supabase.from('message_templates').insert({
+            shop_id: shopId,
+            title: sanitize(template.title),
+            content: template.content, // Not sanitizing to allow variables like [CLIENTE]
+            trigger: template.trigger,
+            delay_value: template.delayValue,
+            delay_unit: template.delayUnit,
+            active: template.active
+        }).select().single();
+
+        if (error) throw error;
+        
+        const newTemplate = mapMessageTemplate(data);
+        setState(prev => ({ ...prev, messageTemplates: [...prev.messageTemplates, newTemplate] }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const updateMessageTemplate = async (id: string, template: Partial<MessageTemplate>): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const updateData: any = {};
+        if (template.title !== undefined) updateData.title = sanitize(template.title);
+        if (template.content !== undefined) updateData.content = template.content;
+        if (template.trigger !== undefined) updateData.trigger = template.trigger;
+        if (template.delayValue !== undefined) updateData.delay_value = template.delayValue;
+        if (template.delayUnit !== undefined) updateData.delay_unit = template.delayUnit;
+        if (template.active !== undefined) updateData.active = template.active;
+
+        const { error } = await supabase.from('message_templates').update(updateData).eq('id', id).eq('shop_id', shopId);
+        if (error) throw error;
+
+        setState(prev => ({
+            ...prev,
+            messageTemplates: prev.messageTemplates.map(t => t.id === id ? { ...t, ...template } : t)
+        }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const removeMessageTemplate = async (id: string): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { error } = await supabase.from('message_templates').delete().eq('id', id).eq('shop_id', shopId);
+        if (error) throw error;
+
+        setState(prev => ({
+            ...prev,
+            messageTemplates: prev.messageTemplates.filter(t => t.id !== id)
+        }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
   const addBlockedSlot = async (block: Omit<BlockedSlot, 'id' | 'shopId'>): MutationResult => {
     try {
         const shopId = ensureShopId();
@@ -1457,6 +1538,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateAppointmentStatus,
       updateAppointmentPaymentMethod,
       addClient, updateClient, removeClient,
+      addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
       addBlockedSlot, removeBlockedSlot,
       updateSettings,
       getWhatsAppQRCode,

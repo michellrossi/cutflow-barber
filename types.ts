@@ -138,6 +138,17 @@ export interface BlockedSlot {
   reason?: string;
 }
 
+export interface MessageTemplate {
+  id: string;
+  shopId: string;
+  title: string;
+  content: string;
+  trigger: 'immediate_confirmation' | 'appointment_reminder' | 'rescheduling_request' | 'post_sale' | 'custom';
+  delayValue: number;
+  delayUnit: 'minutes' | 'hours' | 'days';
+  active: boolean;
+}
+
 export interface ShopState {
   shop: Shop | null;
   services: Service[];
@@ -145,6 +156,7 @@ export interface ShopState {
   coupons: Coupon[];
   appointments: Appointment[];
   clients: Client[]; // Nova lista de clientes
+  messageTemplates: MessageTemplate[]; // [NOVO] Modelos de Mensagem
   blockedSlots: BlockedSlot[];
   settings: ShopSettings;
   // [NOVO] Estado do Cliente Logado

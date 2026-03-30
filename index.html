@@ -197,7 +197,7 @@
       input::placeholder { color: #94a3b8 !important; }
 
       /* Botões e Navegação no modo claro */
-      button.bg-primary, button[style*="background-color"] {
+      button.bg-primary, button[style*="background-color"]:not(.color-picker-btn) {
         border-radius: 12px !important;
         box-shadow: 0 4px 12px rgba(247, 127, 48, 0.3) !important;
         background: linear-gradient(to bottom right, #f77f30, #ea580c) !important;
@@ -251,6 +251,12 @@
       
       /* Active states in button groups */
       .bg-slate-700.text-white { background-color: #0f172a !important; color: #ffffff !important; }
+
+      .color-picker-btn {
+        background-image: none !important;
+        box-shadow: none !important;
+        border-radius: 9999px !important;
+      }
 
       /* Utility Classes */
       .no-scrollbar::-webkit-scrollbar { display: none; }

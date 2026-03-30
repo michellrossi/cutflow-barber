@@ -3,9 +3,10 @@ import { useShop } from '../../../store';
 import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader2, List, Calendar as CalendarIcon, Phone, MessageCircle } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 import { WeeklyCalendar } from './WeeklyCalendar';
+import { formatMessage, getWhatsAppLink } from '../../../utils/messageFormatter';
 
 export const AppointmentsPanel: React.FC = () => {
-    const { appointments, professionals, services, updateAppointmentStatus, updateAppointmentPaymentMethod, createManualAppointment, settings } = useShop();
+    const { appointments, professionals, services, updateAppointmentStatus, updateAppointmentPaymentMethod, createManualAppointment, settings, messageTemplates } = useShop();
     const { showToast } = useToast();
 
     const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
@@ -484,14 +485,27 @@ export const AppointmentsPanel: React.FC = () => {
                                                     <div className="flex items-center justify-end gap-2">
                                                         <button 
                                                             onClick={() => {
-                                                                const message = `Olá ${apt.clientName}, lembrete do seu agendamento na ${settings.shopName || 'Barbearia'} dia ${new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR')} às ${apt.time.substring(0, 5)}. Confirmado?`;
-                                                                const phone = apt.clientPhone.replace(/\D/g, '');
-                                                                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+                                                                const template = messageTemplates.find(t => t.trigger === 'lembrete_agendamento' && t.active) || {
+                                                                    content: `Olá [CLIENTE], lembrete do seu agendamento na [BARBEARIA] dia [DATA] às [HORA]. Confirmado?`
+                                                                };
+                                                                
+                                                                const pro = professionals.find(p => p.id === apt.professionalId);
+                                                                const srvs = services.filter(s => apt.serviceIds.includes(s.id));
+                                                                
+                                                                const message = formatMessage(template.content, {
+                                                                    client: { name: apt.clientName, phone: apt.clientPhone },
+                                                                    appointment: apt,
+                                                                    professional: pro,
+                                                                    services: srvs,
+                                                                    shopName: settings.name
+                                                                });
+                                                                
+                                                                window.open(getWhatsAppLink(apt.clientPhone, message), '_blank');
                                                             }}
-                                                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                            className="p-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors"
                                                             title="Enviar lembrete WhatsApp"
                                                         >
-                                                            <MessageCircle size={16} />
+                                                            <MessageCircle size={14} />
                                                         </button>
                                                         <select 
                                                             value={apt.status}
@@ -567,14 +581,27 @@ export const AppointmentsPanel: React.FC = () => {
                                             <div className="flex items-center gap-2">
                                                 <button 
                                                     onClick={() => {
-                                                        const message = `Olá ${apt.clientName}, lembrete do seu agendamento na ${settings.shopName || 'Barbearia'} dia ${new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR')} às ${apt.time.substring(0, 5)}. Confirmado?`;
-                                                        const phone = apt.clientPhone.replace(/\D/g, '');
-                                                        window.open(`https://wa.me/${phone}?text=${encodeURIComponent(message)}`, '_blank');
+                                                        const template = messageTemplates.find(t => t.trigger === 'lembrete_agendamento' && t.active) || {
+                                                            content: `Olá [CLIENTE], lembrete do seu agendamento na [BARBEARIA] dia [DATA] às [HORA]. Confirmado?`
+                                                        };
+                                                        
+                                                        const pro = professionals.find(p => p.id === apt.professionalId);
+                                                        const srvs = services.filter(s => apt.serviceIds.includes(s.id));
+                                                        
+                                                        const message = formatMessage(template.content, {
+                                                            client: { name: apt.clientName, phone: apt.clientPhone },
+                                                            appointment: apt,
+                                                            professional: pro,
+                                                            services: srvs,
+                                                            shopName: settings.name
+                                                        });
+                                                        
+                                                        window.open(getWhatsAppLink(apt.clientPhone, message), '_blank');
                                                     }}
-                                                    className="p-2 text-green-600 bg-green-50 rounded-lg transition-colors"
+                                                    className="p-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors"
                                                     title="Enviar lembrete WhatsApp"
                                                 >
-                                                    <MessageCircle size={16} />
+                                                    <MessageCircle size={14} />
                                                 </button>
                                                 <div className="font-bold text-lg" style={{ color: settings.primaryColor }}>
                                                     R$ {apt.totalValue.toFixed(2)}

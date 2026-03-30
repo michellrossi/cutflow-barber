@@ -13,10 +13,11 @@ import { ClientsPanel } from './panels/ClientsPanel';
 import { SettingsPanel, SettingsTab } from './panels/SettingsPanel';
 import { LoyaltyPanel } from './panels/LoyaltyPanel';
 import { InsightPanel } from './panels/InsightPanel';
+import { RemindersPanel } from './panels/RemindersPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
 import { PaymentModal } from '../billing/PaymentModal';
 
-type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight';
+type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders';
 
 type TeamSubTab = 'list' | 'schedules' | 'blocks';
 
@@ -87,6 +88,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'loyalty': return <LoyaltyPanel />;
       case 'settings': return <SettingsPanel initialTab={settingsSubTab} onTabChange={setSettingsSubTab} />;
       case 'insight': return <InsightPanel />;
+      case 'reminders': return <RemindersPanel />;
       default: return <DashboardPanel />;
     }
   };
@@ -103,6 +105,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'loyalty': return 'Programa de Fidelidade';
           case 'settings': return 'Configurações';
           case 'insight': return 'Insights com IA';
+          case 'reminders': return 'Lembretes';
       }
   }
 
@@ -180,6 +183,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} />
           <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => handleTabChange('coupons')} />
           <SidebarItem icon={<CalendarCheck size={20} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} />
+          <SidebarItem icon={<MessageSquare size={20} />} label="Lembretes" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} />
           <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} />
           <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => handleTabChange('loyalty')} />
           <SidebarItem icon={<Sparkles size={20} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} />
@@ -354,6 +358,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                     <MobileNavItem icon={<LayoutGrid size={16} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
                     <MobileNavItem icon={<Users size={16} />} label="Equipe" active={activeTab === 'team'} onClick={() => setActiveTab('team')} />
                     <MobileNavItem icon={<CalendarCheck size={16} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => setActiveTab('appointments')} />
+                    <MobileNavItem icon={<MessageSquare size={16} />} label="Lembretes" active={activeTab === 'reminders'} onClick={() => setActiveTab('reminders')} />
                     <MobileNavItem icon={<UserCircle size={16} />} label="Clientes" active={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
                     <MobileNavItem icon={<Award size={16} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => setActiveTab('loyalty')} />
                     <MobileNavItem icon={<DollarSign size={16} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />

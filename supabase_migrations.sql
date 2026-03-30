@@ -91,6 +91,21 @@ ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE services ENABLE ROW LEVEL SECURITY;
 ALTER TABLE professionals ENABLE ROW LEVEL SECURITY;
 
+-- 15. Tabela de Modelos de Mensagem (WhatsApp)
+CREATE TABLE IF NOT EXISTS message_templates (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    shop_id uuid REFERENCES shops(id) ON DELETE CASCADE,
+    title text NOT NULL,
+    content text NOT NULL,
+    trigger text NOT NULL, -- 'immediate_confirmation', 'appointment_reminder', 'rescheduling_request', 'post_sale', 'custom'
+    delay_value integer DEFAULT 0,
+    delay_unit text DEFAULT 'minutes', -- 'minutes', 'hours', 'days'
+    active boolean DEFAULT true,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE message_templates ENABLE ROW LEVEL SECURITY;
+
 -- Políticas para client_auth_tokens
 CREATE POLICY "Permitir inserção de token por qualquer um" ON client_auth_tokens FOR INSERT WITH CHECK (true);
 CREATE POLICY "Permitir leitura de token por qualquer um" ON client_auth_tokens FOR SELECT USING (true);
@@ -110,3 +125,9 @@ CREATE POLICY "Permitir leitura de lojas por qualquer um" ON shops FOR SELECT US
 CREATE POLICY "Permitir leitura de configurações por qualquer um" ON settings FOR SELECT USING (true);
 CREATE POLICY "Permitir leitura de serviços por qualquer um" ON services FOR SELECT USING (true);
 CREATE POLICY "Permitir leitura de profissionais por qualquer um" ON professionals FOR SELECT USING (true);
+
+-- Políticas para message_templates
+CREATE POLICY "Permitir leitura de modelos por qualquer um" ON message_templates FOR SELECT USING (true);
+CREATE POLICY "Permitir inserção de modelos por qualquer um" ON message_templates FOR INSERT WITH CHECK (true);
+CREATE POLICY "Permitir atualização de modelos por qualquer um" ON message_templates FOR UPDATE USING (true);
+CREATE POLICY "Permitir deleção de modelos por qualquer um" ON message_templates FOR DELETE USING (true);

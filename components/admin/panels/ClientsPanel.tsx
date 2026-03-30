@@ -4,6 +4,7 @@ import { Client, Appointment } from '../../../types';
 import { Search, Filter, ChevronRight, MessageCircle, Plus, Star, Edit2, Trash2, X, Save, Phone, Mail, User, Loader2, Eye, Calendar, Clock, DollarSign } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 import { ConfirmationModal } from '../../ui/ConfirmationModal';
+import { formatMessage, getWhatsAppLink } from '../../../utils/messageFormatter';
 
 interface ClientMetrics {
   lastCutDate: string | null;
@@ -19,7 +20,7 @@ interface ProcessedClient extends Client {
 }
 
 export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'medium_risk' | 'vip' | 'new' | 'inactive' }> = ({ initialFilter }) => {
-  const { clients, appointments, addClient, updateClient, removeClient, settings } = useShop();
+  const { clients, appointments, addClient, updateClient, removeClient, settings, messageTemplates, professionals, services } = useShop();
   const { showToast } = useToast();
 
   // State
@@ -357,15 +358,43 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
                     </td>
                     <td className="p-4 text-right">
                       <div className="flex items-center justify-end gap-1.5">
-                        <a 
-                          href={`https://wa.me/${client.phone.replace(/\D/g, '')}?text=Olá ${client.name}!`}
-                          target="_blank"
-                          rel="noreferrer"
+                        <button 
+                          onClick={() => {
+                            const isInactive = client.metrics.daysSinceLastCut > 30;
+                            const trigger = isInactive ? 'recuperacao_cliente' : 'pos_venda_avaliacao';
+                            
+                            const template = messageTemplates.find(t => t.trigger === trigger && t.active) || {
+                              content: isInactive 
+                                ? `Olá [CLIENTE], sentimos sua falta na [BARBEARIA]! Faz tempo que você não vem nos visitar. Que tal agendar um horário?`
+                                : `Olá [CLIENTE], obrigado pela preferência na [BARBEARIA]! Esperamos que tenha gostado do serviço.`
+                            };
+                            
+                            // Find last appointment for data
+                            const clientAppts = appointments.filter(a => 
+                              (a.clientId === client.id) || 
+                              (!a.clientId && a.clientPhone === client.phone)
+                            ).filter(a => a.status === 'completed');
+                            
+                            clientAppts.sort((a, b) => new Date(b.date + 'T' + b.time).getTime() - new Date(a.date + 'T' + a.time).getTime());
+                            const lastAppt = clientAppts[0];
+                            const pro = lastAppt ? professionals.find(p => p.id === lastAppt.professionalId) : undefined;
+                            const srvs = lastAppt ? services.filter(s => lastAppt.serviceIds.includes(s.id)) : [];
+
+                            const message = formatMessage(template.content, {
+                              client: { name: client.name, phone: client.phone },
+                              appointment: lastAppt,
+                              professional: pro,
+                              services: srvs,
+                              shopName: settings.name
+                            });
+                            
+                            window.open(getWhatsAppLink(client.phone, message), '_blank');
+                          }}
                           className="p-1.5 rounded-lg bg-green-50 text-green-600 hover:bg-green-600 hover:text-white transition-colors"
                           title="WhatsApp"
                         >
                           <MessageCircle size={14} />
-                        </a>
+                        </button>
                         <button 
                           onClick={() => handleViewClient(client)}
                           className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white transition-colors"

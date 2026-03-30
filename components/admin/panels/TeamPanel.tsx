@@ -586,7 +586,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                         key={c}
                                         type="button"
                                         onClick={() => setColor(c)}
-                                        className={`w-10 h-10 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center ${color === c ? 'border-slate-900 scale-110 shadow-md' : 'border-slate-200'}`}
+                                        className={`w-10 h-10 rounded-full border-2 transition-all hover:scale-110 flex items-center justify-center color-picker-btn ${color === c ? 'border-slate-900 scale-110 shadow-md' : 'border-slate-200'}`}
                                         style={{ backgroundColor: c }}
                                     >
                                         {color === c && <div className="w-2 h-2 rounded-full bg-white shadow-sm" />}
