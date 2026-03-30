@@ -127,13 +127,19 @@ async function runCronLogic() {
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
 
+    // Janela máxima para tentar enviar (evita reprocessar registros muito antigos)
+    const maxRetries = 3; // após 3 falhas, desiste
+
+    // =========================================================
     // 1. Lembretes de 24 Horas
+    // =========================================================
     const { data: apts24h } = await supabase
         .from('appointments')
         .select('*, professionals(name), shops(id, name, whatsapp_instance)')
         .in('status', ['confirmed', 'scheduled'])
         .eq('confirmation_sent', true)
         .eq('reminder_24h_sent', false)
+        .lte('send_attempts_24h', maxRetries - 1)
         .lte('date', tomorrowStr);
 
     if (apts24h) {
@@ -145,8 +151,7 @@ async function runCronLogic() {
                 console.log(`[Cron] Enviando lembrete 24h para ${apt.client_name}`);
                 
                 const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
-                const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
-
+                const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
                 const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
                 const formattedTime = apt.time.substring(0, 5);
 
@@ -160,21 +165,29 @@ async function runCronLogic() {
                 }, apt.shop_id, 24, 'hours');
 
                 const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
+                
                 if (ok) {
-                    const { error } = await supabase.from('appointments').update({ reminder_24h_sent: true }).eq('id', apt.id);
-                    if (error) console.error(`[Cron] Erro ao atualizar reminder_24h_sent para ${apt.id}:`, error);
+                    await supabase.from('appointments').update({ reminder_24h_sent: true }).eq('id', apt.id);
+                } else {
+                    // Incrementa contador de tentativas para não ficar em loop eterno
+                    const attempts = (apt.send_attempts_24h || 0) + 1;
+                    await supabase.from('appointments').update({ send_attempts_24h: attempts }).eq('id', apt.id);
+                    console.warn(`[Cron] Falha ao enviar lembrete 24h para ${apt.client_name} (tentativa ${attempts}/${maxRetries})`);
                 }
             }
         }
     }
 
+    // =========================================================
     // 2. Lembretes de 1 Hora
+    // =========================================================
     const { data: apts1h } = await supabase
         .from('appointments')
         .select('*, professionals(name), shops(id, name, whatsapp_instance)')
         .in('status', ['confirmed', 'scheduled'])
         .eq('confirmation_sent', true)
         .eq('reminder_1h_sent', false)
+        .lte('send_attempts_1h', maxRetries - 1)
         .eq('date', todayStr);
 
     if (apts1h) {
@@ -186,8 +199,7 @@ async function runCronLogic() {
                 console.log(`[Cron] Enviando lembrete 1h para ${apt.client_name}`);
                 
                 const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
-                const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
-
+                const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
                 const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
                 const formattedTime = apt.time.substring(0, 5);
 
@@ -201,28 +213,39 @@ async function runCronLogic() {
                 }, apt.shop_id, 1, 'hours');
 
                 const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
+                
                 if (ok) {
-                    const { error } = await supabase.from('appointments').update({ reminder_1h_sent: true }).eq('id', apt.id);
-                    if (error) console.error(`[Cron] Erro ao atualizar reminder_1h_sent para ${apt.id}:`, error);
+                    await supabase.from('appointments').update({ reminder_1h_sent: true }).eq('id', apt.id);
+                } else {
+                    const attempts = (apt.send_attempts_1h || 0) + 1;
+                    await supabase.from('appointments').update({ send_attempts_1h: attempts }).eq('id', apt.id);
+                    console.warn(`[Cron] Falha ao enviar lembrete 1h para ${apt.client_name} (tentativa ${attempts}/${maxRetries})`);
                 }
             }
         }
     }
 
-    // 3. Solicitação de Reagendamento (No-show ou Cancelado)
+    // =========================================================
+    // 3. Reagendamento (No-show ou Cancelado)
+    // Janela: até 48h após a data do agendamento
+    // =========================================================
+    const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
+    const twoDaysAgoStr = twoDaysAgo.toISOString().split('T')[0];
+
     const { data: aptsReschedule } = await supabase
         .from('appointments')
         .select('*, professionals(name), shops(id, name, whatsapp_instance)')
         .in('status', ['cancelled', 'noshow'])
-        .eq('rescheduling_sent', false);
+        .eq('rescheduling_sent', false)
+        .lte('send_attempts_reschedule', maxRetries - 1)
+        .gte('date', twoDaysAgoStr); // Apenas agendamentos das últimas 48h
 
     if (aptsReschedule) {
         for (const apt of aptsReschedule) {
             console.log(`[Cron] Enviando solicitação de reagendamento para ${apt.client_name}`);
             
             const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
-            const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
-
+            const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
             const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
             const formattedTime = apt.time.substring(0, 5);
 
@@ -236,32 +259,39 @@ async function runCronLogic() {
             }, apt.shop_id, 0, 'minutes');
 
             const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
+            
             if (ok) {
-                const { error } = await supabase.from('appointments').update({ rescheduling_sent: true }).eq('id', apt.id);
-                if (error) console.error(`[Cron] Erro ao atualizar rescheduling_sent para ${apt.id}:`, error);
+                await supabase.from('appointments').update({ rescheduling_sent: true }).eq('id', apt.id);
+            } else {
+                const attempts = (apt.send_attempts_reschedule || 0) + 1;
+                await supabase.from('appointments').update({ send_attempts_reschedule: attempts }).eq('id', apt.id);
+                console.warn(`[Cron] Falha ao enviar reagendamento para ${apt.client_name} (tentativa ${attempts}/${maxRetries})`);
             }
         }
     }
 
-    // 4. Pós-venda e Avaliação (Concluído)
+    // =========================================================
+    // 4. Pós-venda (Concluído)
+    // Janela: entre 2h e 24h após o horário do agendamento
+    // =========================================================
     const { data: aptsPostSale } = await supabase
         .from('appointments')
         .select('*, professionals(name), shops(id, name, whatsapp_instance)')
         .eq('status', 'completed')
-        .eq('post_sale_sent', false);
+        .eq('post_sale_sent', false)
+        .lte('send_attempts_postsale', maxRetries - 1)
+        .eq('date', todayStr); // Apenas agendamentos de HOJE
 
     if (aptsPostSale) {
         for (const apt of aptsPostSale) {
             const aptDateTime = new Date(`${apt.date}T${apt.time}`);
             const diffMinutes = (now.getTime() - aptDateTime.getTime()) / (1000 * 60);
 
-            // Se passou mais de 2 horas (120 min) e menos de 24 horas
             if (diffMinutes >= 120 && diffMinutes < 1440) {
                 console.log(`[Cron] Enviando pós-venda para ${apt.client_name}`);
                 
                 const { data: servicesData } = await supabase.from('services').select('name').in('id', apt.service_ids || []);
-                const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
-
+                const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
                 const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
                 const formattedTime = apt.time.substring(0, 5);
 
@@ -275,20 +305,27 @@ async function runCronLogic() {
                 }, apt.shop_id, 2, 'hours');
 
                 const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
+                
                 if (ok) {
-                    const { error } = await supabase.from('appointments').update({ post_sale_sent: true }).eq('id', apt.id);
-                    if (error) console.error(`[Cron] Erro ao atualizar post_sale_sent para ${apt.id}:`, error);
+                    await supabase.from('appointments').update({ post_sale_sent: true }).eq('id', apt.id);
+                } else {
+                    const attempts = (apt.send_attempts_postsale || 0) + 1;
+                    await supabase.from('appointments').update({ send_attempts_postsale: attempts }).eq('id', apt.id);
+                    console.warn(`[Cron] Falha ao enviar pós-venda para ${apt.client_name} (tentativa ${attempts}/${maxRetries})`);
                 }
             }
         }
     }
 
-    // 5. Retenção 30 Dias (Clientes que não agendaram há 30 dias)
+    // =========================================================
+    // 5. Retenção 30 Dias
+    // =========================================================
     const { data: apts30d } = await supabase
         .from('appointments')
         .select('*, shops(id, name, whatsapp_instance)')
         .eq('status', 'completed')
         .eq('reminder_30d_sent', false)
+        .lte('send_attempts_30d', maxRetries - 1)
         .eq('date', thirtyDaysAgoStr);
 
     if (apts30d) {
@@ -301,9 +338,13 @@ async function runCronLogic() {
             }, apt.shop_id, 30, 'days');
 
             const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
+            
             if (ok) {
-                const { error } = await supabase.from('appointments').update({ reminder_30d_sent: true }).eq('id', apt.id);
-                if (error) console.error(`[Cron] Erro ao atualizar reminder_30d_sent para ${apt.id}:`, error);
+                await supabase.from('appointments').update({ reminder_30d_sent: true }).eq('id', apt.id);
+            } else {
+                const attempts = (apt.send_attempts_30d || 0) + 1;
+                await supabase.from('appointments').update({ send_attempts_30d: attempts }).eq('id', apt.id);
+                console.warn(`[Cron] Falha ao enviar lembrete 30d para ${apt.client_name} (tentativa ${attempts}/${maxRetries})`);
             }
         }
     }

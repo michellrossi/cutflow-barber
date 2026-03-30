@@ -55,10 +55,15 @@ ADD COLUMN IF NOT EXISTS client_id UUID REFERENCES public.clients(id) ON DELETE 
 ALTER TABLE public.appointments 
 ADD COLUMN IF NOT EXISTS confirmation_sent BOOLEAN DEFAULT false,
 ADD COLUMN IF NOT EXISTS reminder_24h_sent BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS send_attempts_24h INTEGER DEFAULT 0,
 ADD COLUMN IF NOT EXISTS reminder_1h_sent BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS send_attempts_1h INTEGER DEFAULT 0,
 ADD COLUMN IF NOT EXISTS rescheduling_sent BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS send_attempts_reschedule INTEGER DEFAULT 0,
 ADD COLUMN IF NOT EXISTS post_sale_sent BOOLEAN DEFAULT false,
-ADD COLUMN IF NOT EXISTS reminder_30d_sent BOOLEAN DEFAULT false;
+ADD COLUMN IF NOT EXISTS send_attempts_postsale INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS reminder_30d_sent BOOLEAN DEFAULT false,
+ADD COLUMN IF NOT EXISTS send_attempts_30d INTEGER DEFAULT 0;
 
 -- Nova Tabela: Modelos de Mensagens (WhatsApp)
 CREATE TABLE IF NOT EXISTS public.message_templates (
@@ -85,7 +90,6 @@ CREATE TABLE IF NOT EXISTS public.client_auth_tokens (
 -- ==========================================================
 -- 2. ÍNDICES E CONSTRAINTS
 -- ==========================================================
--- Garante que não existam agendamentos duplicados no mesmo horário para profissionais
 DROP INDEX IF EXISTS idx_agendamento_unico_ativo;
 CREATE UNIQUE INDEX idx_agendamento_unico_ativo 
 ON public.appointments (shop_id, professional_id, date, time)
@@ -96,11 +100,6 @@ CREATE INDEX IF NOT EXISTS idx_message_templates_shop_id ON public.message_templ
 -- ==========================================================
 -- 3. FUNÇÕES (BOOKING E FINANCEIRO)
 -- ==========================================================
--- Limpeza de funções antigas para evitar conflitos de candidatos (ERRO 42601)
-DROP FUNCTION IF EXISTS public.book_appointment(uuid, text, text, text[], uuid, text, text, numeric, text);
-DROP FUNCTION IF EXISTS public.book_appointment(uuid, text, text, uuid[], uuid, date, time, numeric, text);
-
--- Função principal de agendamento com Escudo (Rate Limit)
 CREATE OR REPLACE FUNCTION public.book_appointment(
   p_shop_id UUID, p_client_name TEXT, p_client_phone TEXT, p_service_ids TEXT[],
   p_professional_id UUID, p_date TEXT, p_time TEXT, p_total_value NUMERIC,
@@ -110,7 +109,6 @@ DECLARE
   v_appointment_id UUID;
   v_daily_count INTEGER;
 BEGIN
-  -- Rate Limit: Máximo 3 agendamentos por dia por telefone
   SELECT COUNT(*) INTO v_daily_count FROM public.appointments
   WHERE shop_id = p_shop_id AND client_phone = p_client_phone AND DATE(created_at) = CURRENT_DATE;
 
@@ -132,7 +130,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Função para atualizar gastos do cliente automaticamente
 CREATE OR REPLACE FUNCTION update_client_total_spent() RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'UPDATE' AND NEW.status = 'completed' AND OLD.status != 'completed') OR (TG_OP = 'INSERT' AND NEW.status = 'completed') THEN
@@ -153,7 +150,7 @@ AFTER INSERT OR UPDATE OR DELETE ON public.appointments
 FOR EACH ROW EXECUTE FUNCTION update_client_total_spent();
 
 -- ==========================================================
--- 5. POLÍTICAS DE SEGURANÇA (RLS) - CONSOLIDADO
+-- 5. POLÍTICAS DE SEGURANÇA (RLS)
 -- ==========================================================
 ALTER TABLE public.shops ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;
@@ -163,7 +160,6 @@ ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.message_templates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.client_auth_tokens ENABLE ROW LEVEL SECURITY;
 
--- Lojas e Serviços (Acesso Público para Clientes)
 DROP POLICY IF EXISTS "Visibilidade Publica Lojas" ON public.shops;
 CREATE POLICY "Visibilidade Publica Lojas" ON public.shops FOR SELECT USING (true);
 
@@ -173,7 +169,6 @@ CREATE POLICY "Publico_Ve_Servicos" ON public.services FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Publico_Ve_Profissionais" ON public.professionals;
 CREATE POLICY "Publico_Ve_Profissionais" ON public.professionals FOR SELECT USING (true);
 
--- Gestão do Dono (Apenas o owner_id gerencia sua loja)
 DROP POLICY IF EXISTS "Dono_Gere_Loja" ON public.shops;
 CREATE POLICY "Dono_Gere_Loja" ON public.shops FOR ALL USING (auth.uid() = owner_id);
 
@@ -183,22 +178,36 @@ CREATE POLICY "Dono_Gere_Servicos" ON public.services FOR ALL USING (EXISTS (SEL
 DROP POLICY IF EXISTS "Dono_Gere_Agendamentos" ON public.appointments;
 CREATE POLICY "Dono_Gere_Agendamentos" ON public.appointments FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = appointments.shop_id AND owner_id = auth.uid()));
 
--- Agendamentos e Paywall (O cliente agenda se a loja tiver plano ativo)
 DROP POLICY IF EXISTS "Criar Agendamento Paywall" ON public.appointments;
 CREATE POLICY "Criar Agendamento Paywall" ON public.appointments FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.shops WHERE id = appointments.shop_id AND plan IN ('active', 'trial')));
 
 DROP POLICY IF EXISTS "Publico_Le_Agendamentos" ON public.appointments;
 CREATE POLICY "Publico_Le_Agendamentos" ON public.appointments FOR SELECT USING (true);
 
--- Permite que o servidor (anon) atualize flags de notificação
 DROP POLICY IF EXISTS "Servidor_Atualiza_Flags" ON public.appointments;
 CREATE POLICY "Servidor_Atualiza_Flags" ON public.appointments 
 FOR UPDATE USING (true) 
 WITH CHECK (true);
 
--- Tokens e Templates
 DROP POLICY IF EXISTS "Tokens_Acesso_Publico" ON public.client_auth_tokens;
 CREATE POLICY "Tokens_Acesso_Publico" ON public.client_auth_tokens FOR ALL USING (true);
 
 DROP POLICY IF EXISTS "Dono_Gere_Templates" ON public.message_templates;
 CREATE POLICY "Dono_Gere_Templates" ON public.message_templates FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = message_templates.shop_id AND owner_id = auth.uid()));
+
+-- ==========================================================
+-- 6. MANUTENÇÃO E LIMPEZA (OPCIONAL)
+-- ==========================================================
+-- Limpa registros antigos que ficaram presos em loop de notificações pendentes
+
+-- UPDATE public.appointments
+-- SET rescheduling_sent = true
+-- WHERE status IN ('cancelled', 'noshow')
+--   AND rescheduling_sent = false
+--   AND date < CURRENT_DATE - INTERVAL '3 days';
+
+-- UPDATE public.appointments
+-- SET post_sale_sent = true
+-- WHERE status = 'completed'
+--   AND post_sale_sent = false
+--   AND date < CURRENT_DATE - INTERVAL '1 day';
