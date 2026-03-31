@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useShop } from '../../../store';
 import { Coupon } from '../../../types';
 import { ConfirmationModal } from '../../ui/ConfirmationModal';
-import { Plus, X, Loader2, Trash2, Calendar } from 'lucide-react';
+import { Plus, X, Loader2, Trash2, Calendar, LayoutGrid, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 
 export const CouponsPanel: React.FC = () => {
@@ -114,23 +114,23 @@ export const CouponsPanel: React.FC = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-6 border-b border-slate-200 mb-8">
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
                 {[
-                    { id: 'all', label: 'Todos' },
-                    { id: 'active', label: 'Ativos' },
-                    { id: 'expired', label: 'Expirados' }
+                    { id: 'all', label: 'Todos', icon: <LayoutGrid size={18} /> },
+                    { id: 'active', label: 'Ativos', icon: <CheckCircle size={18} /> },
+                    { id: 'expired', label: 'Expirados', icon: <XCircle size={18} /> }
                 ].map(tab => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
-                        className={`pb-4 text-sm transition-all relative whitespace-nowrap ${
-                            activeTab === tab.id ? 'text-slate-900 font-bold' : 'text-slate-500 font-medium hover:text-slate-700'
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+                            activeTab === tab.id 
+                            ? 'bg-white text-orange-600 shadow-sm' 
+                            : 'text-slate-500 hover:text-slate-700'
                         }`}
                     >
+                        {tab.icon}
                         {tab.label}
-                        {activeTab === tab.id && (
-                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-orange-500 rounded-full" />
-                        )}
                     </button>
                 ))}
             </div>

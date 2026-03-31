@@ -1,15 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useShop } from '../../../store';
 import { supabase } from '../../../supabaseClient';
 import { Service } from '../../../types';
 import { ConfirmationModal } from '../../ui/ConfirmationModal';
-import { Plus, Edit2, Trash2, CalendarCheck, Loader2, X, Clock, Image as ImageIcon, Sparkles, Upload } from 'lucide-react';
+import { Plus, Edit2, Trash2, CalendarCheck, Loader2, X, Clock, Image as ImageIcon, Sparkles, Upload, LayoutGrid, Tags } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 
 export const ServicesPanel: React.FC = () => {
     const { services, addService, updateService, removeService, settings } = useShop();
     const { showToast } = useToast();
 
+    const [activeCategory, setActiveCategory] = useState('Todos');
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -30,6 +31,20 @@ export const ServicesPanel: React.FC = () => {
 
     // Categorias disponíveis
     const CATEGORIES = ['Cortes', 'Barba', 'Combos', 'Química', 'Estética', 'Outros'];
+
+    const allCategories = useMemo(() => {
+        const cats = new Set(['Todos']);
+        CATEGORIES.forEach(cat => cats.add(cat));
+        services.forEach(s => {
+            if (s.category) cats.add(s.category);
+        });
+        return Array.from(cats);
+    }, [services]);
+
+    const filteredServices = useMemo(() => {
+        if (activeCategory === 'Todos') return services;
+        return services.filter(s => s.category === activeCategory);
+    }, [services, activeCategory]);
 
     const generateAIImage = async () => {
         if (!formData.name) {
@@ -235,6 +250,37 @@ export const ServicesPanel: React.FC = () => {
                     <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Serviços</h2>
                     <p className="text-slate-500 text-sm">Adicione, edite ou remova serviços oferecidos.</p>
                 </div>
+                <button 
+                    onClick={() => { 
+                        setIsFormOpen(true); 
+                        setEditingId(null); 
+                        setIsCustom(false);
+                        setSelectedCat('');
+                        setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes', imageUrl: '' }); 
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors font-medium shadow-lg shadow-orange-200"
+                >
+                    <Plus size={18} />
+                    Novo Serviço
+                </button>
+            </div>
+
+            {/* Sub-menus Internos */}
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
+                {allCategories.map(cat => (
+                    <button
+                        key={cat}
+                        onClick={() => setActiveCategory(cat)}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+                            activeCategory === cat 
+                            ? 'bg-white text-orange-600 shadow-sm' 
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                        {cat === 'Todos' ? <LayoutGrid size={18} /> : <Tags size={18} />}
+                        {cat}
+                    </button>
+                ))}
             </div>
 
             {isFormOpen && (
@@ -392,7 +438,7 @@ export const ServicesPanel: React.FC = () => {
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
-                {services.map(service => (
+                {filteredServices.map(service => (
                     <div key={service.id} className="bg-white rounded-[2rem] border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all shadow-xl">
                         {/* Imagem do Serviço */}
                         <div className="h-48 w-full relative overflow-hidden">

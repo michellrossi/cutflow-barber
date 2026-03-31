@@ -214,12 +214,12 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
             />
 
             {/* Sub-tabs Navigation */}
-            <div className="flex gap-6 border-b border-slate-200 mb-8 overflow-x-auto no-scrollbar">
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
                 {[
-                    { id: 'list', label: 'Profissionais' },
-                    { id: 'schedules', label: 'Horários' },
-                    { id: 'blocks', label: 'Bloqueio de Horários' },
-                    { id: 'report', label: 'Relatório' }
+                    { id: 'list', label: 'Profissionais', icon: <Users size={18} /> },
+                    { id: 'schedules', label: 'Horários', icon: <Clock size={18} /> },
+                    { id: 'blocks', label: 'Bloqueio', icon: <CalendarX size={18} /> },
+                    { id: 'report', label: 'Relatório', icon: <LayoutGrid size={18} /> }
                 ].map(tab => (
                     <button
                         key={tab.id}
@@ -233,14 +233,14 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                             }
                             handleSubTabChange(tab.id as any);
                         }}
-                        className={`pb-4 text-sm transition-all relative whitespace-nowrap ${
-                            subTab === tab.id ? 'text-slate-900 font-bold' : 'text-slate-500 font-medium hover:text-slate-700'
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+                            subTab === tab.id 
+                            ? 'bg-white text-orange-600 shadow-sm' 
+                            : 'text-slate-500 hover:text-slate-700'
                         }`}
                     >
+                        {tab.icon}
                         {tab.label}
-                        {subTab === tab.id && (
-                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-orange-500 rounded-full" />
-                        )}
                     </button>
                 ))}
             </div>
