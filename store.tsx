@@ -1842,6 +1842,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateAppointmentPaymentMethod,
       addClient, updateClient, removeClient,
       addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
+      addMessageCategory, removeMessageCategory,
       addSubscriptionPlan, updateSubscriptionPlan, removeSubscriptionPlan,
       addClientSubscription, updateClientSubscription, removeClientSubscription,
       addBlockedSlot, removeBlockedSlot,

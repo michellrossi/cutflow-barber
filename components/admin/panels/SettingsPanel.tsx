@@ -4,7 +4,7 @@ import { supabase } from '../../../supabaseClient';
 import { Upload, Edit2, Loader2, Store, User, Clock, MessageSquare, Bell, CreditCard, Shield, Smartphone, Globe, CheckCircle2, Info } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 
-export type SettingsTab = 'profile' | 'account' | 'hours' | 'automation' | 'notifications' | 'billing' | 'security' | 'integrations' | 'booking_page';
+export type SettingsTab = 'profile' | 'account' | 'hours' | 'billing' | 'security' | 'booking_page';
 
 interface SettingsPanelProps {
     initialTab?: SettingsTab;
@@ -27,18 +27,47 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ initialTab, onTabC
         }
     };
 
+    const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
+        { id: 'profile', label: 'Perfil', icon: <Store size={18} /> },
+        { id: 'account', label: 'Conta', icon: <User size={18} /> },
+        { id: 'hours', label: 'Horários', icon: <Clock size={18} /> },
+        { id: 'billing', label: 'Assinatura', icon: <CreditCard size={18} /> },
+        { id: 'security', label: 'Segurança', icon: <Shield size={18} /> },
+        { id: 'booking_page', label: 'Link de Agendamento', icon: <Globe size={18} /> },
+    ];
+
     return (
-        <div className="h-full">
+        <div className="p-6 max-w-7xl mx-auto space-y-8">
+            <div>
+                <h1 className="text-2xl font-bold text-slate-900">Configurações</h1>
+                <p className="text-slate-500">Gerencie as configurações da sua barbearia e conta</p>
+            </div>
+
+            {/* Horizontal Tabs */}
+            <div className="flex flex-wrap gap-2 p-1 bg-slate-100 rounded-lg w-fit">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => handleTabChange(tab.id)}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
+                            activeTab === tab.id 
+                            ? 'bg-white text-orange-600 shadow-sm' 
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                        {tab.icon}
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
+
             {/* Settings Content */}
-            <div className="bg-slate-900 border border-slate-800 rounded-lg p-6 overflow-y-auto h-full">
+            <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-sm">
                 {activeTab === 'profile' && <ProfileSettings />}
                 {activeTab === 'account' && <AccountSettings />}
                 {activeTab === 'hours' && <HoursSettings />}
-                {activeTab === 'automation' && <AutomationSettings />}
-                {activeTab === 'notifications' && <NotificationSettings />}
                 {activeTab === 'billing' && <BillingSettings />}
                 {activeTab === 'security' && <SecuritySettings />}
-                {activeTab === 'integrations' && <IntegrationsSettings />}
                 {activeTab === 'booking_page' && <BookingPageSettings />}
             </div>
         </div>
@@ -75,32 +104,32 @@ const AccountSettings: React.FC = () => {
     return (
         <div className="max-w-2xl">
             <div className="mb-8">
-                <h3 className="text-xl font-bold text-white mb-2">Minha Conta</h3>
-                <p className="text-slate-400">Gerencie as informações básicas da sua barbearia.</p>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Minha Conta</h3>
+                <p className="text-slate-500">Gerencie as informações básicas da sua barbearia.</p>
             </div>
 
             <div className="space-y-6">
                 <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">E-mail do Proprietário</label>
-                    <input disabled value={session?.user.email} className="w-full bg-slate-950 border border-slate-800 rounded-md p-4 text-slate-500 cursor-not-allowed" />
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">E-mail do Proprietário</label>
+                    <input disabled value={session?.user.email} className="w-full bg-slate-50 border border-slate-200 rounded-md p-4 text-slate-400 cursor-not-allowed" />
                 </div>
 
                 <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">URL da Barbearia (Slug)</label>
-                    <div className="flex items-center gap-2 bg-slate-950 border border-slate-700 rounded-md p-4">
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">URL da Barbearia (Slug)</label>
+                    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-md p-4">
                         <span className="text-slate-500 text-sm">cutflow.com/</span>
                         <input 
                             value={slug} 
                             onChange={e => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))} 
-                            className="flex-1 bg-transparent text-white focus:outline-none font-bold" 
+                            className="flex-1 bg-transparent text-slate-900 focus:outline-none font-bold" 
                             placeholder="nome-da-sua-barbearia"
                         />
                     </div>
                     <p className="text-xs text-slate-500 mt-2">Este é o link que você enviará para seus clientes agendarem.</p>
                 </div>
 
-                <div className="pt-6 border-t border-slate-800">
-                    <button onClick={handleSave} className="px-8 py-3 bg-green-600 hover:bg-green-500 text-white rounded-md font-bold transition-all flex items-center gap-2" disabled={isSaving}>
+                <div className="pt-6 border-t border-slate-100">
+                    <button onClick={handleSave} className="px-8 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-md font-bold transition-all flex items-center gap-2 shadow-lg shadow-orange-100" disabled={isSaving}>
                         {isSaving && <Loader2 size={18} className="animate-spin" />}
                         Salvar Alterações
                     </button>

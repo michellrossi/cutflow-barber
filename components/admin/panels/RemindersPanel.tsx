@@ -1,22 +1,74 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useShop } from '../../../store';
-import { MessageSquare, Plus, Save, Trash2, Bell, Clock, CheckCircle, RefreshCw, Eye, Copy, Info, Sparkles, Users, UserCheck, Tags, Smile } from 'lucide-react';
+import { MessageSquare, Plus, Save, Trash2, Bell, Clock, CheckCircle, RefreshCw, Eye, Copy, Info, Sparkles, Users, UserCheck, Tags, Smile, Smartphone, Loader2 } from 'lucide-react';
 import { MessageTemplate, MessageCategory } from '../../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
+import { useToast } from '../../ui/ToastContext';
 
 export const RemindersPanel: React.FC = () => {
     const { 
         messageTemplates, addMessageTemplate, updateMessageTemplate, removeMessageTemplate, 
         messageCategories, addMessageCategory, removeMessageCategory,
-        settings, professionals, services, shop 
+        settings, professionals, services, shop,
+        getWhatsAppQRCode, getWhatsAppStatus, disconnectWhatsApp
     } = useShop();
+    const { showToast } = useToast();
     
-    const [activeTab, setActiveTab] = useState<'clients' | 'team' | 'triggers'>('clients');
+    const [activeTab, setActiveTab] = useState<'clients' | 'team' | 'triggers' | 'whatsapp' | 'notifications'>('clients');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<Partial<MessageTemplate> | null>(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
+
+    // WhatsApp State
+    const [qrCode, setQrCode] = useState<string | null>(null);
+    const [wsLoading, setWsLoading] = useState(false);
+    const [wsStatus, setWsStatus] = useState<'connected' | 'disconnected' | 'loading'>('loading');
+
+    const checkStatus = async () => {
+        const res = await getWhatsAppStatus();
+        if (res.connected) {
+            setWsStatus('connected');
+            setQrCode(null);
+        } else {
+            setWsStatus('disconnected');
+        }
+    };
+
+    useEffect(() => {
+        if (activeTab === 'whatsapp') {
+            checkStatus();
+            const interval = setInterval(checkStatus, 10000);
+            return () => clearInterval(interval);
+        }
+    }, [activeTab]);
+
+    const handleConnect = async () => {
+        setWsLoading(true);
+        const res = await getWhatsAppQRCode();
+        setWsLoading(false);
+        if (res.qrcode) {
+            setQrCode(res.qrcode);
+        } else if (res.connected) {
+            setWsStatus('connected');
+        } else {
+            showToast(res.error || 'Erro ao gerar QR Code', 'error');
+        }
+    };
+
+    const handleDisconnect = async () => {
+        setWsLoading(true);
+        const res = await disconnectWhatsApp();
+        setWsLoading(false);
+        if (res.success) {
+            setWsStatus('disconnected');
+            setQrCode(null);
+            showToast('WhatsApp desconectado com sucesso!');
+        } else {
+            showToast(res.error || 'Erro ao desconectar', 'error');
+        }
+    };
 
     const variables = [
         { label: 'Nome do Cliente', value: '[CLIENTE]' },
@@ -183,7 +235,7 @@ export const RemindersPanel: React.FC = () => {
             </div>
 
             {/* Sub-menus Internos */}
-            <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
+            <div className="flex flex-wrap gap-2 p-1 bg-slate-100 rounded-lg w-fit">
                 <button
                     onClick={() => setActiveTab('clients')}
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
@@ -217,9 +269,116 @@ export const RemindersPanel: React.FC = () => {
                     <Tags size={18} />
                     Gatilhos
                 </button>
+                <button
+                    onClick={() => setActiveTab('whatsapp')}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
+                        activeTab === 'whatsapp' 
+                        ? 'bg-white text-orange-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                >
+                    <Smartphone size={18} />
+                    WhatsApp
+                </button>
+                <button
+                    onClick={() => setActiveTab('notifications')}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
+                        activeTab === 'notifications' 
+                        ? 'bg-white text-orange-600 shadow-sm' 
+                        : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                >
+                    <Bell size={18} />
+                    Preferências
+                </button>
             </div>
 
-            {activeTab === 'triggers' ? (
+            {activeTab === 'whatsapp' ? (
+                <div className="bg-white border border-slate-200 rounded-lg p-8 text-center shadow-sm">
+                    {wsStatus === 'loading' ? (
+                        <div className="flex flex-col items-center py-12">
+                            <Loader2 size={48} className="text-orange-500 animate-spin mb-4" />
+                            <p className="text-slate-400 font-medium">Verificando conexão...</p>
+                        </div>
+                    ) : wsStatus === 'connected' ? (
+                        <div className="flex flex-col items-center py-12">
+                            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6 border border-green-100">
+                                <Smartphone size={40} className="text-green-500" />
+                            </div>
+                            <h4 className="text-2xl font-bold text-slate-900 mb-2">WhatsApp Conectado!</h4>
+                            <p className="text-slate-500 mb-8 max-w-md mx-auto">Sua barbearia já está enviando mensagens automáticas de confirmação e lembretes.</p>
+                            <button 
+                                onClick={handleDisconnect}
+                                className="px-8 py-3 bg-red-50 text-red-600 border border-red-100 rounded-md font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                            >
+                                Desconectar WhatsApp
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center py-12">
+                            {qrCode ? (
+                                <div className="space-y-6">
+                                    <div className="bg-white p-4 rounded-xl inline-block shadow-2xl border border-slate-100">
+                                        <img src={qrCode} alt="WhatsApp QR Code" className="w-64 h-64" />
+                                    </div>
+                                    <div className="max-w-xs mx-auto">
+                                        <p className="text-slate-900 font-bold mb-2">Escaneie o QR Code</p>
+                                        <p className="text-slate-500 text-sm">Abra o WhatsApp no seu celular, vá em Aparelhos Conectados e escaneie o código acima.</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setQrCode(null)}
+                                        className="text-slate-400 hover:text-slate-600 text-sm font-medium underline"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100">
+                                        <MessageSquare size={40} className="text-slate-400" />
+                                    </div>
+                                    <h4 className="text-2xl font-bold text-slate-900 mb-2">Conectar WhatsApp</h4>
+                                    <p className="text-slate-500 mb-8 max-w-md mx-auto">Habilite o envio de mensagens automáticas de confirmação e lembretes para seus clientes.</p>
+                                    <button 
+                                        onClick={handleConnect}
+                                        disabled={wsLoading}
+                                        className="px-12 py-4 bg-green-600 hover:bg-green-500 text-white rounded-md font-bold shadow-lg shadow-green-100 transition-all flex items-center gap-2"
+                                    >
+                                        {wsLoading && <Loader2 size={20} className="animate-spin" />}
+                                        Gerar QR Code de Conexão
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    )}
+                </div>
+            ) : activeTab === 'notifications' ? (
+                <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-sm">
+                    <h2 className="text-lg font-bold text-slate-900 mb-6">Preferências de Notificação</h2>
+                    <div className="space-y-6 max-w-2xl">
+                        <NotificationToggle 
+                            title="Confirmação de Agendamento" 
+                            desc="Envia uma mensagem assim que o cliente realiza o agendamento." 
+                            active={true}
+                        />
+                        <NotificationToggle 
+                            title="Lembrete de 24 horas" 
+                            desc="Envia um lembrete automático um dia antes do horário marcado." 
+                            active={true}
+                        />
+                        <NotificationToggle 
+                            title="Lembrete de 1 hora" 
+                            desc="Envia um lembrete final uma hora antes do atendimento." 
+                            active={true}
+                        />
+                        <NotificationToggle 
+                            title="Solicitação de Avaliação" 
+                            desc="Envia uma mensagem de agradecimento e link para avaliação após o serviço." 
+                            active={false}
+                        />
+                    </div>
+                </div>
+            ) : activeTab === 'triggers' ? (
                 <div className="space-y-6">
                     <div className="bg-white rounded-lg border border-slate-200 p-8 shadow-sm">
                         <h2 className="text-lg font-bold text-slate-900 mb-6">Gerenciar Gatilhos</h2>
@@ -531,6 +690,24 @@ export const RemindersPanel: React.FC = () => {
                     </div>
                 )}
             </AnimatePresence>
+        </div>
+    );
+};
+
+const NotificationToggle: React.FC<{ title: string, desc: string, active: boolean }> = ({ title, desc, active }) => {
+    const [isEnabled, setIsEnabled] = useState(active);
+    return (
+        <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
+            <div className="pr-8">
+                <h4 className="text-slate-900 font-bold text-sm mb-1">{title}</h4>
+                <p className="text-xs text-slate-500">{desc}</p>
+            </div>
+            <button 
+                onClick={() => setIsEnabled(!isEnabled)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isEnabled ? 'bg-orange-500' : 'bg-slate-300'}`}
+            >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+            </button>
         </div>
     );
 };
