@@ -216,7 +216,7 @@ export const AppointmentsPanel: React.FC = () => {
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
                     onClick={(e) => e.target === e.currentTarget && setIsModalOpen(false)}
                 >
-                    <div className="bg-white rounded-xl border border-slate-200 w-full max-w-2xl shadow-2xl relative animate-scale-up max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white rounded-lg border border-slate-200 w-full max-w-2xl shadow-2xl relative animate-scale-up max-h-[90vh] overflow-y-auto">
                         <div className="p-6 border-b border-slate-200 flex justify-between items-center sticky top-0 bg-white z-10">
                             <h3 className="text-xl font-bold text-slate-900">Novo Agendamento Manual</h3>
                             <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-900"><X size={24}/></button>
@@ -278,7 +278,7 @@ export const AppointmentsPanel: React.FC = () => {
                                                 className={`p-3 rounded-lg border cursor-pointer flex items-center justify-between transition-colors ${selected ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}
                                             >
                                                 <div className="flex items-center gap-2">
-                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center ${selected ? 'bg-orange-500 border-orange-500' : 'border-slate-300'}`}>
+                                                    <div className={`w-4 h-4 rounded-sm border flex items-center justify-center ${selected ? 'bg-orange-500 border-orange-500' : 'border-slate-300'}`}>
                                                         {selected && <Check size={10} className="text-white"/>}
                                                     </div>
                                                     <span className="text-sm font-medium text-slate-900">{s.name}</span>
@@ -350,16 +350,16 @@ export const AppointmentsPanel: React.FC = () => {
             )}
 
             <div className="flex justify-end items-center mb-4">
-                <div className="bg-white p-1 rounded-full border border-slate-200 flex gap-1 w-full md:w-auto shadow-sm">
+                <div className="bg-white p-1 rounded-lg border border-slate-200 flex gap-1 w-full md:w-auto shadow-sm">
                     <button 
                         onClick={() => setViewMode('calendar')}
-                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-full text-sm font-bold transition-all ${viewMode === 'calendar' ? 'bg-orange-50 text-orange-600 border border-orange-200 shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-md text-sm font-bold transition-all ${viewMode === 'calendar' ? 'bg-orange-50 text-orange-600 border border-orange-200 shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
                     >
                         <CalendarIcon size={16} /> Agenda
                     </button>
                     <button 
                         onClick={() => setViewMode('list')}
-                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-full text-sm font-bold transition-all ${viewMode === 'list' ? 'bg-orange-50 text-orange-600 border border-orange-200 shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2 rounded-md text-sm font-bold transition-all ${viewMode === 'list' ? 'bg-orange-50 text-orange-600 border border-orange-200 shadow-sm' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
                     >
                         <List size={16} /> Lista
                     </button>
@@ -385,9 +385,9 @@ export const AppointmentsPanel: React.FC = () => {
                     </div>
 
                     {/* BARRA DE FILTROS DE DATA (Design Financeiro) */}
-                    <div className="bg-white p-1.5 md:p-2 rounded-2xl border border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-sm mb-4">
+                    <div className="bg-white p-1.5 md:p-2 rounded-lg border border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-sm mb-4">
                         {/* Abas de Atalho */}
-                        <div className="flex bg-slate-50 p-1 rounded-full w-full lg:w-auto overflow-x-auto py-1 hide-scrollbar no-scrollbar border border-slate-200">
+                        <div className="flex bg-slate-50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto py-1 hide-scrollbar no-scrollbar border border-slate-200">
                             {[
                                 { id: 'today', label: 'Hoje' },
                                 { id: 'tomorrow', label: 'Amanhã' },
@@ -398,7 +398,7 @@ export const AppointmentsPanel: React.FC = () => {
                                 <button
                                     key={preset.id}
                                     onClick={() => setPreset(preset.id as any)}
-                                    className={`px-4 md:px-6 py-2 rounded-full text-[10px] md:text-sm font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
+                                    className={`px-4 md:px-6 py-2 rounded-md text-[10px] md:text-sm font-bold uppercase tracking-wider transition-all whitespace-nowrap ${
                                         activePreset === preset.id 
                                         ? 'bg-white text-orange-600 shadow-sm border border-orange-200' 
                                         : 'text-[#6b7d99] hover:text-slate-900 hover:bg-white'
@@ -410,7 +410,7 @@ export const AppointmentsPanel: React.FC = () => {
                         </div>
 
                         {/* Seletor de Datas Unificado */}
-                        <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-50 px-4 py-2 rounded-full border border-slate-200 focus-within:border-orange-500/50 transition-colors">
+                        <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-50 px-4 py-2 rounded-lg border border-slate-200 focus-within:border-orange-500/50 transition-colors">
                             <Calendar size={14} className="text-slate-400 shrink-0" />
                             <div className="flex items-center gap-2 flex-1">
                                 <input 
@@ -431,10 +431,10 @@ export const AppointmentsPanel: React.FC = () => {
                     </div>
 
                     {/* BARRA DE FILTROS DE STATUS E BUSCA */}
-                    <div className="bg-white p-3 md:p-4 rounded-2xl border border-slate-200 mb-6 flex flex-col gap-3 md:gap-4 shadow-sm">
+                    <div className="bg-white p-3 md:p-4 rounded-lg border border-slate-200 mb-6 flex flex-col gap-3 md:gap-4 shadow-sm">
                         <div className="flex flex-col md:flex-row gap-3 md:gap-4 justify-between items-center">
                             {/* Busca */}
-                            <div className="bg-slate-50 border border-slate-200 rounded-full flex items-center px-4 py-2 text-slate-500 w-full md:w-96 focus-within:border-orange-500/50 transition-colors">
+                            <div className="bg-slate-50 border border-slate-200 rounded-lg flex items-center px-4 py-2 text-slate-500 w-full md:w-96 focus-within:border-orange-500/50 transition-colors">
                                 <Search size={16} className="mr-2 shrink-0 text-slate-400"/>
                                 <input 
                                     value={searchTerm}
@@ -457,7 +457,7 @@ export const AppointmentsPanel: React.FC = () => {
                                     <button
                                         key={status.id}
                                         onClick={() => setStatusFilter(status.id)}
-                                        className={`px-4 py-2 rounded-full text-[9px] md:text-[10px] font-bold whitespace-nowrap transition-all border uppercase tracking-wider ${
+                                        className={`px-4 py-2 rounded-md text-[9px] md:text-[10px] font-bold whitespace-nowrap transition-all border uppercase tracking-wider ${
                                             statusFilter === status.id 
                                             ? `bg-orange-50 text-orange-600 border-orange-200 shadow-sm` 
                                             : 'bg-white text-[#6b7d99] border-slate-200 hover:border-slate-300 hover:text-slate-700'
@@ -471,7 +471,7 @@ export const AppointmentsPanel: React.FC = () => {
                     </div>
 
                     {/* Tabela de Agendamentos (Desktop) / Cards (Mobile) */}
-                    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+                    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
                         <div className="hidden md:block overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
@@ -496,7 +496,7 @@ export const AppointmentsPanel: React.FC = () => {
                                         return (
                                             <tr key={apt.id} className="hover:bg-slate-50 transition-colors group border-b border-slate-100 last:border-0 border-l-4" style={{ borderLeftColor: proColor }}>
                                                 <td className="p-4">
-                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
+                                                    <span className={`px-2 py-1 rounded-sm text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
                                                         {STATUS_LABELS[apt.status] || apt.status}
                                                     </span>
                                                 </td>
@@ -622,7 +622,7 @@ export const AppointmentsPanel: React.FC = () => {
                                                 <div className="font-bold text-slate-900 text-lg">{apt.clientName}</div>
                                                 <div className="text-xs text-[#6b7d99] font-medium">{apt.clientPhone}</div>
                                             </div>
-                                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
+                                            <span className={`px-2 py-1 rounded-sm text-[10px] font-bold border uppercase tracking-wider ${STATUS_COLORS[apt.status] || STATUS_COLORS.scheduled}`}>
                                                 {STATUS_LABELS[apt.status] || apt.status}
                                             </span>
                                         </div>

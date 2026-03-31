@@ -93,7 +93,7 @@ export const InsightPanel: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-[calc(100vh-12rem)] bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+        <div className="flex flex-col h-[calc(100vh-12rem)] bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
             {/* Header com Stats Rápidos */}
             <div className="p-4 border-b border-slate-200 bg-slate-50 flex flex-wrap gap-4 items-center justify-between">
                 <div className="flex items-center gap-2 text-orange-600">
@@ -117,10 +117,10 @@ export const InsightPanel: React.FC = () => {
                 {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
                         <div className={`max-w-[85%] md:max-w-[70%] flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-orange-500' : 'bg-slate-100 border border-slate-200'}`}>
+                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${msg.role === 'user' ? 'bg-orange-500' : 'bg-slate-100 border border-slate-200'}`}>
                                 {msg.role === 'user' ? <User size={16} className="text-white" /> : <Bot size={16} className="text-orange-600" />}
                             </div>
-                            <div className={`p-4 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-orange-500 text-white rounded-tr-none' : 'bg-slate-50 text-slate-700 border border-slate-200 rounded-tl-none shadow-sm'}`}>
+                            <div className={`p-4 rounded-lg text-sm leading-relaxed ${msg.role === 'user' ? 'bg-orange-500 text-white rounded-tr-none' : 'bg-slate-50 text-slate-700 border border-slate-200 rounded-tl-none shadow-sm'}`}>
                                 {msg.content.split('\n').map((line, j) => (
                                     <p key={j} className={line.trim() === '' ? 'h-2' : 'mb-1'}>{line}</p>
                                 ))}
@@ -130,7 +130,7 @@ export const InsightPanel: React.FC = () => {
                 ))}
                 {isLoading && (
                     <div className="flex justify-start animate-pulse">
-                        <div className="flex gap-3 items-center bg-slate-50 p-3 rounded-2xl border border-slate-200">
+                        <div className="flex gap-3 items-center bg-slate-50 p-3 rounded-lg border border-slate-200">
                             <Loader2 size={16} className="animate-spin text-orange-600" />
                             <span className="text-xs text-slate-500">Analisando dados da barbearia...</span>
                         </div>
@@ -147,7 +147,7 @@ export const InsightPanel: React.FC = () => {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         placeholder="Pergunte sobre faturamento, barbeiro mais produtivo, clientes..."
-                        className="w-full bg-white border border-slate-200 rounded-xl py-4 pl-4 pr-14 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-500 transition-all shadow-sm"
+                        className="w-full bg-white border border-slate-200 rounded-lg py-4 pl-4 pr-14 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-500 transition-all shadow-sm"
                         disabled={isLoading}
                     />
                     <button

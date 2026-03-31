@@ -57,12 +57,12 @@ export const DesignPanel: React.FC = () => {
                 <p className="text-slate-500">Personalize a identidade visual da sua barbearia.</p>
             </div>
 
-            <div className="bg-white rounded-xl p-8 border border-slate-200 shadow-sm space-y-6">
+            <div className="bg-white rounded-lg p-8 border border-slate-200 shadow-sm space-y-6">
                  {/* Logo Upload */}
                  <div>
                     <label className="block text-sm text-slate-500 mb-2">Logotipo</label>
                     <div className="flex items-center gap-4">
-                        <div onClick={() => !isUploading && fileInputRef.current?.click()} className={`w-20 h-20 bg-slate-50 rounded-xl border border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative group ${isUploading ? 'cursor-not-allowed opacity-50' : ''}`}>
+                        <div onClick={() => !isUploading && fileInputRef.current?.click()} className={`w-20 h-20 bg-slate-50 rounded-lg border border-dashed border-slate-300 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative group ${isUploading ? 'cursor-not-allowed opacity-50' : ''}`}>
                              {isUploading ? (
                                 <Loader2 size={24} className="text-orange-500 animate-spin" />
                              ) : (
@@ -93,14 +93,14 @@ export const DesignPanel: React.FC = () => {
                     <div>
                          <label className="block text-sm text-slate-500 mb-2">Cor Primária (Destaques)</label>
                          <div className="flex items-center gap-3">
-                             <input type="color" value={primary} onChange={e => setPrimary(e.target.value)} className="w-12 h-12 rounded bg-transparent cursor-pointer" />
+                             <input type="color" value={primary} onChange={e => setPrimary(e.target.value)} className="w-12 h-12 rounded-sm bg-transparent cursor-pointer" />
                              <input value={primary} onChange={e => setPrimary(e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 uppercase" />
                          </div>
                     </div>
                     <div>
                          <label className="block text-sm text-slate-500 mb-2">Cor Secundária (Fundo)</label>
                          <div className="flex items-center gap-3">
-                             <input type="color" value={secondary} onChange={e => setSecondary(e.target.value)} className="w-12 h-12 rounded bg-transparent cursor-pointer" />
+                             <input type="color" value={secondary} onChange={e => setSecondary(e.target.value)} className="w-12 h-12 rounded-sm bg-transparent cursor-pointer" />
                              <input value={secondary} onChange={e => setSecondary(e.target.value)} className="flex-1 bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 uppercase" />
                          </div>
                     </div>
@@ -114,7 +114,7 @@ export const DesignPanel: React.FC = () => {
                 </div>
             </div>
             
-            <div className="mt-8 p-6 bg-slate-50 rounded-xl border border-dashed border-slate-200 text-center">
+            <div className="mt-8 p-6 bg-slate-50 rounded-lg border border-dashed border-slate-200 text-center">
                  <h4 className="text-slate-500 mb-2">Pré-visualização do Botão</h4>
                  <button className="px-6 py-2 rounded-lg text-white font-medium" style={{ backgroundColor: primary }}>
                      Agendar Horário
