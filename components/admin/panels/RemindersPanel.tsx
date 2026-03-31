@@ -199,12 +199,13 @@ export const RemindersPanel: React.FC = () => {
         }
     };
 
-    <div className="space-y-6"> {/* Removido p-6, max-w-7xl e mx-auto para alinhar à esquerda */}
-    <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8"> {/* Ajustado para items-start */}
-        <div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-1">Automação</h2>
-            <p className="text-[#6b7d99] text-sm font-medium">Gerencie suas mensagens automáticas do WhatsApp</p>
-        </div>
+    return (
+        <div className="space-y-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-slate-900">Automação</h1>
+                    <p className="text-slate-500">Gerencie suas mensagens automáticas do WhatsApp</p>
+                </div>
                 <div className="flex flex-wrap gap-3">
                     {activeTab !== 'triggers' && (
                         <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-md border border-slate-200">
@@ -292,58 +293,65 @@ export const RemindersPanel: React.FC = () => {
                 </button>
             </div>
 
-            {activeTab === 'whatsapp' && (
-    <div className="bg-white border border-slate-200 rounded-lg p-8 text-left shadow-sm">
-        {wsStatus === 'connected' ? (
-            <div className="flex flex-col items-start py-6"> 
-                <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6 border border-green-100">
-                    <Smartphone size={40} className="text-green-500" />
+            {activeTab === 'whatsapp' ? (
+                <div className="bg-white border border-slate-200 rounded-lg p-8 text-left shadow-sm">
+                    {wsStatus === 'loading' ? (
+                        <div className="flex flex-col items-center py-12">
+                            <Loader2 size={48} className="text-orange-500 animate-spin mb-4" />
+                            <p className="text-slate-400 font-medium">Verificando conexão...</p>
+                        </div>
+                    ) : wsStatus === 'connected' ? (
+                        <div className="flex flex-col items-center py-12">
+                            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6 border border-green-100">
+                                <Smartphone size={40} className="text-green-500" />
+                            </div>
+                            <h4 className="text-2xl font-bold text-slate-900 mb-2">WhatsApp Conectado!</h4>
+                            <p className="text-slate-500 mb-8 max-w-md mx-auto">Sua barbearia já está enviando mensagens automáticas de confirmação e lembretes.</p>
+                            <button 
+                                onClick={handleDisconnect}
+                                className="px-8 py-3 bg-red-50 text-red-600 border border-red-100 rounded-md font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                            >
+                                Desconectar WhatsApp
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col items-center py-12">
+                            {qrCode ? (
+                                <div className="space-y-6">
+                                    <div className="bg-white p-4 rounded-xl inline-block shadow-2xl border border-slate-100">
+                                        <img src={qrCode} alt="WhatsApp QR Code" className="w-64 h-64" />
+                                    </div>
+                                    <div className="max-w-xs mx-auto">
+                                        <p className="text-slate-900 font-bold mb-2">Escaneie o QR Code</p>
+                                        <p className="text-slate-500 text-sm">Abra o WhatsApp no seu celular, vá em Aparelhos Conectados e escaneie o código acima.</p>
+                                    </div>
+                                    <button 
+                                        onClick={() => setQrCode(null)}
+                                        className="text-slate-400 hover:text-slate-600 text-sm font-medium underline"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100">
+                                        <MessageSquare size={40} className="text-slate-400" />
+                                    </div>
+                                    <h4 className="text-2xl font-bold text-slate-900 mb-2">Conectar WhatsApp</h4>
+                                    <p className="text-slate-500 mb-8 max-w-md mx-auto">Habilite o envio de mensagens automáticas de confirmação e lembretes para seus clientes.</p>
+                                    <button 
+                                        onClick={handleConnect}
+                                        disabled={wsLoading}
+                                        className="px-12 py-4 bg-green-600 hover:bg-green-500 text-white rounded-md font-bold shadow-lg shadow-green-100 transition-all flex items-center gap-2"
+                                    >
+                                        {wsLoading && <Loader2 size={20} className="animate-spin" />}
+                                        Gerar QR Code de Conexão
+                                    </button>
+                                </>
+                            )}
+                        </div>
+                    )}
                 </div>
-                <h4 className="text-2xl font-bold text-slate-900 mb-2">WhatsApp Conectado!</h4>
-                <p className="text-slate-500 mb-8 max-w-md">Sua barbearia já está enviando mensagens automáticas.</p>
-                {/* Botão de desconectar deve vir aqui com items-start */}
-            </div>
-        ) : (
-            <div className="flex flex-col items-start py-6"> 
-                {qrCode ? (
-                    <div className="space-y-6 flex flex-col items-start"> {/* Adicionado flex e items-start */}
-                        <div className="bg-white p-4 rounded-xl inline-block shadow-2xl border border-slate-100">
-                            <img src={qrCode} alt="WhatsApp QR Code" className="w-64 h-64" />
-                        </div>
-                        <div className="max-w-xs"> {/* REMOVIDO mx-auto */}
-                            <p className="text-slate-900 font-bold mb-2">Escaneie o QR Code</p>
-                            <p className="text-slate-500 text-sm">Abra o WhatsApp no seu celular, vá em Aparelhos Conectados e escaneie o código acima.</p>
-                        </div>
-                        <button 
-                            onClick={() => setQrCode(null)}
-                            className="text-slate-400 hover:text-slate-600 text-sm font-medium underline"
-                        >
-                            Cancelar
-                        </button>
-                    </div>
-                ) : (
-                    <>
-                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center mb-6 border border-slate-100">
-                            <MessageSquare size={40} className="text-slate-400" />
-                        </div>
-                        <h4 className="text-2xl font-bold text-slate-900 mb-2">Conectar WhatsApp</h4>
-                        <p className="text-slate-500 mb-8 max-w-md"> {/* REMOVIDO mx-auto */}
-                            Habilite o envio de mensagens automáticas de confirmação e lembretes para seus clientes.
-                        </p>
-                        <button 
-                            onClick={handleConnect}
-                            disabled={wsLoading}
-                            className="px-12 py-4 bg-green-600 hover:bg-green-500 text-white rounded-md font-bold shadow-lg shadow-green-100 transition-all flex items-center gap-2"
-                        >
-                            {wsLoading && <Loader2 size={20} className="animate-spin" />}
-                            Gerar QR Code de Conexão
-                        </button>
-                    </>
-                )}
-            </div>
-        )}
-    </div>
-)}
             ) : activeTab === 'notifications' ? (
                 <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-sm">
                     <h2 className="text-lg font-bold text-slate-900 mb-6">Preferências de Notificação</h2>
