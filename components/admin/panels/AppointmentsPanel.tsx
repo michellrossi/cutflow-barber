@@ -149,7 +149,7 @@ export const AppointmentsPanel: React.FC = () => {
             showToast('Selecione pelo menos um serviço.', 'error');
             return;
         }
-
+        
         setIsSaving(true);
         const { success, error } = await createManualAppointment({
             clientName: formData.clientName,
