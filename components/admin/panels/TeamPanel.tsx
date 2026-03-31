@@ -213,6 +213,13 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                 isDestructive
             />
 
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Equipe</h2>
+                    <p className="text-[#6b7d99] text-sm font-medium">Adicione profissionais, administre seus horários e bloqueios e gere relatórios.</p>
+                </div>
+            </div>
+
             {/* Sub-menus Internos */}
             <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
                 {[
