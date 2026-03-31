@@ -129,42 +129,42 @@ export const SubscriptionsPanel: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-1">Assinaturas</h2>
-            
-            Gestão de Assinaturas
-          </h2>
-          <p className="text-[#6b7d99] text-sm font-medium">Gerencie planos mensais e assinantes da sua barbearia</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {subscriptionPlans.length === 0 && (
-            <button 
-              onClick={handleCreateSuggestedPlans}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors border border-slate-700"
-            >
-              <Zap className="w-4 h-4 text-yellow-500" />
-              Planos Sugeridos
-            </button>
-          )}
-          <button 
-            onClick={() => { setEditingPlan(null); setIsPlanModalOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors border border-slate-700"
-          >
-            <Plus className="w-4 h-4" />
-            Novo Plano
-          </button>
-          <button 
-            onClick={() => { setEditingSub(null); setIsSubModalOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors shadow-lg shadow-orange-500/20"
-          >
-            <Plus className="w-4 h-4" />
-            Novo Assinante
-          </button>
-        </div>
+  <div className="space-y-6">
+    {/* Header Padronizado */}
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+      <div>
+        <h2 className="text-2xl font-bold text-slate-900 mb-1">Assinaturas</h2>
+        <p className="text-[#6b7d99] text-sm font-medium">
+          Gerencie planos mensais e assinantes da sua barbearia
+        </p>
       </div>
+      
+      <div className="flex items-center gap-2">
+        {subscriptionPlans.length === 0 && (
+          <button 
+            onClick={handleCreateSuggestedPlans}
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors border border-slate-200 font-medium"
+          >
+            <Zap className="w-4 h-4 text-orange-500" />
+            Planos Sugeridos
+          </button>
+        )}
+        <button 
+          onClick={() => { setEditingPlan(null); setIsPlanModalOpen(true); }}
+          className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors border border-slate-200 font-medium"
+        >
+          <Plus className="w-4 h-4" />
+          Novo Plano
+        </button>
+        <button 
+          onClick={() => { setEditingSub(null); setIsSubModalOpen(true); }}
+          className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors shadow-lg shadow-orange-500/20 font-medium"
+        >
+          <Plus className="w-4 h-4" />
+          Novo Assinante
+        </button>
+      </div>
+    </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
