@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription } from './types';
+import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory } from './types';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import DOMPurify from 'dompurify';
@@ -50,6 +50,9 @@ interface ShopContextType extends ShopState {
   addMessageTemplate: (template: Omit<MessageTemplate, 'id' | 'shopId'>) => MutationResult;
   updateMessageTemplate: (id: string, template: Partial<MessageTemplate>) => MutationResult;
   removeMessageTemplate: (id: string) => MutationResult;
+
+  addMessageCategory: (name: string) => MutationResult;
+  removeMessageCategory: (id: string) => MutationResult;
 
   // Subscription Actions
   addSubscriptionPlan: (plan: Omit<SubscriptionPlan, 'id' | 'shopId'>) => MutationResult;
@@ -115,6 +118,7 @@ const INITIAL_STATE: ShopState = {
   appointments: [],
   clients: [],
   messageTemplates: [],
+  messageCategories: [],
   subscriptionPlans: [],
   clientSubscriptions: [],
   blockedSlots: [],
@@ -275,7 +279,15 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       trigger: data.trigger,
       delayValue: data.delay_value || 0,
       delayUnit: data.delay_unit || 'minutes',
-      active: data.active
+      active: data.active,
+      target: data.target || 'client',
+      category: data.category
+  });
+
+  const mapMessageCategory = (data: any): MessageCategory => ({
+      id: data.id,
+      shopId: data.shop_id,
+      name: data.name
   });
 
   const mapSubscriptionPlan = (data: any): SubscriptionPlan => ({
@@ -449,7 +461,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Executa queries de configurações e dados estáticos em paralelo
-        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, plansRes, subsRes] = await Promise.all([
+        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, categoriesRes, plansRes, subsRes] = await Promise.all([
             supabase.from('settings').select('*').eq('shop_id', shopId).single(),
             supabase.from('services').select('*').eq('shop_id', shopId),
             supabase.from('professionals').select('*').eq('shop_id', shopId),
@@ -457,6 +469,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             supabase.from('blocked_slots').select('*').eq('shop_id', shopId),
             supabase.from('clients').select('*').eq('shop_id', shopId),
             supabase.from('message_templates').select('*').eq('shop_id', shopId),
+            supabase.from('message_categories').select('*').eq('shop_id', shopId),
             supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
             supabase.from('client_subscriptions').select('*').eq('shop_id', shopId)
         ]);
@@ -482,6 +495,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const mappedClients = (clientsRes.data || []).map(mapClient);
         const mappedPlans = (plansRes.data || []).map(mapSubscriptionPlan);
         const mappedSubs = (subsRes.data || []).map(mapClientSubscription);
+        const mappedCategories = (categoriesRes.data || []).map(mapMessageCategory);
 
         // --- LÓGICA DE ROLES ---
         if (currentSession?.user) {
@@ -524,6 +538,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             subscriptionPlans: mappedPlans,
             clientSubscriptions: mappedSubs,
             messageTemplates: (templatesRes.data || []).map(mapMessageTemplate),
+            messageCategories: mappedCategories,
             blockedSlots: (blocksRes.data || []).map(mapBlockedSlot),
             trialStatus: trialInfo.status,
             daysRemaining: trialInfo.days
@@ -682,6 +697,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           secondary_color: '#1e293b'
       });
 
+      // Default message categories
+      const defaultCategories = [
+        { shop_id: shopData.id, name: 'Confirmação Imediata' },
+        { shop_id: shopData.id, name: 'Lembrete 24h' },
+        { shop_id: shopData.id, name: 'Lembrete 1h' },
+        { shop_id: shopData.id, name: 'Reagendamento' },
+        { shop_id: shopData.id, name: 'Pós-venda e Avaliação' }
+      ];
+      await supabase.from('message_categories').insert(defaultCategories);
+
       // Default message templates
       const defaultTemplates = [
         {
@@ -691,7 +716,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             content: 'Olá [CLIENTE]! Seu agendamento para [SERVICO] na [BARBEARIA] foi realizado com sucesso para o dia [DATA] às [HORA] com o profissional [BARBEIRO]. Te esperamos!',
             delay_value: 0,
             delay_unit: 'minutes',
-            active: true
+            active: true,
+            target: 'client',
+            category: 'Confirmação Imediata'
         },
         {
             shop_id: shopData.id,
@@ -700,7 +727,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             content: 'Olá [CLIENTE], passando para lembrar do seu horário amanhã às [HORA] na [BARBEARIA] para o serviço [SERVICO]. Até logo!',
             delay_value: 24,
             delay_unit: 'hours',
-            active: true
+            active: true,
+            target: 'client',
+            category: 'Lembrete 24h'
         },
         {
             shop_id: shopData.id,
@@ -709,7 +738,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             content: 'Olá [CLIENTE], seu horário na [BARBEARIA] é daqui a pouco, às [HORA]. Já estamos te esperando para o seu [SERVICO]!',
             delay_value: 1,
             delay_unit: 'hours',
-            active: true
+            active: true,
+            target: 'client',
+            category: 'Lembrete 1h'
         },
         {
             shop_id: shopData.id,
@@ -718,7 +749,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             content: 'Olá [CLIENTE], notamos que você não conseguiu comparecer ao seu horário de [SERVICO]. Gostaria de escolher uma nova data para seu atendimento na [BARBEARIA]?',
             delay_value: 1,
             delay_unit: 'hours',
-            active: true
+            active: true,
+            target: 'client',
+            category: 'Reagendamento'
         },
         {
             shop_id: shopData.id,
@@ -727,7 +760,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             content: 'Olá [CLIENTE]! O que achou do seu atendimento hoje com [BARBEIRO]? Sua opinião é muito importante para nós da [BARBEARIA]. Se puder, nos avalie no Google!',
             delay_value: 2,
             delay_unit: 'hours',
-            active: true
+            active: true,
+            target: 'client',
+            category: 'Pós-venda e Avaliação'
         }
       ];
       await supabase.from('message_templates').insert(defaultTemplates);
@@ -1312,7 +1347,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             trigger: template.trigger,
             delay_value: template.delayValue,
             delay_unit: template.delayUnit,
-            active: template.active
+            active: template.active,
+            target: template.target || 'client',
+            category: template.category
         }).select().single();
 
         if (error) throw error;
@@ -1335,6 +1372,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (template.delayValue !== undefined) updateData.delay_value = template.delayValue;
         if (template.delayUnit !== undefined) updateData.delay_unit = template.delayUnit;
         if (template.active !== undefined) updateData.active = template.active;
+        if (template.target !== undefined) updateData.target = template.target;
+        if (template.category !== undefined) updateData.category = template.category;
 
         const { error } = await supabase.from('message_templates').update(updateData).eq('id', id).eq('shop_id', shopId);
         if (error) throw error;
@@ -1358,6 +1397,40 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setState(prev => ({
             ...prev,
             messageTemplates: prev.messageTemplates.filter(t => t.id !== id)
+        }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const addMessageCategory = async (name: string): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { data, error } = await supabase.from('message_categories').insert({
+            shop_id: shopId,
+            name: sanitize(name)
+        }).select().single();
+
+        if (error) throw error;
+        
+        const newCategory = mapMessageCategory(data);
+        setState(prev => ({ ...prev, messageCategories: [...prev.messageCategories, newCategory] }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const removeMessageCategory = async (id: string): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { error } = await supabase.from('message_categories').delete().eq('id', id).eq('shop_id', shopId);
+        if (error) throw error;
+
+        setState(prev => ({
+            ...prev,
+            messageCategories: prev.messageCategories.filter(c => c.id !== id)
         }));
         return { success: true };
     } catch (e: any) {

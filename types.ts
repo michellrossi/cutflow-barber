@@ -148,6 +148,8 @@ export interface MessageTemplate {
   delayValue: number;
   delayUnit: 'minutes' | 'hours' | 'days';
   active: boolean;
+  target?: 'client' | 'professional';
+  category?: string;
 }
 
 export interface SubscriptionPlan {
@@ -173,6 +175,12 @@ export interface ClientSubscription {
   createdAt: string;
 }
 
+export interface MessageCategory {
+  id: string;
+  shopId: string;
+  name: string;
+}
+
 export interface ShopState {
   shop: Shop | null;
   services: Service[];
@@ -183,6 +191,7 @@ export interface ShopState {
   subscriptionPlans: SubscriptionPlan[]; // [NOVO] Planos de Assinatura
   clientSubscriptions: ClientSubscription[]; // [NOVO] Assinaturas de Clientes
   messageTemplates: MessageTemplate[]; // [NOVO] Modelos de Mensagem
+  messageCategories: MessageCategory[]; // [NOVO] Categorias de Mensagem
   blockedSlots: BlockedSlot[];
   settings: ShopSettings;
   // [NOVO] Estado do Cliente Logado

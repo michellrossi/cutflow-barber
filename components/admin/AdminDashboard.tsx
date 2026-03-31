@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info, ShieldCheck } from 'lucide-react';
+import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info, ShieldCheck, Pin } from 'lucide-react';
 import { DashboardPanel } from './panels/DashboardPanel';
 import { TeamPanel } from './panels/TeamPanel';
 import { ServicesPanel } from './panels/ServicesPanel';
@@ -42,10 +42,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       return (saved as SettingsTab) || 'profile';
   });
 
-  const [isTeamOpen, setIsTeamOpen] = useState(() => {
-      return activeTab === 'team';
-  });
-
   const [isSettingsOpen, setIsSettingsOpen] = useState(() => {
       return activeTab === 'settings';
   });
@@ -71,7 +67,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       if (filter && tab === 'clients') {
           setClientFilter(filter);
       }
-      if (tab !== 'team') setIsTeamOpen(false);
       if (tab !== 'settings') setIsSettingsOpen(false);
   };
 
@@ -123,7 +118,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'loyalty': return 'Programa de Fidelidade';
           case 'settings': return 'Configurações';
           case 'insight': return 'Insights com IA';
-          case 'reminders': return 'Lembretes';
+          case 'reminders': return 'Automação';
           case 'subscriptions': return 'Assinaturas';
           case 'plan': return 'Meu Plano';
       }
@@ -158,8 +153,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
             <button 
               onClick={() => setIsSidebarPinned(!isSidebarPinned)}
               className={`ml-auto p-1.5 rounded-lg transition-colors ${isSidebarPinned ? 'text-orange-500 bg-orange-50' : 'text-slate-400 hover:bg-slate-50'}`}
+              title={isSidebarPinned ? "Desafixar Menu" : "Fixar Menu"}
             >
-              <Shield size={16} className={isSidebarPinned ? 'fill-current' : ''} />
+              <Pin size={16} className={isSidebarPinned ? 'fill-current rotate-45' : ''} />
             </button>
           )}
         </div>
@@ -185,7 +181,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => handleTabChange('coupons')} expanded={isSidebarExpanded} />
           <SidebarItem icon={<CalendarCheck size={20} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} expanded={isSidebarExpanded} />
           <SidebarItem icon={<CreditCard size={20} />} label="Assinaturas" active={activeTab === 'subscriptions'} onClick={() => handleTabChange('subscriptions')} expanded={isSidebarExpanded} />
-          <SidebarItem icon={<MessageSquare size={20} />} label="Lembretes" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} />
+          <SidebarItem icon={<MessageSquare size={20} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} />
           <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} expanded={isSidebarExpanded} />
           <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => handleTabChange('loyalty')} expanded={isSidebarExpanded} />
           <SidebarItem icon={<Sparkles size={20} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} expanded={isSidebarExpanded} />
@@ -199,7 +195,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                       setIsSettingsOpen(newState);
                       if (newState) {
                           setActiveTab('settings');
-                          setIsTeamOpen(false);
                       }
                   }}
                   className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${isSidebarExpanded ? 'gap-3' : 'justify-center'} ${activeTab === 'settings' ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
@@ -369,7 +364,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                     <MobileNavItem icon={<LayoutGrid size={16} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
                     <MobileNavItem icon={<Users size={16} />} label="Equipe" active={activeTab === 'team'} onClick={() => setActiveTab('team')} />
                     <MobileNavItem icon={<CalendarCheck size={16} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => setActiveTab('appointments')} />
-                    <MobileNavItem icon={<MessageSquare size={16} />} label="Lembretes" active={activeTab === 'reminders'} onClick={() => setActiveTab('reminders')} />
+                    <MobileNavItem icon={<MessageSquare size={16} />} label="Automação" active={activeTab === 'reminders'} onClick={() => setActiveTab('reminders')} />
                     <MobileNavItem icon={<UserCircle size={16} />} label="Clientes" active={activeTab === 'clients'} onClick={() => setActiveTab('clients')} />
                     <MobileNavItem icon={<Award size={16} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => setActiveTab('loyalty')} />
                     <MobileNavItem icon={<DollarSign size={16} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />

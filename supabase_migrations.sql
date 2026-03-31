@@ -75,7 +75,18 @@ CREATE TABLE IF NOT EXISTS public.message_templates (
     delay_value INTEGER DEFAULT 0,
     delay_unit TEXT DEFAULT 'minutes',
     active BOOLEAN DEFAULT true,
+    target TEXT DEFAULT 'client', -- 'client' or 'professional'
+    category TEXT, -- Link to category name or ID
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Nova Tabela: Categorias de Mensagens
+CREATE TABLE IF NOT EXISTS public.message_categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(shop_id, name)
 );
 
 -- Nova Tabela: Tokens de Autenticação (WhatsApp Login)
