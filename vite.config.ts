@@ -12,11 +12,15 @@ export default defineConfig(({ mode }) => {
       plugins: [react()],
       build: {
         rollupOptions: {
-          onwarn(warning, warn) {
+          onwarn(warning, defaultHandler) {
             if (warning.code === 'MODULE_LEVEL_DIRECTIVE') {
               return;
             }
-            warn(warning);
+            if (defaultHandler) {
+              defaultHandler(warning);
+            } else {
+              console.warn(warning);
+            }
           },
         },
       },
