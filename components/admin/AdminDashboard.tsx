@@ -161,50 +161,60 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
         </div>
         
         <nav className="flex-1 p-4 space-y-1 overflow-y-auto no-scrollbar">
-          <SidebarItem 
-            icon={<LayoutGrid size={20} />} 
-            label="Dashboard" 
-            active={activeTab === 'dashboard'} 
-            onClick={() => handleTabChange('dashboard')} 
-            expanded={isSidebarExpanded}
-          />
-          
-          <SidebarItem 
-            icon={<Users size={20} />} 
-            label="Equipe" 
-            active={activeTab === 'team'} 
-            onClick={() => handleTabChange('team')} 
-            expanded={isSidebarExpanded}
-          />
+  <SidebarItem 
+    icon={<LayoutGrid size={20} />} 
+    label="Dashboard" 
+    active={activeTab === 'dashboard'} 
+    onClick={() => handleTabChange('dashboard')} 
+    expanded={isSidebarExpanded}
+  />
+  
+  <SidebarItem 
+    icon={<Users size={20} />} 
+    label="Equipe" 
+    active={activeTab === 'team'} 
+    onClick={() => handleTabChange('team')} 
+    expanded={isSidebarExpanded}
+  />
 
-          <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} expanded={isSidebarExpanded} />
-          <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => handleTabChange('coupons')} expanded={isSidebarExpanded} />
-          <SidebarItem icon={<CalendarCheck size={20} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} expanded={isSidebarExpanded} />
-          <SidebarItem icon={<CreditCard size={20} />} label="Assinaturas" active={activeTab === 'subscriptions'} onClick={() => handleTabChange('subscriptions')} expanded={isSidebarExpanded} />
-          <SidebarItem icon={<MessageSquare size={20} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} />
-          <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} expanded={isSidebarExpanded} />
-          <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => handleTabChange('loyalty')} expanded={isSidebarExpanded} />
-          <SidebarItem icon={<Sparkles size={20} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} expanded={isSidebarExpanded} />
-          <SidebarItem icon={<DollarSign size={20} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => handleTabChange('finance')} expanded={isSidebarExpanded} />
-          <SidebarItem icon={<ShieldCheck size={20} />} label="Meu Plano" active={activeTab === 'plan'} onClick={() => handleTabChange('plan')} expanded={isSidebarExpanded} />
-          <SidebarItem icon={<Settings size={20} />} label="Configurações" active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} expanded={isSidebarExpanded} />
-          
-          <div className="pt-4 mt-2">
-              <div className="h-px bg-slate-100 mb-4 mx-2"></div>
-              <button 
-                  onClick={onViewClient}
-                  className={`flex items-center px-4 py-3 w-full rounded-lg text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}
-              >
-                  <Smartphone size={20} className="group-hover:text-orange-500 transition-colors shrink-0" />
-                  {isSidebarExpanded && (
-                    <>
-                      <span className="flex-1 text-left">Agenda Digital</span>
-                      <ExternalLink size={14} className="opacity-50" />
-                    </>
-                  )}
-              </button>
-          </div>
-        </nav>
+  <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<CalendarCheck size={20} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<CreditCard size={20} />} label="Assinaturas" active={activeTab === 'subscriptions'} onClick={() => handleTabChange('subscriptions')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => handleTabChange('coupons')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => handleTabChange('loyalty')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<MessageSquare size={20} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<Sparkles size={20} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<DollarSign size={20} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => handleTabChange('finance')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<ShieldCheck size={20} />} label="Meu Plano" active={activeTab === 'plan'} onClick={() => handleTabChange('plan')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<Settings size={20} />} label="Configurações" active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} expanded={isSidebarExpanded} />
+  
+  <div className="pt-4 mt-2">
+      <div className="h-px bg-slate-100 mb-4 mx-2"></div>
+      <button 
+          onClick={onViewClient}
+          className={`flex items-center px-4 py-3 w-full rounded-lg text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}
+      >
+          <Smartphone size={20} className="group-hover:text-orange-500 transition-colors shrink-0" />
+          {isSidebarExpanded && (
+            <>
+              <span className="flex-1 text-left">Agenda Digital</span>
+              <ExternalLink size={14} className="opacity-50" />
+            </>
+          )}
+      </button>
+  </div>
+</nav>
 
         <div className="p-4 border-t border-slate-100">
           <button onClick={onLogout} className={`flex items-center px-4 py-3 w-full text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}>
