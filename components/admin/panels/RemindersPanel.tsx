@@ -200,7 +200,7 @@ export const RemindersPanel: React.FC = () => {
     };
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-8">
+        <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-2xl font-bold text-slate-900">Automação</h1>
@@ -294,7 +294,7 @@ export const RemindersPanel: React.FC = () => {
             </div>
 
             {activeTab === 'whatsapp' ? (
-                <div className="bg-white border border-slate-200 rounded-lg p-8 text-center shadow-sm">
+                <div className="bg-white border border-slate-200 rounded-lg p-8 text-left shadow-sm">
                     {wsStatus === 'loading' ? (
                         <div className="flex flex-col items-center py-12">
                             <Loader2 size={48} className="text-orange-500 animate-spin mb-4" />
