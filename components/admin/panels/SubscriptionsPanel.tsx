@@ -131,13 +131,13 @@ export const SubscriptionsPanel: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-orange-500" />
+          <h2 className="text-2xl font-bold text-slate-900 mb-1">Assinaturas</h2>
+            
             Gestão de Assinaturas
           </h2>
-          <p className="text-slate-400">Gerencie planos mensais e assinantes da sua barbearia</p>
+          <p className="text-[#6b7d99] text-sm font-medium">Gerencie planos mensais e assinantes da sua barbearia</p>
         </div>
         <div className="flex items-center gap-2">
           {subscriptionPlans.length === 0 && (
