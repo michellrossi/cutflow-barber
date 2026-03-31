@@ -200,12 +200,13 @@ export const RemindersPanel: React.FC = () => {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Automação</h1>
-                    <p className="text-slate-500">Gerencie suas mensagens automáticas do WhatsApp</p>
-                </div>
+        <div className="space-y-6"> {/* Removido p-6, max-w-7xl e mx-auto para alinhar à esquerda */}
+            <div className="flex flex-col md:flex-row justify-between items-start gap-4 mb-8"> {/* Ajustado para items-start */}
+               <div>
+                   <h2 className="text-2xl font-bold text-slate-900 mb-1">Automação</h2>
+                   <p className="text-[#6b7d99] text-sm font-medium">Gerencie suas mensagens automáticas do WhatsApp</p>
+               </div>
+
                 <div className="flex flex-wrap gap-3">
                     {activeTab !== 'triggers' && (
                         <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-md border border-slate-200">
@@ -293,29 +294,19 @@ export const RemindersPanel: React.FC = () => {
                 </button>
             </div>
 
-            {activeTab === 'whatsapp' ? (
-                <div className="bg-white border border-slate-200 rounded-lg p-8 text-left shadow-sm">
-                    {wsStatus === 'loading' ? (
-                        <div className="flex flex-col items-center py-12">
-                            <Loader2 size={48} className="text-orange-500 animate-spin mb-4" />
-                            <p className="text-slate-400 font-medium">Verificando conexão...</p>
-                        </div>
-                    ) : wsStatus === 'connected' ? (
-                        <div className="flex flex-col items-center py-12">
-                            <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6 border border-green-100">
-                                <Smartphone size={40} className="text-green-500" />
-                            </div>
-                            <h4 className="text-2xl font-bold text-slate-900 mb-2">WhatsApp Conectado!</h4>
-                            <p className="text-slate-500 mb-8 max-w-md mx-auto">Sua barbearia já está enviando mensagens automáticas de confirmação e lembretes.</p>
-                            <button 
-                                onClick={handleDisconnect}
-                                className="px-8 py-3 bg-red-50 text-red-600 border border-red-100 rounded-md font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                            >
-                                Desconectar WhatsApp
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center py-12">
+            {activeTab === 'whatsapp' && (
+        <div className="bg-white border border-slate-200 rounded-lg p-8 text-left shadow-sm"> {/* Mudado de text-center para text-left */}
+            {wsStatus === 'connected' ? (
+                <div className="flex flex-col items-start py-6"> {/* Mudado de items-center para items-start */}
+                    <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6 border border-green-100">
+                        <Smartphone size={40} className="text-green-500" />
+                    </div>
+                    <h4 className="text-2xl font-bold text-slate-900 mb-2">WhatsApp Conectado!</h4>
+                    <p className="text-slate-500 mb-8 max-w-md">Sua barbearia já está enviando mensagens automáticas.</p>
+                    {/* Botão de desconectar */}
+                </div>
+            ) : (
+                <div className="flex flex-col items-start py-6"> {/* Mudado de items-center para items-start */}
                             {qrCode ? (
                                 <div className="space-y-6">
                                     <div className="bg-white p-4 rounded-xl inline-block shadow-2xl border border-slate-100">
