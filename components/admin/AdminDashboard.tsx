@@ -173,63 +173,13 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
             expanded={isSidebarExpanded}
           />
           
-          <div className="space-y-1">
-              <button 
-                  onClick={() => {
-                      const newState = !isTeamOpen;
-                      setIsTeamOpen(newState);
-                      if (newState) {
-                          setActiveTab('team');
-                          setIsSettingsOpen(false);
-                      }
-                  }}
-                  className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${isSidebarExpanded ? 'gap-3' : 'justify-center'} ${activeTab === 'team' ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
-              >
-                  <Users size={20} className={`shrink-0 ${activeTab === 'team' ? 'text-orange-500' : 'text-slate-700'}`} />
-                  {isSidebarExpanded && (
-                    <>
-                      <span className="flex-1 text-left">Equipe</span>
-                      <motion.div
-                          animate={{ rotate: isTeamOpen ? 180 : 0 }}
-                          transition={{ duration: 0.2 }}
-                      >
-                          <ChevronDown size={16} />
-                      </motion.div>
-                    </>
-                  )}
-              </button>
-
-              <AnimatePresence>
-                  {isTeamOpen && isSidebarExpanded && (
-                      <motion.div 
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="pl-4 space-y-1 overflow-hidden"
-                      >
-                          <SubSidebarItem 
-                              icon={<Users size={16} />} 
-                              label="Profissionais" 
-                              active={activeTab === 'team' && teamSubTab === 'list'} 
-                              onClick={() => { setActiveTab('team'); setTeamSubTab('list'); }} 
-                          />
-                          <SubSidebarItem 
-                              icon={<Clock size={16} />} 
-                              label="Horários" 
-                              active={activeTab === 'team' && teamSubTab === 'schedules'} 
-                              onClick={() => { setActiveTab('team'); setTeamSubTab('schedules'); }} 
-                          />
-                          <SubSidebarItem 
-                              icon={<Lock size={16} />} 
-                              label="Bloqueios" 
-                              active={activeTab === 'team' && teamSubTab === 'blocks'} 
-                              onClick={() => { setActiveTab('team'); setTeamSubTab('blocks'); }} 
-                          />
-                      </motion.div>
-                  )}
-              </AnimatePresence>
-          </div>
+          <SidebarItem 
+            icon={<Users size={20} />} 
+            label="Equipe" 
+            active={activeTab === 'team'} 
+            onClick={() => handleTabChange('team')} 
+            expanded={isSidebarExpanded}
+          />
 
           <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} expanded={isSidebarExpanded} />
           <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => handleTabChange('coupons')} expanded={isSidebarExpanded} />
