@@ -12,7 +12,7 @@ export const RemindersPanel: React.FC = () => {
         settings, professionals, services, shop 
     } = useShop();
     
-    const [activeTab, setActiveTab] = useState<'clients' | 'team' | 'categories'>('clients');
+    const [activeTab, setActiveTab] = useState<'clients' | 'team' | 'triggers'>('clients');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<Partial<MessageTemplate> | null>(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -155,8 +155,8 @@ export const RemindersPanel: React.FC = () => {
                     <p className="text-slate-500">Gerencie suas mensagens automáticas do WhatsApp</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                    {activeTab !== 'categories' && (
-                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-xl border border-slate-200">
+                    {activeTab !== 'triggers' && (
+                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-md border border-slate-200">
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Testar em:</span>
                             <input 
                                 type="text" 
@@ -167,13 +167,13 @@ export const RemindersPanel: React.FC = () => {
                             />
                         </div>
                     )}
-                    {activeTab !== 'categories' && (
+                    {activeTab !== 'triggers' && (
                         <button 
                             onClick={() => {
                                 setEditingTemplate({ trigger: 'custom', delayUnit: 'minutes', delayValue: 0, active: true });
                                 setIsModalOpen(true);
                             }}
-                            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors font-medium shadow-lg shadow-orange-200"
+                            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors font-medium shadow-lg shadow-orange-200"
                         >
                             <Plus size={18} />
                             Novo Modelo
@@ -183,10 +183,10 @@ export const RemindersPanel: React.FC = () => {
             </div>
 
             {/* Sub-menus Internos */}
-            <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit">
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit">
                 <button
                     onClick={() => setActiveTab('clients')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
                         activeTab === 'clients' 
                         ? 'bg-white text-orange-600 shadow-sm' 
                         : 'text-slate-500 hover:text-slate-700'
@@ -197,7 +197,7 @@ export const RemindersPanel: React.FC = () => {
                 </button>
                 <button
                     onClick={() => setActiveTab('team')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
                         activeTab === 'team' 
                         ? 'bg-white text-orange-600 shadow-sm' 
                         : 'text-slate-500 hover:text-slate-700'
@@ -207,33 +207,33 @@ export const RemindersPanel: React.FC = () => {
                     Equipe
                 </button>
                 <button
-                    onClick={() => setActiveTab('categories')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                        activeTab === 'categories' 
+                    onClick={() => setActiveTab('triggers')}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
+                        activeTab === 'triggers' 
                         ? 'bg-white text-orange-600 shadow-sm' 
                         : 'text-slate-500 hover:text-slate-700'
                     }`}
                 >
                     <Tags size={18} />
-                    Categorias
+                    Gatilhos
                 </button>
             </div>
 
-            {activeTab === 'categories' ? (
+            {activeTab === 'triggers' ? (
                 <div className="space-y-6">
-                    <div className="bg-white rounded-3xl border border-slate-200 p-8 shadow-sm">
-                        <h2 className="text-lg font-bold text-slate-900 mb-6">Gerenciar Categorias</h2>
+                    <div className="bg-white rounded-lg border border-slate-200 p-8 shadow-sm">
+                        <h2 className="text-lg font-bold text-slate-900 mb-6">Gerenciar Gatilhos</h2>
                         <div className="flex gap-4 mb-8">
                             <input 
                                 type="text"
                                 value={newCategoryName}
                                 onChange={(e) => setNewCategoryName(e.target.value)}
-                                placeholder="Nome da nova categoria..."
-                                className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                placeholder="Nome do novo gatilho..."
+                                className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                             />
                             <button 
                                 onClick={handleAddCategory}
-                                className="px-6 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200 flex items-center gap-2"
+                                className="px-6 py-3 bg-orange-500 text-white rounded-md font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200 flex items-center gap-2"
                             >
                                 <Plus size={20} />
                                 Adicionar
@@ -244,12 +244,12 @@ export const RemindersPanel: React.FC = () => {
                             {messageCategories.map((category) => (
                                 <div 
                                     key={category.id}
-                                    className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100 group"
+                                    className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100 group"
                                 >
                                     <span className="font-bold text-slate-700">{category.name}</span>
                                     <button 
                                         onClick={() => removeMessageCategory(category.id)}
-                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all opacity-0 group-hover:opacity-100"
                                     >
                                         <Trash2 size={18} />
                                     </button>
@@ -266,17 +266,17 @@ export const RemindersPanel: React.FC = () => {
                             layout
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col"
+                            className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col"
                         >
                             <div className="flex justify-between items-start mb-4">
-                                <div className="p-3 bg-orange-50 text-orange-600 rounded-xl">
+                                <div className="p-3 bg-orange-50 text-orange-600 rounded-md">
                                     <MessageSquare size={24} />
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button 
                                         onClick={() => handleTest(template.id)}
                                         disabled={isTesting}
-                                        className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
+                                        className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
                                         title="Enviar Teste"
                                     >
                                         <Copy size={18} />
@@ -286,13 +286,13 @@ export const RemindersPanel: React.FC = () => {
                                             setEditingTemplate(template);
                                             setIsModalOpen(true);
                                         }}
-                                        className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                                        className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-md transition-colors"
                                     >
                                         <Eye size={18} />
                                     </button>
                                     <button 
                                         onClick={() => removeMessageTemplate(template.id)}
-                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                                     >
                                         <Trash2 size={18} />
                                     </button>
@@ -301,9 +301,9 @@ export const RemindersPanel: React.FC = () => {
 
                             <h3 className="font-bold text-slate-900 text-lg mb-1">{template.title}</h3>
                             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 mb-4">
-                                <span className="px-2 py-0.5 bg-slate-100 rounded-full">{getTriggerLabel(template.trigger)}</span>
+                                <span className="px-2 py-0.5 bg-slate-100 rounded-md">{getTriggerLabel(template.trigger)}</span>
                                 {template.category && (
-                                    <span className="px-2 py-0.5 bg-orange-50 text-orange-600 rounded-full border border-orange-100">{template.category}</span>
+                                    <span className="px-2 py-0.5 bg-orange-50 text-orange-600 rounded-md border border-orange-100">{template.category}</span>
                                 )}
                                 {template.delayValue > 0 && (
                                     <span className="flex items-center gap-1">
@@ -313,12 +313,12 @@ export const RemindersPanel: React.FC = () => {
                                 )}
                             </div>
 
-                            <div className="bg-slate-50 rounded-xl p-4 text-sm text-slate-600 line-clamp-4 flex-grow mb-4 italic">
+                            <div className="bg-slate-50 rounded-md p-4 text-sm text-slate-600 line-clamp-4 flex-grow mb-4 italic">
                                 "{template.content}"
                             </div>
 
                             <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                                <span className={`text-xs font-bold px-2 py-1 rounded-full ${template.active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                                <span className={`text-xs font-bold px-2 py-1 rounded-md ${template.active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                                     {template.active ? 'Ativo' : 'Inativo'}
                                 </span>
                                 <button 
@@ -336,12 +336,15 @@ export const RemindersPanel: React.FC = () => {
             {/* Modal de Edição */}
             <AnimatePresence>
                 {isModalOpen && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+                    <div 
+                        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+                        onClick={(e) => e.target === e.currentTarget && setIsModalOpen(false)}
+                    >
                         <motion.div 
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className="bg-white rounded-3xl w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col md:flex-row"
+                            className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-hidden shadow-2xl flex flex-col md:flex-row"
                         >
                             {/* Editor */}
                             <div className="flex-1 p-8 overflow-y-auto border-r border-slate-100">
@@ -355,29 +358,16 @@ export const RemindersPanel: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-6">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 gap-4">
                                         <div>
                                             <label className="block text-sm font-bold text-slate-700 mb-2">Título do Modelo</label>
                                             <input 
                                                 type="text"
                                                 value={editingTemplate?.title || ''}
                                                 onChange={(e) => setEditingTemplate(prev => ({ ...prev, title: e.target.value }))}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                                                 placeholder="Ex: Lembrete 2h antes"
                                             />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Categoria</label>
-                                            <select 
-                                                value={editingTemplate?.category || ''}
-                                                onChange={(e) => setEditingTemplate(prev => ({ ...prev, category: e.target.value }))}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
-                                            >
-                                                <option value="">Sem Categoria</option>
-                                                {messageCategories.map(cat => (
-                                                    <option key={cat.id} value={cat.name}>{cat.name}</option>
-                                                ))}
-                                            </select>
                                         </div>
                                     </div>
 
@@ -387,7 +377,7 @@ export const RemindersPanel: React.FC = () => {
                                             <select 
                                                 value={editingTemplate?.trigger || 'custom'}
                                                 onChange={(e) => setEditingTemplate(prev => ({ ...prev, trigger: e.target.value as any }))}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                                             >
                                                 <option value="immediate_confirmation">Confirmação Imediata</option>
                                                 <option value="appointment_reminder">Lembrete de Agendamento</option>
@@ -403,12 +393,12 @@ export const RemindersPanel: React.FC = () => {
                                                     type="number"
                                                     value={editingTemplate?.delayValue || 0}
                                                     onChange={(e) => setEditingTemplate(prev => ({ ...prev, delayValue: parseInt(e.target.value) }))}
-                                                    className="w-20 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                                    className="w-20 px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                                                 />
                                                 <select 
                                                     value={editingTemplate?.delayUnit || 'minutes'}
                                                     onChange={(e) => setEditingTemplate(prev => ({ ...prev, delayUnit: e.target.value as any }))}
-                                                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                                                 >
                                                     <option value="minutes">Minutos</option>
                                                     <option value="hours">Horas</option>
@@ -424,7 +414,7 @@ export const RemindersPanel: React.FC = () => {
                                             <div className="flex gap-2">
                                                 <button 
                                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                                                    className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 px-2 py-1 rounded-lg border border-slate-200 transition-all"
+                                                    className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 px-2 py-1 rounded-md border border-slate-200 transition-all"
                                                 >
                                                     <Smile size={12} />
                                                     EMOJIS
@@ -432,7 +422,7 @@ export const RemindersPanel: React.FC = () => {
                                                 <button 
                                                     onClick={handleGenerateAI}
                                                     disabled={isGeneratingAI}
-                                                    className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded-lg border border-orange-200 transition-all disabled:opacity-50"
+                                                    className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded-md border border-orange-200 transition-all disabled:opacity-50"
                                                 >
                                                     <Sparkles size={12} className={isGeneratingAI ? 'animate-pulse' : ''} />
                                                     {isGeneratingAI ? 'GERANDO...' : 'GERAR COM IA'}
@@ -462,7 +452,7 @@ export const RemindersPanel: React.FC = () => {
                                                         const content = editingTemplate?.content || '';
                                                         setEditingTemplate(prev => ({ ...prev, content: content + ' ' + v.value }));
                                                     }}
-                                                    className="px-2 py-1 bg-slate-100 hover:bg-orange-100 hover:text-orange-700 text-slate-600 rounded-lg text-xs font-bold transition-colors border border-slate-200"
+                                                    className="px-2 py-1 bg-slate-100 hover:bg-orange-100 hover:text-orange-700 text-slate-600 rounded-md text-xs font-bold transition-colors border border-slate-200"
                                                 >
                                                     {v.value}
                                                 </button>
@@ -472,7 +462,7 @@ export const RemindersPanel: React.FC = () => {
                                             value={editingTemplate?.content || ''}
                                             onChange={(e) => setEditingTemplate(prev => ({ ...prev, content: e.target.value }))}
                                             rows={6}
-                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all resize-none"
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all resize-none"
                                             placeholder="Digite sua mensagem aqui..."
                                         />
                                         <div className="flex items-center gap-2 mt-2 text-slate-400 text-xs">
@@ -484,13 +474,13 @@ export const RemindersPanel: React.FC = () => {
                                     <div className="flex gap-4 pt-4">
                                         <button 
                                             onClick={() => setIsModalOpen(false)}
-                                            className="flex-1 px-6 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                                            className="flex-1 px-6 py-3 bg-slate-100 text-slate-700 rounded-md font-bold hover:bg-slate-200 transition-all"
                                         >
                                             Cancelar
                                         </button>
                                         <button 
                                             onClick={handleSave}
-                                            className="flex-1 px-6 py-3 bg-orange-500 text-white rounded-xl font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200 flex items-center justify-center gap-2"
+                                            className="flex-1 px-6 py-3 bg-orange-500 text-white rounded-md font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200 flex items-center justify-center gap-2"
                                         >
                                             <Save size={20} />
                                             Salvar Modelo
@@ -509,7 +499,7 @@ export const RemindersPanel: React.FC = () => {
                                 <div className="flex-grow flex items-center justify-center">
                                     <div className="relative w-full">
                                         {/* WhatsApp Style Bubble */}
-                                        <div className="bg-white rounded-2xl p-4 shadow-xl border border-slate-100 relative max-w-full">
+                                        <div className="bg-white rounded-lg p-4 shadow-xl border border-slate-100 relative max-w-full">
                                             <div className="text-sm text-slate-800 whitespace-pre-wrap break-words">
                                                 {editingTemplate?.content ? replaceVariables(editingTemplate.content) : 'Sua mensagem aparecerá aqui...'}
                                             </div>
@@ -526,7 +516,7 @@ export const RemindersPanel: React.FC = () => {
                                 </div>
 
                                 <div className="mt-auto pt-6">
-                                    <div className="bg-orange-50 rounded-2xl p-4 border border-orange-100">
+                                    <div className="bg-orange-50 rounded-lg p-4 border border-orange-100">
                                         <div className="flex items-center gap-2 text-orange-700 font-bold text-xs mb-1">
                                             <Bell size={14} />
                                             Configuração Ativa

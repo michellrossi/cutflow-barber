@@ -258,7 +258,7 @@ export const ServicesPanel: React.FC = () => {
                         setSelectedCat('');
                         setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes', imageUrl: '' }); 
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors font-medium shadow-lg shadow-orange-200"
+                    className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium shadow-lg shadow-orange-200"
                 >
                     <Plus size={18} />
                     Novo Serviço
@@ -266,12 +266,12 @@ export const ServicesPanel: React.FC = () => {
             </div>
 
             {/* Sub-menus Internos */}
-            <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
                 {allCategories.map(cat => (
                     <button
                         key={cat}
                         onClick={() => setActiveCategory(cat)}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
                             activeCategory === cat 
                             ? 'bg-white text-orange-600 shadow-sm' 
                             : 'text-slate-500 hover:text-slate-700'
@@ -439,7 +439,7 @@ export const ServicesPanel: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                 {filteredServices.map(service => (
-                    <div key={service.id} className="bg-white rounded-[2rem] border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all shadow-xl">
+                    <div key={service.id} className="bg-white rounded-lg border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all shadow-xl">
                         {/* Imagem do Serviço */}
                         <div className="h-48 w-full relative overflow-hidden">
                             {service.imageUrl ? (
@@ -474,13 +474,13 @@ export const ServicesPanel: React.FC = () => {
                                 <div className="flex gap-3">
                                     <button 
                                         onClick={() => handleEdit(service)} 
-                                        className="flex-1 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all font-bold text-sm flex items-center justify-center gap-2"
+                                        className="flex-1 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all font-bold text-sm flex items-center justify-center gap-2"
                                     >
                                         <Edit2 size={14} /> Editar
                                     </button>
                                     <button 
                                         onClick={() => setDeleteId(service.id)} 
-                                        className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                                        className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
                                     >
                                         <Trash2 size={18}/>
                                     </button>
@@ -499,7 +499,7 @@ export const ServicesPanel: React.FC = () => {
                     setSelectedCat('');
                     setFormData({ name: '', description: '', price: '', duration: '', category: 'Cortes', imageUrl: '' }); 
                 }}
-                    className="bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 p-8 flex flex-col items-center justify-center gap-6 hover:border-slate-300 hover:bg-slate-100 transition-all min-h-[400px] group"
+                    className="bg-slate-50 rounded-lg border-2 border-dashed border-slate-200 p-8 flex flex-col items-center justify-center gap-6 hover:border-slate-300 hover:bg-slate-100 transition-all min-h-[400px] group"
                 >
                     <div className="w-16 h-16 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-orange-500 group-hover:scale-110 transition-all shadow-xl">
                         <Plus size={32} />

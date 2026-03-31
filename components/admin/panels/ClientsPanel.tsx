@@ -227,7 +227,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
         </div>
         <button 
           onClick={() => handleOpenForm()}
-          className="text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-colors self-start md:self-auto shadow-lg"
+          className="text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition-colors self-start md:self-auto shadow-lg"
           style={{ backgroundColor: settings.primaryColor }}
         >
           <Plus size={18} />
@@ -236,13 +236,13 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
       </div>
 
       {/* Filters & Search */}
-      <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+      <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
         <div className="relative flex-1 w-full lg:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
           <input 
             type="text" 
             placeholder="Buscar por nome, telefone ou email..." 
-            className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:outline-none focus:border-orange-500 transition-colors placeholder:text-[#6b7d99]"
+            className="w-full bg-slate-50 border border-slate-200 rounded-md pl-10 pr-4 py-2.5 text-slate-900 focus:outline-none focus:border-orange-500 transition-colors placeholder:text-[#6b7d99]"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -293,7 +293,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
       </div>
 
       {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse table-fixed">
             <thead>
@@ -346,7 +346,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
                       )}
                     </td>
                     <td className="p-4">
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${getRiskBadgeColor(client.metrics.risk)}`}>
+                      <span className={`px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase border ${getRiskBadgeColor(client.metrics.risk)}`}>
                         {client.metrics.risk}
                       </span>
                     </td>
@@ -530,7 +530,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
       {/* View Details Modal */}
       {isViewModalOpen && viewingClient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setIsViewModalOpen(false)}>
-          <div className="bg-white rounded-xl border border-slate-200 w-full max-w-2xl shadow-2xl relative animate-scale-up overflow-hidden flex flex-col max-h-[90vh]">
+          <div className="bg-white rounded-lg border border-slate-200 w-full max-w-2xl shadow-2xl relative animate-scale-up overflow-hidden flex flex-col max-h-[90vh]">
             <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
               <div className="flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center text-slate-700 font-bold text-xl border-2 border-slate-300">
@@ -543,7 +543,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
                 <div>
                   <h3 className="text-2xl font-bold text-slate-900">{viewingClient.name}</h3>
                   <div className="flex items-center gap-3 mt-1">
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold uppercase border ${getRiskBadgeColor(viewingClient.metrics.risk)}`}>
+                    <span className={`px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase border ${getRiskBadgeColor(viewingClient.metrics.risk)}`}>
                       {viewingClient.metrics.risk}
                     </span>
                     <div className="flex items-center gap-1 text-slate-600 text-sm font-medium">
@@ -552,7 +552,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
                   </div>
                 </div>
               </div>
-              <button onClick={() => setIsViewModalOpen(false)} className="text-slate-400 hover:text-slate-900 p-2">
+              <button onClick={() => setIsViewModalOpen(false)} className="text-slate-400 hover:text-slate-900 p-2 hover:bg-slate-100 rounded-md transition-all">
                 <X size={24} />
               </button>
             </div>
@@ -560,27 +560,27 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
             <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
               {/* Stats Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
                   <div className="text-slate-500 text-xs uppercase font-bold mb-1">Total Gasto</div>
                   <div className="text-xl font-bold text-green-600 flex items-center justify-center gap-1">
                     <DollarSign size={16} />
                     {viewingClient.metrics.totalSpent.toFixed(2)}
                   </div>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
                   <div className="text-slate-500 text-xs uppercase font-bold mb-1">Cortes Realizados</div>
                   <div className="text-xl font-bold text-slate-900 flex items-center justify-center gap-1">
                     <Star size={16} className="text-yellow-500" />
                     {viewingClient.metrics.totalCuts}
                   </div>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
                   <div className="text-slate-500 text-xs uppercase font-bold mb-1">Frequência</div>
                   <div className="text-xl font-bold text-slate-900">
                     {viewingClient.metrics.frequency}
                   </div>
                 </div>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-center">
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center">
                   <div className="text-slate-500 text-xs uppercase font-bold mb-1">Último Corte</div>
                   <div className="text-sm font-bold text-slate-900">
                     {viewingClient.metrics.lastCutDate ? new Date(viewingClient.metrics.lastCutDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'N/A'}
@@ -602,7 +602,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
                       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                       .slice(0, 5)
                       .map(appt => (
-                        <div key={appt.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
+                        <div key={appt.id} className="bg-slate-50 p-3 rounded-md border border-slate-200 flex justify-between items-center">
                           <div>
                             <div className="text-sm font-bold text-slate-900">
                               {new Date(appt.date + 'T12:00:00').toLocaleDateString('pt-BR')}
@@ -633,7 +633,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
                       .filter(a => (a.clientId === viewingClient.id || (!a.clientId && a.clientPhone === viewingClient.phone)) && a.status === 'scheduled')
                       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                       .map(appt => (
-                        <div key={appt.id} className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex justify-between items-center">
+                        <div key={appt.id} className="bg-slate-50 p-3 rounded-md border border-slate-200 flex justify-between items-center">
                           <div>
                             <div className="text-sm font-bold text-slate-900">
                               {new Date(appt.date + 'T12:00:00').toLocaleDateString('pt-BR')}
@@ -656,7 +656,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
 
               {/* Notes */}
               {viewingClient.notes && (
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                   <h4 className="text-sm font-bold text-slate-500 uppercase mb-2">Observações</h4>
                   <p className="text-slate-700 text-sm italic">"{viewingClient.notes}"</p>
                 </div>
@@ -666,7 +666,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
             <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end">
               <button 
                 onClick={() => setIsViewModalOpen(false)}
-                className="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold transition-colors"
+                className="px-6 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-bold transition-colors"
               >
                 Fechar
               </button>
@@ -696,12 +696,12 @@ const FilterButton: React.FC<{ active: boolean, onClick: () => void, label: stri
   return (
     <button 
       onClick={onClick}
-      className={`px-4 py-1.5 rounded-lg border text-sm whitespace-nowrap flex items-center gap-2 transition-all shadow-sm ${getColorClasses()}`}
+      className={`px-4 py-1.5 rounded-md border text-sm whitespace-nowrap flex items-center gap-2 transition-all shadow-sm ${getColorClasses()}`}
     >
       {color && <div className={`w-2 h-2 rounded-full ${dotColors[color]}`}></div>}
       {label}
       {count !== undefined && (
-        <span className={`text-[10px] px-1.5 py-0.5 rounded-md ${active ? 'bg-white/20' : 'bg-slate-100'} font-bold`}>
+        <span className={`text-[10px] px-1.5 py-0.5 rounded-sm ${active ? 'bg-white/20' : 'bg-slate-100'} font-bold`}>
           {count}
         </span>
       )}

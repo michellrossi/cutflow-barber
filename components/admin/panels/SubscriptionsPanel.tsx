@@ -195,7 +195,7 @@ export const SubscriptionsPanel: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 p-1 bg-slate-900/50 border border-slate-800 rounded-xl w-fit">
+      <div className="flex items-center gap-1 p-1 bg-slate-900/50 border border-slate-800 rounded-lg w-fit">
         <button
           onClick={() => setActiveTab('subscribers')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
@@ -219,7 +219,7 @@ export const SubscriptionsPanel: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="bg-slate-900/50 border border-slate-800 rounded-2xl overflow-hidden">
+      <div className="bg-slate-900/50 border border-slate-800 rounded-lg overflow-hidden">
         {activeTab === 'subscribers' ? (
           <>
             {/* Filters */}
@@ -272,7 +272,7 @@ export const SubscriptionsPanel: React.FC = () => {
                       <tr key={sub.id} className="hover:bg-slate-800/30 transition-colors group">
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-orange-500 font-bold border border-slate-700">
+                            <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-orange-500 font-bold border border-slate-700">
                               {client?.name.charAt(0)}
                             </div>
                             <div>
@@ -292,9 +292,9 @@ export const SubscriptionsPanel: React.FC = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden max-w-[80px]">
+                            <div className="flex-1 h-1.5 bg-slate-800 rounded-md overflow-hidden max-w-[80px]">
                               <div 
-                                className={`h-full rounded-full ${
+                                className={`h-full rounded-sm ${
                                   (sub.servicesUsedThisMonth / (plan?.servicesPerMonth || 1)) > 0.8 ? 'bg-red-500' : 'bg-emerald-500'
                                 }`}
                                 style={{ width: `${Math.min(100, (sub.servicesUsedThisMonth / (plan?.servicesPerMonth || 1)) * 100)}%` }}
@@ -344,14 +344,14 @@ export const SubscriptionsPanel: React.FC = () => {
         ) : (
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {subscriptionPlans.map((plan) => (
-              <div key={plan.id} className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 relative group overflow-hidden">
+              <div key={plan.id} className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 relative group overflow-hidden">
                 {!plan.active && (
-                  <div className="absolute top-4 right-4 bg-red-500/10 text-red-500 text-[10px] uppercase font-bold px-2 py-1 rounded border border-red-500/20">
+                  <div className="absolute top-4 right-4 bg-red-500/10 text-red-500 text-[10px] uppercase font-bold px-2 py-1 rounded-sm border border-red-500/20">
                     Inativo
                   </div>
                 )}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500">
+                  <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
                     <Zap className="w-6 h-6" />
                   </div>
                   <div>
@@ -391,9 +391,9 @@ export const SubscriptionsPanel: React.FC = () => {
             ))}
             <button 
               onClick={() => { setEditingPlan(null); setIsPlanModalOpen(true); }}
-              className="border-2 border-dashed border-slate-800 hover:border-orange-500/50 hover:bg-orange-500/5 rounded-2xl p-6 flex flex-col items-center justify-center gap-3 transition-all group"
+              className="border-2 border-dashed border-slate-800 hover:border-orange-500/50 hover:bg-orange-500/5 rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-all group"
             >
-              <div className="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-orange-500 group-hover:scale-110 transition-all">
+              <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-orange-500 group-hover:scale-110 transition-all">
                 <Plus className="w-6 h-6" />
               </div>
               <span className="text-slate-500 group-hover:text-orange-500 font-medium">Criar Novo Plano</span>
@@ -417,7 +417,7 @@ export const SubscriptionsPanel: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-lg shadow-2xl overflow-hidden"
             >
               <div className="p-6 border-b border-slate-800">
                 <h3 className="text-xl font-bold text-white">{editingPlan ? 'Editar Plano' : 'Novo Plano'}</h3>
@@ -471,7 +471,7 @@ export const SubscriptionsPanel: React.FC = () => {
                     name="active"
                     id="plan-active"
                     defaultChecked={editingPlan ? editingPlan.active : true}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-orange-500 focus:ring-orange-500/20"
+                    className="w-4 h-4 rounded-sm border-slate-700 bg-slate-800 text-orange-500 focus:ring-orange-500/20"
                   />
                   <label htmlFor="plan-active" className="text-sm text-slate-300">Plano Ativo</label>
                 </div>
@@ -511,7 +511,7 @@ export const SubscriptionsPanel: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden"
+              className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-lg shadow-2xl overflow-hidden"
             >
               <div className="p-6 border-b border-slate-800">
                 <h3 className="text-xl font-bold text-white">{editingSub ? 'Editar Assinatura' : 'Nova Assinatura'}</h3>
@@ -632,7 +632,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon, label, value, color }) => {
   };
 
   return (
-    <div className={`p-4 rounded-2xl border ${colorClasses[color]} transition-all hover:scale-[1.02]`}>
+    <div className={`p-4 rounded-lg border ${colorClasses[color]} transition-all hover:scale-[1.02]`}>
       <div className="flex items-center gap-3 mb-2">
         {icon}
         <span className="text-slate-400 text-sm font-medium">{label}</span>
@@ -669,7 +669,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const config = configs[status] || configs.inactive;
 
   return (
-    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-bold uppercase border ${config.classes} w-fit`}>
+    <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase border ${config.classes} w-fit`}>
       {config.icon}
       {config.label}
     </div>

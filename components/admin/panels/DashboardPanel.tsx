@@ -149,7 +149,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
             </div>
 
             {/* Today's Agenda Summary */}
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
                 <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                     <div className="flex items-center gap-3">
                         <div className="p-2 bg-primary/10 rounded-lg" style={{ color: settings.primaryColor }}>
@@ -167,7 +167,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                         todayAgenda.map((apt) => (
                             <div key={apt.id} className="p-4 hover:bg-slate-50 transition-colors grid grid-cols-1 sm:grid-cols-12 items-center gap-4">
                                 {/* Horário */}
-                                <div className="sm:col-span-1 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-xl p-2 min-w-[70px]">
+                                <div className="sm:col-span-1 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-lg p-2 min-w-[70px]">
                                     <span className="text-lg font-bold text-slate-900">{apt.time.substring(0, 5)}</span>
                                     <span className="text-[10px] font-bold text-[#6b7d99] uppercase tracking-tighter">Horário</span>
                                 </div>
@@ -185,7 +185,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                                 <div className="sm:col-span-3 flex flex-col">
                                     <span className="text-[10px] font-bold text-[#6b7d99] uppercase tracking-widest mb-1">Profissional</span>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: professionals.find(p => p.id === apt.professionalId)?.color || '#64748b' }} />
+                                        <div className="w-2 h-2 rounded-sm shrink-0" style={{ backgroundColor: professionals.find(p => p.id === apt.professionalId)?.color || '#64748b' }} />
                                         <span className="text-sm text-slate-700 font-medium truncate">{getProName(apt.professionalId)}</span>
                                     </div>
                                 </div>
@@ -201,7 +201,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
 
                                 {/* Status */}
                                 <div className="sm:col-span-2 flex justify-end">
-                                    <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${getStatusStyles(apt.status)}`}>
+                                    <div className={`px-3 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wider border whitespace-nowrap ${getStatusStyles(apt.status)}`}>
                                         {getStatusLabel(apt.status)}
                                     </div>
                                 </div>
@@ -224,13 +224,13 @@ const StatCard: React.FC<{ icon: React.ReactNode, label: string, value: string, 
     <motion.div 
         whileHover={{ y: -4 }}
         onClick={onClick}
-        className={`bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:border-slate-300 transition-all ${onClick ? 'cursor-pointer' : ''}`}
+        className={`bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:border-slate-300 transition-all ${onClick ? 'cursor-pointer' : ''}`}
     >
         <div className="flex justify-between items-start mb-4">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
                 {icon}
             </div>
-            <span className="text-[10px] font-bold text-[#6b7d99] uppercase tracking-widest bg-slate-100 px-2 py-1 rounded">
+            <span className="text-[10px] font-bold text-[#6b7d99] uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-sm">
                 {trend}
             </span>
         </div>

@@ -213,8 +213,8 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                 isDestructive
             />
 
-            {/* Sub-tabs Navigation */}
-            <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
+            {/* Sub-menus Internos */}
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
                 {[
                     { id: 'list', label: 'Profissionais', icon: <Users size={18} /> },
                     { id: 'schedules', label: 'Horários', icon: <Clock size={18} /> },
@@ -233,7 +233,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                             }
                             handleSubTabChange(tab.id as any);
                         }}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
                             subTab === tab.id 
                             ? 'bg-white text-orange-600 shadow-sm' 
                             : 'text-slate-500 hover:text-slate-700'
@@ -249,13 +249,24 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                 <>
                     <div className="flex justify-between mb-8">
                         <p className="text-slate-500">Adicione, edite ou remova profissionais da sua equipe.</p>
+                        <button 
+                            onClick={() => { 
+                                setIsFormOpen(true); 
+                                setEditingId(null); 
+                                setName(''); setRole(''); setEmail(''); setPhone(''); setPhoto(null); setCommission('50');
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors font-medium shadow-lg shadow-orange-200"
+                        >
+                            <Plus size={18} />
+                            Novo Profissional
+                        </button>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
                         {professionals.map(pro => {
                             const isMaster = pro.role.toLowerCase().includes('master');
                             return (
-                                <div key={pro.id} className="bg-white rounded-xl border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all w-full max-w-[210px] shadow-lg">
+                                <div key={pro.id} className="bg-white rounded-md border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all w-full max-w-[210px] shadow-lg">
                                     {/* Top Half: Photo */}
                                     <div className="relative h-64 w-full overflow-hidden">
                                         <img 
@@ -292,7 +303,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                         <div className="mt-auto flex gap-1.5 justify-center">
                                             <button 
                                                 onClick={() => handleEdit(pro)} 
-                                                className="p-2 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors"
+                                                className="p-2 bg-slate-100 rounded-md text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors"
                                                 title="Editar"
                                             >
                                                 <Edit2 size={14}/>
@@ -303,7 +314,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                                     setSchedule(pro.workSchedule || DEFAULT_SCHEDULE);
                                                     handleSubTabChange('schedules');
                                                 }} 
-                                                className="p-2 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors"
+                                                className="p-2 bg-slate-100 rounded-md text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors"
                                                 title="Ver Horários"
                                             >
                                                 <Clock size={14}/>
@@ -314,12 +325,12 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                                     setBlockDate(new Date().toISOString().split('T')[0]);
                                                     handleSubTabChange('blocks');
                                                 }} 
-                                                className="p-2 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors"
+                                                className="p-2 bg-slate-100 rounded-md text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors"
                                                 title="Bloquear Horário"
                                             >
                                                 <CalendarX size={14}/>
                                             </button>
-                                            <button onClick={() => setDeleteId(pro.id)} className="p-2 bg-red-500/10 text-red-500 rounded-lg hover:bg-red-500/20 transition-colors" title="Remover">
+                                            <button onClick={() => setDeleteId(pro.id)} className="p-2 bg-red-500/10 text-red-500 rounded-md hover:bg-red-500/20 transition-colors" title="Remover">
                                                 <Trash2 size={14}/>
                                             </button>
                                         </div>
@@ -331,7 +342,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                         {/* Add New Card */}
                         <button 
                             onClick={() => { setIsFormOpen(true); setEditingId(null); setName(''); setRole(''); setEmail(''); setPhone(''); setCommission('50'); setColor('#f97316'); setPhoto(null); }}
-                            className="bg-transparent rounded-xl border-2 border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-100 transition-all flex flex-col items-center justify-center text-center w-full max-w-[210px] min-h-[350px] group"
+                            className="bg-transparent rounded-md border-2 border-dashed border-slate-300 hover:border-slate-400 hover:bg-slate-100 transition-all flex flex-col items-center justify-center text-center w-full max-w-[210px] min-h-[350px] group"
                         >
                             <div className="w-12 h-12 rounded-full bg-slate-100 group-hover:bg-slate-200 flex items-center justify-center mb-4 transition-colors">
                                 <UserPlus size={20} className="text-slate-400 group-hover:text-slate-600" />

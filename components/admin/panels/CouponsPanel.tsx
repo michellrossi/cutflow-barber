@@ -114,7 +114,7 @@ export const CouponsPanel: React.FC = () => {
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 p-1 bg-slate-100 rounded-2xl w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
                 {[
                     { id: 'all', label: 'Todos', icon: <LayoutGrid size={18} /> },
                     { id: 'active', label: 'Ativos', icon: <CheckCircle size={18} /> },
@@ -123,7 +123,7 @@ export const CouponsPanel: React.FC = () => {
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id as any)}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
                             activeTab === tab.id 
                             ? 'bg-white text-orange-600 shadow-sm' 
                             : 'text-slate-500 hover:text-slate-700'

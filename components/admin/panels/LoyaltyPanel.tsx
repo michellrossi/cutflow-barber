@@ -31,7 +31,7 @@ export const LoyaltyPanel: React.FC = () => {
 
     return (
         <div className="max-w-4xl space-y-8">
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                     <Award className="text-orange-500" size={24} />
                     <div>
@@ -47,7 +47,7 @@ export const LoyaltyPanel: React.FC = () => {
                         <div className="grid grid-cols-2 gap-3">
                             <button
                                 onClick={() => setFormData({ ...formData, loyaltyMode: 'card' })}
-                                className={`flex flex-col items-center gap-3 p-4 rounded-xl border transition-all ${formData.loyaltyMode === 'card' ? 'bg-orange-50 border-orange-500 text-orange-600 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'}`}
+                                className={`flex flex-col items-center gap-3 p-4 rounded-lg border transition-all ${formData.loyaltyMode === 'card' ? 'bg-orange-50 border-orange-500 text-orange-600 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'}`}
                             >
                                 <CreditCard size={24} />
                                 <div className="text-center">
@@ -57,7 +57,7 @@ export const LoyaltyPanel: React.FC = () => {
                             </button>
                             <button
                                 onClick={() => setFormData({ ...formData, loyaltyMode: 'points' })}
-                                className={`flex flex-col items-center gap-3 p-4 rounded-xl border transition-all ${formData.loyaltyMode === 'points' ? 'bg-orange-50 border-orange-500 text-orange-600 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'}`}
+                                className={`flex flex-col items-center gap-3 p-4 rounded-lg border transition-all ${formData.loyaltyMode === 'points' ? 'bg-orange-50 border-orange-500 text-orange-600 shadow-sm' : 'bg-slate-50 border-slate-200 text-slate-400 hover:border-slate-300'}`}
                             >
                                 <Target size={24} />
                                 <div className="text-center">
@@ -117,7 +117,7 @@ export const LoyaltyPanel: React.FC = () => {
                 </div>
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+            <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
                 <div className="flex items-center gap-3 mb-6">
                     <Percent className="text-orange-500" size={24} />
                     <div>
@@ -181,7 +181,7 @@ export const LoyaltyPanel: React.FC = () => {
                 <button
                     onClick={handleSave}
                     disabled={loading}
-                    className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-orange-500/20"
+                    className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-white px-8 py-3 rounded-lg font-bold transition-all shadow-lg shadow-orange-500/20"
                 >
                     {loading ? <Clock className="animate-spin" size={20} /> : success ? <CheckCircle2 size={20} /> : <Save size={20} />}
                     {loading ? 'Salvando...' : success ? 'Configurações Salvas!' : 'Salvar Configurações'}

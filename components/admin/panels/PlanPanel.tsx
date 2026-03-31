@@ -166,8 +166,8 @@ export const PlanPanel: React.FC = () => {
           <h1 className="text-2xl font-bold text-slate-900">Meu Plano</h1>
           <p className="text-slate-500">Gerencie sua assinatura e descubra novos recursos</p>
         </div>
-        <div className="bg-orange-50 border border-orange-100 px-4 py-2 rounded-xl flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white">
+        <div className="bg-orange-50 border border-orange-100 px-4 py-2 rounded-lg flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-white">
             <ShieldCheck size={20} />
           </div>
           <div>
@@ -182,12 +182,12 @@ export const PlanPanel: React.FC = () => {
           <motion.div
             key={plan.id}
             whileHover={{ y: -5 }}
-            className={`relative bg-white rounded-3xl border-2 transition-all duration-300 flex flex-col ${
+            className={`relative bg-white rounded-lg border-2 transition-all duration-300 flex flex-col ${
               plan.popular ? 'border-amber-500 shadow-xl shadow-amber-100' : 'border-slate-100 hover:border-slate-200 shadow-sm'
             }`}
           >
             {plan.popular && (
-              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-4 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 shadow-lg">
+              <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-amber-500 text-white px-4 py-1 rounded-sm text-[10px] font-bold uppercase tracking-widest flex items-center gap-1 shadow-lg">
                 <Star size={12} fill="currentColor" />
                 mais popular
               </div>
@@ -195,7 +195,7 @@ export const PlanPanel: React.FC = () => {
 
             <div className="p-8 border-b border-slate-50">
               <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-2xl bg-${plan.color}-50`}>
+                <div className={`p-3 rounded-lg bg-${plan.color}-50`}>
                   {plan.icon}
                 </div>
                 {plan.id === 'profissional' && (
@@ -222,8 +222,8 @@ export const PlanPanel: React.FC = () => {
                   <ul className="space-y-3">
                     {category.features.map((feature, fIdx) => (
                       <li key={fIdx} className={`flex items-start gap-3 text-sm ${feature.included ? 'text-slate-700' : 'text-slate-300'}`}>
-                        <div className={`mt-0.5 shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${feature.included ? 'bg-green-50 text-green-500' : 'bg-slate-50 text-slate-200'}`}>
-                          {feature.included ? <Check size={12} strokeWidth={3} /> : <div className="w-1.5 h-1.5 rounded-full bg-current" />}
+                        <div className={`mt-0.5 shrink-0 w-5 h-5 rounded-sm flex items-center justify-center ${feature.included ? 'bg-green-50 text-green-500' : 'bg-slate-50 text-slate-200'}`}>
+                          {feature.included ? <Check size={12} strokeWidth={3} /> : <div className="w-1.5 h-1.5 rounded-sm bg-current" />}
                         </div>
                         <span className={feature.included ? 'font-medium' : 'line-through decoration-slate-200'}>
                           {feature.text}
@@ -237,7 +237,7 @@ export const PlanPanel: React.FC = () => {
 
             <div className="p-8 pt-0 mt-auto">
               <button
-                className={`w-full py-4 rounded-2xl font-bold text-sm transition-all duration-300 ${
+                className={`w-full py-4 rounded-lg font-bold text-sm transition-all duration-300 ${
                   plan.id === 'profissional'
                     ? 'bg-slate-100 text-slate-400 cursor-default'
                     : plan.popular
@@ -252,24 +252,24 @@ export const PlanPanel: React.FC = () => {
         ))}
       </div>
 
-      <div className="bg-slate-900 rounded-[2rem] p-8 md:p-12 text-white relative overflow-hidden">
+      <div className="bg-slate-900 rounded-lg p-8 md:p-12 text-white relative overflow-hidden">
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="max-w-xl text-center md:text-left">
             <h2 className="text-3xl font-bold mb-4">Dúvidas sobre os planos?</h2>
             <p className="text-slate-400 mb-8">Nossa equipe está pronta para te ajudar a escolher a melhor opção para o seu negócio.</p>
             <div className="flex flex-wrap justify-center md:justify-start gap-4">
-              <button className="bg-white text-slate-900 px-8 py-4 rounded-2xl font-bold hover:bg-slate-100 transition-all flex items-center gap-2">
+              <button className="bg-white text-slate-900 px-8 py-4 rounded-lg font-bold hover:bg-slate-100 transition-all flex items-center gap-2">
                 <MessageCircle size={20} />
                 Falar no WhatsApp
               </button>
-              <button className="bg-slate-800 text-white px-8 py-4 rounded-2xl font-bold hover:bg-slate-700 transition-all border border-slate-700">
+              <button className="bg-slate-800 text-white px-8 py-4 rounded-lg font-bold hover:bg-slate-700 transition-all border border-slate-700">
                 Ver Comparativo Completo
               </button>
             </div>
           </div>
           <div className="hidden lg:block">
-             <div className="w-64 h-64 bg-gradient-to-br from-orange-500 to-amber-500 rounded-full blur-3xl opacity-20 absolute -right-20 -bottom-20"></div>
-             <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full blur-3xl opacity-20 absolute right-40 top-0"></div>
+             <div className="w-64 h-64 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg blur-3xl opacity-20 absolute -right-20 -bottom-20"></div>
+             <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg blur-3xl opacity-20 absolute right-40 top-0"></div>
              <img src="https://i.freeimage.host/qD9Rddv.png" alt="Insight Barber" className="w-48 h-48 object-contain opacity-20 grayscale brightness-200" />
           </div>
         </div>

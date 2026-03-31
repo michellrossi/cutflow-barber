@@ -286,7 +286,7 @@ export const FinancePanel: React.FC = () => {
                 <button 
                     onClick={handleExport}
                     disabled={isLoading || reportAppointments.length === 0}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-green-900/10"
+                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-200"
                 >
                     <Download size={18} />
                     Exportar Relatório
@@ -294,10 +294,10 @@ export const FinancePanel: React.FC = () => {
             </div>
 
             {/* BARRA DE FILTROS MODERNA */}
-            <div className="bg-white p-1.5 rounded-xl border border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-sm">
+            <div className="bg-white p-1.5 rounded-lg border border-slate-200 flex flex-col lg:flex-row justify-between items-center gap-2 shadow-sm">
                 
                 {/* Abas de Atalho */}
-                <div className="flex bg-slate-50 p-1 rounded-full w-full lg:w-auto overflow-x-auto hide-scrollbar border border-slate-200">
+                <div className="flex bg-slate-50 p-1 rounded-lg w-full lg:w-auto overflow-x-auto hide-scrollbar border border-slate-200">
                     {[
                         { id: '30days', label: '30 Dias' },
                         { id: 'thisMonth', label: 'Este Mês' },
@@ -307,7 +307,7 @@ export const FinancePanel: React.FC = () => {
                         <button
                             key={preset.id}
                             onClick={() => setPreset(preset.id as any)}
-                            className={`px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap ${
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                                 activePreset === preset.id 
                                 ? 'bg-white text-slate-900 shadow-sm border border-slate-200' 
                                 : 'text-[#6b7d99] hover:text-slate-900 hover:bg-white'
@@ -319,7 +319,7 @@ export const FinancePanel: React.FC = () => {
                 </div>
 
                 {/* Seletor de Datas Unificado */}
-                <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-50 px-3 py-2 rounded-full border border-slate-200 focus-within:border-orange-500/50 transition-colors">
+                <div className="flex items-center gap-2 w-full lg:w-auto bg-slate-50 px-3 py-2 rounded-lg border border-slate-200 focus-within:border-orange-500/50 transition-colors">
                     <Calendar size={16} className="text-[#6b7d99] shrink-0" />
                     <div className="flex items-center gap-2 flex-1">
                         <input 
@@ -350,7 +350,7 @@ export const FinancePanel: React.FC = () => {
                 {/* KPI Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     {/* Faturamento Total */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
+                    <div className="bg-white p-6 rounded-lg border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-orange-50 rounded-lg text-[#c55f18] border border-orange-100">
                                 <DollarSign size={20} />
@@ -363,33 +363,33 @@ export const FinancePanel: React.FC = () => {
                     </div>
 
                     {/* Lucro da Loja (Owner Share) */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
+                    <div className="bg-white p-6 rounded-lg border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-orange-50 rounded-lg text-[#c55f18] border border-orange-100">
                                 <Wallet size={20} />
                             </div>
                             <span className="text-[#6b7d99] font-bold text-xs uppercase tracking-wider">Lucro da Loja</span>
                         </div>
-                        <div className="text-2xl font-bold text-[#c55f18] mt-2">
+                        <div className="text-2xl font-bold text-slate-900 mt-2">
                             R$ {stats.totalOwnerShare.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
 
                     {/* Comissões a Pagar */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
+                    <div className="bg-white p-6 rounded-lg border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-orange-50 rounded-lg text-[#c55f18] border border-orange-100">
                                 <PieChart size={20} />
                             </div>
                             <span className="text-[#6b7d99] font-bold text-xs uppercase tracking-wider">Comissões (Equipe)</span>
                         </div>
-                        <div className="text-2xl font-bold text-[#c55f18] mt-2">
+                        <div className="text-2xl font-bold text-slate-900 mt-2">
                             R$ {stats.totalCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </div>
                     </div>
 
                     {/* Ticket Médio */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
+                    <div className="bg-white p-6 rounded-lg border border-slate-200 relative overflow-hidden group hover:border-slate-300 transition-colors shadow-sm">
                         <div className="flex items-center gap-3 mb-2">
                             <div className="p-2 bg-orange-50 rounded-lg text-[#c55f18] border border-orange-100">
                                 <Award size={20} />
@@ -406,11 +406,11 @@ export const FinancePanel: React.FC = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
                     
                     {/* Gráfico de Evolução Diária */}
-                    <div className="lg:col-span-2 bg-white p-6 rounded-xl border border-slate-200 flex flex-col min-h-[400px] shadow-sm">
+                    <div className="lg:col-span-2 bg-white p-6 rounded-lg border border-slate-200 flex flex-col min-h-[400px] shadow-sm">
                         <h3 className="text-lg font-bold text-slate-900 mb-6">Evolução do Faturamento</h3>
                         
                         {stats.chartData.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-[#6b7d99] h-64 border border-dashed border-slate-200 rounded-xl bg-slate-50">
+                            <div className="flex-1 flex flex-col items-center justify-center text-[#6b7d99] h-64 border border-dashed border-slate-200 rounded-lg bg-slate-50">
                                 <TrendingUp size={32} className="mb-2 opacity-50"/>
                                 <p>Sem dados financeiros para o período.</p>
                             </div>
@@ -452,13 +452,13 @@ export const FinancePanel: React.FC = () => {
                     </div>
 
                     {/* Formas de Pagamento */}
-                    <div className="lg:col-span-1 bg-white p-6 rounded-xl border border-slate-200 flex flex-col min-h-[400px] shadow-sm">
+                    <div className="lg:col-span-1 bg-white p-6 rounded-lg border border-slate-200 flex flex-col min-h-[400px] shadow-sm">
                         <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                             <PieChart size={18} className="text-blue-500"/>
                             Formas de Pagamento
                         </h3>
                         {stats.paymentMethodData.length === 0 ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-[#6b7d99] h-full border border-dashed border-slate-200 rounded-xl bg-slate-50">
+                            <div className="flex-1 flex flex-col items-center justify-center text-[#6b7d99] h-full border border-dashed border-slate-200 rounded-lg bg-slate-50">
                                 <PieChart size={32} className="mb-2 opacity-50"/>
                                 <p>Sem dados financeiros.</p>
                             </div>
@@ -512,7 +512,7 @@ export const FinancePanel: React.FC = () => {
                 {/* Rankings em Linha */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
                     {/* Ranking de Profissionais */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-[450px] shadow-sm">
+                    <div className="bg-white p-6 rounded-lg border border-slate-200 flex flex-col h-[450px] shadow-sm">
                         <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                             <Award size={18} className="text-[#c55f18]"/>
                             Top Profissionais
@@ -524,9 +524,9 @@ export const FinancePanel: React.FC = () => {
                                 stats.sortedPros.map((pro, idx) => (
                                     <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0 group">
                                         <div className="relative shrink-0">
-                                            <img src={pro.photo || 'https://via.placeholder.com/40'} alt={pro.name} className="w-10 h-10 rounded-full object-cover border border-slate-200 group-hover:border-slate-300 transition-colors" referrerPolicy="no-referrer" />
+                                            <img src={pro.photo || 'https://via.placeholder.com/40'} alt={pro.name} className="w-10 h-10 rounded-lg object-cover border border-slate-200 group-hover:border-slate-300 transition-colors" referrerPolicy="no-referrer" />
                                             {idx < 3 && (
-                                                <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : 'bg-orange-700'}`}>
+                                                <div className={`absolute -top-1 -right-1 w-5 h-5 rounded-sm flex items-center justify-center text-[10px] font-bold text-white shadow-lg ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : 'bg-orange-700'}`}>
                                                     {idx + 1}
                                                 </div>
                                             )}
@@ -536,9 +536,9 @@ export const FinancePanel: React.FC = () => {
                                                 <span className="text-sm font-medium text-slate-900 truncate">{pro.name}</span>
                                                 <span className="text-sm font-bold text-[#c55f18]">R$ {pro.value.toFixed(0)}</span>
                                             </div>
-                                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                            <div className="w-full bg-slate-100 rounded-md h-1.5 overflow-hidden">
                                                 <div 
-                                                    className="bg-[#c55f18] h-full rounded-full transition-all duration-1000" 
+                                                    className="bg-[#c55f18] h-full rounded-sm transition-all duration-1000" 
                                                     style={{ width: `${(pro.value / (stats.totalRevenue || 1)) * 100}%` }}
                                                 ></div>
                                             </div>
@@ -553,7 +553,7 @@ export const FinancePanel: React.FC = () => {
                     </div>
 
                     {/* Ranking de Clientes */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-[450px] shadow-sm">
+                    <div className="bg-white p-6 rounded-lg border border-slate-200 flex flex-col h-[450px] shadow-sm">
                         <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                             <Users size={18} className="text-[#c55f18]"/>
                             Top Clientes
@@ -564,7 +564,7 @@ export const FinancePanel: React.FC = () => {
                             ) : (
                                 stats.sortedClients.map((client, idx) => (
                                     <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0 group">
-                                        <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white shadow-sm shrink-0 ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-orange-700' : 'bg-slate-300'}`}>
+                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white shadow-sm shrink-0 ${idx === 0 ? 'bg-yellow-500' : idx === 1 ? 'bg-slate-400' : idx === 2 ? 'bg-orange-700' : 'bg-slate-300'}`}>
                                             {idx + 1}º
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -572,9 +572,9 @@ export const FinancePanel: React.FC = () => {
                                                 <span className="text-sm font-medium text-slate-900 truncate">{client.name}</span>
                                                 <span className="text-sm font-bold text-[#c55f18]">R$ {client.value.toFixed(0)}</span>
                                             </div>
-                                            <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                            <div className="w-full bg-slate-100 rounded-md h-1.5 overflow-hidden">
                                                 <div 
-                                                    className="bg-[#c55f18] h-full rounded-full transition-all duration-1000" 
+                                                    className="bg-[#c55f18] h-full rounded-sm transition-all duration-1000" 
                                                     style={{ width: `${(client.value / (stats.totalRevenue || 1)) * 100}%` }}
                                                 ></div>
                                             </div>
@@ -589,7 +589,7 @@ export const FinancePanel: React.FC = () => {
                     </div>
 
                     {/* Ranking de Rentabilidade de Serviços */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-[450px] shadow-sm">
+                    <div className="bg-white p-6 rounded-lg border border-slate-200 flex flex-col h-[450px] shadow-sm">
                         <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                             <TrendingUp size={18} className="text-[#c55f18]"/>
                             Serviços Lucrativos
@@ -608,9 +608,9 @@ export const FinancePanel: React.FC = () => {
                                                 <span className="text-sm font-medium text-slate-700 truncate">{item.name}</span>
                                                 <span className="text-sm font-bold text-slate-900">R$ {item.value.toFixed(0)}</span>
                                             </div>
-                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                            <div className="w-full bg-slate-100 h-1.5 rounded-md overflow-hidden">
                                                 <div 
-                                                    className="h-full rounded-full transition-all duration-1000"
+                                                    className="h-full rounded-sm transition-all duration-1000"
                                                     style={{ 
                                                         width: `${percentage}%`,
                                                         backgroundColor: '#c55f18' 
@@ -625,7 +625,7 @@ export const FinancePanel: React.FC = () => {
                     </div>
 
                     {/* Ranking de Serviços Mais Realizados */}
-                    <div className="bg-white p-6 rounded-xl border border-slate-200 flex flex-col h-[450px] shadow-sm">
+                    <div className="bg-white p-6 rounded-lg border border-slate-200 flex flex-col h-[450px] shadow-sm">
                         <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                             <Scissors size={18} className="text-[#c55f18]"/>
                             Serviços Mais Realizados
@@ -644,9 +644,9 @@ export const FinancePanel: React.FC = () => {
                                                 <span className="text-sm font-medium text-slate-700 truncate">{item.name}</span>
                                                 <span className="text-sm font-bold text-slate-900">{item.count} execuções</span>
                                             </div>
-                                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                            <div className="w-full bg-slate-100 h-1.5 rounded-md overflow-hidden">
                                                 <div 
-                                                    className="h-full rounded-full transition-all duration-1000"
+                                                    className="h-full rounded-sm transition-all duration-1000"
                                                     style={{ 
                                                         width: `${percentage}%`,
                                                         backgroundColor: '#c55f18' 
