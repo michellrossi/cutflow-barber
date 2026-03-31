@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info } from 'lucide-react';
+import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info, ShieldCheck } from 'lucide-react';
 import { DashboardPanel } from './panels/DashboardPanel';
 import { TeamPanel } from './panels/TeamPanel';
 import { ServicesPanel } from './panels/ServicesPanel';
@@ -18,7 +18,9 @@ import { SubscriptionsPanel } from './panels/SubscriptionsPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
 import { PaymentModal } from '../billing/PaymentModal';
 
-type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions';
+import { PlanPanel } from './panels/PlanPanel';
+
+type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan';
 
 type TeamSubTab = 'list' | 'schedules' | 'blocks';
 
@@ -50,6 +52,19 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   
   const { settings, trialStatus, daysRemaining, theme, toggleTheme } = useShop();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+
+  // Retractable Sidebar States
+  const [isSidebarPinned, setIsSidebarPinned] = useState(() => {
+      const saved = localStorage.getItem('adminSidebarPinned');
+      return saved === null ? true : saved === 'true';
+  });
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+
+  const isSidebarExpanded = isSidebarPinned || isSidebarHovered;
+
+  useEffect(() => {
+      localStorage.setItem('adminSidebarPinned', String(isSidebarPinned));
+  }, [isSidebarPinned]);
 
   const handleTabChange = (tab: AdminTab, filter?: string) => {
       setActiveTab(tab);
@@ -91,6 +106,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'insight': return <InsightPanel />;
       case 'reminders': return <RemindersPanel />;
       case 'subscriptions': return <SubscriptionsPanel />;
+      case 'plan': return <PlanPanel />;
       default: return <DashboardPanel />;
     }
   };
@@ -109,6 +125,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'insight': return 'Insights com IA';
           case 'reminders': return 'Lembretes';
           case 'subscriptions': return 'Assinaturas';
+          case 'plan': return 'Meu Plano';
       }
   }
 
@@ -118,16 +135,43 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
 
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-slate-200 flex flex-col hidden md:flex admin-sidebar">
-        <div className="p-6 flex items-center gap-3 border-b border-slate-200">
-          <div className="w-8 h-8 rounded bg-orange-500 flex items-center justify-center text-white font-bold overflow-hidden">
+      <aside 
+        onMouseEnter={() => setIsSidebarHovered(true)}
+        onMouseLeave={() => setIsSidebarHovered(false)}
+        className={`bg-white border-r border-slate-200 flex flex-col hidden md:flex transition-all duration-300 ease-in-out relative z-40 ${isSidebarExpanded ? 'w-64' : 'w-20'} admin-sidebar`}
+      >
+        <div className={`p-6 flex items-center border-b border-slate-200 transition-all duration-300 ${isSidebarExpanded ? 'gap-3' : 'justify-center p-4'}`}>
+          <div className="w-8 h-8 rounded bg-orange-500 flex items-center justify-center text-white font-bold overflow-hidden shrink-0">
              <img src="https://i.freeimage.host/qD9Rddv.png" alt="Insight Barber Logo" className="w-full h-full object-cover" />
           </div>
-          <span className="font-bold text-lg tracking-tight truncate text-slate-900">INSIGHT BARBER</span>
+          {isSidebarExpanded && (
+            <motion.span 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="font-bold text-lg tracking-tight truncate text-slate-900"
+            >
+              INSIGHT BARBER
+            </motion.span>
+          )}
+          
+          {isSidebarExpanded && (
+            <button 
+              onClick={() => setIsSidebarPinned(!isSidebarPinned)}
+              className={`ml-auto p-1.5 rounded-lg transition-colors ${isSidebarPinned ? 'text-orange-500 bg-orange-50' : 'text-slate-400 hover:bg-slate-50'}`}
+            >
+              <Shield size={16} className={isSidebarPinned ? 'fill-current' : ''} />
+            </button>
+          )}
         </div>
         
-        <nav className="flex-1 p-4 space-y-1">
-          <SidebarItem icon={<LayoutGrid size={20} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => handleTabChange('dashboard')} />
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto no-scrollbar">
+          <SidebarItem 
+            icon={<LayoutGrid size={20} />} 
+            label="Dashboard" 
+            active={activeTab === 'dashboard'} 
+            onClick={() => handleTabChange('dashboard')} 
+            expanded={isSidebarExpanded}
+          />
           
           <div className="space-y-1">
               <button 
@@ -139,20 +183,24 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                           setIsSettingsOpen(false);
                       }
                   }}
-                  className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${activeTab === 'team' ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
+                  className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${isSidebarExpanded ? 'gap-3' : 'justify-center'} ${activeTab === 'team' ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
               >
-                  <Users size={20} className={activeTab === 'team' ? 'text-orange-500' : 'text-slate-700'} />
-                  <span className="flex-1 text-left">Equipe</span>
-                  <motion.div
-                      animate={{ rotate: isTeamOpen ? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
-                  >
-                      <ChevronDown size={16} />
-                  </motion.div>
+                  <Users size={20} className={`shrink-0 ${activeTab === 'team' ? 'text-orange-500' : 'text-slate-700'}`} />
+                  {isSidebarExpanded && (
+                    <>
+                      <span className="flex-1 text-left">Equipe</span>
+                      <motion.div
+                          animate={{ rotate: isTeamOpen ? 180 : 0 }}
+                          transition={{ duration: 0.2 }}
+                      >
+                          <ChevronDown size={16} />
+                      </motion.div>
+                    </>
+                  )}
               </button>
 
               <AnimatePresence>
-                  {isTeamOpen && (
+                  {isTeamOpen && isSidebarExpanded && (
                       <motion.div 
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
@@ -183,15 +231,16 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
               </AnimatePresence>
           </div>
 
-          <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} />
-          <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => handleTabChange('coupons')} />
-          <SidebarItem icon={<CalendarCheck size={20} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} />
-          <SidebarItem icon={<CreditCard size={20} />} label="Assinaturas" active={activeTab === 'subscriptions'} onClick={() => handleTabChange('subscriptions')} />
-          <SidebarItem icon={<MessageSquare size={20} />} label="Lembretes" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} />
-          <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} />
-          <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => handleTabChange('loyalty')} />
-          <SidebarItem icon={<Sparkles size={20} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} />
-          <SidebarItem icon={<DollarSign size={20} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => handleTabChange('finance')} />
+          <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} expanded={isSidebarExpanded} />
+          <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => handleTabChange('coupons')} expanded={isSidebarExpanded} />
+          <SidebarItem icon={<CalendarCheck size={20} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} expanded={isSidebarExpanded} />
+          <SidebarItem icon={<CreditCard size={20} />} label="Assinaturas" active={activeTab === 'subscriptions'} onClick={() => handleTabChange('subscriptions')} expanded={isSidebarExpanded} />
+          <SidebarItem icon={<MessageSquare size={20} />} label="Lembretes" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} />
+          <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} expanded={isSidebarExpanded} />
+          <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => handleTabChange('loyalty')} expanded={isSidebarExpanded} />
+          <SidebarItem icon={<Sparkles size={20} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} expanded={isSidebarExpanded} />
+          <SidebarItem icon={<DollarSign size={20} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => handleTabChange('finance')} expanded={isSidebarExpanded} />
+          <SidebarItem icon={<ShieldCheck size={20} />} label="Meu Plano" active={activeTab === 'plan'} onClick={() => handleTabChange('plan')} expanded={isSidebarExpanded} />
           
           <div className="space-y-1">
               <button 
@@ -203,20 +252,24 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                           setIsTeamOpen(false);
                       }
                   }}
-                  className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${activeTab === 'settings' ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
+                  className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${isSidebarExpanded ? 'gap-3' : 'justify-center'} ${activeTab === 'settings' ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
               >
-                  <Settings size={20} className={activeTab === 'settings' ? 'text-orange-500' : 'text-slate-700'} />
-                  <span className="flex-1 text-left">Configurações</span>
-                  <motion.div
-                      animate={{ rotate: isSettingsOpen ? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
-                  >
-                      <ChevronDown size={16} />
-                  </motion.div>
+                  <Settings size={20} className={`shrink-0 ${activeTab === 'settings' ? 'text-orange-500' : 'text-slate-700'}`} />
+                  {isSidebarExpanded && (
+                    <>
+                      <span className="flex-1 text-left">Configurações</span>
+                      <motion.div
+                          animate={{ rotate: isSettingsOpen ? 180 : 0 }}
+                          transition={{ duration: 0.2 }}
+                      >
+                          <ChevronDown size={16} />
+                      </motion.div>
+                    </>
+                  )}
               </button>
 
               <AnimatePresence>
-                  {isSettingsOpen && (
+                  {isSettingsOpen && isSidebarExpanded && (
                       <motion.div 
                           initial={{ height: 0, opacity: 0 }}
                           animate={{ height: 'auto', opacity: 1 }}
@@ -301,19 +354,23 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
               <div className="h-px bg-slate-100 mb-4 mx-2"></div>
               <button 
                   onClick={onViewClient}
-                  className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group"
+                  className={`flex items-center px-4 py-3 w-full rounded-lg text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}
               >
-                  <Smartphone size={20} className="group-hover:text-orange-500 transition-colors" />
-                  <span className="flex-1 text-left">Agenda Digital</span>
-                  <ExternalLink size={14} className="opacity-50" />
+                  <Smartphone size={20} className="group-hover:text-orange-500 transition-colors shrink-0" />
+                  {isSidebarExpanded && (
+                    <>
+                      <span className="flex-1 text-left">Agenda Digital</span>
+                      <ExternalLink size={14} className="opacity-50" />
+                    </>
+                  )}
               </button>
           </div>
         </nav>
 
         <div className="p-4 border-t border-slate-100">
-          <button onClick={onLogout} className="flex items-center gap-3 px-4 py-3 w-full text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors">
-            <LogOut size={20} />
-            <span>Sair / Home</span>
+          <button onClick={onLogout} className={`flex items-center px-4 py-3 w-full text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}>
+            <LogOut size={20} className="shrink-0" />
+            {isSidebarExpanded && <span>Sair / Home</span>}
           </button>
         </div>
       </aside>
@@ -369,6 +426,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                     <MobileNavItem icon={<Scissors size={16} />} label="Serviços" active={activeTab === 'services'} onClick={() => setActiveTab('services')} />
                     <MobileNavItem icon={<Tag size={16} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => setActiveTab('coupons')} />
                     <MobileNavItem icon={<Sparkles size={16} />} label="IA" active={activeTab === 'insight'} onClick={() => setActiveTab('insight')} />
+                    <MobileNavItem icon={<ShieldCheck size={16} />} label="Plano" active={activeTab === 'plan'} onClick={() => setActiveTab('plan')} />
                     <MobileNavItem icon={<Settings size={16} />} label="Config" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
                 </div>
             </div>
@@ -382,14 +440,14 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   );
 };
 
-const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void }> = ({ icon, label, active, onClick }) => {
+const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void, expanded?: boolean }> = ({ icon, label, active, onClick, expanded = true }) => {
     return (
         <button 
             onClick={onClick}
-            className={`flex items-center gap-3 px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${active ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
+            className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${expanded ? 'gap-3' : 'justify-center'} ${active ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
         >
-            <span className={active ? 'text-orange-500' : 'text-slate-700'}>{icon}</span>
-            <span>{label}</span>
+            <span className={`shrink-0 ${active ? 'text-orange-500' : 'text-slate-700'}`}>{icon}</span>
+            {expanded && <span>{label}</span>}
         </button>
     );
 }
