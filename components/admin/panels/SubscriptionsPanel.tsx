@@ -58,21 +58,18 @@ export const SubscriptionsPanel: React.FC = () => {
   }, [clientSubscriptions, subscriptionPlans]);
 
   // Filtered Data
-  const filteredSubscribers = useMemo(() => {
-    return clientSubscriptions.filter(sub => {
-      const client = clients.find(c => c.id === sub.clientId);
-      const plan = subscriptionPlans.find(p => p.id === sub.planId);
-      
-      const matchesSearch = 
-        client?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        client?.phone.includes(searchQuery) ||
-        plan?.name.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
-      
-      return matchesSearch && matchesStatus;
-    });
-  }, [clientSubscriptions, clients, subscriptionPlans, searchQuery, statusFilter]);
+  const filteredSubscriptions = useMemo(() => {
+  return clientSubscriptions.filter(sub => {
+    const client = clients.find(c => c.id === sub.clientId);
+    const plan = subscriptionPlans.find(p => p.id === sub.planId);
+    
+    const searchString = `${client?.name} ${client?.email} ${plan?.name}`.toLowerCase();
+    const matchesSearch = searchString.includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
+}, [clientSubscriptions, clients, subscriptionPlans, searchQuery, statusFilter]);
 
   const handleSavePlan = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
