@@ -82,19 +82,29 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
 
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
-                            <DollarSign size={20} />
+                        <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-red-600">
+                            <Users size={20} />
                         </div>
-                        <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Ticket Médio</span>
+                        <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Inativos (&gt;30 dias)</span>
                     </div>
-                    <div className="text-3xl font-black text-slate-900">{formatCurrency(stats.avgTicket)}</div>
+                    <div className="text-3xl font-black text-slate-900">
+                        {clients.filter(c => {
+                            const lastAppt = appointments.filter(a => a.clientId === c.id).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+                            if (!lastAppt) return true;
+                            const diff = new Date().getTime() - new Date(lastAppt.date).getTime();
+                            return diff > 30 * 24 * 60 * 60 * 1000;
+                        }).length}
+                    </div>
                 </div>
             </div>
 
             {/* Gráficos */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <h3 className="text-lg font-bold text-slate-900 mb-6">Nº de clientes atendidos por mês</h3>
+                    <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <Users size={20} className="text-blue-500" />
+                        Nº de clientes atendidos por mês
+                    </h3>
                     <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={monthlyData}>
@@ -109,7 +119,10 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <h3 className="text-lg font-bold text-slate-900 mb-6">Gasto Médio dos Clientes por Mês</h3>
+                    <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <DollarSign size={20} className="text-orange-500" />
+                        Gasto Médio dos Clientes por Mês
+                    </h3>
                     <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={monthlyData}>
@@ -124,7 +137,10 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                 </div>
 
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2">
-                    <h3 className="text-lg font-bold text-slate-900 mb-6">Clientes Novos por Mês</h3>
+                    <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <TrendingUp size={20} className="text-purple-500" />
+                        Clientes Novos por Mês
+                    </h3>
                     <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={monthlyData}>
@@ -140,7 +156,7 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
             </div>
             
             {/* Ranking de Clientes (Padrão de Lista) */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-1">
                 <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                     <Award size={20} className="text-orange-500" />
                     Top 10 Clientes
