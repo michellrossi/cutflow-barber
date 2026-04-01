@@ -65,22 +65,23 @@ export const LoyaltyPanel: React.FC = () => {
         </div>
 
             {activeTab === 'config' ? (
-                <div className="space-y-8">
-                    <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Award className="text-orange-500" size={24} />
-                            <div>
-                                <h3 className="text-lg font-bold text-slate-900">Programa de Fidelidade</h3>
-                                <p className="text-sm text-slate-500">Ative ou desative o programa de fidelidade para seus clientes.</p>
-                            </div>
+            <div className="animate-fade-in space-y-8">
+                <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Award className="text-orange-500" size={24} />
+                        <div>
+                            <h3 className="text-lg font-bold text-slate-900">Programa de Fidelidade</h3>
+                            <p className="text-sm text-slate-500">Ative ou desative o programa de fidelidade para seus clientes.</p>
                         </div>
-                        <button
-                            onClick={() => setFormData({ ...formData, loyaltyEnabled: !formData.loyaltyEnabled })}
-                            className={`w-14 h-8 rounded-full transition-all ${formData.loyaltyEnabled ? 'bg-orange-500' : 'bg-slate-300'}`}
-                        >
-                            <div className={`w-6 h-6 bg-white rounded-full transition-all ${formData.loyaltyEnabled ? 'ml-7' : 'ml-1'}`} />
-                        </button>
                     </div>
+                    {/* Toggle Switch lateral */}
+                    <button
+                        onClick={() => setFormData({ ...formData, loyaltyEnabled: !formData.loyaltyEnabled })}
+                        className={`w-14 h-8 rounded-full transition-all relative ${formData.loyaltyEnabled ? 'bg-orange-500' : 'bg-slate-300'}`}
+                    >
+                        <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${formData.loyaltyEnabled ? 'left-7' : 'left-1'}`} />
+                    </button>
+                </div>
 
                     <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
                         <div className="flex items-center gap-3 mb-6">
