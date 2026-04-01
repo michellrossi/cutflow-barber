@@ -1,13 +1,13 @@
 import React, { useMemo } from 'react';
 import { useShop } from '../../../store';
-import { Users, Scissors, Calendar, UserCheck, Clock, Phone, User, ChevronRight, DollarSign, TrendingUp } from 'lucide-react';
+import { Users, Scissors, Calendar, Clock, Phone, User, DollarSign, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) => void }> = ({ onNavigate }) => {
     const { appointments, clients, professionals, services, settings } = useShop();
     const today = new Date().toISOString().split('T')[0];
 
-    // Stats calculations [cite: 4]
+    // Stats calculations
     const todayAppointments = useMemo(() =>
         appointments.filter(apt => apt.date === today && apt.status !== 'cancelled'),
         [appointments, today]);
@@ -19,20 +19,19 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
         const lastAppByClient: Record<string, Date> = {};
         appointments.forEach(app => {
             if (app.clientId && app.status === 'completed') {
-                const appDate = new Date(app.date + 'T12:00:00');[cite: 6]
+                const appDate = new Date(app.date + 'T12:00:00');
                 if (!lastAppByClient[app.clientId] || appDate > lastAppByClient[app.clientId]) {
                     lastAppByClient[app.clientId] = appDate;
                 }
             }
         });
 
-        return Object.values(lastAppByClient).filter(lastDate => lastDate < thirtyDaysAgo).length;[cite: 7]
+        return Object.values(lastAppByClient).filter(lastDate => lastDate < thirtyDaysAgo).length;
     }, [appointments]);
 
-    const professionalsCount = useMemo(() => professionals.length, [professionals]);[cite: 8]
+    const professionalsCount = useMemo(() => professionals.length, [professionals]);
     const servicesCount = useMemo(() => services.length, [services]);
 
-    // Revenue calculations (Voltando para Hoje, Semana, Mês e Ano) [cite: 9]
     const revenueStats = useMemo(() => {
         const now = new Date();
         const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -40,7 +39,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
         const startOfWeek = new Date(startOfToday);
         startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
 
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);[cite: 10]
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const startOfYear = new Date(now.getFullYear(), 0, 1);
 
         let todayVal = 0;
@@ -49,14 +48,14 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
         let yearVal = 0;
 
         appointments.forEach(apt => {
-            if (apt.status !== 'completed') return;[cite: 11]
+            if (apt.status !== 'completed') return;
 
             const aptDate = new Date(apt.date + 'T12:00:00');
             const value = apt.totalValue;
 
             if (aptDate >= startOfToday) todayVal += value;
             if (aptDate >= startOfWeek) weekVal += value;
-            if (aptDate >= startOfMonth) monthVal += value;[cite: 12]
+            if (aptDate >= startOfMonth) monthVal += value;
             if (aptDate >= startOfYear) yearVal += value;
         });
 
@@ -64,12 +63,12 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
     }, [appointments]);
 
     const todayAgenda = useMemo(() => {
-        return [...todayAppointments].sort((a, b) => a.time.localeCompare(b.time));[cite: 14]
+        return [...todayAppointments].sort((a, b) => a.time.localeCompare(b.time));
     }, [todayAppointments]);
 
     const getProName = (id: string | null) => {
-        if (!id) return 'Sem preferência';[cite: 15]
-        return professionals.find(p => p.id === id)?.name || 'Desconhecido';[cite: 16]
+        if (!id) return 'Sem preferência';
+        return professionals.find(p => p.id === id)?.name || 'Desconhecido';
     };
 
     const getServicesNames = (ids: string[]) => {
@@ -78,7 +77,6 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
 
     return (
         <div className="space-y-8 animate-fade-in">
-            {/* Top Stats Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     icon={<Calendar size={18} />}
@@ -114,7 +112,6 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                 />
             </div>
 
-            {/* Revenue Stats Cards (Restaurados: Hoje, Semana, Mês, Ano) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     icon={<DollarSign size={18} />}
@@ -150,7 +147,6 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                 />
             </div>
 
-            {/* Agenda Summary */}
             <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
                 <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
                     <div className="flex items-center gap-3">
@@ -246,19 +242,19 @@ const StatCard: React.FC<StatCardProps> = ({ icon, label, value, subtitle, color
 
 const getStatusStyles = (status: string) => {
     switch (status) {
-        case 'scheduled': return 'text-blue-700 bg-blue-50 border-blue-100';[cite: 55]
-        case 'confirmed': return 'text-orange-700 bg-orange-50 border-orange-100';[cite: 56]
+        case 'scheduled': return 'text-blue-700 bg-blue-50 border-blue-100';
+        case 'confirmed': return 'text-orange-700 bg-orange-50 border-orange-100';
         case 'completed': return 'text-emerald-700 bg-emerald-50 border-emerald-100';
         case 'cancelled': return 'text-red-700 bg-red-50 border-red-100';
-        case 'noshow': return 'text-slate-700 bg-slate-50 border-slate-200';[cite: 57]
+        case 'noshow': return 'text-slate-700 bg-slate-50 border-slate-200';
         default: return 'text-slate-700 bg-slate-50 border-slate-200';
     }
 };
 
 const getStatusLabel = (status: string) => {
     switch (status) {
-        case 'scheduled': return 'Agendado';[cite: 58]
-        case 'confirmed': return 'Confirmado';[cite: 59]
+        case 'scheduled': return 'Agendado';
+        case 'confirmed': return 'Confirmado';
         case 'completed': return 'Finalizado';
         case 'cancelled': return 'Cancelado';
         case 'noshow': return 'Não veio';
