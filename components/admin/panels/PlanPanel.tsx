@@ -184,11 +184,18 @@ export const PlanPanel: React.FC = () => {
         </div>
         <div className="flex items-center gap-4">
           {daysRemaining > 0 && (
-            <div className="bg-red-50 border border-red-100 px-4 py-2 rounded-lg flex items-center gap-2">
-              <Clock className="text-red-500" size={20} />
-              <div>
-                <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">Período de teste</p>
-                <p className="text-sm font-bold text-slate-900">{daysRemaining} dias restantes</p>
+            <div className="bg-white border border-slate-100 p-4 rounded-lg shadow-sm flex items-center gap-4 min-w-[280px]">
+              <div className="flex-1">
+                <div className="flex justify-between items-center mb-1">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Período de teste</p>
+                  <p className="text-sm font-bold text-slate-900">{daysRemaining} dias restantes</p>
+                </div>
+                <div className="w-full bg-slate-100 rounded-full h-2">
+                  <div 
+                    className="bg-orange-500 h-2 rounded-full" 
+                    style={{ width: `${Math.min(100, (daysRemaining / 30) * 100)}%` }}
+                  ></div>
+                </div>
               </div>
             </div>
           )}

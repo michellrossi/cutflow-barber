@@ -344,45 +344,45 @@ export const SubscriptionsPanel: React.FC = () => {
         ) : (
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {subscriptionPlans.map((plan) => (
-              <div key={plan.id} className="bg-slate-800/50 border border-slate-700 rounded-lg p-6 relative group overflow-hidden">
+              <div key={plan.id} className="bg-white border border-slate-100 rounded-lg p-6 relative group overflow-hidden shadow-sm hover:border-slate-200 transition-all">
                 {!plan.active && (
-                  <div className="absolute top-4 right-4 bg-red-500/10 text-red-500 text-[10px] uppercase font-bold px-2 py-1 rounded-sm border border-red-500/20">
+                  <div className="absolute top-4 right-4 bg-red-50 text-red-500 text-[10px] uppercase font-bold px-2 py-1 rounded-sm border border-red-100">
                     Inativo
                   </div>
                 )}
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500">
+                  <div className="w-12 h-12 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
                     <Zap className="w-6 h-6" />
                   </div>
                   <div>
-                    <h3 className="text-white font-bold text-lg">{plan.name}</h3>
-                    <p className="text-slate-400 text-sm line-clamp-1">{plan.description}</p>
+                    <h3 className="text-slate-900 font-bold text-lg">{plan.name}</h3>
+                    <p className="text-slate-500 text-sm line-clamp-1">{plan.description}</p>
                   </div>
                 </div>
                 
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400">Preço Mensal</span>
-                    <span className="text-white font-bold text-xl">
+                    <span className="text-slate-500">Preço Mensal</span>
+                    <span className="text-slate-900 font-bold text-xl">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan.price)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-400">Serviços inclusos</span>
-                    <span className="text-orange-500 font-bold">{plan.servicesPerMonth} por mês</span>
+                    <span className="text-slate-500">Serviços inclusos</span>
+                    <span className="text-orange-600 font-bold">{plan.servicesPerMonth} por mês</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-4 border-t border-slate-700/50">
+                <div className="flex items-center gap-2 pt-4 border-t border-slate-50">
                   <button 
                     onClick={() => { setEditingPlan(plan); setIsPlanModalOpen(true); }}
-                    className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg text-sm font-medium transition-all"
+                    className="flex-1 py-2 bg-slate-50 hover:bg-slate-100 text-slate-900 rounded-lg text-sm font-medium transition-all"
                   >
                     Editar
                   </button>
                   <button 
                     onClick={() => { if(confirm('Excluir plano?')) removeSubscriptionPlan(plan.id); }}
-                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -391,9 +391,9 @@ export const SubscriptionsPanel: React.FC = () => {
             ))}
             <button 
               onClick={() => { setEditingPlan(null); setIsPlanModalOpen(true); }}
-              className="border-2 border-dashed border-slate-800 hover:border-orange-500/50 hover:bg-orange-500/5 rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-all group"
+              className="border-2 border-dashed border-slate-200 hover:border-orange-500 hover:bg-orange-50 rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-all group"
             >
-              <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500 group-hover:text-orange-500 group-hover:scale-110 transition-all">
+              <div className="w-12 h-12 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:text-orange-500 group-hover:scale-110 transition-all">
                 <Plus className="w-6 h-6" />
               </div>
               <span className="text-slate-500 group-hover:text-orange-500 font-medium">Criar Novo Plano</span>
