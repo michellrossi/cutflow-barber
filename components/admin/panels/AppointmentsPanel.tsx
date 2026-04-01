@@ -210,6 +210,11 @@ export const AppointmentsPanel: React.FC = () => {
 
     return (
         <div className="relative pb-20">
+            <div className="mb-8">
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Agenda</h2>
+                <p className="text-[#6b7d99] text-sm font-medium">Gerencie sua agenda e registre atendimentos.</p>
+            </div>
+            
             {/* Modal de Novo Agendamento Manual */}
             {isModalOpen && (
                 <div 
@@ -371,10 +376,7 @@ export const AppointmentsPanel: React.FC = () => {
             ) : (
                 <>
                     {/* Cabeçalho Simplificado */}
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-                        <div>
-                            <p className="text-slate-500">Gerencie sua agenda e registre atendimentos manuais.</p>
-                        </div>
+                    <div className="flex flex-col md:flex-row justify-end items-start md:items-center gap-4 mb-6">
                         <button 
                             onClick={() => setIsModalOpen(true)}
                             className="flex items-center gap-2 px-6 py-3 rounded-lg text-white font-bold shadow-lg hover:opacity-90 transition-all" 
