@@ -48,7 +48,10 @@ export const LoyaltyPanel: React.FC = () => {
                 </button>
                 <button
                     onClick={() => setActiveTab('management')}
-                    className={`pb-4 px-2 font-bold transition-all ${activeTab === 'management' ? 'text-orange-500 border-b-2 border-orange-500' : 'text-slate-500 hover:text-slate-700'}`}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
+                            activeTab === tab.id 
+                            ? 'bg-white text-orange-600 shadow-sm' 
+                            : 'text-slate-500 hover:text-slate-700'
                 >
                     Gestão de Clientes
                 </button>
