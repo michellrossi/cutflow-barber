@@ -1,7 +1,9 @@
 
-import React from 'react';
-import { Check, Star, Zap, Crown, ShieldCheck, MessageCircle, BarChart3, Users, Scissors, Sparkles, Gift, CreditCard } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Check, Star, Zap, Crown, ShieldCheck, MessageCircle, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useShop } from '../../../store';
+import { UpgradeModal } from '../../ui/UpgradeModal';
 
 interface PlanFeature {
   text: string;
@@ -25,6 +27,19 @@ interface Plan {
 }
 
 export const PlanPanel: React.FC = () => {
+  const { shop } = useShop();
+  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
+  const [daysRemaining, setDaysRemaining] = useState(0);
+
+  useEffect(() => {
+    if (shop?.trialEndsAt) {
+      const end = new Date(shop.trialEndsAt);
+      const now = new Date();
+      const diffTime = end.getTime() - now.getTime();
+      const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      setDaysRemaining(days > 0 ? days : 0);
+    }
+  }, [shop]);
   const plans: Plan[] = [
     {
       id: 'essencial',
@@ -161,18 +176,30 @@ export const PlanPanel: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-12">
+      <UpgradeModal isOpen={isUpgradeModalOpen} onClose={() => setIsUpgradeModalOpen(false)} />
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Meu Plano</h1>
           <p className="text-slate-500">Gerencie sua assinatura e descubra novos recursos</p>
         </div>
-        <div className="bg-orange-50 border border-orange-100 px-4 py-2 rounded-lg flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-white">
-            <ShieldCheck size={20} />
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Plano Atual</p>
-            <p className="text-sm font-bold text-slate-900">Profissional (Trial)</p>
+        <div className="flex items-center gap-4">
+          {daysRemaining > 0 && (
+            <div className="bg-red-50 border border-red-100 px-4 py-2 rounded-lg flex items-center gap-2">
+              <Clock className="text-red-500" size={20} />
+              <div>
+                <p className="text-[10px] font-bold text-red-600 uppercase tracking-wider">Período de teste</p>
+                <p className="text-sm font-bold text-slate-900">{daysRemaining} dias restantes</p>
+              </div>
+            </div>
+          )}
+          <div className="bg-orange-50 border border-orange-100 px-4 py-2 rounded-lg flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-white">
+              <ShieldCheck size={20} />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Plano Atual</p>
+              <p className="text-sm font-bold text-slate-900">Profissional (Trial)</p>
+            </div>
           </div>
         </div>
       </div>
@@ -237,6 +264,7 @@ export const PlanPanel: React.FC = () => {
 
             <div className="p-8 pt-0 mt-auto">
               <button
+                onClick={() => plan.id !== 'profissional' && setIsUpgradeModalOpen(true)}
                 className={`w-full py-4 rounded-lg font-bold text-sm transition-all duration-300 ${
                   plan.id === 'profissional'
                     ? 'bg-slate-100 text-slate-400 cursor-default'

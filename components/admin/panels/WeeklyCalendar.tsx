@@ -295,9 +295,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                 <div className="flex gap-2 overflow-x-auto py-2 hide-scrollbar">
                     <button
                         onClick={() => setSelectedProId('all')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all border ${
                             selectedProId === 'all' 
-                            ? 'shadow-lg scale-105' 
+                            ? 'shadow-sm' 
                             : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                         }`}
                         style={{ 
@@ -313,9 +313,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                         <button
                             key={pro.id}
                             onClick={() => setSelectedProId(pro.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all border whitespace-nowrap ${
+                            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all border whitespace-nowrap ${
                                 selectedProId === pro.id 
-                                ? 'shadow-lg scale-105' 
+                                ? 'shadow-sm' 
                                 : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
                             }`}
                             style={{ 
