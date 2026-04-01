@@ -37,10 +37,10 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ initialTab, onTabC
     ];
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-8">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <div>
-                <h1 className="text-2xl font-bold text-slate-900">Configurações</h1>
-                <p className="text-slate-500">Gerencie as configurações da sua barbearia e conta</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Configurações</h1>
+                <p className="text-[#6b7d99] text-sm font-medium">Gerencie as configurações da sua barbearia e conta</p>
             </div>
 
             {/* Horizontal Tabs */}
