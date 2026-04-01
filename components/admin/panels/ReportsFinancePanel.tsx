@@ -63,37 +63,64 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
     }, [filteredAppointments]);
 
     return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                        <DollarSign size={16} className="text-orange-500" />
-                        <h4 className="text-sm font-bold text-slate-500">Faturamento Total</h4>
-                    </div>
-                    <p className="text-2xl font-bold text-slate-900 mt-2">R$ {stats.totalRevenue.toFixed(2)}</p>
-                </div>
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                        <TrendingUp size={16} className="text-green-500" />
-                        <h4 className="text-sm font-bold text-slate-500">Lucro da Loja</h4>
-                    </div>
-                    <p className="text-2xl font-bold text-slate-900 mt-2">R$ {stats.profit.toFixed(2)}</p>
-                </div>
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Users size={16} className="text-blue-500" />
-                        <h4 className="text-sm font-bold text-slate-500">Comissões</h4>
-                    </div>
-                    <p className="text-2xl font-bold text-slate-900 mt-2">R$ {stats.totalCommissions.toFixed(2)}</p>
-                </div>
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-                    <div className="flex items-center gap-2 mb-2">
-                        <Clock size={16} className="text-purple-500" />
-                        <h4 className="text-sm font-bold text-slate-500">Ticket Médio</h4>
-                    </div>
-                    <p className="text-2xl font-bold text-slate-900 mt-2">R$ {stats.avgTicket.toFixed(2)}</p>
-                </div>
-            </div>
+  <div className="space-y-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Faturamento Total */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
+            <DollarSign size={20} />
+          </div>
+          <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Faturamento Total</span>
+        </div>
+        <div className="text-3xl font-black text-slate-900">
+          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalRevenue)}
+        </div>
+        <div className="text-xs text-slate-400 mt-1">Valor bruto acumulado</div>
+      </div>
+
+      {/* Lucro da Loja */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+            <TrendingUp size={20} />
+          </div>
+          <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Lucro da Loja</span>
+        </div>
+        <div className="text-3xl font-black text-slate-900">
+          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.profit)}
+        </div>
+        <div className="text-xs text-slate-400 mt-1">Líquido após comissões</div>
+      </div>
+
+      {/* Comissões */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+            <Users size={20} />
+          </div>
+          <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Comissões</span>
+        </div>
+        <div className="text-3xl font-black text-slate-900">
+          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalCommissions)}
+        </div>
+        <div className="text-xs text-slate-400 mt-1">Total pago à equipe</div>
+      </div>
+
+      {/* Ticket Médio */}
+      <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
+            <Clock size={20} />
+          </div>
+          <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Ticket Médio</span>
+        </div>
+        <div className="text-3xl font-black text-slate-900">
+          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.avgTicket)}
+        </div>
+        <div className="text-xs text-slate-400 mt-1">Média por atendimento</div>
+      </div>
+    </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
