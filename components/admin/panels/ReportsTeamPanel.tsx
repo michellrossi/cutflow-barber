@@ -1,17 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { Users, Scissors, DollarSign, Award, LayoutGrid, Clock } from 'lucide-react';
-import { DateRangeFilter } from '../ui/DateRangeFilter';
 
-export const ReportsTeamPanel: React.FC = () => {
-    const { professionals, appointments, services } = useShop();
+interface ReportsTeamPanelProps {
+    dateRange: string;
+}
+
+export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange }) => {
+    const { professionals, appointments, services, fetchFinancialReport } = useShop();
     const [selectedProId, setSelectedProId] = useState<string>(
         professionals.length > 0 ? professionals[0].id : ''
     );
+    const [filteredAppointments, setFilteredAppointments] = useState(appointments);
+
+    useEffect(() => {
+        const loadData = async () => {
+            const now = new Date();
+            let startDate = new Date();
+            
+            if (dateRange === '30 dias') startDate.setDate(now.getDate() - 30);
+            else if (dateRange === 'Este mês') startDate.setDate(1);
+            else if (dateRange === 'Mês passado') {
+                startDate.setMonth(now.getMonth() - 1);
+                startDate.setDate(1);
+                now.setMonth(now.getMonth());
+                now.setDate(0);
+            } else if (dateRange === 'Semestre') startDate.setMonth(now.getMonth() - 6);
+            else if (dateRange === 'Todo o período') startDate = new Date(2000, 0, 1);
+            else startDate = new Date(0);
+
+            const data = await fetchFinancialReport(startDate.toISOString().split('T')[0], now.toISOString().split('T')[0]);
+            setFilteredAppointments(data);
+        };
+        loadData();
+    }, [dateRange, fetchFinancialReport]);
 
     return (
         <div className="space-y-8 animate-fade-in">
-            {/* Filtro de Data e Seleção de Profissional */}
+            {/* Seleção de Profissional */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex-1">
                     <label className="block text-sm font-bold text-slate-700 mb-4 uppercase tracking-wider">
@@ -38,16 +64,13 @@ export const ReportsTeamPanel: React.FC = () => {
                         ))}
                     </div>
                 </div>
-                <div className="shrink-0">
-                    <DateRangeFilter />
-                </div>
             </div>
 
             {selectedProId ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {(() => {
                         const pro = professionals.find(p => p.id === selectedProId);
-                        const proAppointments = appointments.filter(a => a.professionalId === selectedProId && a.status === 'completed');
+                        const proAppointments = filteredAppointments.filter(a => a.professionalId === selectedProId && a.status === 'completed');
                         
                         const totalServices = proAppointments.length;
                         const totalRevenue = proAppointments.reduce((acc, a) => acc + a.totalValue, 0);

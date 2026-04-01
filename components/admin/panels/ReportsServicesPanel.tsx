@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { DateRangeFilter } from '../ui/DateRangeFilter';
 import { Scissors, DollarSign, TrendingUp } from 'lucide-react';
 
-export const ReportsServicesPanel: React.FC = () => {
+interface ReportsServicesPanelProps {
+    dateRange: string;
+}
+
+export const ReportsServicesPanel: React.FC<ReportsServicesPanelProps> = ({ dateRange }) => {
     const { services, fetchFinancialReport } = useShop();
-    const [dateRange, setDateRange] = useState('30 dias');
     const [filteredAppointments, setFilteredAppointments] = useState<any[]>([]);
 
     useEffect(() => {
@@ -49,9 +51,6 @@ export const ReportsServicesPanel: React.FC = () => {
 
     return (
         <div className="space-y-8">
-            <div className="flex justify-end">
-                <DateRangeFilter onFilterChange={setDateRange} />
-            </div>
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                 <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                     <TrendingUp size={20} className="text-orange-500" />
