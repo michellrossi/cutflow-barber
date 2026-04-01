@@ -34,6 +34,12 @@ export const LoyaltyPanel: React.FC = () => {
 
     return (
         <div className="max-w-4xl space-y-8">
+            <div className="mb-8">
+                <h1 className="text-2xl font-bold text-slate-900">PROGRAMA DE FIDELIDADE</h1>
+                <h2 className="text-lg font-bold text-slate-500">GESTÃO DO PROGRAMA</h2>
+                <p className="text-sm text-slate-400 mt-2">Configure as regras de fidelização e acompanhe o progresso dos seus clientes.</p>
+            </div>
+
             <div className="flex gap-4 border-b border-slate-200">
                 <button
                     onClick={() => setActiveTab('config')}
