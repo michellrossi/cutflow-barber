@@ -31,6 +31,7 @@ export const SubscriptionsPanel: React.FC = () => {
     addClientSubscription,
     updateClientSubscription,
     removeClientSubscription,
+    appointments,
     settings
   } = useShop();
 
@@ -262,6 +263,20 @@ export const SubscriptionsPanel: React.FC = () => {
                       filteredSubscriptions.map((sub) => {
                         const client = clients.find(c => c.id === sub.clientId);
                         const plan = subscriptionPlans.find(p => p.id === sub.planId);
+                        
+                        // Cálculo Real de Uso
+                        const currentMonth = new Date().getMonth();
+                        const currentYear = new Date().getFullYear();
+                        const servicesUsed = appointments
+                          .filter(a => 
+                            (a.clientId === sub.clientId || a.clientPhone === client?.phone) && 
+                            a.status === 'completed' && 
+                            a.paymentMethod === 'subscription' &&
+                            new Date(a.date + 'T12:00:00').getMonth() === currentMonth &&
+                            new Date(a.date + 'T12:00:00').getFullYear() === currentYear
+                          )
+                          .reduce((acc, a) => acc + (a.serviceIds?.length || 1), 0);
+
                         return (
                           <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors">
                             <td className="px-6 py-4">
@@ -276,7 +291,7 @@ export const SubscriptionsPanel: React.FC = () => {
                             </td>
                             <td className="px-6 py-4 text-center">
                               <div className="text-sm font-bold text-slate-900">
-                                {sub.servicesUsedThisMonth} <span className="text-slate-400 font-medium">/ {plan?.servicesPerMonth || 0}</span>
+                                {servicesUsed} <span className="text-slate-400 font-medium">/ {plan?.servicesPerMonth || 0}</span>
                               </div>
                             </td>
                             <td className="px-6 py-4">

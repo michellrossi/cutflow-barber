@@ -215,15 +215,13 @@ export const AppointmentsPanel: React.FC = () => {
                     <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Horários</h2>
                     <p className="text-[#6b7d99] text-sm font-medium">Gerencie sua agenda e registre atendimentos.</p>
                 </div>
-                {viewMode === 'list' && (
-                    <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 whitespace-nowrap"
-                    >
-                        <Plus size={20} className="stroke-[3px]" />
-                        Novo Agendamento
-                    </button>
-                )}
+                <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 whitespace-nowrap"
+                >
+                    <Plus size={20} className="stroke-[3px]" />
+                    Novo Agendamento
+                </button>
             </div>
 
             {/* Modal de Novo Agendamento Manual */}
@@ -365,26 +363,31 @@ export const AppointmentsPanel: React.FC = () => {
                 </div>
             )}
 
-            <div className="flex flex-col xl:flex-row gap-4 mb-4">
-                {/* Toggle de Modos */}
-                <div className="bg-white p-0.5 rounded-md border border-slate-200 flex items-center gap-1 shadow-sm shrink-0 h-fit">
-                    <button
-                        onClick={() => setViewMode('calendar')}
-                        className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'calendar' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
-                    >
-                        <CalendarIcon size={16} /> Agenda
-                    </button>
-                    <button
-                        onClick={() => setViewMode('list')}
-                        className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
-                    >
-                        <List size={16} /> Lista
-                    </button>
-                </div>
+            {/* Toggle de Modos extraído para variável */}
+            {(() => {
+                const ModeToggle = (
+                    <div className="bg-white p-0.5 rounded-md border border-slate-200 flex items-center gap-1 shadow-sm shrink-0 h-fit">
+                        <button
+                            onClick={() => setViewMode('calendar')}
+                            className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'calendar' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
+                        >
+                            <CalendarIcon size={16} /> Agenda
+                        </button>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
+                        >
+                            <List size={16} /> Lista
+                        </button>
+                    </div>
+                );
 
-                {/* BARRA DE FILTROS DE DATA (Design Financeiro) APENAS NO MODO LISTA */}
-                {viewMode === 'list' && (
-                    <div className="bg-white p-1 rounded-lg border border-slate-200 flex items-center flex-nowrap gap-1 shadow-sm w-max overflow-x-auto no-scrollbar max-w-full">
+                return (
+                    <>
+                        {viewMode === 'list' && (
+                            <div className="flex flex-col xl:flex-row gap-4 mb-4">
+                                {ModeToggle}
+                                <div className="bg-white p-1 rounded-lg border border-slate-200 flex items-center flex-nowrap gap-1 shadow-sm w-max overflow-x-auto no-scrollbar max-w-full">
                         {/* Abas de Atalho */}
                         <div className="flex bg-slate-50 p-1 rounded-md shrink-0 border border-slate-200 gap-1">
                             {[
@@ -424,16 +427,16 @@ export const AppointmentsPanel: React.FC = () => {
                                     onChange={e => handleDateChange('end', e.target.value)}
                                     className="bg-transparent border-none text-slate-700 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans font-bold"
                                 />
+                                </div>
                             </div>
                         </div>
                     </div>
                 )}
-            </div>
 
-            {viewMode === 'calendar' ? (
-                <WeeklyCalendar onNewAppointment={() => setIsModalOpen(true)} />
-            ) : (
-                <>
+                {viewMode === 'calendar' ? (
+                            <WeeklyCalendar onNewAppointment={() => setIsModalOpen(true)} modeToggle={ModeToggle} />
+                        ) : (
+                            <>
 
                     {/* BARRA DE FILTROS DE STATUS E BUSCA */}
                     <div className="bg-white p-3 md:p-4 rounded-lg border border-slate-200 mb-6 flex flex-col gap-3 md:gap-4 shadow-sm">
@@ -738,6 +741,9 @@ export const AppointmentsPanel: React.FC = () => {
                     </div>
                 </>
             )}
+                    </>
+                );
+            })()}
         </div>
     );
 };
