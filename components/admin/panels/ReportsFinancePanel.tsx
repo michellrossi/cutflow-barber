@@ -8,7 +8,7 @@ interface ReportsFinancePanelProps {
 }
 
 export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRange }) => {
-    const { appointments, fetchFinancialReport, settings } = useShop();
+    const { appointments, fetchFinancialReport, settings, professionals } = useShop();
     const [filteredAppointments, setFilteredAppointments] = useState(appointments);
 
     useEffect(() => {
@@ -35,8 +35,22 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
 
     const stats = useMemo(() => {
         const completed = filteredAppointments.filter(a => a.status === 'completed');
-        const totalRevenue = completed.reduce((acc, a) => acc + a.totalValue, 0);
-        const totalCommissions = completed.reduce((acc, a) => acc + (a.totalValue * 0.5), 0);
+        
+        // CÁLCULO REAL BASEADO NOS PROFISSIONAIS
+        let totalRevenue = 0;
+        let totalCommissions = 0;
+
+        completed.forEach(app => {
+            totalRevenue += app.totalValue;
+            
+            if (app.professionalId) {
+                const pro = professionals.find(p => p.id === app.professionalId);
+                const rate = pro?.commissionPercentage ?? 50;
+                const commission = app.totalValue * (rate / 100);
+                totalCommissions += commission;
+            }
+        });
+
         const profit = totalRevenue - totalCommissions;
         const avgTicket = completed.length > 0 ? totalRevenue / completed.length : 0;
 

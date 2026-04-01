@@ -251,6 +251,7 @@ export const SubscriptionsPanel: React.FC = () => {
                     <tr className="border-b border-slate-100 bg-slate-50/50">
                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Assinante</th>
                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Plano</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Uso</th>
                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vencimento</th>
                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Ações</th>
@@ -273,16 +274,31 @@ export const SubscriptionsPanel: React.FC = () => {
                                 {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan?.price || 0)}
                               </div>
                             </td>
+                            <td className="px-6 py-4 text-center">
+                              <div className="text-sm font-bold text-slate-900">
+                                {sub.servicesUsedThisMonth} <span className="text-slate-400 font-medium">/ {plan?.servicesPerMonth || 0}</span>
+                              </div>
+                            </td>
                             <td className="px-6 py-4">
                               <StatusBadge status={sub.status} />
                             </td>
-                            <td className="px-6 py-4 text-sm text-slate-600">
-                              {new Date(sub.nextBillingDate).toLocaleDateString('pt-BR')}
+                            <td className="px-6 py-4 text-sm text-slate-600 font-medium">
+                              {new Date(sub.nextBillingDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                             </td>
                             <td className="px-6 py-4 text-right">
                               <div className="flex justify-end gap-2">
-                                <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors"><Edit2 size={16} /></button>
-                                <button className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                                <button 
+                                  onClick={() => { setEditingSub(sub); setIsSubModalOpen(true); }}
+                                  className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-colors"
+                                >
+                                  <Edit2 size={16} />
+                                </button>
+                                <button 
+                                  onClick={() => { if(confirm('Excluir assinatura?')) removeClientSubscription(sub.id); }}
+                                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
                               </div>
                             </td>
                           </tr>

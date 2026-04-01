@@ -37,14 +37,32 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
         const activeSubscribers = clientSubscriptions.filter(sub => sub.status === 'active').length;
         const totalClients = clients.length;
         
+        // CÁLCULO REAL DE CLIENTES INATIVOS
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const lastAppByClient: Record<string, Date> = {};
+        appointments.forEach(app => {
+            const clientId = app.clientId || app.clientPhone;
+            if (clientId && app.status === 'completed') {
+                const appDate = new Date(app.date + 'T12:00:00');
+                if (!lastAppByClient[clientId] || appDate > lastAppByClient[clientId]) {
+                    lastAppByClient[clientId] = appDate;
+                }
+            }
+        });
+
+        const inactiveClients = Object.values(lastAppByClient).filter(lastDate => lastDate < thirtyDaysAgo).length;
+
         return {
             totalClients,
             activeSubscribers,
+            inactiveClients,
             avgTicket: filteredAppointments.length > 0 
                 ? filteredAppointments.reduce((acc, a) => acc + a.totalValue, 0) / filteredAppointments.length 
                 : 0
         };
-    }, [clients, clientSubscriptions, filteredAppointments]);
+    }, [clients, clientSubscriptions, filteredAppointments, appointments]);
 
     const formatCurrency = (val: number) => 
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -123,12 +141,7 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                         <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Inativos (&gt;30 dias)</span>
                     </div>
                     <div className="text-3xl font-black text-slate-900">
-                        {clients.filter(c => {
-                            const lastAppt = appointments.filter(a => a.clientId === c.id).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
-                            if (!lastAppt) return true;
-                            const diff = new Date().getTime() - new Date(lastAppt.date).getTime();
-                            return diff > 30 * 24 * 60 * 60 * 1000;
-                        }).length}
+                        {stats.inactiveClients}
                     </div>
                 </div>
             </div>

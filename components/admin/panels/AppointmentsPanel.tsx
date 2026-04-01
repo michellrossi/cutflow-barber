@@ -365,73 +365,75 @@ export const AppointmentsPanel: React.FC = () => {
                 </div>
             )}
 
+            <div className="flex flex-col xl:flex-row gap-4 mb-4">
+                {/* Toggle de Modos */}
+                <div className="bg-white p-0.5 rounded-md border border-slate-200 flex items-center gap-1 shadow-sm shrink-0 h-fit">
+                    <button
+                        onClick={() => setViewMode('calendar')}
+                        className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'calendar' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
+                    >
+                        <CalendarIcon size={16} /> Agenda
+                    </button>
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
+                    >
+                        <List size={16} /> Lista
+                    </button>
+                </div>
+
+                {/* BARRA DE FILTROS DE DATA (Design Financeiro) APENAS NO MODO LISTA */}
+                {viewMode === 'list' && (
+                    <div className="bg-white p-1 rounded-lg border border-slate-200 flex items-center flex-nowrap gap-1 shadow-sm w-max overflow-x-auto no-scrollbar max-w-full">
+                        {/* Abas de Atalho */}
+                        <div className="flex bg-slate-50 p-1 rounded-md shrink-0 border border-slate-200 gap-1">
+                            {[
+                                { id: 'today', label: 'Hoje' },
+                                { id: 'tomorrow', label: 'Amanhã' },
+                                { id: 'week', label: 'Semana' },
+                                { id: 'month', label: 'Mês' },
+                                { id: 'all', label: 'Tudo' }
+                            ].map((preset) => (
+                                <button
+                                    key={preset.id}
+                                    onClick={() => setPreset(preset.id as any)}
+                                    className={`px-3 md:px-4 py-1.5 rounded-md text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${activePreset === preset.id
+                                            ? 'bg-orange-500 text-white shadow-sm border border-orange-600'
+                                            : 'bg-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent'
+                                        }`}
+                                >
+                                    {preset.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Seletor de Datas Unificado */}
+                        <div className="flex items-center gap-2 shrink-0 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 focus-within:border-orange-500/50 transition-colors">
+                            <Calendar size={14} className="text-slate-400 shrink-0" />
+                            <div className="flex items-center gap-2 flex-1">
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={e => handleDateChange('start', e.target.value)}
+                                    className="bg-transparent border-none text-slate-700 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans font-bold"
+                                />
+                                <span className="text-slate-400 font-bold text-[10px] uppercase">até</span>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={e => handleDateChange('end', e.target.value)}
+                                    className="bg-transparent border-none text-slate-700 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans font-bold"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {viewMode === 'calendar' ? (
                 <WeeklyCalendar onNewAppointment={() => setIsModalOpen(true)} />
             ) : (
                 <>
-
-                    <div className="flex flex-col xl:flex-row gap-4 mb-4">
-                        {/* Toggle de Modos */}
-                        <div className="bg-white p-0.5 rounded-md border border-slate-200 flex items-center gap-1 shadow-sm shrink-0 h-fit">
-                            <button
-                                onClick={() => setViewMode('calendar')}
-                                className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'calendar' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
-                            >
-                                <CalendarIcon size={16} /> Agenda
-                            </button>
-                            <button
-                                onClick={() => setViewMode('list')}
-                                className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
-                            >
-                                <List size={16} /> Lista
-                            </button>
-                        </div>
-
-                        {/* BARRA DE FILTROS DE DATA (Design Financeiro) */}
-                        <div className="bg-white p-1 rounded-lg border border-slate-200 flex items-center flex-nowrap gap-1 shadow-sm w-max overflow-x-auto no-scrollbar max-w-full">
-                            {/* Abas de Atalho */}
-                            <div className="flex bg-slate-50 p-1 rounded-md shrink-0 border border-slate-200 gap-1">
-                                {[
-                                    { id: 'today', label: 'Hoje' },
-                                    { id: 'tomorrow', label: 'Amanhã' },
-                                    { id: 'week', label: 'Semana' },
-                                    { id: 'month', label: 'Mês' },
-                                    { id: 'all', label: 'Tudo' }
-                                ].map((preset) => (
-                                    <button
-                                        key={preset.id}
-                                        onClick={() => setPreset(preset.id as any)}
-                                        className={`px-3 md:px-4 py-1.5 rounded-md text-[10px] md:text-xs font-bold uppercase tracking-wider transition-all whitespace-nowrap ${activePreset === preset.id
-                                                ? 'bg-orange-500 text-white shadow-sm border border-orange-600'
-                                                : 'bg-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-200/50 border border-transparent'
-                                            }`}
-                                    >
-                                        {preset.label}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Seletor de Datas Unificado */}
-                            <div className="flex items-center gap-2 shrink-0 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 focus-within:border-orange-500/50 transition-colors">
-                                <Calendar size={14} className="text-slate-400 shrink-0" />
-                                <div className="flex items-center gap-2 flex-1">
-                                    <input
-                                        type="date"
-                                        value={startDate}
-                                        onChange={e => handleDateChange('start', e.target.value)}
-                                        className="bg-transparent border-none text-slate-700 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans font-bold"
-                                    />
-                                    <span className="text-slate-400 font-bold text-[10px] uppercase">até</span>
-                                    <input
-                                        type="date"
-                                        value={endDate}
-                                        onChange={e => handleDateChange('end', e.target.value)}
-                                        className="bg-transparent border-none text-slate-700 text-[11px] md:text-sm focus:outline-none w-full cursor-pointer font-sans font-bold"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     {/* BARRA DE FILTROS DE STATUS E BUSCA */}
                     <div className="bg-white p-3 md:p-4 rounded-lg border border-slate-200 mb-6 flex flex-col gap-3 md:gap-4 shadow-sm">

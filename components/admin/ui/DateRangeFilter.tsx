@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { Calendar, ChevronDown } from 'lucide-react';
 
-export const DateRangeFilter: React.FC = () => {
+interface DateRangeFilterProps {
+    onFilterChange: (filter: string) => void;
+}
+
+export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState('30 dias');
 
@@ -24,6 +28,7 @@ export const DateRangeFilter: React.FC = () => {
                             key={filter}
                             onClick={() => {
                                 setSelectedFilter(filter);
+                                onFilterChange(filter);
                                 setIsOpen(false);
                             }}
                             className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 rounded-md"
