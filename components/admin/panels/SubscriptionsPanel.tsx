@@ -252,47 +252,47 @@ export const SubscriptionsPanel: React.FC = () => {
 
             {/* Table */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-800/50 text-slate-400 text-xs uppercase tracking-wider">
-                    <th className="px-6 py-4 font-semibold">Cliente</th>
-                    <th className="px-6 py-4 font-semibold">Plano</th>
-                    <th className="px-6 py-4 font-semibold">Status</th>
-                    <th className="px-6 py-4 font-semibold">Uso (Mês)</th>
-                    <th className="px-6 py-4 font-semibold">Próx. Cobrança</th>
-                    <th className="px-6 py-4 font-semibold text-right">Ações</th>
+                  <tr className="border-b border-slate-200 bg-slate-50 text-xs text-slate-500 uppercase tracking-wider">
+                    <th className="p-4 font-bold">Cliente</th>
+                    <th className="p-4 font-bold">Plano</th>
+                    <th className="p-4 font-bold">Status</th>
+                    <th className="p-4 font-bold">Uso (Mês)</th>
+                    <th className="p-4 font-bold">Próx. Cobrança</th>
+                    <th className="p-4 font-bold text-right">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody className="divide-y divide-slate-100">
                   {filteredSubscribers.map((sub) => {
                     const client = clients.find(c => c.id === sub.clientId);
                     const plan = subscriptionPlans.find(p => p.id === sub.planId);
                     
                     return (
-                      <tr key={sub.id} className="hover:bg-slate-800/30 transition-colors group">
-                        <td className="px-6 py-4">
+                      <tr key={sub.id} className="hover:bg-slate-50 transition-colors group">
+                        <td className="p-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-orange-500 font-bold border border-slate-700">
+                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs border border-slate-200 shrink-0">
                               {client?.name.charAt(0)}
                             </div>
                             <div>
-                              <div className="text-white font-medium">{client?.name || 'Cliente Removido'}</div>
+                              <div className="text-slate-900 font-bold">{client?.name || 'Cliente Removido'}</div>
                               <div className="text-slate-500 text-sm">{client?.phone}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-white">{plan?.name || 'Plano Removido'}</div>
-                          <div className="text-orange-500 text-sm font-medium">
+                        <td className="p-4">
+                          <div className="text-slate-900 font-medium">{plan?.name || 'Plano Removido'}</div>
+                          <div className="text-orange-600 text-sm font-bold">
                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan?.price || 0)}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="p-4">
                           <StatusBadge status={sub.status} />
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="p-4">
                           <div className="flex items-center gap-2">
-                            <div className="flex-1 h-1.5 bg-slate-800 rounded-md overflow-hidden max-w-[80px]">
+                            <div className="flex-1 h-1.5 bg-slate-100 rounded-md overflow-hidden max-w-[80px]">
                               <div 
                                 className={`h-full rounded-sm ${
                                   (sub.servicesUsedThisMonth / (plan?.servicesPerMonth || 1)) > 0.8 ? 'bg-red-500' : 'bg-emerald-500'
@@ -300,28 +300,28 @@ export const SubscriptionsPanel: React.FC = () => {
                                 style={{ width: `${Math.min(100, (sub.servicesUsedThisMonth / (plan?.servicesPerMonth || 1)) * 100)}%` }}
                               />
                             </div>
-                            <span className="text-sm text-slate-400">
+                            <span className="text-sm text-slate-600 font-medium">
                               {sub.servicesUsedThisMonth}/{plan?.servicesPerMonth}
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2 text-slate-300">
-                            <Calendar className="w-4 h-4 text-slate-500" />
+                        <td className="p-4">
+                          <div className="flex items-center gap-2 text-slate-900 font-medium">
+                            <Calendar className="w-4 h-4 text-slate-400" />
                             {sub.nextBillingDate ? new Date(sub.nextBillingDate).toLocaleDateString('pt-BR') : '-'}
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="p-4 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
                             <button 
                               onClick={() => { setEditingSub(sub); setIsSubModalOpen(true); }}
-                              className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all"
+                              className="p-1.5 rounded-lg bg-slate-100 text-slate-600 hover:bg-slate-800 hover:text-white transition-all"
                             >
                               <Edit2 className="w-4 h-4" />
                             </button>
                             <button 
                               onClick={() => { if(confirm('Excluir assinatura?')) removeClientSubscription(sub.id); }}
-                              className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                              className="p-1.5 rounded-lg bg-red-50 text-red-600 hover:bg-red-600 hover:text-white transition-all"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
