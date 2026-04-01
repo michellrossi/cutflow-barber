@@ -111,6 +111,17 @@ export const CouponsPanel: React.FC = () => {
                     <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Cupons</h2>
                     <p className="text-[#6b7d99] text-sm font-medium">Crie e gerencie promoções para fidelizar seus clientes.</p>
                 </div>
+                <button 
+                    onClick={() => { 
+                        setIsFormOpen(true); 
+                        setEditingId(null); 
+                        setFormData({ code: '', value: '', type: 'percentage', maxUses: '', expiresAt: '' }); 
+                    }}
+                    className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 whitespace-nowrap"
+                >
+                    <Plus size={20} className="stroke-[3px]" />
+                    Novo Cupom
+                </button>
             </div>
 
             {/* Tabs */}

@@ -234,26 +234,24 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
 
             {/* Header da Agenda */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-3">
-                        <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200 text-[10px] font-bold uppercase tracking-wider">
-                            <button 
-                                onClick={() => setViewType('day')}
-                                className={`px-2 py-1 rounded transition-all ${viewType === 'day' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
-                            >
-                                Dia
-                            </button>
-                            <button 
-                                onClick={() => setViewType('week')}
-                                className={`px-2 py-1 rounded transition-all ${viewType === 'week' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
-                            >
-                                Semana
-                            </button>
-                        </div>
+                <div className="flex flex-wrap items-center gap-3">
+                    <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200 text-[10px] font-bold uppercase tracking-wider">
+                        <button 
+                            onClick={() => setViewType('day')}
+                            className={`px-2 py-1 rounded transition-all ${viewType === 'day' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
+                        >
+                            Dia
+                        </button>
+                        <button 
+                            onClick={() => setViewType('week')}
+                            className={`px-2 py-1 rounded transition-all ${viewType === 'week' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
+                        >
+                            Semana
+                        </button>
                     </div>
                     <div className="flex items-center gap-2 text-slate-500">
                         <Calendar size={14} />
-                        <span className="text-xs md:text-sm font-medium">{dateRangeLabel}</span>
+                        <span className="text-xs md:text-sm font-medium whitespace-nowrap">{dateRangeLabel}</span>
                     </div>
                 </div>
                 
@@ -281,10 +279,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                     
                     <button 
                         onClick={onNewAppointment}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-white font-bold shadow-lg hover:opacity-90 transition-all text-sm flex-1 md:flex-none"
-                        style={{ backgroundColor: settings.primaryColor }}
+                        className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 whitespace-nowrap flex-1 md:flex-none"
                     >
-                        <Plus size={18} /> <span className="hidden sm:inline">Novo</span>
+                        <Plus size={20} className="stroke-[3px]" /> <span className="hidden sm:inline">Novo</span>
                     </button>
                 </div>
             </div>

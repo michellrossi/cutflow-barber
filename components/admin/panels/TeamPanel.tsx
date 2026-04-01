@@ -218,6 +218,19 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                     <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Equipe</h2>
                     <p className="text-[#6b7d99] text-sm font-medium">Adicione profissionais, administre seus horários e bloqueios e gere relatórios.</p>
                 </div>
+                {subTab === 'list' && (
+                    <button 
+                        onClick={() => { 
+                            setIsFormOpen(true); 
+                            setEditingId(null); 
+                            setName(''); setRole(''); setEmail(''); setPhone(''); setPhoto(null); setCommission('50');
+                        }}
+                        className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 whitespace-nowrap"
+                    >
+                        <Plus size={20} className="stroke-[3px]" />
+                        Novo Profissional
+                    </button>
+                )}
             </div>
 
             {/* Sub-menus Internos */}
@@ -254,19 +267,6 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
 
             {subTab === 'list' && (
                 <>
-                    <div className="flex justify-end mb-8">
-                        <button 
-                            onClick={() => { 
-                                setIsFormOpen(true); 
-                                setEditingId(null); 
-                                setName(''); setRole(''); setEmail(''); setPhone(''); setPhoto(null); setCommission('50');
-                            }}
-                            className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 whitespace-nowrap"
-                        >
-                            <Plus size={20} className="stroke-[3px]" />
-                            Novo Profissional
-                        </button>
-                    </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-2">
                         {professionals.map(pro => {
