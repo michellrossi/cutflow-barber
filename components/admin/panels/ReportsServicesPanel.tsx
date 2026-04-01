@@ -1,15 +1,38 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { DateRangeFilter } from '../ui/DateRangeFilter';
 import { Scissors, DollarSign, TrendingUp } from 'lucide-react';
 
 export const ReportsServicesPanel: React.FC = () => {
-    const { appointments, services } = useShop();
+    const { services, fetchFinancialReport } = useShop();
+    const [dateRange, setDateRange] = useState('30 dias');
+    const [filteredAppointments, setFilteredAppointments] = useState<any[]>([]);
 
-    // Data for services
+    useEffect(() => {
+        const loadData = async () => {
+            const now = new Date();
+            let startDate = new Date();
+            
+            if (dateRange === '30 dias') startDate.setDate(now.getDate() - 30);
+            else if (dateRange === 'Este mês') startDate.setDate(1);
+            else if (dateRange === 'Mês passado') {
+                startDate.setMonth(now.getMonth() - 1);
+                startDate.setDate(1);
+                now.setMonth(now.getMonth());
+                now.setDate(0);
+            } else if (dateRange === 'Semestre') startDate.setMonth(now.getMonth() - 6);
+            else if (dateRange === 'Todo o período') startDate = new Date(2000, 0, 1);
+            else startDate = new Date(0);
+
+            const data = await fetchFinancialReport(startDate.toISOString().split('T')[0], now.toISOString().split('T')[0]);
+            setFilteredAppointments(data);
+        };
+        loadData();
+    }, [dateRange, fetchFinancialReport]);
+
     const serviceStats = services.map(service => {
-        const appts = appointments.filter(a => a.serviceIds.includes(service.id) && a.status === 'completed');
+        const appts = filteredAppointments.filter(a => a.serviceIds.includes(service.id) && a.status === 'completed');
         const totalRevenue = appts.reduce((acc, a) => acc + (service.price || 0), 0);
         return {
             name: service.name,
@@ -18,17 +41,16 @@ export const ReportsServicesPanel: React.FC = () => {
         };
     });
 
-    // Mock data for monthly services
     const monthlyServices = [
-        { name: 'Jan', total: 150 },
-        { name: 'Fev', total: 180 },
-        { name: 'Mar', total: 200 },
+        { name: 'Jan', total: filteredAppointments.filter(a => new Date(a.date).getMonth() === 0).length },
+        { name: 'Fev', total: filteredAppointments.filter(a => new Date(a.date).getMonth() === 1).length },
+        { name: 'Mar', total: filteredAppointments.filter(a => new Date(a.date).getMonth() === 2).length },
     ];
 
     return (
         <div className="space-y-8">
             <div className="flex justify-end">
-                <DateRangeFilter />
+                <DateRangeFilter onFilterChange={setDateRange} />
             </div>
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
                 <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">

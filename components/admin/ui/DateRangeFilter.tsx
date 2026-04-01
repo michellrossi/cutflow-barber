@@ -5,7 +5,7 @@ export const DateRangeFilter: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [selectedFilter, setSelectedFilter] = useState('30 dias');
 
-    const filters = ['30 dias', 'Este mês', 'Mês passado', 'Semestre', 'Personalizado'];
+    const filters = ['30 dias', 'Este mês', 'Mês passado', 'Semestre', 'Todo o período', 'Personalizado'];
 
     return (
         <div className="relative">
