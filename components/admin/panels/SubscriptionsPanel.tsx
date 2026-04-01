@@ -623,21 +623,40 @@ interface StatCardProps {
   color: 'blue' | 'amber' | 'red' | 'emerald';
 }
 
-const StatCard: React.FC<StatCardProps> = ({ icon, label, value, color }) => {
-  const colorClasses = {
-    blue: 'bg-blue-500/10 border-blue-500/20',
-    amber: 'bg-amber-500/10 border-amber-500/20',
-    red: 'bg-red-500/10 border-red-500/20',
-    emerald: 'bg-emerald-500/10 border-emerald-500/20',
+const StatCard: React.FC<{ 
+  label: string, 
+  value: string | number, 
+  icon: React.ReactNode, 
+  color: 'orange' | 'blue' | 'emerald' | 'purple' 
+}> = ({ label, value, icon, color }) => {
+  // Mapeamento de cores para o padrão de ícones com fundo suave
+  const colorStyles = {
+    orange: "bg-orange-50 text-orange-600",
+    blue: "bg-blue-50 text-blue-600",
+    emerald: "bg-emerald-50 text-emerald-600",
+    purple: "bg-purple-50 text-purple-600",
   };
 
   return (
-    <div className={`p-4 rounded-lg border ${colorClasses[color]} transition-all hover:scale-[1.02]`}>
-      <div className="flex items-center gap-3 mb-2">
-        {icon}
-        <span className="text-slate-400 text-sm font-medium">{label}</span>
+    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+      <div className="flex items-center gap-3 mb-4">
+        {/* Ícone com fundo suave e arredondado */}
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${colorStyles[color]}`}>
+          {React.cloneElement(icon as React.ReactElement, { size: 20 })}
+        </div>
+        {/* Label em caixa alta e cinza médio */}
+        <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">
+          {label}
+        </span>
       </div>
-      <div className="text-2xl font-bold text-white">{value}</div>
+      {/* Valor principal em negrito acentuado (font-black) */}
+      <div className="text-3xl font-black text-slate-900">
+        {value}
+      </div>
+      {/* Descrição secundária opcional (ajuste conforme a necessidade) */}
+      <div className="text-xs text-slate-400 mt-1">
+        Métrica atualizada
+      </div>
     </div>
   );
 };
