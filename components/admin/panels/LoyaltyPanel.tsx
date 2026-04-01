@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { useShop } from '../../../store';
-import { Award, CreditCard, Target, Percent, DollarSign, Clock, Save, CheckCircle2, Info } from 'lucide-react';
+// Adicionados: Settings, Users, Target
+import { Award, CreditCard, Target, Percent, DollarSign, Clock, Save, CheckCircle2, Info, Settings, Users } from 'lucide-react';
 import { LoyaltyManagementPanel } from './LoyaltyManagementPanel';
 
 export const LoyaltyPanel: React.FC = () => {
