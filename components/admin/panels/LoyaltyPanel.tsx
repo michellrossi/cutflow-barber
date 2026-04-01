@@ -35,12 +35,11 @@ export const LoyaltyPanel: React.FC = () => {
     return (
         <div className="max-w-4xl space-y-8">
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-slate-900">PROGRAMA DE FIDELIDADE</h1>
-                <h2 className="text-lg font-bold text-slate-500">GESTÃO DO PROGRAMA</h2>
-                <p className="text-sm text-slate-400 mt-2">Configure as regras de fidelização e acompanhe o progresso dos seus clientes.</p>
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão do Programa</h2>
+                <p className="text-[#6b7d99] text-sm font-medium">Configure as regras de fidelização e acompanhe o progresso dos seus clientes.</p>
             </div>
 
-            <div className="flex gap-4 border-b border-slate-200">
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
                 <button
                     onClick={() => setActiveTab('config')}
                     className={`pb-4 px-2 font-bold transition-all ${activeTab === 'config' ? 'text-orange-500 border-b-2 border-orange-500' : 'text-slate-500 hover:text-slate-700'}`}
