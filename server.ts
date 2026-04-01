@@ -15,11 +15,16 @@ const __dirname = path.dirname(__filename);
 
 // Configurações
 const PORT = process.env.PORT || 3000;
-const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_KEY || '';
 const geminiKey = process.env.GEMINI_API_KEY || '';
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+if (!supabaseUrl || !supabaseKey) {
+    console.error("❌ ERRO CRÍTICO: As variáveis de ambiente do Supabase não foram encontradas!");
+    console.error("👉 Certifique-se de configurar VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no painel da sua hospedagem (Railway, Render, etc).");
+}
+
+const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseKey || 'placeholder');
 
 /**
  * GERA MENSAGEM (TEMPLATE)
