@@ -44,6 +44,21 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
                         Selecione o Profissional
                     </label>
                     <div className="flex flex-wrap gap-4">
+                        <button
+                            onClick={() => setSelectedProId('all')}
+                            className={`flex flex-col items-center gap-2 p-2 rounded-xl transition-all border-2 ${
+                                selectedProId === 'all' 
+                                    ? 'border-orange-500 bg-orange-50 shadow-md scale-105' 
+                                    : 'border-transparent hover:bg-slate-50'
+                            }`}
+                        >
+                            <div className="w-16 h-16 rounded-full bg-slate-200 flex items-center justify-center border-2 border-white shadow-sm shrink-0">
+                                <Users size={32} className="text-slate-500" />
+                            </div>
+                            <span className={`text-xs font-bold truncate max-w-[80px] ${selectedProId === 'all' ? 'text-orange-600' : 'text-slate-600'}`}>
+                                Todos
+                            </span>
+                        </button>
                         {professionals.map(pro => (
                             <button
                                 key={pro.id}
@@ -69,12 +84,19 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
             {selectedProId ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {(() => {
-                        const pro = professionals.find(p => p.id === selectedProId);
-                        const proAppointments = filteredAppointments.filter(a => a.professionalId === selectedProId && a.status === 'completed');
+                        const isAll = selectedProId === 'all';
+                        const proAppointments = isAll 
+                            ? filteredAppointments.filter(a => a.status === 'completed')
+                            : filteredAppointments.filter(a => a.professionalId === selectedProId && a.status === 'completed');
                         
                         const totalServices = proAppointments.length;
                         const totalRevenue = proAppointments.reduce((acc, a) => acc + a.totalValue, 0);
-                        const totalCommission = (totalRevenue * (pro?.commissionPercentage || 50)) / 100;
+                        
+                        // Cálculo de comissão apenas se um profissional específico for selecionado
+                        const pro = isAll ? null : professionals.find(p => p.id === selectedProId);
+                        const totalCommission = isAll 
+                            ? 0 
+                            : (totalRevenue * (pro?.commissionPercentage || 50)) / 100;
 
                         const serviceBreakdown: { [key: string]: number } = {};
                         proAppointments.forEach(appt => {
@@ -114,19 +136,21 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
                                     <div className="text-xs text-slate-400 mt-1">Valor bruto gerado</div>
                                 </div>
 
-                                {/* Card Comissão */}
-                                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
-                                            <Award size={20} />
+                                {/* Card Comissão (apenas se não for 'Todos') */}
+                                {!isAll && (
+                                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
+                                                <Award size={20} />
+                                            </div>
+                                            <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Comissão Devida</span>
                                         </div>
-                                        <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Comissão Devida</span>
+                                        <div className="text-3xl font-black text-slate-900">
+                                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCommission)}
+                                        </div>
+                                        <div className="text-xs text-slate-400 mt-1">{pro?.commissionPercentage}% de comissão</div>
                                     </div>
-                                    <div className="text-3xl font-black text-slate-900">
-                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(totalCommission)}
-                                    </div>
-                                    <div className="text-xs text-slate-400 mt-1">{pro?.commissionPercentage}% de comissão</div>
-                                </div>
+                                )}
 
                                 {/* Mix de Serviços */}
                                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
@@ -149,6 +173,32 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
                                         )}
                                     </div>
                                 </div>
+
+                                {/* Top Profissionais (apenas se for 'Todos') */}
+                                {isAll && (
+                                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm md:col-span-2 lg:col-span-4">
+                                        <h3 className="font-bold text-slate-900 mb-4">Top Profissionais (Faturamento)</h3>
+                                        <div className="space-y-2">
+                                            {professionals.map(pro => {
+                                                const proRevenue = filteredAppointments
+                                                    .filter(a => a.professionalId === pro.id && a.status === 'completed')
+                                                    .reduce((acc, a) => acc + a.totalValue, 0);
+                                                return { ...pro, revenue: proRevenue };
+                                            })
+                                            .sort((a, b) => b.revenue - a.revenue)
+                                            .map((pro, index) => (
+                                                <div key={pro.id} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="font-bold text-slate-400 w-6">#{index + 1}</span>
+                                                        <img src={pro.photoUrl} alt={pro.name} className="w-8 h-8 rounded-full" />
+                                                        <span className="font-bold text-slate-900">{pro.name}</span>
+                                                    </div>
+                                                    <span className="font-black text-orange-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pro.revenue)}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Tabela Detalhada */}
                                 <div className="bg-white rounded-2xl border border-slate-200 shadow-sm md:col-span-2 lg:col-span-4 overflow-hidden">

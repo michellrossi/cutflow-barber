@@ -22,7 +22,7 @@ export const ReportsPanel: React.FC = () => {
     return (
         <div className="space-y-8">
             <div className="mb-8">
-                <h2 className="text-2xl font-bold text-slate-900 mb-1">Relatórios</h2>
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Dados</h2>
                 <p className="text-[#6b7d99] text-sm font-medium">Acompanhe o desempenho do seu negócio com dados detalhados.</p>
             </div>
 
