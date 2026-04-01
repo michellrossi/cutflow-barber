@@ -133,7 +133,7 @@ export const SubscriptionsPanel: React.FC = () => {
     {/* Header Padronizado */}
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
       <div>
-        <h2 className="text-2xl font-bold text-slate-900 mb-1">Assinaturas</h2>
+        <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Assinaturas</h2>
         <p className="text-[#6b7d99] text-sm font-medium">
           Gerencie planos mensais e assinantes da sua barbearia
         </p>
