@@ -1,16 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useShop } from '../../../store';
 import { SubscriptionPlan, ClientSubscription, Client } from '../../../types';
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  CreditCard, 
-  Users, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  Plus,
+  Search,
+  Filter,
+  MoreVertical,
+  CreditCard,
+  Users,
+  Clock,
+  CheckCircle2,
+  XCircle,
   AlertCircle,
   Calendar,
   ChevronRight,
@@ -21,9 +21,9 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const SubscriptionsPanel: React.FC = () => {
-  const { 
-    subscriptionPlans, 
-    clientSubscriptions, 
+  const {
+    subscriptionPlans,
+    clientSubscriptions,
     clients,
     addSubscriptionPlan,
     updateSubscriptionPlan,
@@ -59,17 +59,17 @@ export const SubscriptionsPanel: React.FC = () => {
 
   // Filtered Data
   const filteredSubscriptions = useMemo(() => {
-  return clientSubscriptions.filter(sub => {
-    const client = clients.find(c => c.id === sub.clientId);
-    const plan = subscriptionPlans.find(p => p.id === sub.planId);
-    
-    const searchString = `${client?.name} ${client?.email} ${plan?.name}`.toLowerCase();
-    const matchesSearch = searchString.includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-}, [clientSubscriptions, clients, subscriptionPlans, searchQuery, statusFilter]);
+    return clientSubscriptions.filter(sub => {
+      const client = clients.find(c => c.id === sub.clientId);
+      const plan = subscriptionPlans.find(p => p.id === sub.planId);
+
+      const searchString = `${client?.name} ${client?.email} ${plan?.name}`.toLowerCase();
+      const matchesSearch = searchString.includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [clientSubscriptions, clients, subscriptionPlans, searchQuery, statusFilter]);
 
   const handleSavePlan = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -126,64 +126,64 @@ export const SubscriptionsPanel: React.FC = () => {
   };
 
   return (
-  <div className="space-y-6">
-    {/* Header Padronizado */}
-    <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-900 mb-1">Assinaturas</h2>
-        <p className="text-[#6b7d99] text-sm font-medium">
-          Gerencie planos mensais e assinantes da sua barbearia
-        </p>
-      </div>
-      
-      <div className="flex items-center gap-2">
-        {subscriptionPlans.length === 0 && (
-          <button 
-            onClick={handleCreateSuggestedPlans}
+    <div className="space-y-6">
+      {/* Header Padronizado */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Assinantes</h2>
+          <p className="text-[#6b7d99] text-sm font-medium">
+            Gerencie planos mensais e assinantes da sua barbearia
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          {subscriptionPlans.length === 0 && (
+            <button
+              onClick={handleCreateSuggestedPlans}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors border border-slate-200 font-medium"
+            >
+              <Zap className="w-4 h-4 text-orange-500" />
+              Planos Sugeridos
+            </button>
+          )}
+          <button
+            onClick={() => { setEditingPlan(null); setIsPlanModalOpen(true); }}
             className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors border border-slate-200 font-medium"
           >
-            <Zap className="w-4 h-4 text-orange-500" />
-            Planos Sugeridos
+            <Plus className="w-4 h-4" />
+            Novo Plano
           </button>
-        )}
-        <button 
-          onClick={() => { setEditingPlan(null); setIsPlanModalOpen(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors border border-slate-200 font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Plano
-        </button>
-        <button 
-          onClick={() => { setEditingSub(null); setIsSubModalOpen(true); }}
-          className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors shadow-lg shadow-orange-500/20 font-medium"
-        >
-          <Plus className="w-4 h-4" />
-          Novo Assinante
-        </button>
+          <button
+            onClick={() => { setEditingSub(null); setIsSubModalOpen(true); }}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors shadow-lg shadow-orange-500/20 font-medium"
+          >
+            <Plus className="w-4 h-4" />
+            Novo Assinante
+          </button>
+        </div>
       </div>
-    </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard 
+        <StatCard
           icon={<Users className="w-5 h-5 text-blue-400" />}
           label="Ativos"
           value={stats.active}
           color="blue"
         />
-        <StatCard 
+        <StatCard
           icon={<Clock className="w-5 h-5 text-amber-400" />}
           label="Pendentes"
           value={stats.pending}
           color="amber"
         />
-        <StatCard 
+        <StatCard
           icon={<AlertCircle className="w-5 h-5 text-red-400" />}
           label="Inativos"
           value={stats.inactive}
           color="red"
         />
-        <StatCard 
+        <StatCard
           icon={<Zap className="w-5 h-5 text-emerald-400" />}
           label="Receita Mensal"
           value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(stats.totalRevenue)}
@@ -192,118 +192,116 @@ export const SubscriptionsPanel: React.FC = () => {
       </div>
 
       {/* Tabs - Estilo Interruptor Correto */}
-<div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg w-fit mb-8">
-  <button
-    onClick={() => setActiveTab('subscribers')}
-    className={`px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
-      activeTab === 'subscribers' 
-        ? 'bg-white text-orange-600 shadow-sm' 
-        : 'text-slate-500 hover:text-slate-700'
-    }`}
-  >
-    Assinantes
-  </button>
-  <button
-    onClick={() => setActiveTab('plans')}
-    className={`px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
-      activeTab === 'plans' 
-        ? 'bg-white text-orange-600 shadow-sm' 
-        : 'text-slate-500 hover:text-slate-700'
-    }`}
-  >
-    Planos
-  </button>
-</div>
-
-{/* Main Content */}
-<div className="w-full">
-  {activeTab === 'subscribers' ? (
-    <div className="space-y-4">
-      {/* Filters - Ajustados para o padrão claro */}
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Buscar assinante ou plano..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-500 transition-all"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-white border border-slate-200 rounded-lg text-slate-600 px-3 py-2 focus:outline-none focus:border-orange-500 transition-all text-sm font-medium"
-          >
-            <option value="all">Todos os Status</option>
-            <option value="active">Ativos</option>
-            <option value="pending">Pendentes</option>
-            <option value="inactive">Inativos</option>
-          </select>
-        </div>
+      <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-lg w-fit mb-8">
+        <button
+          onClick={() => setActiveTab('subscribers')}
+          className={`px-6 py-2.5 rounded-md text-sm font-bold transition-all ${activeTab === 'subscribers'
+              ? 'bg-white text-orange-600 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
+            }`}
+        >
+          Assinantes
+        </button>
+        <button
+          onClick={() => setActiveTab('plans')}
+          className={`px-6 py-2.5 rounded-md text-sm font-bold transition-all ${activeTab === 'plans'
+              ? 'bg-white text-orange-600 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
+            }`}
+        >
+          Planos
+        </button>
       </div>
 
-      {/* Table - Padrão ClientsPanel */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/50">
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Assinante</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Plano</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vencimento</th>
-                <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50">
-              {filteredSubscriptions.length > 0 ? (
-                filteredSubscriptions.map((sub) => {
-                  const client = clients.find(c => c.id === sub.clientId);
-                  const plan = subscriptionPlans.find(p => p.id === sub.planId);
-                  return (
-                    <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-bold text-slate-900">{client?.name || 'Cliente Removido'}</div>
-                        <div className="text-xs text-slate-400">{client?.email}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-slate-600">{plan?.name}</div>
-                        <div className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">
-                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan?.price || 0)}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <StatusBadge status={sub.status} />
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-600">
-                        {new Date(sub.nextBillingDate).toLocaleDateString('pt-BR')}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors"><Edit2 size={16} /></button>
-                          <button className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
-                        </div>
-                      </td>
+      {/* Main Content */}
+      <div className="w-full">
+        {activeTab === 'subscribers' ? (
+          <div className="space-y-4">
+            {/* Filters - Ajustados para o padrão claro */}
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar assinante ou plano..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-500 transition-all"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-slate-400" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-lg text-slate-600 px-3 py-2 focus:outline-none focus:border-orange-500 transition-all text-sm font-medium"
+                >
+                  <option value="all">Todos os Status</option>
+                  <option value="active">Ativos</option>
+                  <option value="pending">Pendentes</option>
+                  <option value="inactive">Inativos</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Table - Padrão ClientsPanel */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-100 bg-slate-50/50">
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Assinante</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Plano</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Vencimento</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Ações</th>
                     </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
-                    Nenhum assinante encontrado
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-  ) : (
+                  </thead>
+                  <tbody className="divide-y divide-slate-50">
+                    {filteredSubscriptions.length > 0 ? (
+                      filteredSubscriptions.map((sub) => {
+                        const client = clients.find(c => c.id === sub.clientId);
+                        const plan = subscriptionPlans.find(p => p.id === sub.planId);
+                        return (
+                          <tr key={sub.id} className="hover:bg-slate-50/50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div className="text-sm font-bold text-slate-900">{client?.name || 'Cliente Removido'}</div>
+                              <div className="text-xs text-slate-400">{client?.email}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm font-medium text-slate-600">{plan?.name}</div>
+                              <div className="text-[10px] text-slate-400 uppercase font-bold tracking-tight">
+                                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(plan?.price || 0)}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <StatusBadge status={sub.status} />
+                            </td>
+                            <td className="px-6 py-4 text-sm text-slate-600">
+                              {new Date(sub.nextBillingDate).toLocaleDateString('pt-BR')}
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <div className="flex justify-end gap-2">
+                                <button className="p-2 text-slate-400 hover:text-slate-600 transition-colors"><Edit2 size={16} /></button>
+                                <button className="p-2 text-slate-400 hover:text-red-500 transition-colors"><Trash2 size={16} /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-12 text-center text-slate-400 italic">
+                          Nenhum assinante encontrado
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        ) : (
           <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {subscriptionPlans.map((plan) => (
               <div key={plan.id} className="bg-white border border-slate-100 rounded-lg p-6 relative group overflow-hidden shadow-sm hover:border-slate-200 transition-all">
@@ -321,7 +319,7 @@ export const SubscriptionsPanel: React.FC = () => {
                     <p className="text-slate-500 text-sm line-clamp-1">{plan.description}</p>
                   </div>
                 </div>
-                
+
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-slate-500">Preço Mensal</span>
@@ -336,14 +334,14 @@ export const SubscriptionsPanel: React.FC = () => {
                 </div>
 
                 <div className="flex items-center gap-2 pt-4 border-t border-slate-50">
-                  <button 
+                  <button
                     onClick={() => { setEditingPlan(plan); setIsPlanModalOpen(true); }}
                     className="flex-1 py-2 bg-slate-50 hover:bg-slate-100 text-slate-900 rounded-lg text-sm font-medium transition-all"
                   >
                     Editar
                   </button>
-                  <button 
-                    onClick={() => { if(confirm('Excluir plano?')) removeSubscriptionPlan(plan.id); }}
+                  <button
+                    onClick={() => { if (confirm('Excluir plano?')) removeSubscriptionPlan(plan.id); }}
                     className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -351,7 +349,7 @@ export const SubscriptionsPanel: React.FC = () => {
                 </div>
               </div>
             ))}
-            <button 
+            <button
               onClick={() => { setEditingPlan(null); setIsPlanModalOpen(true); }}
               className="border-2 border-dashed border-slate-200 hover:border-orange-500 hover:bg-orange-50 rounded-lg p-6 flex flex-col items-center justify-center gap-3 transition-all group"
             >
@@ -368,14 +366,14 @@ export const SubscriptionsPanel: React.FC = () => {
       <AnimatePresence>
         {isPlanModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsPlanModalOpen(false)}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -462,14 +460,14 @@ export const SubscriptionsPanel: React.FC = () => {
       <AnimatePresence>
         {isSubModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsSubModalOpen(false)}
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             />
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -585,11 +583,11 @@ interface StatCardProps {
   color: 'blue' | 'amber' | 'red' | 'emerald';
 }
 
-const StatCard: React.FC<{ 
-  label: string, 
-  value: string | number, 
-  icon: React.ReactNode, 
-  color: 'orange' | 'blue' | 'emerald' | 'purple' 
+const StatCard: React.FC<{
+  label: string,
+  value: string | number,
+  icon: React.ReactNode,
+  color: 'orange' | 'blue' | 'emerald' | 'purple'
 }> = ({ label, value, icon, color }) => {
   // Mapeamento de cores para o padrão de ícones com fundo suave
   const colorStyles = {
@@ -625,23 +623,23 @@ const StatCard: React.FC<{
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => {
   const configs: Record<string, { label: string, classes: string, icon: React.ReactNode }> = {
-    active: { 
-      label: 'Ativo', 
+    active: {
+      label: 'Ativo',
       classes: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
       icon: <CheckCircle2 className="w-3 h-3" />
     },
-    pending: { 
-      label: 'Pendente', 
+    pending: {
+      label: 'Pendente',
       classes: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
       icon: <Clock className="w-3 h-3" />
     },
-    inactive: { 
-      label: 'Inativo', 
+    inactive: {
+      label: 'Inativo',
       classes: 'bg-slate-500/10 text-slate-400 border-slate-500/20',
       icon: <AlertCircle className="w-3 h-3" />
     },
-    cancelled: { 
-      label: 'Cancelado', 
+    cancelled: {
+      label: 'Cancelado',
       classes: 'bg-red-500/10 text-red-500 border-red-500/20',
       icon: <XCircle className="w-3 h-3" />
     },

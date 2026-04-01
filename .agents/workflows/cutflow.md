@@ -22,4 +22,4 @@ Título (Label): Posicionado ao lado do ícone, em cinza médio, fonte pequena, 
 
 Valor Principal: Posicionado abaixo da linha do cabeçalho, deve ser o elemento de maior destaque, usando uma fonte extra negrita/preta e tamanho grande (text-3xl font-black text-slate-900).
 
-Subtítulo/Descrição: Logo abaixo do valor, uma linha de texto pequena, em fonte padrão (sem caixa alta) e na cor cinza claro (text-xs text-slate-400).
+Subtítulo/Descrição: Logo abaixo do valor, uma linha de texto pequena, em fonte padrão (sem caixa alta) e na cor cinza claro (text-sm text-slate-500).

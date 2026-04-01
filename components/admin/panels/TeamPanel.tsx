@@ -254,8 +254,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
 
             {subTab === 'list' && (
                 <>
-                    <div className="flex justify-between mb-8">
-                        <p className="text-slate-500">Adicione, edite ou remova profissionais da sua equipe.</p>
+                    <div className="flex justify-end mb-8">
                         <button 
                             onClick={() => { 
                                 setIsFormOpen(true); 
