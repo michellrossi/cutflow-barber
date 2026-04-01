@@ -37,35 +37,29 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ initialTab, onTabC
     ];
 
     return (
-    <div className="space-y-6"> {/* REMOVIDO: max-w-4xl e mx-auto para alinhar à esquerda */}
-        
-        {/* Cabeçalho Padronizado */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+        <div className="p-6 max-w-7xl mx-auto space-y-8">
             <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-1">Configurações</h2>
-                <p className="text-[#6b7d99] text-sm font-medium">
-                    Gerencie as informações da sua barbearia, horários e preferências do sistema.
-                </p>
+                <h1 className="text-2xl font-bold text-slate-900">Configurações</h1>
+                <p className="text-slate-500">Gerencie as configurações da sua barbearia e conta</p>
             </div>
-        </div>
 
-        {/* Sub-menus Estilo "Interruptor" */}
-        <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
-            {tabs.map(tab => (
-                <button
-                    key={tab.id}
-                    onClick={() => handleTabChange(tab.id)}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
-                        activeTab === tab.id 
-                        ? 'bg-white text-orange-600 shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                >
-                    {tab.icon}
-                    {tab.label}
-                </button>
-            ))}
-        </div>
+            {/* Horizontal Tabs */}
+            <div className="flex flex-wrap gap-2 p-1 bg-slate-100 rounded-lg w-fit">
+                {tabs.map((tab) => (
+                    <button
+                        key={tab.id}
+                        onClick={() => handleTabChange(tab.id)}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
+                            activeTab === tab.id 
+                            ? 'bg-white text-orange-600 shadow-sm' 
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                    >
+                        {tab.icon}
+                        {tab.label}
+                    </button>
+                ))}
+            </div>
 
             {/* Settings Content */}
             <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-sm">

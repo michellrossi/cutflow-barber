@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info, ShieldCheck, Pin } from 'lucide-react';
+import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info, ShieldCheck, Pin, BarChart3 } from 'lucide-react';
 import { DashboardPanel } from './panels/DashboardPanel';
 import { TeamPanel } from './panels/TeamPanel';
 import { ServicesPanel } from './panels/ServicesPanel';
@@ -12,6 +12,7 @@ import { FinancePanel } from './panels/FinancePanel';
 import { ClientsPanel } from './panels/ClientsPanel';
 import { SettingsPanel, SettingsTab } from './panels/SettingsPanel';
 import { LoyaltyPanel } from './panels/LoyaltyPanel';
+import { ReportsPanel } from './panels/ReportsPanel';
 import { InsightPanel } from './panels/InsightPanel';
 import { RemindersPanel } from './panels/RemindersPanel';
 import { SubscriptionsPanel } from './panels/SubscriptionsPanel';
@@ -20,7 +21,7 @@ import { PaymentModal } from '../billing/PaymentModal';
 
 import { PlanPanel } from './panels/PlanPanel';
 
-type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan';
+type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan' | 'reports';
 
 type TeamSubTab = 'list' | 'schedules' | 'blocks';
 
@@ -97,6 +98,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'finance': return <FinancePanel />;
       case 'clients': return <ClientsPanel initialFilter={clientFilter as any} />;
       case 'loyalty': return <LoyaltyPanel />;
+      case 'reports': return <ReportsPanel />;
       case 'settings': return <SettingsPanel initialTab={settingsSubTab} onTabChange={setSettingsSubTab} />;
       case 'insight': return <InsightPanel />;
       case 'reminders': return <RemindersPanel />;
@@ -116,6 +118,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'finance': return 'Financeiro';
           case 'clients': return 'Gestão de Clientes';
           case 'loyalty': return 'Programa de Fidelidade';
+          case 'reports': return 'Relatórios';
           case 'settings': return 'Configurações';
           case 'insight': return 'Insights com IA';
           case 'reminders': return 'Automação';
@@ -188,6 +191,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => handleTabChange('coupons')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => handleTabChange('loyalty')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<BarChart3 size={20} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => handleTabChange('reports')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<MessageSquare size={20} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} />
   
@@ -273,6 +278,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     <MobileNavItem icon={<CreditCard size={16} />} label="Assinaturas" active={activeTab === 'subscriptions'} onClick={() => setActiveTab('subscriptions')} />
     <MobileNavItem icon={<Tag size={16} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => setActiveTab('coupons')} />
     <MobileNavItem icon={<Award size={16} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => setActiveTab('loyalty')} />
+    <MobileNavItem icon={<BarChart3 size={16} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
     <MobileNavItem icon={<MessageSquare size={16} />} label="Automação" active={activeTab === 'reminders'} onClick={() => setActiveTab('reminders')} />
     <MobileNavItem icon={<Sparkles size={16} />} label="IA" active={activeTab === 'insight'} onClick={() => setActiveTab('insight')} />
     <MobileNavItem icon={<DollarSign size={16} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />
