@@ -43,11 +43,27 @@ export const ReportsServicesPanel: React.FC<ReportsServicesPanelProps> = ({ date
         };
     });
 
-    const monthlyServices = [
-        { name: 'Jan', total: filteredAppointments.filter(a => new Date(a.date).getMonth() === 0).length },
-        { name: 'Fev', total: filteredAppointments.filter(a => new Date(a.date).getMonth() === 1).length },
-        { name: 'Mar', total: filteredAppointments.filter(a => new Date(a.date).getMonth() === 2).length },
-    ];
+    const monthlyServices = React.useMemo(() => {
+        const dataMap: Record<string, { total: number, label: string }> = {};
+
+        filteredAppointments.forEach(apt => {
+            if (apt.status !== 'completed') return;
+            const date = new Date(apt.date + 'T12:00:00');
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const monthLabel = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+            
+            if (!dataMap[monthKey]) {
+                dataMap[monthKey] = { total: 0, label: monthLabel };
+            }
+            dataMap[monthKey].total += 1; // Executados neste mês
+        });
+
+        const sortedKeys = Object.keys(dataMap).sort();
+        return sortedKeys.map(key => ({
+            name: dataMap[key].label.charAt(0).toUpperCase() + dataMap[key].label.slice(1),
+            total: dataMap[key].total
+        }));
+    }, [filteredAppointments]);
 
     return (
         <div className="space-y-8">

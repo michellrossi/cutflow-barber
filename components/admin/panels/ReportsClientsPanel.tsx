@@ -49,12 +49,47 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
     const formatCurrency = (val: number) => 
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
-    // Dados para os gráficos (exemplo)
-    const monthlyData = [
-        { name: 'Jan', atendidos: 40, gastoMedio: 100, novos: 10 },
-        { name: 'Fev', atendidos: 30, gastoMedio: 120, novos: 15 },
-        { name: 'Mar', atendidos: 50, gastoMedio: 90, novos: 8 },
-    ];
+    // Dados Dinâmicos para os gráficos
+    const monthlyData = useMemo(() => {
+        const dataMap: Record<string, { atendidos: Set<string>, receita: number, novos: number, label: string }> = {};
+
+        // 1. Receita e Atendidos por mês (usando filteredAppointments)
+        filteredAppointments.forEach(apt => {
+            if (apt.status !== 'completed') return;
+            const date = new Date(apt.date + 'T12:00:00');
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const monthLabel = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+            
+            if (!dataMap[monthKey]) {
+                dataMap[monthKey] = { atendidos: new Set(), receita: 0, novos: 0, label: monthLabel };
+            }
+            
+            dataMap[monthKey].atendidos.add(apt.clientId || apt.clientPhone);
+            dataMap[monthKey].receita += apt.totalValue;
+        });
+
+        // 2. Novos clientes (usando clients)
+        clients.forEach(c => {
+            if (!c.createdAt) return;
+            const date = new Date(c.createdAt);
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            if (dataMap[monthKey]) {
+                dataMap[monthKey].novos += 1;
+            }
+        });
+
+        const sortedKeys = Object.keys(dataMap).sort();
+        
+        return sortedKeys.map(key => {
+            const numAtendidos = dataMap[key].atendidos.size;
+            return {
+                name: dataMap[key].label.charAt(0).toUpperCase() + dataMap[key].label.slice(1),
+                atendidos: numAtendidos,
+                gastoMedio: numAtendidos > 0 ? (dataMap[key].receita / numAtendidos) : 0,
+                novos: dataMap[key].novos
+            };
+        });
+    }, [filteredAppointments, clients]);
 
     return (
         <div className="w-full space-y-8 animate-fade-in">
