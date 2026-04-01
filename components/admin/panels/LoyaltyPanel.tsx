@@ -40,22 +40,29 @@ export const LoyaltyPanel: React.FC = () => {
             </div>
 
             <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
-                <button
-                    onClick={() => setActiveTab('config')}
-                    className={`pb-4 px-2 font-bold transition-all ${activeTab === 'config' ? 'text-orange-500 border-b-2 border-orange-500' : 'text-slate-500 hover:text-slate-700'}`}
-                >
-                    Configurações
-                </button>
-                <button
-                    onClick={() => setActiveTab('management')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
-                            activeTab === tab.id 
-                            ? 'bg-white text-orange-600 shadow-sm' 
-                            : 'text-slate-500 hover:text-slate-700'
-                >
-                    Gestão de Clientes
-                </button>
-            </div>
+            <button
+                onClick={() => setActiveTab('config')}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
+                    activeTab === 'config' 
+                    ? 'bg-white text-orange-600 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+            >
+                <Settings size={18} />
+                Configurações
+            </button>
+            <button
+                onClick={() => setActiveTab('management')}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
+                    activeTab === 'management' 
+                    ? 'bg-white text-orange-600 shadow-sm' 
+                    : 'text-slate-500 hover:text-slate-700'
+                }`}
+            >
+                <Users size={18} />
+                Gestão de Clientes
+            </button>
+        </div>
 
             {activeTab === 'config' ? (
                 <div className="space-y-8">
