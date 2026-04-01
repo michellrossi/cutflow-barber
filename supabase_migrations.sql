@@ -37,7 +37,8 @@ ADD COLUMN IF NOT EXISTS loyalty_points_ratio INTEGER DEFAULT 1,
 ADD COLUMN IF NOT EXISTS loyalty_points_goal INTEGER DEFAULT 1000,
 ADD COLUMN IF NOT EXISTS loyalty_reward_value NUMERIC DEFAULT 10,
 ADD COLUMN IF NOT EXISTS loyalty_reward_type TEXT DEFAULT 'percentage',
-ADD COLUMN IF NOT EXISTS loyalty_reward_validity_days INTEGER DEFAULT 90;
+ADD COLUMN IF NOT EXISTS loyalty_reward_validity_days INTEGER DEFAULT 90,
+ADD COLUMN IF NOT EXISTS loyalty_enabled BOOLEAN DEFAULT true;
 
 -- Ajustes na tabela CLIENTS (Fidelidade e Gastos)
 ALTER TABLE public.clients 

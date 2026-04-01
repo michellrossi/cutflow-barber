@@ -54,6 +54,8 @@ async function generateWhatsAppMessage(trigger: string, data: any, shopId: strin
             content = `Olá [CLIENTE]! O que achou do seu atendimento hoje com [BARBEIRO]? Sua opinião é muito importante para nós da [BARBEARIA].`;
         } else if (trigger === 'retention_30d') {
             content = `Olá [CLIENTE]! Faz um tempo que não nos vemos na [BARBEARIA]. Que tal agendar um novo horário para manter o visual em dia? ✂️💈`;
+        } else if (trigger === 'loyalty_reward') {
+            content = `Olá [CLIENTE], parabéns! Você atingiu a meta de fidelidade e ganhou um cupom de [DESCONTO]! Use o código: [CODIGO]. Validade: [VALIDADE] dias.`;
         } else {
             content = `Olá [CLIENTE]! Passando para confirmar seu horário de [SERVICO] com [BARBEIRO] no dia [DATA] às [HORA]. Até logo! ✂️💈`;
         }
@@ -67,7 +69,10 @@ async function generateWhatsAppMessage(trigger: string, data: any, shopId: strin
         .replace(/\[HORA\]/g, data.time || '')
         .replace(/\[BARBEIRO\]/g, data.proName || 'um de nossos profissionais')
         .replace(/\[BARBEARIA\]/g, data.shopName || 'nossa barbearia')
-        .replace(/\[URL\]/g, data.url || '');
+        .replace(/\[URL\]/g, data.url || '')
+        .replace(/\[DESCONTO\]/g, data.discount || '')
+        .replace(/\[CODIGO\]/g, data.code || '')
+        .replace(/\[VALIDADE\]/g, data.validity || '');
 }
 
 /**
@@ -613,6 +618,54 @@ async function startServer() {
         }
         
         res.json({ success: clientOk });
+    });
+
+    // Rota para processar recompensa de fidelidade
+    app.post('/api/loyalty/check-reward', async (req, res) => {
+        const { clientId, shopId } = req.body;
+        
+        try {
+            const { data: client } = await supabase.from('clients').select('*').eq('id', clientId).single();
+            const { data: settings } = await supabase.from('settings').select('*').eq('shop_id', shopId).single();
+            const { data: shop } = await supabase.from('shops').select('name, whatsapp_instance').eq('id', shopId).single();
+            
+            if (!client || !settings || !settings.loyalty_enabled) return res.json({ success: false });
+
+            const goal = settings.loyalty_points_goal;
+            if (client.loyalty_points < goal) return res.json({ success: false });
+
+            const firstName = client.name.split(' ')[0];
+            const last4Phone = client.phone.replace(/\D/g, '').slice(-4);
+            const day = new Date().getDate();
+            const couponCode = `${firstName}${last4Phone}${day}`.toUpperCase();
+
+            await supabase.from('coupons').insert({
+                shop_id: shopId,
+                client_id: clientId,
+                code: couponCode,
+                discount_value: settings.loyalty_reward_value,
+                discount_type: settings.loyalty_reward_type,
+                expires_at: new Date(Date.now() + settings.loyalty_reward_validity_days * 24 * 60 * 60 * 1000).toISOString(),
+                is_loyalty_reward: true
+            });
+
+            await supabase.from('clients').update({ loyalty_points: 0 }).eq('id', clientId);
+
+            const msg = await generateWhatsAppMessage('loyalty_reward', {
+                clientName: client.name,
+                discount: `${settings.loyalty_reward_value}${settings.loyalty_reward_type === 'percentage' ? '%' : ' R$'}`,
+                code: couponCode,
+                validity: settings.loyalty_reward_validity_days,
+                shopName: shop?.name || "nossa barbearia"
+            }, shopId);
+            
+            await sendWhatsApp(client.phone, msg, shop?.whatsapp_instance);
+
+            res.json({ success: true, couponCode });
+        } catch (error: any) {
+            console.error("Erro ao processar recompensa:", error);
+            res.status(500).json({ success: false, error: error.message });
+        }
     });
 
     
