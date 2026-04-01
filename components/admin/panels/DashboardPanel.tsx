@@ -235,7 +235,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon, label, value, subtitle, color
 
         <div className="flex flex-col items-start">
             <p className="text-3xl font-black text-slate-900 leading-none">{value}</p>
-            {subtitle && <p className="text-sm text-slate-500 font-bold mt-2 tracking-tight">{subtitle}</p>}
+            {subtitle && <p className="text-xs text-slate-400 mt-1">{subtitle}</p>}
         </div>
     </motion.div>
 );

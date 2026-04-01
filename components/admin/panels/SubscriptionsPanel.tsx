@@ -148,16 +148,15 @@ export const SubscriptionsPanel: React.FC = () => {
           )}
           <button
             onClick={() => { setEditingPlan(null); setIsPlanModalOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors border border-slate-200 font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors border border-slate-200 font-medium whitespace-nowrap"
           >
-            <Plus className="w-4 h-4" />
-            Novo Plano
+            Configurar Planos
           </button>
           <button
             onClick={() => { setEditingSub(null); setIsSubModalOpen(true); }}
-            className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors shadow-lg shadow-orange-500/20 font-medium"
+            className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 whitespace-nowrap"
           >
-            <Plus className="w-4 h-4" />
+            <Plus size={20} className="stroke-[3px]" />
             Novo Assinante
           </button>
         </div>

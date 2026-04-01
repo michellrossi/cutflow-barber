@@ -225,9 +225,9 @@ export const RemindersPanel: React.FC = () => {
                                 setEditingTemplate({ trigger: 'custom', delayUnit: 'minutes', delayValue: 0, active: true });
                                 setIsModalOpen(true);
                             }}
-                            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors font-medium shadow-lg shadow-orange-200"
+                            className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 whitespace-nowrap"
                         >
-                            <Plus size={18} />
+                            <Plus size={20} className="stroke-[3px]" />
                             Novo Modelo
                         </button>
                     )}

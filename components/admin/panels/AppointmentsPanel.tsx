@@ -374,21 +374,20 @@ export const AppointmentsPanel: React.FC = () => {
                 <WeeklyCalendar onNewAppointment={() => setIsModalOpen(true)} />
             ) : (
                 <>
-                    <div className="flex flex-col md:flex-row justify-end items-start md:items-center gap-4 mb-6">
+                    <div className="flex items-center justify-end w-full mb-6">
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition-colors self-start md:self-auto shadow-lg"
-                            style={{ backgroundColor: settings.primaryColor }}
+                            className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 whitespace-nowrap"
                         >
-                            <Plus size={18} />
+                            <Plus size={20} className="stroke-[3px]" />
                             Novo Agendamento
                         </button>
                     </div>
 
                     {/* BARRA DE FILTROS DE DATA (Design Financeiro) */}
-                    <div className="bg-white p-1.5 md:p-2 rounded-lg border border-slate-200 flex flex-row items-center gap-3 shadow-sm mb-4 w-fit max-w-full overflow-x-auto no-scrollbar">
+                    <div className="bg-white p-1 rounded-lg border border-slate-200 flex items-center flex-nowrap gap-1 shadow-sm mb-4 w-max overflow-x-auto no-scrollbar max-w-full">
                         {/* Abas de Atalho */}
-                        <div className="flex bg-slate-50 p-1 rounded-lg shrink-0 py-1 border border-slate-200">
+                        <div className="flex bg-slate-50 p-1 rounded-md shrink-0 border border-slate-200 gap-1">
                             {[
                                 { id: 'today', label: 'Hoje' },
                                 { id: 'tomorrow', label: 'Amanhã' },

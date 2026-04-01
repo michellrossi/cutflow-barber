@@ -227,10 +227,9 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
         </div>
         <button 
           onClick={() => handleOpenForm()}
-          className="text-white px-4 py-2 rounded-md font-medium flex items-center gap-2 transition-colors self-start md:self-auto shadow-lg"
-          style={{ backgroundColor: settings.primaryColor }}
+          className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 md:self-auto self-start whitespace-nowrap"
         >
-          <Plus size={18} />
+          <Plus size={20} className="stroke-[3px]" />
           Novo Cliente
         </button>
       </div>
