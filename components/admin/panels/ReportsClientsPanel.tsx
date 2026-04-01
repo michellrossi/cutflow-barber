@@ -156,7 +156,7 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
             </div>
             
             {/* Ranking de Clientes (Padrão de Lista) */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-1">
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm md:col-span-2 lg:col-span-2>
                 <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                     <Award size={20} className="text-orange-500" />
                     Top 10 Clientes
