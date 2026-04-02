@@ -10,15 +10,15 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
     const { settings } = useShop();
     const primaryColor = settings?.primaryColor || '#F59E0B'; // Padrao laranja cutflow7
     const [isOpen, setIsOpen] = useState(false);
-    
+
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
-    
+
     // Controle de cliques: 0 = start, 1 = end
     const [clickStep, setClickStep] = useState<0 | 1>(0);
-    
+
     const [currentMonth, setCurrentMonth] = useState(new Date());
-    
+
     const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -71,16 +71,16 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
         return days;
     };
 
-    const isSameDay = (d1: Date, d2: Date) => 
-        d1.getFullYear() === d2.getFullYear() && 
-        d1.getMonth() === d2.getMonth() && 
+    const isSameDay = (d1: Date, d2: Date) =>
+        d1.getFullYear() === d2.getFullYear() &&
+        d1.getMonth() === d2.getMonth() &&
         d1.getDate() === d2.getDate();
 
     const isBetween = (date: Date) => {
         if (!startDate || !endDate) return false;
-        const d = new Date(date).setHours(0,0,0,0);
-        const s = new Date(startDate).setHours(0,0,0,0);
-        const e = new Date(endDate).setHours(0,0,0,0);
+        const d = new Date(date).setHours(0, 0, 0, 0);
+        const s = new Date(startDate).setHours(0, 0, 0, 0);
+        const e = new Date(endDate).setHours(0, 0, 0, 0);
         return d > s && d < e;
     };
 
@@ -101,7 +101,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
             setEndDate(date);
             setClickStep(0);
             setIsOpen(false);
-            
+
             // Enviar os dados via string pro Panel
             const sv = date.toISOString().split('T')[0];
             const ev = startDate!.toISOString().split('T')[0];
@@ -113,10 +113,10 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
         <div className="relative" ref={containerRef}>
             {/* Inputs Header no Padrão cutflow7 */}
             <div className="flex items-center gap-3">
-                <div 
+                <div
                     onClick={() => { setIsOpen(true); setClickStep(0); }}
                     className="flex items-center gap-2 px-3 h-11 bg-white border rounded-xl min-w-[140px] cursor-pointer transition-colors shadow-sm"
-                    style={{ 
+                    style={{
                         borderColor: isOpen && clickStep === 0 ? primaryColor : '#E2E8F0',
                         boxShadow: isOpen && clickStep === 0 ? `0 0 0 1px ${primaryColor}30` : 'none'
                     }}
@@ -126,13 +126,13 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                         {formatShort(startDate) || 'Data inicial'}
                     </span>
                 </div>
-                
+
                 <span className="text-slate-400 font-medium text-sm">até</span>
-                
-                <div 
+
+                <div
                     onClick={() => { setIsOpen(true); setClickStep(1); }}
                     className="flex items-center gap-2 px-3 h-11 bg-white border rounded-xl min-w-[140px] cursor-pointer transition-colors shadow-sm"
-                    style={{ 
+                    style={{
                         borderColor: isOpen && clickStep === 1 ? primaryColor : '#E2E8F0',
                         boxShadow: isOpen && clickStep === 1 ? `0 0 0 1px ${primaryColor}30` : 'none'
                     }}
@@ -147,10 +147,10 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
             {/* Calendário Popover */}
             {isOpen && (
                 <div className="absolute top-full right-0 md:left-0 lg:left-auto lg:right-0 mt-3 w-[320px] bg-white border border-slate-200 rounded-xl shadow-[0px_10px_30px_rgba(0,0,0,0.08)] z-50 p-5 animate-in fade-in zoom-in-95 duration-200">
-                    
+
                     {/* Header do Mês */}
                     <div className="flex items-center justify-between mb-6">
-                        <button 
+                        <button
                             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
                             className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors text-slate-600"
                         >
@@ -159,7 +159,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                         <span className="font-bold text-slate-800 capitalize text-sm">
                             {currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                         </span>
-                        <button 
+                        <button
                             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
                             className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors text-slate-600"
                         >
@@ -169,33 +169,31 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
 
                     {/* Grade de Dias */}
                     <div className="grid grid-cols-7 gap-1 text-center mb-3">
-                        {['dom','seg','ter','qua','qui','sex','sab'].map((d, i) => (
+                        {['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'].map((d, i) => (
                             <span key={i} className="text-xs font-bold text-slate-400">{d}</span>
                         ))}
                     </div>
 
                     <div className="grid grid-cols-7 gap-y-1 text-center">
                         {generateCalendar().map((dayObj, i) => {
-                            const isSelect = (startDate && isSameDay(dayObj.date, startDate)) || (endDate && isSameDay(dayObj.date, endDate));
-                            const isToday = isSameDay(dayObj.date, new Date());
-                            const isInBet = isBetween(dayObj.date);
-                            
+                            const isToday = dayObj.date.toDateString() === new Date().toDateString();
+                            const isSelect = (startDate && dayObj.date.toDateString() === startDate.toDateString()) ||
+                                (endDate && dayObj.date.toDateString() === endDate.toDateString());
+                            const isInBet = startDate && endDate && dayObj.date > startDate && dayObj.date < endDate;
+
+                            // DEFINIÇÃO DAS CORES CONFORME SUA SOLICITAÇÃO:
                             let bgColor = 'transparent';
-                            let textColor = !dayObj.isCurrentMonth ? '#CBD5E1' : '#6B7280';
-                            let borderRadius = '50%';
-                            
+                            let textColor = '#6B7280'; // Cinza (Tailwind gray-500) para dias não selecionados
+
                             if (isSelect) {
-                                bgColor = primaryColor;
-                                textColor = '#FFFFFF';
-                                borderRadius = '50%';
-                            } else if (isInBet) {
-                                bgColor = `${primaryColor}30`;
-                                textColor = '#1F2937';
-                                borderRadius = '0px';
+                                bgColor = primaryColor; // Laranja sólido
+                                textColor = '#FFFFFF'; // Texto branco
                             } else if (isToday) {
-                                bgColor = `${primaryColor}20`;
+                                bgColor = `${primaryColor}20`; // Laranja suave (20% de opacidade)
+                                textColor = primaryColor;    // Texto laranja
+                            } else if (isInBet) {
+                                bgColor = `${primaryColor}10`; // Fundo muito suave para o intervalo
                                 textColor = primaryColor;
-                                borderRadius = '12px';
                             }
 
                             return (
