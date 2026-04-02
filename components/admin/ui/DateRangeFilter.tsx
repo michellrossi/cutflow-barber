@@ -8,7 +8,7 @@ interface DateRangeFilterProps {
 
 export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange }) => {
     const { settings } = useShop();
-    const primaryColor = settings?.primaryColor || '#f97316';
+    const primaryColor = settings?.primaryColor || '#F59E0B'; // Padrao laranja cutflow7
     const [isOpen, setIsOpen] = useState(false);
     
     const [startDate, setStartDate] = useState<Date | null>(null);
@@ -31,7 +31,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const formatShort = (d: Date | null) => d ? d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Data';
+    const formatShort = (d: Date | null) => d ? d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
 
     const getDaysInMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
     const getFirstDayOfMonth = (date: Date) => new Date(date.getFullYear(), date.getMonth(), 1).getDay();
@@ -85,6 +85,14 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
     };
 
     const handleDayClick = (date: Date) => {
+        // Se já tiver startDate e endDate, reseta a seleção
+        if (startDate && endDate) {
+            setStartDate(date);
+            setEndDate(null);
+            setClickStep(1);
+            return;
+        }
+
         if (clickStep === 0 || (clickStep === 1 && startDate && date < startDate)) {
             setStartDate(date);
             setEndDate(null);
@@ -103,115 +111,102 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
 
     return (
         <div className="relative" ref={containerRef}>
-            {/* Inputs Header */}
-            <div className="flex items-center gap-2">
-                <button 
+            {/* Inputs Header no Padrão cutflow7 */}
+            <div className="flex items-center gap-3">
+                <div 
                     onClick={() => { setIsOpen(true); setClickStep(0); }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-[2rem] text-sm font-bold shadow-sm transition-all whitespace-nowrap"
+                    className="flex items-center gap-2 px-3 h-11 bg-white border rounded-xl min-w-[140px] cursor-pointer transition-colors shadow-sm"
                     style={{ 
-                        backgroundColor: primaryColor, 
-                        color: '#ffffff',
-                        border: `1px solid ${primaryColor}` 
+                        borderColor: isOpen && clickStep === 0 ? primaryColor : '#E2E8F0',
+                        boxShadow: isOpen && clickStep === 0 ? `0 0 0 1px ${primaryColor}30` : 'none'
                     }}
                 >
-                    <Calendar size={16} />
-                    {formatShort(startDate)}
-                </button>
-                <span className="text-slate-400 font-bold text-xs uppercase">até</span>
-                <button 
+                    <Calendar size={18} style={{ color: primaryColor }} />
+                    <span className="text-sm font-medium" style={{ color: startDate ? '#334155' : '#94A3B8' }}>
+                        {formatShort(startDate) || 'Data inicial'}
+                    </span>
+                </div>
+                
+                <span className="text-slate-400 font-medium text-sm">até</span>
+                
+                <div 
                     onClick={() => { setIsOpen(true); setClickStep(1); }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-[2rem] text-sm font-bold shadow-sm transition-all whitespace-nowrap bg-transparent"
+                    className="flex items-center gap-2 px-3 h-11 bg-white border rounded-xl min-w-[140px] cursor-pointer transition-colors shadow-sm"
                     style={{ 
-                        color: primaryColor,
-                        border: `1px solid ${primaryColor}` 
+                        borderColor: isOpen && clickStep === 1 ? primaryColor : '#E2E8F0',
+                        boxShadow: isOpen && clickStep === 1 ? `0 0 0 1px ${primaryColor}30` : 'none'
                     }}
                 >
-                    <Calendar size={16} />
-                    {formatShort(endDate)}
-                </button>
+                    <Calendar size={18} style={{ color: primaryColor }} />
+                    <span className="text-sm font-medium" style={{ color: endDate ? '#334155' : '#94A3B8' }}>
+                        {formatShort(endDate) || 'Data final'}
+                    </span>
+                </div>
             </div>
 
-            {/* Popover */}
+            {/* Calendário Popover */}
             {isOpen && (
-                <div className="absolute top-full right-0 md:left-0 lg:left-auto lg:right-0 mt-3 w-80 bg-white border border-slate-200 rounded-2xl shadow-[0px_10px_40px_rgba(0,0,0,0.1)] z-50 p-6 animate-in fade-in zoom-in-95 duration-200">
+                <div className="absolute top-full right-0 md:left-0 lg:left-auto lg:right-0 mt-3 w-[320px] bg-white border border-slate-200 rounded-xl shadow-[0px_10px_30px_rgba(0,0,0,0.08)] z-50 p-5 animate-in fade-in zoom-in-95 duration-200">
+                    
+                    {/* Header do Mês */}
                     <div className="flex items-center justify-between mb-6">
                         <button 
                             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
-                            className="w-8 h-8 rounded-full border flex items-center justify-center hover:bg-slate-50 transition-colors"
-                            style={{ borderColor: primaryColor, color: primaryColor }}
+                            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors text-slate-600"
                         >
-                            <ChevronLeft size={16} />
+                            <ChevronLeft size={20} />
                         </button>
-                        <span className="font-bold text-slate-800 capitalize">
+                        <span className="font-bold text-slate-800 capitalize text-sm">
                             {currentMonth.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}
                         </span>
                         <button 
                             onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
-                            className="w-8 h-8 rounded-full border flex items-center justify-center hover:bg-slate-50 transition-colors"
-                            style={{ borderColor: primaryColor, color: primaryColor }}
+                            className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-slate-100 transition-colors text-slate-600"
                         >
-                            <ChevronRight size={16} />
+                            <ChevronRight size={20} />
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                        {['D','S','T','Q','Q','S','S'].map((d, i) => (
-                            <span key={i} className="text-[10px] font-black text-slate-400">{d}</span>
+                    {/* Grade de Dias */}
+                    <div className="grid grid-cols-7 gap-1 text-center mb-3">
+                        {['dom','seg','ter','qua','qui','sex','sab'].map((d, i) => (
+                            <span key={i} className="text-xs font-bold text-slate-400">{d}</span>
                         ))}
                     </div>
 
-                    <div className="grid grid-cols-7 gap-y-2 text-center">
+                    <div className="grid grid-cols-7 gap-y-1 text-center">
                         {generateCalendar().map((dayObj, i) => {
                             const isSelect = (startDate && isSameDay(dayObj.date, startDate)) || (endDate && isSameDay(dayObj.date, endDate));
                             const isInBet = isBetween(dayObj.date);
+                            
                             return (
                                 <button
                                     key={i}
+                                    disabled={!dayObj.isCurrentMonth}
                                     onClick={() => handleDayClick(dayObj.date)}
-                                    className={`w-full aspect-square flex items-center justify-center text-sm font-bold rounded-full transition-all relative ${
-                                        !dayObj.isCurrentMonth ? 'text-slate-300' : 'text-slate-700'
-                                    } hover:bg-orange-50`}
+                                    className="w-full aspect-square flex items-center justify-center text-sm font-medium transition-colors relative"
                                     style={{
-                                        backgroundColor: isSelect ? primaryColor : isInBet ? `${primaryColor}20` : 'transparent',
-                                        color: isSelect ? '#ffffff' : undefined,
-                                        borderRadius: isSelect ? '9999px' : isInBet ? '0px' : '9999px' // Estilo contínuo sutil
+                                        color: !dayObj.isCurrentMonth ? '#CBD5E1' : isSelect ? '#FFFFFF' : '#334155',
+                                        backgroundColor: isSelect ? primaryColor : isInBet ? `${primaryColor}25` : 'transparent',
+                                        borderRadius: isSelect ? '50%' : isInBet ? '0px' : '50%',
+                                        opacity: !dayObj.isCurrentMonth ? 0.5 : 1,
+                                        cursor: !dayObj.isCurrentMonth ? 'not-allowed' : 'pointer'
+                                    }}
+                                    onMouseOver={(e) => {
+                                        if (dayObj.isCurrentMonth && !isSelect && !isInBet) {
+                                            e.currentTarget.style.backgroundColor = `${primaryColor}15`;
+                                        }
+                                    }}
+                                    onMouseOut={(e) => {
+                                        if (dayObj.isCurrentMonth && !isSelect && !isInBet) {
+                                            e.currentTarget.style.backgroundColor = 'transparent';
+                                        }
                                     }}
                                 >
-                                    {dayObj.date.getDate()}
+                                    <span className="relative z-10">{dayObj.date.getDate()}</span>
                                 </button>
                             );
                         })}
-                    </div>
-                    
-                    <div className="mt-6 flex flex-wrap gap-2">
-                        {['Hoje', 'Esta Semana', 'Este Mês', 'Mês Passado'].map((preset) => (
-                            <button
-                                key={preset}
-                                onClick={() => {
-                                    const now = new Date();
-                                    let s = new Date(now), e = new Date(now);
-                                    if (preset === 'Hoje') {
-                                        // s e e já são agora
-                                    } else if (preset === 'Esta Semana') {
-                                        s.setDate(now.getDate() - now.getDay());
-                                    } else if (preset === 'Este Mês') {
-                                        s.setDate(1);
-                                    } else if (preset === 'Mês Passado') {
-                                        s.setMonth(now.getMonth() - 1);
-                                        s.setDate(1);
-                                        e.setMonth(now.getMonth());
-                                        e.setDate(0);
-                                    }
-                                    setStartDate(s);
-                                    setEndDate(e);
-                                    setIsOpen(false);
-                                    onFilterChange(`${s.toISOString().split('T')[0]}|${e.toISOString().split('T')[0]}`);
-                                }}
-                                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-md text-xs font-bold transition-colors"
-                            >
-                                {preset}
-                            </button>
-                        ))}
                     </div>
                 </div>
             )}
