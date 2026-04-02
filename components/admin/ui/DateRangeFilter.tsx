@@ -109,8 +109,8 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                     onClick={() => { setIsOpen(true); setClickStep(0); }}
                     className="flex items-center gap-2 px-4 py-2 rounded-[2rem] text-sm font-bold shadow-sm transition-all whitespace-nowrap"
                     style={{ 
-                        backgroundColor: (isOpen && clickStep === 0) || startDate ? primaryColor : '#ffffff', 
-                        color: (isOpen && clickStep === 0) || startDate ? '#ffffff' : primaryColor,
+                        backgroundColor: primaryColor, 
+                        color: '#ffffff',
                         border: `1px solid ${primaryColor}` 
                     }}
                 >
@@ -120,13 +120,13 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                 <span className="text-slate-400 font-bold text-xs uppercase">até</span>
                 <button 
                     onClick={() => { setIsOpen(true); setClickStep(1); }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-[2rem] text-sm font-bold shadow-sm transition-all whitespace-nowrap bg-white"
+                    className="flex items-center gap-2 px-4 py-2 rounded-[2rem] text-sm font-bold shadow-sm transition-all whitespace-nowrap bg-transparent"
                     style={{ 
-                        backgroundColor: (isOpen && clickStep === 1) || endDate ? primaryColor : '#ffffff', 
-                        color: (isOpen && clickStep === 1) || endDate ? '#ffffff' : primaryColor,
+                        color: primaryColor,
                         border: `1px solid ${primaryColor}` 
                     }}
                 >
+                    <Calendar size={16} />
                     {formatShort(endDate)}
                 </button>
             </div>

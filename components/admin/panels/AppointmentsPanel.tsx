@@ -387,8 +387,7 @@ export const AppointmentsPanel: React.FC = () => {
                 return (
                     <>
                         {viewMode === 'list' && (
-                            <div className="flex flex-col xl:flex-row gap-4 mb-4">
-                                {ModeToggle}
+                            <div className="flex flex-col xl:flex-row justify-between xl:items-center gap-4 mb-4">
                                 <div className="bg-white p-1 rounded-lg border border-slate-200 flex items-center flex-nowrap gap-1 shadow-sm w-max overflow-x-auto no-scrollbar max-w-full">
                         {/* Abas de Atalho */}
                         <div className="flex bg-slate-50 p-1 rounded-md shrink-0 border border-slate-200 gap-1">
@@ -432,6 +431,7 @@ export const AppointmentsPanel: React.FC = () => {
                                 </div>
                             </div>
                         </div>
+                        {ModeToggle}
                     </div>
                 )}
 

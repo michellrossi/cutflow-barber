@@ -241,7 +241,7 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                 </h3>
                 <div className="flex flex-col divide-y divide-slate-100">
                     {(() => {
-                        const topClients = clients.slice(0, 5);
+                        const topClients = [...clients].sort((a,b) => (b.totalSpent || 0) - (a.totalSpent || 0)).slice(0, 5);
                         const maxSpent = Math.max(...topClients.map(c => c.totalSpent || 0), 1); 
                         
                         return topClients.map((client, index) => {
