@@ -18,7 +18,11 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
             const now = new Date();
             let startDate = new Date();
             
-            if (dateRange === '30 dias') startDate.setDate(now.getDate() - 30);
+            if (dateRange && dateRange.includes('|')) {
+                const [startStr, endStr] = dateRange.split('|');
+                startDate = new Date(startStr + 'T00:00:00');
+                now.setTime(new Date(endStr + 'T23:59:59').getTime());
+            } else if (dateRange === '30 dias') startDate.setDate(now.getDate() - 30);
             else if (dateRange === 'Este mês') startDate.setDate(1);
             else if (dateRange === 'Mês passado') {
                 startDate.setMonth(now.getMonth() - 1);

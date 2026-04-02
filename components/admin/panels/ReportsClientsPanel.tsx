@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, LineChart, Line } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, LineChart, Line, AreaChart, Area } from 'recharts';
 import { Users, TrendingUp, UserPlus, Award, DollarSign, Calendar } from 'lucide-react';
 import { useShop } from '../../../store';
 
@@ -16,7 +16,11 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
             const now = new Date();
             let startDate = new Date();
             
-            if (dateRange === '30 dias') startDate.setDate(now.getDate() - 30);
+            if (dateRange && dateRange.includes('|')) {
+                const [startStr, endStr] = dateRange.split('|');
+                startDate = new Date(startStr + 'T00:00:00');
+                now.setTime(new Date(endStr + 'T23:59:59').getTime());
+            } else if (dateRange === '30 dias') startDate.setDate(now.getDate() - 30);
             else if (dateRange === 'Este mês') startDate.setDate(1);
             else if (dateRange === 'Mês passado') {
                 startDate.setMonth(now.getMonth() - 1);
@@ -66,6 +70,32 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
 
     const formatCurrency = (val: number) => 
         new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+    // Dados Diários de Clientes Novos (Da Antiga Aba Financeiro)
+    const combinedDailyData = useMemo(() => {
+        const monthlyDataMap: Record<string, { novos: number, label: string }> = {};
+
+        // Contar clientes novos (criados naquele dia)
+        clients.forEach(c => {
+            if (!c.createdAt) return;
+            const dateStr = c.createdAt.split('T')[0];
+            if (!monthlyDataMap[dateStr]) {
+                const d = new Date(dateStr + 'T12:00:00');
+                monthlyDataMap[dateStr] = { 
+                    novos: 0, 
+                    label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) 
+                };
+            }
+            monthlyDataMap[dateStr].novos += 1;
+        });
+
+        const sortedDailyKeys = Object.keys(monthlyDataMap).sort();
+        
+        return sortedDailyKeys.map(key => ({
+            name: monthlyDataMap[key].label,
+            novos: monthlyDataMap[key].novos
+        }));
+    }, [clients]);
 
     // Dados Dinâmicos para os gráficos
     const monthlyData = useMemo(() => {
@@ -187,17 +217,17 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-2">
                     <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                         <TrendingUp size={20} className="text-purple-500" />
-                        Clientes Novos por Mês
+                        Clientes Novos (Diário)
                     </h3>
                     <div className="h-64 w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={monthlyData}>
+                            <AreaChart data={combinedDailyData}>
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                                <YAxis axisLine={false} tickLine={false} />
+                                <YAxis axisLine={false} tickLine={false} allowDecimals={false} />
                                 <Tooltip />
-                                <Line type="monotone" dataKey="novos" stroke={settings.primaryColor} strokeWidth={3} />
-                            </LineChart>
+                                <Area type="monotone" dataKey="novos" stroke={settings.primaryColor || '#8b5cf6'} fillOpacity={0.2} fill={settings.primaryColor || '#8b5cf6'} />
+                            </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>

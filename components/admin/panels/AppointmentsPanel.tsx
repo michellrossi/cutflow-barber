@@ -215,21 +215,7 @@ export const AppointmentsPanel: React.FC = () => {
                     <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Horários</h2>
                     <p className="text-[#6b7d99] text-sm font-medium">Gerencie sua agenda e registre atendimentos.</p>
                 </div>
-                <div className="flex items-center gap-3 w-full md:w-auto shrink-0 justify-end flex-wrap md:flex-nowrap">
-                    <div className="bg-white p-0.5 rounded-md border border-slate-200 flex items-center gap-1 shadow-sm shrink-0 h-fit">
-                        <button
-                            onClick={() => setViewMode('calendar')}
-                            className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'calendar' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
-                        >
-                            <CalendarIcon size={16} /> Agenda
-                        </button>
-                        <button
-                            onClick={() => setViewMode('list')}
-                            className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
-                        >
-                            <List size={16} /> Lista
-                        </button>
-                    </div>
+                <div className="flex items-center gap-3 w-full md:w-auto mt-4 md:mt-0">
                     <button
                         onClick={() => setIsModalOpen(true)}
                         className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 whitespace-nowrap"
@@ -381,10 +367,28 @@ export const AppointmentsPanel: React.FC = () => {
 
             {/* Modo Lista Filtros */}
             {(() => {
+                const ModeToggle = (
+                    <div className="bg-white p-1 rounded-lg border border-slate-200 flex items-center flex-nowrap gap-1 shadow-sm w-max overflow-x-auto no-scrollbar shrink-0">
+                        <button
+                            onClick={() => setViewMode('calendar')}
+                            className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${viewMode === 'calendar' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
+                        >
+                            <CalendarIcon size={16} /> Agenda
+                        </button>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
+                        >
+                            <List size={16} /> Lista
+                        </button>
+                    </div>
+                );
+
                 return (
                     <>
                         {viewMode === 'list' && (
                             <div className="flex flex-col xl:flex-row gap-4 mb-4">
+                                {ModeToggle}
                                 <div className="bg-white p-1 rounded-lg border border-slate-200 flex items-center flex-nowrap gap-1 shadow-sm w-max overflow-x-auto no-scrollbar max-w-full">
                         {/* Abas de Atalho */}
                         <div className="flex bg-slate-50 p-1 rounded-md shrink-0 border border-slate-200 gap-1">
@@ -432,7 +436,7 @@ export const AppointmentsPanel: React.FC = () => {
                 )}
 
                 {viewMode === 'calendar' ? (
-                            <WeeklyCalendar onNewAppointment={() => setIsModalOpen(true)} />
+                            <WeeklyCalendar onNewAppointment={() => setIsModalOpen(true)} modeToggle={ModeToggle} />
                         ) : (
                             <>
 

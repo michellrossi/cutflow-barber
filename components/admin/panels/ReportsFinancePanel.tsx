@@ -16,7 +16,11 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
             const now = new Date();
             let startDate = new Date();
             
-            if (dateRange === '30 dias') startDate.setDate(now.getDate() - 30);
+            if (dateRange && dateRange.includes('|')) {
+                const [startStr, endStr] = dateRange.split('|');
+                startDate = new Date(startStr + 'T00:00:00');
+                now.setTime(new Date(endStr + 'T23:59:59').getTime());
+            } else if (dateRange === '30 dias') startDate.setDate(now.getDate() - 30);
             else if (dateRange === 'Este mês') startDate.setDate(1);
             else if (dateRange === 'Mês passado') {
                 startDate.setMonth(now.getMonth() - 1);
@@ -244,28 +248,8 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
                 </div>
             </div>
 
-            {/* Novos Gráficos: Ocupação e Clientes Novos Lado a Lado */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                 {/* Clientes Novos por Mês */}
-                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                    <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
-                        <TrendingUp size={20} className="text-purple-500" />
-                        Clientes Novos (Diário)
-                    </h3>
-                    <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={stats.combinedDailyData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                                <YAxis axisLine={false} tickLine={false} allowDecimals={false} />
-                                <Tooltip />
-                                <Area type="monotone" dataKey="novos" stroke={settings.primaryColor || '#8b5cf6'} fillOpacity={0.2} fill={settings.primaryColor || '#8b5cf6'} />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Taxa de Ocupação */}
+            {/* Novo Gráfico: Ocupação */}
+            <div className="grid grid-cols-1 gap-6">
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
                         <Clock size={20} className="text-blue-500" />

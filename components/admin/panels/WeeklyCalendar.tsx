@@ -5,9 +5,10 @@ import { Appointment } from '../../../types';
 
 interface WeeklyCalendarProps {
     onNewAppointment: () => void;
+    modeToggle?: React.ReactNode;
 }
 
-export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment }) => {
+export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment, modeToggle }) => {
     const { appointments, professionals, services, settings, updateAppointmentStatus, updateAppointmentPaymentMethod, theme } = useShop();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedProId, setSelectedProId] = useState<string | 'all'>('all');
@@ -276,6 +277,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                             <ChevronRight size={20} />
                         </button>
                     </div>
+                    {modeToggle}
                 </div>
             </div>
 
