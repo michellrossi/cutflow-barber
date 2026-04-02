@@ -5,10 +5,9 @@ import { Appointment } from '../../../types';
 
 interface WeeklyCalendarProps {
     onNewAppointment: () => void;
-    modeToggle?: React.ReactNode;
 }
 
-export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment, modeToggle }) => {
+export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment }) => {
     const { appointments, professionals, services, settings, updateAppointmentStatus, updateAppointmentPaymentMethod, theme } = useShop();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedProId, setSelectedProId] = useState<string | 'all'>('all');
@@ -277,7 +276,6 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                             <ChevronRight size={20} />
                         </button>
                     </div>
-                    {modeToggle}
                 </div>
             </div>
 
@@ -287,10 +285,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                 <div className="flex gap-2 overflow-x-auto py-2 hide-scrollbar">
                     <button
                         onClick={() => setSelectedProId('all')}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all border ${
+                        className={`flex items-center gap-2 px-4 py-2 font-medium transition-all border ${
                             selectedProId === 'all' 
-                            ? 'shadow-sm' 
-                            : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                            ? 'shadow-sm rounded-[2rem]' 
+                            : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 rounded-md'
                         }`}
                         style={{ 
                             borderColor: selectedProId === 'all' ? settings.primaryColor : undefined,
@@ -305,10 +303,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                         <button
                             key={pro.id}
                             onClick={() => setSelectedProId(pro.id)}
-                            className={`flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all border whitespace-nowrap ${
+                            className={`flex items-center gap-2 px-4 py-2 font-medium transition-all border whitespace-nowrap ${
                                 selectedProId === pro.id 
-                                ? 'shadow-sm' 
-                                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                                ? 'shadow-sm rounded-[2rem]' 
+                                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 rounded-md'
                             }`}
                             style={{ 
                                 borderColor: selectedProId === pro.id ? pro.color : undefined,

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { User, Store, Shield, Clock, Save, Link as LinkIcon, MapPin, Instagram, Mail, Phone, Lock } from 'lucide-react';
+import { useShop } from '../../../store';
 
 type ProfileTab = 'cadastro' | 'barbearia' | 'conta' | 'horarios';
 
 export const ProfilePanel = () => {
+  const { shop, session, settings } = useShop();
   const [activeTab, setActiveTab] = useState<ProfileTab>('cadastro');
 
   const inputClass = "w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all font-medium placeholder:text-slate-400";
@@ -69,7 +71,7 @@ export const ProfilePanel = () => {
                 <label className={labelClass}>Nome Completo do Dono</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input type="text" placeholder="Seu nome" className={inputClass} defaultValue="João da Silva" />
+                  <input type="text" placeholder="Seu nome" className={inputClass} defaultValue={session?.user?.user_metadata?.full_name || 'Usuário Principal'} />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -77,14 +79,14 @@ export const ProfilePanel = () => {
                   <label className={labelClass}>E-mail Pessoal</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input type="email" placeholder="seuemail@exemplo.com" className={inputClass} defaultValue="joao.silva@email.com" />
+                    <input type="email" placeholder="seuemail@exemplo.com" className={inputClass} defaultValue={session?.user?.email || ''} readOnly />
                   </div>
                 </div>
                 <div>
                   <label className={labelClass}>Celular (WhatsApp)</label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input type="tel" placeholder="(00) 00000-0000" className={inputClass} defaultValue="(11) 98765-4321" />
+                    <input type="tel" placeholder="(00) 00000-0000" className={inputClass} defaultValue={settings?.phone || ''} />
                   </div>
                 </div>
               </div>
@@ -103,14 +105,14 @@ export const ProfilePanel = () => {
                 <label className={labelClass}>Nome da Barbearia</label>
                 <div className="relative">
                   <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input type="text" placeholder="Nome oficial" className={inputClass} defaultValue="CutFlow Barber Shop" />
+                  <input type="text" placeholder="Nome oficial" className={inputClass} defaultValue={settings?.name || 'CutFlow Barber Shop'} />
                 </div>
               </div>
               <div>
                 <label className={labelClass}>Endereço Físico</label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input type="text" placeholder="Rua, Número, Bairro, Cidade - UF" className={inputClass} defaultValue="Av. Paulista, 1000 - São Paulo, SP" />
+                  <input type="text" placeholder="Rua, Número, Bairro, Cidade - UF" className={inputClass} defaultValue={settings?.address || ''} />
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -118,14 +120,14 @@ export const ProfilePanel = () => {
                   <label className={labelClass}>Instagram (@)</label>
                   <div className="relative">
                     <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input type="text" placeholder="@suabarbearia" className={inputClass} defaultValue="@cutflowbarber" />
+                    <input type="text" placeholder="@suabarbearia" className={inputClass} defaultValue={settings?.instagram || ''} />
                   </div>
                 </div>
                 <div>
                   <label className={labelClass}>Link Público (Agenda)</label>
                   <div className="relative">
                     <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                    <input type="text" placeholder="cutflow.com.br/suabarbearia" className={inputClass} defaultValue="cutflow.app/cutflowbarber" />
+                    <input type="text" placeholder="cutflow.com.br/suabarbearia" className={inputClass} defaultValue={`cutflow.com.br/b/${shop?.slug || ''}`} readOnly />
                   </div>
                 </div>
               </div>
@@ -144,7 +146,7 @@ export const ProfilePanel = () => {
                 <label className={labelClass}>Login Principal</label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input type="text" placeholder="Seu nome de usuário" className={inputClass} defaultValue="joao.admin" />
+                  <input type="text" placeholder="Seu nome de usuário" className={inputClass} defaultValue={session?.user?.email || ''} readOnly />
                 </div>
               </div>
               <hr className="my-6 border-slate-100" />
