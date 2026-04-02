@@ -144,6 +144,8 @@ async function runCronLogic() {
     const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
     const thirtyDaysAgoStr = `${thirtyDaysAgo.getFullYear()}-${String(thirtyDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(thirtyDaysAgo.getDate()).padStart(2, '0')}`;
+    const thirtyThreeDaysAgo = new Date(now.getTime() - 33 * 24 * 60 * 60 * 1000);
+    const thirtyThreeDaysAgoStr = `${thirtyThreeDaysAgo.getFullYear()}-${String(thirtyThreeDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(thirtyThreeDaysAgo.getDate()).padStart(2, '0')}`;
 
     const maxRetries = 3;
 
@@ -154,7 +156,6 @@ async function runCronLogic() {
         .from('appointments')
         .select('*, professionals(name), shops(id, name, whatsapp_instance)')
         .in('status', ['confirmed', 'scheduled'])
-        .eq('confirmation_sent', true)
         .eq('reminder_24h_sent', false)
         .lte('send_attempts_24h', maxRetries - 1)
         .lte('date', tomorrowStr);
@@ -196,7 +197,6 @@ async function runCronLogic() {
         .from('appointments')
         .select('*, professionals(name), shops(id, name, whatsapp_instance)')
         .in('status', ['confirmed', 'scheduled'])
-        .eq('confirmation_sent', true)
         .eq('reminder_1h_sent', false)
         .lte('send_attempts_1h', maxRetries - 1)
         .eq('date', todayStr);
@@ -321,7 +321,8 @@ async function runCronLogic() {
         .eq('status', 'completed')
         .eq('reminder_30d_sent', false)
         .lte('send_attempts_30d', maxRetries - 1)
-        .eq('date', thirtyDaysAgoStr);
+        .lte('date', thirtyDaysAgoStr)
+        .gte('date', thirtyThreeDaysAgoStr);
 
     if (apts30d) {
         for (const apt of apts30d) {
