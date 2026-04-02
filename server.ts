@@ -39,13 +39,14 @@ export const supabaseAdmin = createClient(supabaseUrl || 'https://placeholder.su
  * GERA MENSAGEM (TEMPLATE)
  * Busca do banco de dados usando supabaseAdmin para evitar bloqueios de RLS
  */
-async function generateWhatsAppMessage(trigger: string, data: any, shopId: string, delayValue?: number, delayUnit?: string) {
+async function generateWhatsAppMessage(trigger: string, data: any, shopId: string, delayValue?: number, delayUnit?: string, target: string = 'client') {
     // Ajustado para supabaseAdmin
     let query = supabaseAdmin
         .from('message_templates')
         .select('content')
         .eq('shop_id', shopId)
         .eq('trigger', trigger)
+        .eq('target', target)
         .eq('active', true);
 
     if (delayValue !== undefined) query = query.eq('delay_value', delayValue);
@@ -73,7 +74,11 @@ async function generateWhatsAppMessage(trigger: string, data: any, shopId: strin
         } else if (trigger === 'loyalty_reward') {
             content = `Olá [CLIENTE], parabéns!\nVocê atingiu a meta de fidelidade e ganhou um cupom de [DESCONTO]! Use o código: [CODIGO]. Validade: [VALIDADE] dias.`;
         } else {
-            content = `Olá [CLIENTE]!\nPassando para confirmar seu horário de [SERVICO] com [BARBEIRO] no dia [DATA] às [HORA]. Até logo! ✂️💈`;
+            if (target === 'professional') {
+                content = `💇‍♂️ *Novo Agendamento!*\nOlá [BARBEIRO], você tem um novo horário com [CLIENTE] para [SERVICO] no dia [DATA] às [HORA].`;
+            } else {
+                content = `Olá [CLIENTE]!\nSeu horário de [SERVICO] com [BARBEIRO] no dia [DATA] às [HORA] foi pré-agendado. Até logo! ✂️💈`;
+            }
         }
     }
 
@@ -416,11 +421,26 @@ async function startServer() {
             time: formattedTime,
             proName: apt.professionals?.name || "um de nossos profissionais",
             shopName: apt.shops?.name
-        }, apt.shop_id);
+        }, apt.shop_id, undefined, undefined, 'client');
 
         const clientOk = await sendWhatsApp(apt.client_phone, clientMessage, apt.shops?.whatsapp_instance);
         if (clientOk) await supabaseAdmin.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
-        res.json({ success: clientOk });
+        
+        // Notificação para o Barbeiro
+        if (apt.professionals?.phone) {
+            const proMessage = await generateWhatsAppMessage('immediate_confirmation', {
+                clientName: apt.client_name,
+                services: servicesNames,
+                date: formattedDate,
+                time: formattedTime,
+                proName: apt.professionals.name,
+                shopName: apt.shops?.name
+            }, apt.shop_id, undefined, undefined, 'professional');
+            
+            await sendWhatsApp(apt.professionals.phone, proMessage, apt.shops?.whatsapp_instance);
+        }
+        
+        res.json({ success: clientOk || true });
     });
 
     // Fidelidade (Ajustado para supabaseAdmin)
