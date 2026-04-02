@@ -177,8 +177,20 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                     <div className="grid grid-cols-7 gap-y-1 text-center">
                         {generateCalendar().map((dayObj, i) => {
                             const isSelect = (startDate && isSameDay(dayObj.date, startDate)) || (endDate && isSameDay(dayObj.date, endDate));
-                            const isInBet = isBetween(dayObj.date);
+                            const isToday = isSameDay(dayObj.date, new Date());
                             
+                            let bgColor = 'transparent';
+                            let textColor = !dayObj.isCurrentMonth ? '#CBD5E1' : '#64748B';
+                            let borderRadius = '50%';
+                            
+                            if (isSelect) {
+                                bgColor = primaryColor;
+                                textColor = '#FFFFFF';
+                            } else if (isToday) {
+                                bgColor = `${primaryColor}80`; // Laranja mais claro
+                                textColor = '#FFFFFF';
+                            }
+
                             return (
                                 <button
                                     key={i}
@@ -186,19 +198,19 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                                     onClick={() => handleDayClick(dayObj.date)}
                                     className="w-full aspect-square flex items-center justify-center text-sm font-medium transition-colors relative"
                                     style={{
-                                        color: !dayObj.isCurrentMonth ? '#CBD5E1' : isSelect ? '#FFFFFF' : '#334155',
-                                        backgroundColor: isSelect ? primaryColor : isInBet ? `${primaryColor}25` : 'transparent',
-                                        borderRadius: isSelect ? '50%' : isInBet ? '0px' : '50%',
+                                        color: textColor,
+                                        backgroundColor: bgColor,
+                                        borderRadius: borderRadius,
                                         opacity: !dayObj.isCurrentMonth ? 0.5 : 1,
                                         cursor: !dayObj.isCurrentMonth ? 'not-allowed' : 'pointer'
                                     }}
                                     onMouseOver={(e) => {
-                                        if (dayObj.isCurrentMonth && !isSelect && !isInBet) {
+                                        if (dayObj.isCurrentMonth && !isSelect && !isToday) {
                                             e.currentTarget.style.backgroundColor = `${primaryColor}15`;
                                         }
                                     }}
                                     onMouseOut={(e) => {
-                                        if (dayObj.isCurrentMonth && !isSelect && !isInBet) {
+                                        if (dayObj.isCurrentMonth && !isSelect && !isToday) {
                                             e.currentTarget.style.backgroundColor = 'transparent';
                                         }
                                     }}
