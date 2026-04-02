@@ -18,24 +18,23 @@ const PORT = process.env.PORT || 3000;
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const geminiKey = process.env.GEMINI_API_KEY || '';
 
-// 1. Cliente comum (Usa ANON_KEY - Respeita RLS)
 const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
-export const supabase = createClient(supabaseUrl, supabaseKey);
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+// Validação de Segurança (antes de criar o client para evitar crash)
+if (!supabaseUrl || !supabaseKey) {
+    console.error("❌ ERRO CRÍTICO: Variáveis de ambiente faltando!");
+}
+if (!serviceRoleKey) {
+    console.warn("⚠️ AVISO: SUPABASE_SERVICE_ROLE_KEY não configurada. O Cron Job pode falhar devido a RLS.");
+}
+
+// 1. Cliente comum (Usa ANON_KEY - Respeita RLS)
+export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseKey || 'placeholder');
 
 // 2. Cliente Administrativo (Usa SERVICE_ROLE - Ignora RLS)
 // USE ISSO PARA O CRON JOB E OPERAÇÕES DE SISTEMA NO BACKEND
-export const supabaseAdmin = createClient(
-    supabaseUrl,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
-// Validação de Segurança
-if (!supabaseUrl || !supabaseKey || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-    console.error("❌ ERRO CRÍTICO: Variáveis de ambiente faltando!");
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        console.error("👉 SUPABASE_SERVICE_ROLE_KEY não configurada. O Cron Job não funcionará.");
-    }
-}
+export const supabaseAdmin = createClient(supabaseUrl || 'https://placeholder.supabase.co', serviceRoleKey || 'placeholder');
 
 /**
  * GERA MENSAGEM (TEMPLATE)
