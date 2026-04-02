@@ -5,7 +5,6 @@ import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import cron from 'node-cron';
 import * as dotenv from 'dotenv';
 
 dotenv.config();
@@ -132,14 +131,19 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
 }
 
 async function runCronLogic() {
-    console.log("[Cron] Iniciando verificação de lembretes...");
+    console.log("[Cron] Iniciando verificação de lembretes (Timezone SP - GMT-3)...");
 
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    // Solução de Fuso Horário: Forçar leitura no relógio de São Paulo independentemente de onde o Node roda
+    const nowUtc = new Date();
+    const spTimeString = nowUtc.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
+    const now = new Date(spTimeString);
+    
+    // Obter strings perfeitas garantindo que o limite do dia não vire por conversões para ISOString (UTC zero)
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
     const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+    const thirtyDaysAgoStr = `${thirtyDaysAgo.getFullYear()}-${String(thirtyDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(thirtyDaysAgo.getDate()).padStart(2, '0')}`;
 
     const maxRetries = 3;
 
@@ -505,13 +509,6 @@ async function startServer() {
 
     app.listen(Number(PORT), '0.0.0.0', () => {
         console.log(`Servidor ativo na porta ${PORT}`);
-        cron.schedule('*/30 * * * *', async () => {
-            try {
-                await fetch(`http://localhost:${PORT}/api/notify/cron`);
-            } catch (err) {
-                console.error("[Internal Cron] Erro:", err);
-            }
-        });
     });
 }
 
