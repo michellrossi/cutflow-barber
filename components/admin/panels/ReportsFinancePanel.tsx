@@ -8,7 +8,7 @@ interface ReportsFinancePanelProps {
 }
 
 export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRange }) => {
-    const { appointments, fetchFinancialReport, settings, professionals } = useShop();
+    const { appointments, fetchFinancialReport, settings, professionals, clients } = useShop();
     const [filteredAppointments, setFilteredAppointments] = useState(appointments);
 
     useEffect(() => {
@@ -73,8 +73,71 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
             { name: 'Pix', value: completed.filter(a => a.paymentMethod === 'pix').length, color: '#22c55e' },
         ].filter(d => d.value > 0);
 
-        return { totalRevenue, totalCommissions, profit, avgTicket, chartData, paymentData };
-    }, [filteredAppointments]);
+        // --- DADOS PARA O GRÁFICO DE OCUPAÇÃO ---
+        const occupancyData: { date: string; displayDate: string; occupancy: number; fill: string }[] = [];
+        
+        // Obter horas de funcionamento (fallback para 10h diárias se não configurado)
+        let totalDailyHours = 10;
+        if (settings?.businessHours) {
+            // Lógica simplificada: média de horas dos dias úteis
+            // Na implementação real baseada no Supabase, leremos do JSON
+            // ex: const schedule = settings.businessHours.monday;
+            // totalDailyHours = (schedule.end - schedule.start)
+        }
+        
+        const activeProfessionalsCount = professionals.length > 0 ? professionals.length : 1;
+        const totalAvailableHoursPerDay = totalDailyHours * activeProfessionalsCount;
+
+        // --- CÁLCULO MENSAL CLIENTES NOVOS E OCUPAÇÃO ---
+        const monthlyDataMap: Record<string, { novos: number, bookedHours: number, label: string }> = {};
+
+        completed.forEach(app => {
+            const dateStr = app.date; // YYYY-MM-DD
+            if (!monthlyDataMap[dateStr]) {
+                const d = new Date(dateStr + 'T12:00:00');
+                monthlyDataMap[dateStr] = { 
+                    novos: 0, 
+                    bookedHours: 0, 
+                    label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) 
+                };
+            }
+            monthlyDataMap[dateStr].bookedHours += 1; // Simplificando 1 agendamento = 1 hora
+        });
+
+        // Contar clientes novos (criados naquele dia)
+        clients.forEach(c => {
+            if (!c.createdAt) return;
+            const dateStr = c.createdAt.split('T')[0];
+            if (!monthlyDataMap[dateStr]) {
+                const d = new Date(dateStr + 'T12:00:00');
+                monthlyDataMap[dateStr] = { 
+                    novos: 0, 
+                    bookedHours: 0, 
+                    label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) 
+                };
+            }
+            monthlyDataMap[dateStr].novos += 1;
+        });
+
+        const sortedDailyKeys = Object.keys(monthlyDataMap).sort();
+        
+        const combinedDailyData = sortedDailyKeys.map(key => {
+            const booked = monthlyDataMap[key].bookedHours;
+            const occupancyRate = (booked / totalAvailableHoursPerDay) * 100;
+            let fillColor = '#ef4444'; // Red < 50%
+            if (occupancyRate >= 80) fillColor = '#22c55e'; // Green >= 80%
+            else if (occupancyRate >= 50) fillColor = '#eab308'; // Yellow 50-79%
+
+            return {
+                name: monthlyDataMap[key].label,
+                novos: monthlyDataMap[key].novos,
+                occupancyRate: Math.min(occupancyRate, 100),
+                fill: fillColor
+            };
+        });
+
+        return { totalRevenue, totalCommissions, profit, avgTicket, chartData, paymentData, combinedDailyData };
+    }, [filteredAppointments, professionals, clients, settings]);
 
     return (
   <div className="space-y-6">
@@ -177,6 +240,56 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
                                 <Legend />
                             </RechartsPieChart>
                         </ResponsiveContainer>
+                    </div>
+                </div>
+            </div>
+
+            {/* Novos Gráficos: Ocupação e Clientes Novos Lado a Lado */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 {/* Clientes Novos por Mês */}
+                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <TrendingUp size={20} className="text-purple-500" />
+                        Clientes Novos (Diário)
+                    </h3>
+                    <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={stats.combinedDailyData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                <YAxis axisLine={false} tickLine={false} allowDecimals={false} />
+                                <Tooltip />
+                                <Area type="monotone" dataKey="novos" stroke={settings.primaryColor || '#8b5cf6'} fillOpacity={0.2} fill={settings.primaryColor || '#8b5cf6'} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Taxa de Ocupação */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <h3 className="text-lg font-bold text-slate-900 mb-6 flex items-center gap-2">
+                        <Clock size={20} className="text-blue-500" />
+                        Taxa de Ocupação (Diária)
+                    </h3>
+                    <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <RechartsBarChart data={stats.combinedDailyData}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                <YAxis axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(val) => `${val}%`} />
+                                <Tooltip formatter={(value: number) => [`${value.toFixed(1)}%`, 'Ocupação']} />
+                                <Bar dataKey="occupancyRate" radius={[4, 4, 0, 0]}>
+                                    {stats.combinedDailyData.map((entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                                    ))}
+                                </Bar>
+                            </RechartsBarChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <div className="mt-4 flex items-center justify-center gap-4 text-xs font-medium text-slate-500">
+                        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-green-500"></div> &ge; 80%</div>
+                        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-yellow-500"></div> 50% - 79%</div>
+                        <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-red-500"></div> &lt; 50%</div>
                     </div>
                 </div>
             </div>
