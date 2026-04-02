@@ -10,6 +10,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
     const { settings } = useShop();
     const primaryColor = settings?.primaryColor || '#F59E0B'; // Padrao laranja cutflow7
     const [isOpen, setIsOpen] = useState(false);
+    const borderRadius = '8px'; // ou o valor que você preferir para o arredondamento
 
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
@@ -168,12 +169,6 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                     </div>
 
                     {/* Grade de Dias */}
-                    <div className="grid grid-cols-7 gap-1 text-center mb-3">
-                        {['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sab'].map((d, i) => (
-                            <span key={i} className="text-xs font-bold text-slate-400">{d}</span>
-                        ))}
-                    </div>
-
                     <div className="grid grid-cols-7 gap-y-1 text-center">
                         {generateCalendar().map((dayObj, i) => {
                             const isToday = dayObj.date.toDateString() === new Date().toDateString();
@@ -181,15 +176,15 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                                 (endDate && dayObj.date.toDateString() === endDate.toDateString());
                             const isInBet = startDate && endDate && dayObj.date > startDate && dayObj.date < endDate;
 
-                            // DEFINIÇÃO DAS CORES CONFORME SUA SOLICITAÇÃO:
+                            // Lógica de cores conforme sua solicitação
                             let bgColor = 'transparent';
-                            let textColor = '#6B7280'; // Cinza (Tailwind gray-500) para dias não selecionados
+                            let textColor = '#6B7280'; // Cinza para dias comuns
 
                             if (isSelect) {
                                 bgColor = primaryColor; // Laranja sólido
                                 textColor = '#FFFFFF'; // Texto branco
                             } else if (isToday) {
-                                bgColor = `${primaryColor}20`; // Laranja suave (20% de opacidade)
+                                bgColor = `${primaryColor}20`; // Laranja suave (20%)
                                 textColor = primaryColor;    // Texto laranja
                             } else if (isInBet) {
                                 bgColor = `${primaryColor}10`; // Fundo muito suave para o intervalo
@@ -205,19 +200,9 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                                     style={{
                                         color: textColor,
                                         backgroundColor: bgColor,
-                                        borderRadius: borderRadius,
+                                        borderRadius: borderRadius, // Agora esta variável existe!
                                         opacity: !dayObj.isCurrentMonth ? 0.5 : 1,
                                         cursor: !dayObj.isCurrentMonth ? 'not-allowed' : 'pointer'
-                                    }}
-                                    onMouseOver={(e) => {
-                                        if (dayObj.isCurrentMonth && !isSelect && !isToday && !isInBet) {
-                                            e.currentTarget.style.backgroundColor = `${primaryColor}20`;
-                                        }
-                                    }}
-                                    onMouseOut={(e) => {
-                                        if (dayObj.isCurrentMonth && !isSelect && !isToday && !isInBet) {
-                                            e.currentTarget.style.backgroundColor = 'transparent';
-                                        }
                                     }}
                                 >
                                     <span className="relative z-10">{dayObj.date.getDate()}</span>
