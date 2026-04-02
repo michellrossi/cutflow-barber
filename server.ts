@@ -461,58 +461,64 @@ async function startServer() {
         res.json({ success: ok });
     });
 
-    // Cron manual
+    // Rota do CRON protegida por Token
     app.get('/api/notify/cron', async (req, res) => {
+        const authHeader = req.headers.authorization;
+
+        // Verifica se o token enviado no Header é o mesmo do .env
+        if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+            console.warn("[Cron] Tentativa de acesso não autorizada negada.");
+            return res.status(401).json({ error: "Não autorizado" });
+        }
+
         try {
-            await runCronLogic();
+            await runCronLogic(); // Executa a lógica [cite: 161]
             res.json({ status: "Cron executado com sucesso" });
         } catch (err: any) {
+            console.error("[Cron] Erro ao executar:", err);
             res.status(500).json({ error: err.message });
         }
     });
-
-    // WhatsApp Management (Ajustado para supabaseAdmin)
-    app.post('/api/whatsapp/qrcode', async (req, res) => {
-        const { shopId } = req.body;
-        const instanceName = `shop-${shopId}`;
-        try {
-            await fetch(`${process.env.WHATSAPP_API_URL}/instance/create`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'apikey': process.env.WHATSAPP_API_KEY || '' },
-                body: JSON.stringify({ instanceName, integration: "WHATSAPP-BAILEYS" })
-            });
-            await supabaseAdmin.from('shops').update({ whatsapp_instance: instanceName }).eq('id', shopId);
-            const response = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connect/${instanceName}`, { headers: { 'apikey': process.env.WHATSAPP_API_KEY || '' } });
-            const data = await response.json();
-            res.json({ qrcode: data.base64, connected: data.instance?.state === 'open' });
-        } catch (error: any) {
-            res.status(500).json({ error: error.message });
-        }
+} catch (err: any) {
+    res.status(500).json({ error: err.message });
+}
     });
 
-    // Servidor estático e Produção
-    if (process.env.NODE_ENV === 'production') {
-        const distPath = path.resolve(__dirname, 'dist');
-        app.use(express.static(distPath));
-        app.use((req, res, next) => {
-            if (req.accepts('html')) res.sendFile(path.join(distPath, 'index.html'));
-            else next();
+// WhatsApp Management (Ajustado para supabaseAdmin)
+app.post('/api/whatsapp/qrcode', async (req, res) => {
+    const { shopId } = req.body;
+    const instanceName = `shop-${shopId}`;
+    try {
+        await fetch(`${process.env.WHATSAPP_API_URL}/instance/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'apikey': process.env.WHATSAPP_API_KEY || '' },
+            body: JSON.stringify({ instanceName, integration: "WHATSAPP-BAILEYS" })
         });
-    } else {
-        const vite = await createViteServer({ server: { middlewareMode: true }, appType: 'spa' });
-        app.use(vite.middlewares);
+        await supabaseAdmin.from('shops').update({ whatsapp_instance: instanceName }).eq('id', shopId);
+        const response = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connect/${instanceName}`, { headers: { 'apikey': process.env.WHATSAPP_API_KEY || '' } });
+        const data = await response.json();
+        res.json({ qrcode: data.base64, connected: data.instance?.state === 'open' });
+    } catch (error: any) {
+        res.status(500).json({ error: error.message });
     }
+});
 
-    app.listen(Number(PORT), '0.0.0.0', () => {
-        console.log(`Servidor ativo na porta ${PORT}`);
-        cron.schedule('*/30 * * * *', async () => {
-            try {
-                await fetch(`http://localhost:${PORT}/api/notify/cron`);
-            } catch (err) {
-                console.error("[Internal Cron] Erro:", err);
-            }
-        });
+// Servidor estático e Produção
+if (process.env.NODE_ENV === 'production') {
+    const distPath = path.resolve(__dirname, 'dist');
+    app.use(express.static(distPath));
+    app.use((req, res, next) => {
+        if (req.accepts('html')) res.sendFile(path.join(distPath, 'index.html'));
+        else next();
     });
+} else {
+    const vite = await createViteServer({ server: { middlewareMode: true }, appType: 'spa' });
+    app.use(vite.middlewares);
+}
+
+app.listen(Number(PORT), '0.0.0.0', () => {
+
+});
 }
 
 startServer().catch(err => console.error("Erro ao iniciar servidor:", err));
