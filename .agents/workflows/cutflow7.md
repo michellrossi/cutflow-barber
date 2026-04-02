@@ -45,21 +45,44 @@ Nomes abreviados no topo:
 dom, seg, ter, qua, qui, sex, sab
 
 🎨 4. Estados visuais (CRÍTICO)
-Dia padrão:
-Fundo transparente
-Texto escuro
-Dia selecionado (início ou fim):
-Fundo laranja sólido
-Texto branco
-Formato circular
-Intervalo entre datas:
-Fundo laranja claro (transparente)
+A. Dias não selecionados (estado padrão)
+Sem cor de fundo
+Fundo: transparente
+Texto: cinza médio (#6B7280)
 Sem borda
-Dia hover:
-Fundo levemente destacado (laranja bem claro)
-Dias fora do mês:
-Texto cinza claro
-Desabilitados
+Hover:
+Fundo: laranja bem claro (opacity baixa, tipo #F59E0B20)
+
+B. Dia atual (hoje)
+Fundo: laranja muito suave (#F59E0B20 ou similar)
+Texto: laranja mais escuro (#F59E0B)
+Formato: levemente arredondado
+Não deve parecer selecionado
+
+C. Dias selecionados (início e fim do range)
+Fundo: laranja sólido (#F59E0B)
+Texto: branco
+Formato: circular ou arredondado
+Destaque forte (prioridade visual máxima)
+
+4. Intervalo entre datas
+Fundo: laranja claro (ex: #F59E0B30)
+Texto: padrão (escuro)
+Sem borda
+Não usar o mesmo laranja do selecionado
+⚠️ Regra crítica de prioridade visual
+
+Se um dia for:
+
+Hoje E selecionado → usar estilo de selecionado, não de hoje
+Nunca aplicar múltiplos estilos ao mesmo tempo
+🧩 Correção comportamental
+Apenas:
+Data inicial
+Data final
+Intervalo entre elas
+
+👉 Todo o resto deve parecer neutro
 
 🧠 5. Lógica de seleção
 Primeiro clique → define data inicial
