@@ -199,29 +199,55 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
 
                                 {/* Top Profissionais (apenas se for 'Todos') */}
                                 {isAll && (
-                                    <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm md:col-span-2 lg:col-span-2">
-                                        <h3 className="font-bold text-slate-900 mb-4 flex items-center gap-2">
-                                            <Award size={20} className="text-orange-500" />
-                                            Top Profissionais (Faturamento)
+                                    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] md:col-span-2 lg:col-span-2">
+                                        <h3 className="text-lg font-bold text-[#1E293B] mb-4 flex items-center gap-2">
+                                            <Users size={20} className="text-[#1E293B]" />
+                                            Top Profissionais
                                         </h3>
-                                        <div className="space-y-2">
-                                            {professionals.map(pro => {
-                                                const proRevenue = filteredAppointments
-                                                    .filter(a => a.professionalId === pro.id && a.status === 'completed')
-                                                    .reduce((acc, a) => acc + a.totalValue, 0);
-                                                return { ...pro, revenue: proRevenue };
-                                            })
-                                            .sort((a, b) => b.revenue - a.revenue)
-                                            .map((pro, index) => (
-                                                <div key={pro.id} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="font-bold text-slate-400 w-6">#{index + 1}</span>
-                                                        <img src={pro.photoUrl} alt={pro.name} className="w-8 h-8 rounded-full" />
-                                                        <span className="font-bold text-slate-900">{pro.name}</span>
-                                                    </div>
-                                                    <span className="font-black text-orange-600">{new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pro.revenue)}</span>
-                                                </div>
-                                            ))}
+                                        <div className="flex flex-col divide-y divide-slate-100">
+                                            {(() => {
+                                                const sorted = professionals.map(pro => {
+                                                    const proAppts = filteredAppointments.filter(a => a.professionalId === pro.id && a.status === 'completed');
+                                                    const proRevenue = proAppts.reduce((acc, a) => acc + a.totalValue, 0);
+                                                    return { ...pro, revenue: proRevenue, visits: proAppts.length };
+                                                }).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
+
+                                                const maxVal = Math.max(...sorted.map(s => s.revenue), 1);
+                                                
+                                                return sorted.map((pro, index) => {
+                                                    let badgeColor = 'bg-slate-200 text-slate-700'; // 4º+
+                                                    if (index === 0) badgeColor = 'bg-yellow-400 text-yellow-900';
+                                                    else if (index === 1) badgeColor = 'bg-slate-400 text-white';
+                                                    else if (index === 2) badgeColor = 'bg-[#cd6133] text-white';
+
+                                                    const progressWidth = `${(pro.revenue / maxVal) * 100}%`;
+
+                                                    return (
+                                                        <div key={pro.id} className="py-4 flex items-center gap-4">
+                                                            <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center font-bold text-sm ${badgeColor}`}>
+                                                                {index + 1}º
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <div className="flex justify-between items-start mb-1">
+                                                                    <div className="flex items-center gap-2 min-w-0">
+                                                                        <img src={pro.photoUrl} alt={pro.name} className="w-6 h-6 rounded-full shrink-0" referrerPolicy="no-referrer" />
+                                                                        <span className="font-medium text-[#1E293B] truncate">{pro.name}</span>
+                                                                    </div>
+                                                                    <span className="font-bold text-[#F16A1B] whitespace-nowrap ml-2">
+                                                                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pro.revenue)}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="w-full bg-[#F1F5F9] h-1.5 rounded-full overflow-hidden">
+                                                                    <div className="bg-[#F16A1B] h-full rounded-full" style={{ width: progressWidth }}></div>
+                                                                </div>
+                                                                <div className="text-xs text-slate-500 mt-1 text-right">
+                                                                    {pro.visits} atendimentos
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                });
+                                            })()}
                                         </div>
                                     </div>
                                 )}

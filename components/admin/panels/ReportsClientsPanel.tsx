@@ -203,22 +203,51 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                 </div>
             </div>
             
-            {/* Ranking de Clientes (Padrão de Lista) */}
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm lg:col-span-1">
-                <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-                    <Award size={20} className="text-orange-500" />
-                    Top 10 Clientes
+            {/* Ranking de Clientes (Padrão cutflow4) */}
+            <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] lg:col-span-1">
+                <h3 className="text-lg font-bold text-[#1E293B] mb-4 flex items-center gap-2">
+                    <Users size={20} className="text-[#1E293B]" />
+                    Top Clientes
                 </h3>
-                <div className="space-y-2">
-                    {clients.slice(0, 10).map((client, index) => (
-                        <div key={index} className="flex justify-between items-center p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
-                            <div className="flex items-center gap-3">
-                                <span className="font-bold text-slate-400 w-6">#{index + 1}</span>
-                                <span className="font-bold text-slate-900">{client.name}</span>
-                            </div>
-                            <span className="font-black text-orange-600">{formatCurrency(client.totalSpent || 0)}</span>
-                        </div>
-                    ))}
+                <div className="flex flex-col divide-y divide-slate-100">
+                    {(() => {
+                        const topClients = clients.slice(0, 5);
+                        const maxSpent = Math.max(...topClients.map(c => c.totalSpent || 0), 1); 
+                        
+                        return topClients.map((client, index) => {
+                            let badgeColor = 'bg-slate-200 text-slate-700'; 
+                            if (index === 0) badgeColor = 'bg-yellow-400 text-yellow-900';
+                            else if (index === 1) badgeColor = 'bg-slate-400 text-white';
+                            else if (index === 2) badgeColor = 'bg-[#cd6133] text-white'; 
+
+                            const progressWidth = `${((client.totalSpent || 0) / maxSpent) * 100}%`;
+                            
+                            // Calcula as visitas com base em client.loyaltyCardCount, com fallback seguro para histórico
+                            const visitasCount = appointments.filter(a => (a.clientId === client.id || a.clientPhone === client.phone) && a.status === 'completed').length || client.loyaltyCardCount || 0;
+
+                            return (
+                                <div key={index} className="py-4 flex items-center gap-4">
+                                    <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center font-bold text-sm ${badgeColor}`}>
+                                        {index + 1}º
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <span className="font-medium text-[#1E293B] truncate">{client.name}</span>
+                                            <span className="font-bold text-[#F16A1B] whitespace-nowrap ml-2">
+                                                {formatCurrency(client.totalSpent || 0)}
+                                            </span>
+                                        </div>
+                                        <div className="w-full bg-[#F1F5F9] h-1.5 rounded-full overflow-hidden">
+                                            <div className="bg-[#F16A1B] h-full rounded-full" style={{ width: progressWidth }}></div>
+                                        </div>
+                                        <div className="text-xs text-slate-500 mt-1 text-right">
+                                            {visitasCount} visitas
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        });
+                    })()}
                 </div>
             </div>
         </div>
