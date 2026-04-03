@@ -185,7 +185,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                                 bgColor = primaryColor; // Laranja sólido para início e fim
                                 textColor = '#FFFFFF';
                             } else if (isToday) {
-                                bgColor = `${primaryColor}20`; // Laranja suave para o dia de hoje
+                                bgColor = `${primaryColor}50`; // Laranja suave para o dia de hoje
                                 textColor = primaryColor;
                             } else if (isInBet) {
                                 bgColor = `${primaryColor}10`; // Fundo beeeem leve para ligar o período
