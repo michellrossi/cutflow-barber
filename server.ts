@@ -404,7 +404,7 @@ async function startServer() {
             const chatHistory = history.map((msg: any) => ({ role: msg.role === 'assistant' ? 'model' : 'user', parts: [{ text: msg.content }] }));
             const genAI = new GoogleGenAI({ apiKey: geminiKey });
             const response = await genAI.models.generateContent({
-                model: "gemini-3-flash-preview",
+                model: "gemini-2.0-flash",
                 contents: [...chatHistory, { role: 'user', parts: [{ text: prompt }] }],
                 config: { systemInstruction }
             });
@@ -522,6 +522,38 @@ async function startServer() {
             const response = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connect/${instanceName}`, { headers: { 'apikey': process.env.WHATSAPP_API_KEY || '' } });
             const data = await response.json();
             res.json({ qrcode: data.base64, connected: data.instance?.state === 'open' });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Status da instância WhatsApp
+    app.post('/api/whatsapp/status', async (req, res) => {
+        const { shopId } = req.body;
+        try {
+            const { data: shop } = await supabaseAdmin.from('shops').select('whatsapp_instance').eq('id', shopId).single();
+            if (!shop?.whatsapp_instance) return res.json({ connected: false });
+            const r = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connectionState/${shop.whatsapp_instance}`,
+                { headers: { apikey: process.env.WHATSAPP_API_KEY || '' } });
+            const d = await r.json();
+            const connected = d.instance?.state === 'open';
+            await supabaseAdmin.from('shops').update({ whatsapp_connected: connected }).eq('id', shopId);
+            res.json({ connected });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Desconectar instância WhatsApp
+    app.post('/api/whatsapp/disconnect', async (req, res) => {
+        const { shopId } = req.body;
+        try {
+            const { data: shop } = await supabaseAdmin.from('shops').select('whatsapp_instance').eq('id', shopId).single();
+            if (!shop?.whatsapp_instance) return res.json({ success: true });
+            await fetch(`${process.env.WHATSAPP_API_URL}/instance/logout/${shop.whatsapp_instance}`,
+                { method: 'DELETE', headers: { apikey: process.env.WHATSAPP_API_KEY || '' } });
+            await supabaseAdmin.from('shops').update({ whatsapp_connected: false }).eq('id', shopId);
+            res.json({ success: true });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
