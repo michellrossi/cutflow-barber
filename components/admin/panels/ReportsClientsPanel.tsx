@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, Cell, LineChart, Line, AreaChart, Area } from 'recharts';
-import { Users, TrendingUp, UserPlus, Award, DollarSign, Calendar } from 'lucide-react';
+import { Users, TrendingUp, UserPlus, Award, DollarSign, Calendar, UserX } from 'lucide-react';
 import { useShop } from '../../../store';
 
 interface ReportsClientsPanelProps {
@@ -58,10 +58,20 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
 
         const inactiveClients = Object.values(lastAppByClient).filter(lastDate => lastDate < thirtyDaysAgo).length;
 
+        // NO-SHOW: calculado sobre agendamentos do período filtrado
+        const totalFinalized = filteredAppointments.filter(a =>
+            a.status === 'completed' || a.status === 'noshow'
+        ).length;
+        const totalNoShows = filteredAppointments.filter(a => a.status === 'noshow').length;
+        const noShowRate = totalFinalized > 0 ? (totalNoShows / totalFinalized) * 100 : 0;
+
         return {
             totalClients,
             activeSubscribers,
             inactiveClients,
+            noShowRate,
+            totalNoShows,
+            totalFinalized,
             avgTicket: filteredAppointments.length > 0 
                 ? filteredAppointments.reduce((acc, a) => acc + a.totalValue, 0) / filteredAppointments.length 
                 : 0
@@ -139,6 +149,25 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
         });
     }, [filteredAppointments, clients]);
 
+    // Tendência mensal de no-shows
+    const noShowMonthlyData = useMemo(() => {
+        const dataMap: Record<string, { noshow: number; total: number; label: string }> = {};
+        filteredAppointments.forEach(apt => {
+            if (apt.status !== 'completed' && apt.status !== 'noshow') return;
+            const date = new Date(apt.date + 'T12:00:00');
+            const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+            const label = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+            if (!dataMap[monthKey]) dataMap[monthKey] = { noshow: 0, total: 0, label };
+            dataMap[monthKey].total += 1;
+            if (apt.status === 'noshow') dataMap[monthKey].noshow += 1;
+        });
+        return Object.keys(dataMap).sort().map(k => ({
+            name: dataMap[k].label.charAt(0).toUpperCase() + dataMap[k].label.slice(1),
+            taxa: dataMap[k].total > 0 ? parseFloat(((dataMap[k].noshow / dataMap[k].total) * 100).toFixed(1)) : 0,
+            noShows: dataMap[k].noshow
+        }));
+    }, [filteredAppointments]);
+
     return (
         <div className="w-full space-y-8 animate-fade-in">
             {/* Cards no Padrão Correto */}
@@ -173,6 +202,30 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                     <div className="text-3xl font-black text-slate-900">
                         {stats.inactiveClients}
                     </div>
+                </div>
+
+                {/* Card No-Show */}
+                <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+                            <UserX size={20} />
+                        </div>
+                        <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Taxa de No-Show</span>
+                    </div>
+                    <div className="flex items-end gap-2">
+                        <div className="text-3xl font-black text-slate-900">
+                            {stats.noShowRate.toFixed(1)}%
+                        </div>
+                        {stats.noShowRate >= 15 && (
+                            <span className="text-xs font-bold text-red-500 mb-1">⚠ Alta</span>
+                        )}
+                        {stats.noShowRate > 0 && stats.noShowRate < 15 && (
+                            <span className="text-xs font-bold text-green-600 mb-1">✓ Normal</span>
+                        )}
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">
+                        {stats.totalNoShows} falta{stats.totalNoShows !== 1 ? 's' : ''} de {stats.totalFinalized} encerrados
+                    </p>
                 </div>
             </div>
 
@@ -231,6 +284,45 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                         </ResponsiveContainer>
                     </div>
                 </div>
+            </div>
+
+            {/* Gráfico: Tendência de No-Show */}
+            <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+                    <UserX size={20} className="text-amber-500" />
+                    Taxa de No-Show por Mês
+                </h3>
+                <p className="text-xs text-slate-400 mb-6">Percentual de agendamentos encerrados sem comparecimento — <span className="text-green-600 font-bold">Verde</span> &lt;8% · <span className="text-amber-500 font-bold">Amarelo</span> 8–14% · <span className="text-red-500 font-bold">Vermelho</span> ≥15%</p>
+                {noShowMonthlyData.length === 0 ? (
+                    <div className="h-64 flex flex-col items-center justify-center gap-2">
+                        <UserX size={40} className="text-slate-200" />
+                        <p className="text-sm text-slate-400">Nenhum dado de no-show no período selecionado</p>
+                    </div>
+                ) : (
+                    <div className="h-64 w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={noShowMonthlyData} barSize={40}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+                                <YAxis axisLine={false} tickLine={false} unit="%" tick={{ fontSize: 12 }} domain={[0, (dataMax: number) => Math.max(dataMax + 5, 20)]} />
+                                <Tooltip
+                                    formatter={(value: number, _: string, props: any) => [
+                                        `${value}% (${props.payload.noShows} falta${props.payload.noShows !== 1 ? 's' : ''})`,
+                                        'Taxa de No-Show'
+                                    ]}
+                                />
+                                <Bar dataKey="taxa" radius={[6, 6, 0, 0]}>
+                                    {noShowMonthlyData.map((entry, index) => (
+                                        <Cell
+                                            key={index}
+                                            fill={entry.taxa >= 15 ? '#ef4444' : entry.taxa >= 8 ? '#f59e0b' : '#22c55e'}
+                                        />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                )}
             </div>
             
             {/* Ranking de Clientes (Padrão cutflow4) */}
