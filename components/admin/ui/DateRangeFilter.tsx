@@ -177,21 +177,23 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                             let bgColor = 'transparent';
                             let textColor = '#64748B'; // Cinza para dias não selecionados
                             let isHoverable = false;
+                            let borderStyle = '1px solid transparent'; // Padrão sem borda
 
-                            // Lógica de cores limpa
+                            // Lógica de cores à prova de falhas
                             if (!dayObj.isCurrentMonth) {
-                                textColor = '#CBD5E1'; // Cinza bem apagado para dias de fora do mês
+                                textColor = '#CBD5E1'; // Cinza bem apagado para fora do mês
                             } else if (isSelect) {
                                 bgColor = primaryColor; // Laranja sólido para início e fim
                                 textColor = '#FFFFFF';
-                            } else if (isToday) {
-                                bgColor = `${primaryColor}50`; // Laranja suave para o dia de hoje
-                                textColor = primaryColor;
                             } else if (isInBet) {
-                                bgColor = `${primaryColor}10`; // Fundo beeeem leve para ligar o período
-                                textColor = '#334155'; // Texto escuro
+                                bgColor = `${primaryColor}15`; // Fundo ultra leve (Hex 15) para o meio do período
+                                textColor = '#334155'; // Texto escuro para leitura
+                            } else if (isToday) {
+                                bgColor = 'transparent'; // Sem preenchimento de fundo
+                                textColor = primaryColor; // Cor do texto em laranja
+                                borderStyle = `1px solid ${primaryColor}`; // Borda elegante para o "hoje"
                             } else {
-                                isHoverable = true; // Apenas dias livres ganham hover
+                                isHoverable = true; // Apenas dias livres ganham hover cinza
                             }
 
                             return (
@@ -204,6 +206,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                                         color: textColor,
                                         backgroundColor: bgColor !== 'transparent' ? bgColor : undefined,
                                         borderRadius: borderRadius,
+                                        border: borderStyle, // <-- Nova propriedade de borda aplicada
                                         cursor: !dayObj.isCurrentMonth ? 'default' : 'pointer'
                                     }}
                                 >

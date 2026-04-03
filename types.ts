@@ -127,6 +127,9 @@ export interface ShopSettings {
   loyaltyRewardValue?: number;
   loyaltyRewardType?: 'percentage' | 'fixed';
   loyaltyRewardValidityDays?: number;
+  instagram?: string;
+  address?: string;
+  businessHours?: Record<string, { active: boolean; start: string; end: string }>;
 }
 
 export interface BlockedSlot {

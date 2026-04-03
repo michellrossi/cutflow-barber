@@ -111,7 +111,7 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
                                 {selectedServices.map(s => <div key={s.id}>{s.name}</div>)}
                             </div>
                         </div>
-                        <div className="text-right" style={{ color: settings.textColor || '#cbd5e1' }}>R$ {subtotal.toFixed(2)}</div>
+                        <div className="text-right" style={{ color: settings.textColor || '#cbd5e1' }}>{subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                     </div>
 
                     <div className="pb-4 border-b" style={{ borderColor: settings.borderColor || '#334155' }}>
@@ -132,17 +132,17 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
                 <div className="space-y-2 mb-6">
                         <div className="flex justify-between" style={{ color: settings.textColor || '#94a3b8' }}>
                             <span>Subtotal</span>
-                            <span>R$ {subtotal.toFixed(2)}</span>
+                            <span>{subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                         </div>
                         {discountAmount > 0 && (
                             <div className="flex justify-between text-green-500">
                                 <span>Desconto</span>
-                                <span>- R$ {discountAmount.toFixed(2)}</span>
+                                <span>- {discountAmount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                             </div>
                         )}
                         <div className="flex justify-between text-2xl font-bold pt-4 border-t" style={{ color: settings.titleColor || '#ffffff', borderColor: settings.borderColor || '#334155' }}>
                             <span>Total</span>
-                            <span>R$ {total.toFixed(2)}</span>
+                            <span>{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
                         </div>
                 </div>
 

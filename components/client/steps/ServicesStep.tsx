@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Service } from '../../../types';
 import { ArrowLeft, Check, Clock, Scissors } from 'lucide-react';
 import { StickyFooter } from '../StickyFooter';
@@ -12,128 +12,148 @@ interface ServicesStepProps {
     total: number;
 }
 
+const formatCurrency = (value: number) =>
+    value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
 export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedServiceIds, setSelectedServiceIds, setStep, settings, total }) => {
-    
+    const accent = settings.accentColor || settings.primaryColor || '#f97316';
+    const cardBg = settings.cardBackgroundColor || 'rgba(30, 41, 59, 0.4)';
+    const border = settings.borderColor || '#334155';
+    const textColor = settings.textColor || '#94a3b8';
+    const titleColor = settings.titleColor || '#ffffff';
+
+    const [activeCategory, setActiveCategory] = useState<string>('Todos');
+
     const toggleService = (id: string) => {
-        if (selectedServiceIds.includes(id)) {
-            setSelectedServiceIds(prev => prev.filter(i => i !== id));
-        } else {
-            setSelectedServiceIds(prev => [...prev, id]);
-        }
+        setSelectedServiceIds(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        );
     };
 
-    const groupedServices = useMemo(() => {
-        return services.reduce((acc, service) => {
-            const cat = service.category || 'Geral';
-            if (!acc[cat]) acc[cat] = [];
-            acc[cat].push(service);
-            return acc;
-        }, {} as Record<string, typeof services>);
+    const categories = useMemo(() => {
+        const cats = Array.from(new Set(services.map(s => s.category || 'Geral'))).sort();
+        return ['Todos', ...cats];
     }, [services]);
 
-    const sortedCategories = Object.keys(groupedServices).sort();
+    const displayedServices = useMemo(() => {
+        if (activeCategory === 'Todos') return services;
+        return services.filter(s => (s.category || 'Geral') === activeCategory);
+    }, [services, activeCategory]);
 
     return (
         <div className="max-w-2xl mx-auto py-8 px-4 pb-32">
+            {/* Voltar */}
             <div className="mb-6">
-                <button 
-                    onClick={() => setStep('home')} 
+                <button
+                    onClick={() => setStep('home')}
                     className="group flex items-center gap-2 transition-colors"
-                    style={{ color: settings.textColor || '#94a3b8' }}
+                    style={{ color: textColor }}
                 >
-                    <div className="p-2 rounded-full transition-colors" style={{ backgroundColor: settings.cardBackgroundColor || '#1e293b' }}>
-                        <ArrowLeft size={18}/> 
+                    <div className="p-2 rounded-full transition-colors" style={{ backgroundColor: cardBg }}>
+                        <ArrowLeft size={18} />
                     </div>
                     <span className="font-medium">Voltar ao início</span>
                 </button>
             </div>
-            
-            <h2 className="text-3xl font-bold mb-2" style={{ color: settings.titleColor || '#ffffff' }}>Escolha seus serviços</h2>
-            <p className="mb-8" style={{ color: settings.textColor || '#94a3b8' }}>Selecione um ou mais serviços desejados</p>
 
-            <div className="space-y-8">
-                {sortedCategories.map(category => (
-                    <div key={category}>
-                        <h3 className="text-lg font-bold mb-3 border-b pb-2" style={{ color: settings.titleColor || '#ffffff', borderColor: settings.borderColor || '#334155' }}>
-                            {category}
-                        </h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {groupedServices[category].map(service => {
-                                const isSelected = selectedServiceIds.includes(service.id);
-                                return (
-                                    <div 
-                                        key={service.id} 
-                                        onClick={() => toggleService(service.id)}
-                                        className={`rounded-[2rem] border flex flex-col overflow-hidden group transition-all shadow-xl cursor-pointer relative ${
-                                            isSelected ? 'ring-2' : 'hover:brightness-110'
-                                        }`}
-                                        style={{ 
-                                            backgroundColor: settings.cardBackgroundColor || 'rgba(30, 41, 59, 0.4)', 
-                                            borderColor: isSelected ? (settings.accentColor || settings.primaryColor) : (settings.borderColor || '#334155'),
-                                            '--tw-ring-color': isSelected ? `${settings.accentColor || settings.primaryColor}33` : 'transparent'
-                                        } as any}
-                                    >
-                                        {/* Imagem do Serviço */}
-                                        <div className="h-40 w-full relative overflow-hidden">
-                                            {service.imageUrl ? (
-                                                <img 
-                                                    src={service.imageUrl} 
-                                                    alt={service.name} 
-                                                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                                    referrerPolicy="no-referrer"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: settings.inputBackgroundColor || '#0f172a' }}>
-                                                    <Scissors size={40} style={{ color: settings.borderColor || '#334155' }} />
-                                                </div>
-                                            )}
-                                            {/* Badge de Duração */}
-                                            <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-white/10" style={{ color: settings.accentColor || settings.primaryColor }}>
-                                                <Clock size={12}/>
-                                                {service.duration} min
-                                            </div>
-                                            {/* Checkbox Overlay */}
-                                            {isSelected && (
-                                                <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: `${settings.accentColor || settings.primaryColor}1a` }}>
-                                                    <div className="text-white rounded-full p-2 shadow-lg" style={{ backgroundColor: settings.accentColor || settings.primaryColor }}>
-                                                        <Check size={24} strokeWidth={3} />
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
+            <h2 className="text-3xl font-bold mb-1" style={{ color: titleColor }}>Escolha seus serviços</h2>
+            <p className="mb-6" style={{ color: textColor }}>Selecione um ou mais serviços desejados</p>
 
-                                        {/* Conteúdo */}
-                                        <div className="p-5 flex flex-col flex-1">
-                                            <h3 className="font-bold text-base leading-tight mb-1" style={{ color: settings.titleColor || '#ffffff' }}>{service.name}</h3>
-                                            <p className="text-[10px] line-clamp-2 mb-4 min-h-[1.5rem] leading-relaxed" style={{ color: settings.textColor || '#94a3b8' }}>{service.description}</p>
-
-                                            <div className="mt-auto flex items-center justify-between">
-                                                <p className="text-xl font-bold" style={{ color: settings.accentColor || settings.primaryColor }}>
-                                                    R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                                                </p>
-                                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                                    isSelected ? '' : ''
-                                                }`} style={{ 
-                                                    backgroundColor: isSelected ? (settings.accentColor || settings.primaryColor) : 'transparent', 
-                                                    borderColor: isSelected ? (settings.accentColor || settings.primaryColor) : (settings.borderColor || '#334155') 
-                                                }}>
-                                                    {isSelected && <Check size={14} style={{ color: settings.buttonTextColor || '#ffffff' }} strokeWidth={3} />}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-                ))}
+            {/* Filtros de Categoria */}
+            <div className="flex gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar">
+                {categories.map(cat => {
+                    const isActive = activeCategory === cat;
+                    return (
+                        <button
+                            key={cat}
+                            onClick={() => setActiveCategory(cat)}
+                            className="shrink-0 px-4 py-2 rounded-full text-sm font-bold border transition-all"
+                            style={{
+                                backgroundColor: isActive ? accent : cardBg,
+                                borderColor: isActive ? accent : border,
+                                color: isActive ? '#fff' : textColor,
+                            }}
+                        >
+                            {cat}
+                        </button>
+                    );
+                })}
             </div>
 
-            <StickyFooter 
-                total={total} 
-                onContinue={() => setStep('professional')} 
-                disabled={selectedServiceIds.length === 0} 
-                settings={settings} 
+            {/* Grid de Serviços */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {displayedServices.map(service => {
+                    const isSelected = selectedServiceIds.includes(service.id);
+                    return (
+                        <div
+                            key={service.id}
+                            onClick={() => toggleService(service.id)}
+                            className={`rounded-[2rem] border flex flex-col overflow-hidden group transition-all shadow-xl cursor-pointer relative ${isSelected ? 'ring-2' : 'hover:brightness-110'}`}
+                            style={{
+                                backgroundColor: cardBg,
+                                borderColor: isSelected ? accent : border,
+                                ['--tw-ring-color' as any]: isSelected ? `${accent}33` : 'transparent',
+                            }}
+                        >
+                            {/* Imagem */}
+                            <div className="h-40 w-full relative overflow-hidden">
+                                {service.imageUrl ? (
+                                    <img
+                                        src={service.imageUrl}
+                                        alt={service.name}
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        referrerPolicy="no-referrer"
+                                    />
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center" style={{ backgroundColor: settings.inputBackgroundColor || '#0f172a' }}>
+                                        <Scissors size={40} style={{ color: border }} />
+                                    </div>
+                                )}
+                                {/* Badge Duração */}
+                                <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1.5 border border-white/10" style={{ color: accent }}>
+                                    <Clock size={12} />
+                                    {service.duration} min
+                                </div>
+                                {/* Overlay selecionado */}
+                                {isSelected && (
+                                    <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: `${accent}1a` }}>
+                                        <div className="text-white rounded-full p-2 shadow-lg" style={{ backgroundColor: accent }}>
+                                            <Check size={24} strokeWidth={3} />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Conteúdo */}
+                            <div className="p-5 flex flex-col flex-1">
+                                <h3 className="font-bold text-base leading-tight mb-1" style={{ color: titleColor }}>{service.name}</h3>
+                                <p className="text-[10px] line-clamp-2 mb-4 min-h-[1.5rem] leading-relaxed" style={{ color: textColor }}>{service.description}</p>
+
+                                <div className="mt-auto flex items-center justify-between">
+                                    <p className="text-xl font-bold" style={{ color: accent }}>
+                                        {formatCurrency(service.price)}
+                                    </p>
+                                    <div
+                                        className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
+                                        style={{
+                                            backgroundColor: isSelected ? accent : 'transparent',
+                                            borderColor: isSelected ? accent : border,
+                                        }}
+                                    >
+                                        {isSelected && <Check size={14} style={{ color: settings.buttonTextColor || '#ffffff' }} strokeWidth={3} />}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <StickyFooter
+                total={total}
+                onContinue={() => setStep('professional')}
+                disabled={selectedServiceIds.length === 0}
+                settings={settings}
             />
         </div>
     );
