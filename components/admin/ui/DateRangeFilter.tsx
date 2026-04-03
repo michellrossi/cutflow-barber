@@ -10,7 +10,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
     const { settings } = useShop();
     const primaryColor = settings?.primaryColor || '#F59E0B'; // Padrao laranja cutflow7
     const [isOpen, setIsOpen] = useState(false);
-    const borderRadius = '8px'; // ou o valor que você preferir para o arredondamento
+    const borderRadius = '8px';
 
     const [startDate, setStartDate] = useState<Date | null>(null);
     const [endDate, setEndDate] = useState<Date | null>(null);
@@ -72,19 +72,6 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
         return days;
     };
 
-    const isSameDay = (d1: Date, d2: Date) =>
-        d1.getFullYear() === d2.getFullYear() &&
-        d1.getMonth() === d2.getMonth() &&
-        d1.getDate() === d2.getDate();
-
-    const isBetween = (date: Date) => {
-        if (!startDate || !endDate) return false;
-        const d = new Date(date).setHours(0, 0, 0, 0);
-        const s = new Date(startDate).setHours(0, 0, 0, 0);
-        const e = new Date(endDate).setHours(0, 0, 0, 0);
-        return d > s && d < e;
-    };
-
     const handleDayClick = (date: Date) => {
         // Se já tiver startDate e endDate, reseta a seleção
         if (startDate && endDate) {
@@ -109,6 +96,8 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
             onFilterChange(`${ev}|${sv}`);
         }
     };
+
+    const weekDays = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
     return (
         <div className="relative" ref={containerRef}>
@@ -168,6 +157,15 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                         </button>
                     </div>
 
+                    {/* Header dos Dias da Semana para organizar visualmente */}
+                    <div className="grid grid-cols-7 mb-2 text-center">
+                        {weekDays.map((day, i) => (
+                            <div key={i} className="text-xs font-bold text-slate-400">
+                                {day}
+                            </div>
+                        ))}
+                    </div>
+
                     {/* Grade de Dias */}
                     <div className="grid grid-cols-7 gap-y-1 text-center">
                         {generateCalendar().map((dayObj, i) => {
@@ -176,19 +174,24 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                                 (endDate && dayObj.date.toDateString() === endDate.toDateString());
                             const isInBet = startDate && endDate && dayObj.date > startDate && dayObj.date < endDate;
 
-                            // Lógica de cores conforme sua solicitação
                             let bgColor = 'transparent';
-                            let textColor = '#6B7280'; // Cinza para dias comuns
+                            let textColor = '#64748B'; // Cinza para dias não selecionados
+                            let isHoverable = false;
 
-                            if (isSelect) {
-                                bgColor = primaryColor; // Laranja sólido
-                                textColor = '#FFFFFF'; // Texto branco
+                            // Lógica de cores limpa
+                            if (!dayObj.isCurrentMonth) {
+                                textColor = '#CBD5E1'; // Cinza bem apagado para dias de fora do mês
+                            } else if (isSelect) {
+                                bgColor = primaryColor; // Laranja sólido para início e fim
+                                textColor = '#FFFFFF';
                             } else if (isToday) {
-                                bgColor = `${primaryColor}20`; // Laranja suave (20%)
-                                textColor = primaryColor;    // Texto laranja
-                            } else if (isInBet) {
-                                bgColor = `${primaryColor}10`; // Fundo muito suave para o intervalo
+                                bgColor = `${primaryColor}20`; // Laranja suave para o dia de hoje
                                 textColor = primaryColor;
+                            } else if (isInBet) {
+                                bgColor = `${primaryColor}10`; // Fundo beeeem leve para ligar o período
+                                textColor = '#334155'; // Texto escuro
+                            } else {
+                                isHoverable = true; // Apenas dias livres ganham hover
                             }
 
                             return (
@@ -196,13 +199,12 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({ onFilterChange
                                     key={i}
                                     disabled={!dayObj.isCurrentMonth}
                                     onClick={() => handleDayClick(dayObj.date)}
-                                    className="w-full aspect-square flex items-center justify-center text-sm font-medium transition-colors relative"
+                                    className={`w-full aspect-square flex items-center justify-center text-sm font-medium transition-colors relative ${isHoverable ? 'hover:bg-slate-100' : ''}`}
                                     style={{
                                         color: textColor,
-                                        backgroundColor: bgColor,
-                                        borderRadius: borderRadius, // Agora esta variável existe!
-                                        opacity: !dayObj.isCurrentMonth ? 0.5 : 1,
-                                        cursor: !dayObj.isCurrentMonth ? 'not-allowed' : 'pointer'
+                                        backgroundColor: bgColor !== 'transparent' ? bgColor : undefined,
+                                        borderRadius: borderRadius,
+                                        cursor: !dayObj.isCurrentMonth ? 'default' : 'pointer'
                                     }}
                                 >
                                     <span className="relative z-10">{dayObj.date.getDate()}</span>

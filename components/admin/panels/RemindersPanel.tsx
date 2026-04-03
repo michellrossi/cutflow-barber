@@ -7,14 +7,14 @@ import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { useToast } from '../../ui/ToastContext';
 
 export const RemindersPanel: React.FC = () => {
-    const { 
-        messageTemplates, addMessageTemplate, updateMessageTemplate, removeMessageTemplate, 
+    const {
+        messageTemplates, addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
         messageCategories, addMessageCategory, removeMessageCategory,
         settings, professionals, services, shop,
         getWhatsAppQRCode, getWhatsAppStatus, disconnectWhatsApp
     } = useShop();
     const { showToast } = useToast();
-    
+
     const [activeTab, setActiveTab] = useState<'clients' | 'team' | 'triggers' | 'whatsapp' | 'notifications'>('clients');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<Partial<MessageTemplate> | null>(null);
@@ -146,7 +146,7 @@ export const RemindersPanel: React.FC = () => {
 
     const handleGenerateAI = async () => {
         if (!editingTemplate?.trigger) return;
-        
+
         setIsGeneratingAI(true);
         try {
             const response = await fetch('/api/ai/generate-template', {
@@ -203,15 +203,15 @@ export const RemindersPanel: React.FC = () => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900">Automação</h1>
-                    <p className="text-slate-500">Gerencie suas mensagens automáticas do WhatsApp</p>
+                    <h1 className="text-2xl font-bold text-slate-900">Gestão de Automações</h1>
+                    <p className="text-slate-500">Se conecte e gerencie suas mensagens automáticas do WhatsApp</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
                     {activeTab !== 'triggers' && (
                         <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-md border border-slate-200">
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Testar em:</span>
-                            <input 
-                                type="text" 
+                            <input
+                                type="text"
                                 placeholder="5511999999999"
                                 value={testPhone}
                                 onChange={(e) => setTestPhone(e.target.value)}
@@ -220,7 +220,7 @@ export const RemindersPanel: React.FC = () => {
                         </div>
                     )}
                     {activeTab !== 'triggers' && (
-                        <button 
+                        <button
                             onClick={() => {
                                 setEditingTemplate({ trigger: 'custom', delayUnit: 'minutes', delayValue: 0, active: true });
                                 setIsModalOpen(true);
@@ -238,55 +238,50 @@ export const RemindersPanel: React.FC = () => {
             <div className="flex flex-wrap gap-2 p-1 bg-slate-100 rounded-lg w-fit">
                 <button
                     onClick={() => setActiveTab('clients')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
-                        activeTab === 'clients' 
-                        ? 'bg-white text-orange-600 shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${activeTab === 'clients'
+                            ? 'bg-white text-orange-600 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
                 >
                     <Users size={18} />
                     Clientes
                 </button>
                 <button
                     onClick={() => setActiveTab('team')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
-                        activeTab === 'team' 
-                        ? 'bg-white text-orange-600 shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${activeTab === 'team'
+                            ? 'bg-white text-orange-600 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
                 >
                     <UserCheck size={18} />
                     Equipe
                 </button>
                 <button
                     onClick={() => setActiveTab('triggers')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
-                        activeTab === 'triggers' 
-                        ? 'bg-white text-orange-600 shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${activeTab === 'triggers'
+                            ? 'bg-white text-orange-600 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
                 >
                     <Tags size={18} />
                     Gatilhos
                 </button>
                 <button
                     onClick={() => setActiveTab('whatsapp')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
-                        activeTab === 'whatsapp' 
-                        ? 'bg-white text-orange-600 shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${activeTab === 'whatsapp'
+                            ? 'bg-white text-orange-600 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
                 >
                     <Smartphone size={18} />
                     WhatsApp
                 </button>
                 <button
                     onClick={() => setActiveTab('notifications')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
-                        activeTab === 'notifications' 
-                        ? 'bg-white text-orange-600 shadow-sm' 
-                        : 'text-slate-500 hover:text-slate-700'
-                    }`}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${activeTab === 'notifications'
+                            ? 'bg-white text-orange-600 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
                 >
                     <Bell size={18} />
                     Preferências
@@ -307,7 +302,7 @@ export const RemindersPanel: React.FC = () => {
                             </div>
                             <h4 className="text-2xl font-bold text-slate-900 mb-2">WhatsApp Conectado!</h4>
                             <p className="text-slate-500 mb-8 max-w-md mx-auto">Sua barbearia já está enviando mensagens automáticas de confirmação e lembretes.</p>
-                            <button 
+                            <button
                                 onClick={handleDisconnect}
                                 className="px-8 py-3 bg-red-50 text-red-600 border border-red-100 rounded-md font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm"
                             >
@@ -325,7 +320,7 @@ export const RemindersPanel: React.FC = () => {
                                         <p className="text-slate-900 font-bold mb-2">Escaneie o QR Code</p>
                                         <p className="text-slate-500 text-sm">Abra o WhatsApp no seu celular, vá em Aparelhos Conectados e escaneie o código acima.</p>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => setQrCode(null)}
                                         className="text-slate-400 hover:text-slate-600 text-sm font-medium underline"
                                     >
@@ -339,7 +334,7 @@ export const RemindersPanel: React.FC = () => {
                                     </div>
                                     <h4 className="text-2xl font-bold text-slate-900 mb-2">Conectar WhatsApp</h4>
                                     <p className="text-slate-500 mb-8 max-w-md mx-auto">Habilite o envio de mensagens automáticas de confirmação e lembretes para seus clientes.</p>
-                                    <button 
+                                    <button
                                         onClick={handleConnect}
                                         disabled={wsLoading}
                                         className="px-12 py-4 bg-green-600 hover:bg-green-500 text-white rounded-md font-bold shadow-lg shadow-green-100 transition-all flex items-center gap-2"
@@ -356,24 +351,24 @@ export const RemindersPanel: React.FC = () => {
                 <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-sm">
                     <h2 className="text-lg font-bold text-slate-900 mb-6">Preferências de Notificação</h2>
                     <div className="space-y-6 max-w-2xl">
-                        <NotificationToggle 
-                            title="Confirmação de Agendamento" 
-                            desc="Envia uma mensagem assim que o cliente realiza o agendamento." 
+                        <NotificationToggle
+                            title="Confirmação de Agendamento"
+                            desc="Envia uma mensagem assim que o cliente realiza o agendamento."
                             active={true}
                         />
-                        <NotificationToggle 
-                            title="Lembrete de 24 horas" 
-                            desc="Envia um lembrete automático um dia antes do horário marcado." 
+                        <NotificationToggle
+                            title="Lembrete de 24 horas"
+                            desc="Envia um lembrete automático um dia antes do horário marcado."
                             active={true}
                         />
-                        <NotificationToggle 
-                            title="Lembrete de 1 hora" 
-                            desc="Envia um lembrete final uma hora antes do atendimento." 
+                        <NotificationToggle
+                            title="Lembrete de 1 hora"
+                            desc="Envia um lembrete final uma hora antes do atendimento."
                             active={true}
                         />
-                        <NotificationToggle 
-                            title="Solicitação de Avaliação" 
-                            desc="Envia uma mensagem de agradecimento e link para avaliação após o serviço." 
+                        <NotificationToggle
+                            title="Solicitação de Avaliação"
+                            desc="Envia uma mensagem de agradecimento e link para avaliação após o serviço."
                             active={false}
                         />
                     </div>
@@ -383,14 +378,14 @@ export const RemindersPanel: React.FC = () => {
                     <div className="bg-white rounded-lg border border-slate-200 p-8 shadow-sm">
                         <h2 className="text-lg font-bold text-slate-900 mb-6">Gerenciar Gatilhos</h2>
                         <div className="flex gap-4 mb-8">
-                            <input 
+                            <input
                                 type="text"
                                 value={newCategoryName}
                                 onChange={(e) => setNewCategoryName(e.target.value)}
                                 placeholder="Nome do novo gatilho..."
                                 className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                             />
-                            <button 
+                            <button
                                 onClick={handleAddCategory}
                                 className="px-6 py-3 bg-orange-500 text-white rounded-md font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200 flex items-center gap-2"
                             >
@@ -401,12 +396,12 @@ export const RemindersPanel: React.FC = () => {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {messageCategories.map((category) => (
-                                <div 
+                                <div
                                     key={category.id}
                                     className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100 group"
                                 >
                                     <span className="font-bold text-slate-700">{category.name}</span>
-                                    <button 
+                                    <button
                                         onClick={() => removeMessageCategory(category.id)}
                                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all opacity-0 group-hover:opacity-100"
                                     >
@@ -420,7 +415,7 @@ export const RemindersPanel: React.FC = () => {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredTemplates.map((template) => (
-                        <motion.div 
+                        <motion.div
                             key={template.id}
                             layout
                             initial={{ opacity: 0, y: 20 }}
@@ -432,7 +427,7 @@ export const RemindersPanel: React.FC = () => {
                                     <MessageSquare size={24} />
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <button 
+                                    <button
                                         onClick={() => handleTest(template.id)}
                                         disabled={isTesting}
                                         className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
@@ -440,7 +435,7 @@ export const RemindersPanel: React.FC = () => {
                                     >
                                         <Copy size={18} />
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => {
                                             setEditingTemplate(template);
                                             setIsModalOpen(true);
@@ -449,7 +444,7 @@ export const RemindersPanel: React.FC = () => {
                                     >
                                         <Eye size={18} />
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => removeMessageTemplate(template.id)}
                                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                                     >
@@ -480,7 +475,7 @@ export const RemindersPanel: React.FC = () => {
                                 <span className={`text-xs font-bold px-2 py-1 rounded-md ${template.active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
                                     {template.active ? 'Ativo' : 'Inativo'}
                                 </span>
-                                <button 
+                                <button
                                     onClick={() => updateMessageTemplate(template.id, { active: !template.active })}
                                     className="text-xs font-medium text-orange-600 hover:underline"
                                 >
@@ -495,11 +490,11 @@ export const RemindersPanel: React.FC = () => {
             {/* Modal de Edição */}
             <AnimatePresence>
                 {isModalOpen && (
-                    <div 
+                    <div
                         className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
                         onClick={(e) => e.target === e.currentTarget && setIsModalOpen(false)}
                     >
-                        <motion.div 
+                        <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
@@ -520,7 +515,7 @@ export const RemindersPanel: React.FC = () => {
                                     <div className="grid grid-cols-1 gap-4">
                                         <div>
                                             <label className="block text-sm font-bold text-slate-700 mb-2">Título do Modelo</label>
-                                            <input 
+                                            <input
                                                 type="text"
                                                 value={editingTemplate?.title || ''}
                                                 onChange={(e) => setEditingTemplate(prev => ({ ...prev, title: e.target.value }))}
@@ -533,7 +528,7 @@ export const RemindersPanel: React.FC = () => {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-sm font-bold text-slate-700 mb-2">Gatilho</label>
-                                            <select 
+                                            <select
                                                 value={editingTemplate?.trigger || 'custom'}
                                                 onChange={(e) => setEditingTemplate(prev => ({ ...prev, trigger: e.target.value as any }))}
                                                 className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
@@ -548,13 +543,13 @@ export const RemindersPanel: React.FC = () => {
                                         <div>
                                             <label className="block text-sm font-bold text-slate-700 mb-2">Tempo de Envio</label>
                                             <div className="flex gap-2">
-                                                <input 
+                                                <input
                                                     type="number"
                                                     value={editingTemplate?.delayValue || 0}
                                                     onChange={(e) => setEditingTemplate(prev => ({ ...prev, delayValue: parseInt(e.target.value) }))}
                                                     className="w-20 px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
                                                 />
-                                                <select 
+                                                <select
                                                     value={editingTemplate?.delayUnit || 'minutes'}
                                                     onChange={(e) => setEditingTemplate(prev => ({ ...prev, delayUnit: e.target.value as any }))}
                                                     className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
@@ -571,14 +566,14 @@ export const RemindersPanel: React.FC = () => {
                                         <div className="flex justify-between items-end mb-2">
                                             <label className="block text-sm font-bold text-slate-700">Conteúdo da Mensagem</label>
                                             <div className="flex gap-2">
-                                                <button 
+                                                <button
                                                     onClick={() => setShowEmojiPicker(!showEmojiPicker)}
                                                     className="flex items-center gap-1.5 text-[10px] font-bold text-slate-600 hover:text-slate-700 bg-slate-50 hover:bg-slate-100 px-2 py-1 rounded-md border border-slate-200 transition-all"
                                                 >
                                                     <Smile size={12} />
                                                     EMOJIS
                                                 </button>
-                                                <button 
+                                                <button
                                                     onClick={handleGenerateAI}
                                                     disabled={isGeneratingAI}
                                                     className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 hover:text-orange-700 bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded-md border border-orange-200 transition-all disabled:opacity-50"
@@ -593,7 +588,7 @@ export const RemindersPanel: React.FC = () => {
                                             <div className="absolute z-[60] mt-2">
                                                 <div className="fixed inset-0" onClick={() => setShowEmojiPicker(false)} />
                                                 <div className="relative">
-                                                    <EmojiPicker 
+                                                    <EmojiPicker
                                                         onEmojiClick={onEmojiClick}
                                                         theme={Theme.LIGHT}
                                                         width={300}
@@ -605,7 +600,7 @@ export const RemindersPanel: React.FC = () => {
 
                                         <div className="flex flex-wrap gap-2 mb-3">
                                             {variables.map(v => (
-                                                <button 
+                                                <button
                                                     key={v.value}
                                                     onClick={() => {
                                                         const content = editingTemplate?.content || '';
@@ -617,7 +612,7 @@ export const RemindersPanel: React.FC = () => {
                                                 </button>
                                             ))}
                                         </div>
-                                        <textarea 
+                                        <textarea
                                             value={editingTemplate?.content || ''}
                                             onChange={(e) => setEditingTemplate(prev => ({ ...prev, content: e.target.value }))}
                                             rows={6}
@@ -631,13 +626,13 @@ export const RemindersPanel: React.FC = () => {
                                     </div>
 
                                     <div className="flex gap-4 pt-4">
-                                        <button 
+                                        <button
                                             onClick={() => setIsModalOpen(false)}
                                             className="flex-1 px-6 py-3 bg-slate-100 text-slate-700 rounded-md font-bold hover:bg-slate-200 transition-all"
                                         >
                                             Cancelar
                                         </button>
-                                        <button 
+                                        <button
                                             onClick={handleSave}
                                             className="flex-1 px-6 py-3 bg-orange-500 text-white rounded-md font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200 flex items-center justify-center gap-2"
                                         >
@@ -702,7 +697,7 @@ const NotificationToggle: React.FC<{ title: string, desc: string, active: boolea
                 <h4 className="text-slate-900 font-bold text-sm mb-1">{title}</h4>
                 <p className="text-xs text-slate-500">{desc}</p>
             </div>
-            <button 
+            <button
                 onClick={() => setIsEnabled(!isEnabled)}
                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isEnabled ? 'bg-orange-500' : 'bg-slate-300'}`}
             >
