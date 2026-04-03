@@ -3,6 +3,7 @@ import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import { createClient } from '@supabase/supabase-js';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
@@ -351,6 +352,17 @@ async function startServer() {
     const app = express();
     app.use(cors());
     app.use(express.json());
+
+    // Rate Limiting: proteção contra abuso nos endpoints de notificação e fidelidade
+    const notifyLimiter = rateLimit({
+        windowMs: 60_000, // 1 minuto
+        max: 10,          // máximo 10 requisições por IP por minuto
+        standardHeaders: true,
+        legacyHeaders: false,
+        message: { error: 'Muitas requisições. Aguarde 1 minuto.' }
+    });
+    app.use('/api/notify/', notifyLimiter);
+    app.use('/api/loyalty/', notifyLimiter);
 
     app.get('/api/health', (req, res) => {
         res.json({ status: 'ok' });

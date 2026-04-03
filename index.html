@@ -1,19 +1,20 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- SEGURANÇA: Headers de Segurança Simulados via Meta Tags -->
-    
-    <!-- 1. Content Security Policy (CSP) 
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- SEGURANÇA: Headers de Segurança Simulados via Meta Tags -->
+
+  <!-- 1. Content Security Policy (CSP) 
          Define quais recursos o navegador pode carregar.
          - script-src: Permite scripts do próprio domínio, esm.sh (libs), cdn.tailwindcss.com e inline.
          - connect-src: Permite conexões XHR (https) e WebSocket (wss) para o Supabase e esm.sh.
          - style-src: Permite estilos inline e Google Fonts.
          - img-src: Permite imagens de qualquer lugar e data URIs.
     -->
-    <meta http-equiv="Content-Security-Policy" content="
+  <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
       script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://esm.sh;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
@@ -24,272 +25,482 @@
       base-uri 'self';
     ">
 
-    <!-- 2. Prevenção de MIME Sniffing -->
-    <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    
-    <!-- 3. Política de Referrer (Privacidade) -->
-    <meta name="referrer" content="strict-origin-when-cross-origin">
+  <!-- 2. Prevenção de MIME Sniffing -->
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
 
-    <title>CutFlow - Agendamento</title>
-    
-    <!-- Fonte Plus Jakarta Sans -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- 3. Política de Referrer (Privacidade) -->
+  <meta name="referrer" content="strict-origin-when-cross-origin">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+  <title>Insight Barber- Agendamento</title>
+
+  <!-- Fonte Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            primary: '#f77f30', // Warmer orange
+            secondary: '#c55f18', // Sienna
+          },
+          boxShadow: {
+            'card-light': '0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02)',
+            'button-primary': '0 4px 12px rgba(247, 127, 48, 0.3)',
+          },
+          animation: {
+            'fade-in': 'fadeIn 0.3s ease-out forwards',
+            'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'slide-in-right': 'slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'float': 'float 6s ease-in-out infinite',
+            'float-delayed': 'float 6s ease-in-out 3s infinite',
+            'pulse-glow': 'pulseGlow 5s ease-in-out infinite',
+            'scale-in': 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'scale-up': 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+          },
+          keyframes: {
+            fadeIn: {
+              '0%': { opacity: '0' },
+              '100%': { opacity: '1' },
             },
-            colors: {
-              primary: '#f77f30', // Warmer orange
-              secondary: '#c55f18', // Sienna
+            slideUp: {
+              '0%': { opacity: '0', transform: 'translateY(40px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' },
             },
-            boxShadow: {
-              'card-light': '0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02)',
-              'button-primary': '0 4px 12px rgba(247, 127, 48, 0.3)',
+            slideInRight: {
+              '0%': { opacity: '0', transform: 'translateX(60px)' },
+              '100%': { opacity: '1', transform: 'translateX(0)' },
             },
-            animation: {
-              'fade-in': 'fadeIn 0.3s ease-out forwards',
-              'slide-up': 'slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              'slide-in-right': 'slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              'float': 'float 6s ease-in-out infinite',
-              'float-delayed': 'float 6s ease-in-out 3s infinite',
-              'pulse-glow': 'pulseGlow 5s ease-in-out infinite',
-              'scale-in': 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-              'scale-up': 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            float: {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-20px)' },
             },
-            keyframes: {
-              fadeIn: {
-                '0%': { opacity: '0' },
-                '100%': { opacity: '1' },
-              },
-              slideUp: {
-                '0%': { opacity: '0', transform: 'translateY(40px)' },
-                '100%': { opacity: '1', transform: 'translateY(0)' },
-              },
-              slideInRight: {
-                '0%': { opacity: '0', transform: 'translateX(60px)' },
-                '100%': { opacity: '1', transform: 'translateX(0)' },
-              },
-              float: {
-                '0%, 100%': { transform: 'translateY(0)' },
-                '50%': { transform: 'translateY(-20px)' },
-              },
-              pulseGlow: {
-                '0%, 100%': { opacity: '0.6', transform: 'scale(1)' },
-                '50%': { opacity: '0.8', transform: 'scale(1.05)' },
-              },
-              scaleIn: {
-                '0%': { opacity: '0', transform: 'scale(0.9)' },
-                '100%': { opacity: '1', transform: 'scale(1)' },
-              }
+            pulseGlow: {
+              '0%, 100%': { opacity: '0.6', transform: 'scale(1)' },
+              '50%': { opacity: '0.8', transform: 'scale(1.05)' },
+            },
+            scaleIn: {
+              '0%': { opacity: '0', transform: 'scale(0.9)' },
+              '100%': { opacity: '1', transform: 'scale(1)' },
             }
           }
         }
       }
-    </script>
-    <style>
-      :root {
-        --bg-color: #f8fafc; /* Slate 50 */
-        --text-color: #0f172a; /* Slate 900 */
-        --card-bg: #ffffff;
-        --border-color: #e2e8f0; /* Slate 200 */
-        --muted-text: #475569; /* Slate 600 */
-      }
+    }
+  </script>
+  <style>
+    :root {
+      --bg-color: #f8fafc;
+      /* Slate 50 */
+      --text-color: #0f172a;
+      /* Slate 900 */
+      --card-bg: #ffffff;
+      --border-color: #e2e8f0;
+      /* Slate 200 */
+      --muted-text: #475569;
+      /* Slate 600 */
+    }
 
-      body {
-        background-color: var(--bg-color);
-        color: var(--text-color);
-        transition: background-color 0.3s ease, color 0.3s ease;
-      }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
 
-      /* Overrides para Tailwind no modo claro */
-      .bg-slate-900 { background-color: var(--bg-color) !important; }
-      .bg-slate-950 { background-color: #ffffff !important; }
-      div.bg-slate-800, div.bg-slate-800\/50 { 
-        background-color: #ffffff !important; 
-        box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02) !important;
-        border-color: #e2e8f0 !important;
-        border-radius: 1rem !important; /* rounded-2xl */
-      }
-      button.bg-slate-800 {
-        background-color: #ffffff !important;
-        border-color: #e2e8f0 !important;
-      }
-      .bg-slate-900\/50 { background-color: rgba(248, 250, 252, 0.5) !important; }
-      .bg-slate-900\/80 { background-color: rgba(255, 255, 255, 0.8) !important; }
-      .bg-slate-900\/20 { background-color: rgba(248, 250, 252, 0.2) !important; }
-      .bg-slate-900\/30 { background-color: rgba(248, 250, 252, 0.3) !important; }
-      .bg-slate-800\/20 { background-color: rgba(248, 250, 252, 0.5) !important; }
-      .bg-slate-800\/40 { background-color: rgba(248, 250, 252, 0.7) !important; }
-      .bg-slate-800\/50 { background-color: rgba(248, 250, 252, 0.8) !important; }
-      .bg-slate-800\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
-      .border-slate-800 { border-color: #e2e8f0; }
-      .border-slate-700 { border-color: #e2e8f0; }
-      .border-slate-700\/30 { border-color: rgba(226, 232, 240, 0.3) !important; }
-      .border-slate-700\/50 { border-color: rgba(226, 232, 240, 0.5) !important; }
-      .text-slate-100 { color: #0f172a !important; }
-      .text-slate-200 { color: #1e293b !important; }
-      .text-slate-300 { color: #334155 !important; }
-      .text-slate-400 { color: #6b7d99 !important; }
-      .text-slate-500 { color: #475569 !important; }
-      .text-slate-600 { color: #334155 !important; }
-      .text-white { color: #0f172a !important; }
-      .hover\:text-white:hover { color: #0f172a !important; }
-      .hover\:bg-slate-800:hover { background-color: #f1f5f9 !important; }
-      .hover\:bg-slate-700:hover { background-color: #f1f5f9 !important; }
-      .bg-black\/80 { background-color: rgba(255, 255, 255, 0.9) !important; }
-      .bg-black\/70 { background-color: rgba(255, 255, 255, 0.8) !important; }
-      .bg-black\/60 { background-color: rgba(255, 255, 255, 0.7) !important; }
-      .backdrop-blur-sm { backdrop-filter: blur(8px) !important; background-color: rgba(255, 255, 255, 0.5) !important; }
-      .backdrop-blur-md { backdrop-filter: blur(12px) !important; background-color: rgba(255, 255, 255, 0.6) !important; }
-      
-      /* Specific calendar fixes for light mode */
-      .calendar-grid-header { background-color: #f8fafc !important; border-bottom: 1px solid #e2e8f0 !important; }
-      .calendar-time-column { background-color: #ffffff !important; border-right: 1px solid #e2e8f0 !important; }
-      .calendar-cell-today { background-color: rgba(249, 115, 22, 0.03) !important; }
-      /* Calendar Specifics */
-      .calendar-header { background-color: #ffffff !important; border-bottom: 1px solid #e2e8f0 !important; }
-      .calendar-time-column { background-color: #f8fafc !important; border-right: 1px solid #e2e8f0 !important; }
-      .calendar-grid-line { border-color: #f1f5f9 !important; }
-      .calendar-day-column { border-right: 1px solid #f1f5f9 !important; }
-      .calendar-current-time-line { background-color: #ef4444 !important; }
-      
-      .calendar-appointment { 
-        background-color: #ffffff !important; 
-        box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -1px rgba(15, 23, 42, 0.02) !important;
-        border-width: 1px !important;
-        border-style: solid !important;
-        border-color: #e2e8f0;
-        border-left-width: 4px !important;
-        border-radius: 0.5rem !important;
-      }
-      .calendar-appointment[style*="border-left-color"] {
-        border-left-color: inherit !important;
-      }
-      
-      .appointment-list-item {
-        border-left-width: 4px !important;
-        border-left-style: solid !important;
-      }
-      .appointment-list-item[style*="border-left-color"] {
-        border-left-color: inherit !important;
-      }
-      .calendar-appointment p { color: #0f172a !important; }
-      .calendar-appointment span { color: #475569 !important; }
-      
-      /* Input e Textarea no modo claro */
-      input, textarea, select {
-        background-color: #f1f5f9 !important; /* Slate 100 */
-        color: #0f172a !important;
-        border-color: #e2e8f0 !important;
-        border-radius: 0.5rem !important;
-      }
-      input:focus, textarea:focus, select:focus {
-        border-color: #f97316 !important; /* Primary focus */
-        background-color: #ffffff !important;
-      }
-      input::placeholder { color: #94a3b8 !important; }
+    /* Overrides para Tailwind no modo claro */
+    .bg-slate-900 {
+      background-color: var(--bg-color) !important;
+    }
 
-      /* Botões e Navegação no modo claro */
-      button.bg-primary, button[style*="background-color"]:not(.color-picker-btn) {
-        border-radius: 12px !important;
-        box-shadow: 0 4px 12px rgba(247, 127, 48, 0.3) !important;
-        background: linear-gradient(to bottom right, #f77f30, #ea580c) !important;
-        color: #ffffff !important;
-        border: none !important;
-      }
+    .bg-slate-950 {
+      background-color: #ffffff !important;
+    }
 
-      button.bg-primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(247, 127, 48, 0.4) !important;
-      }
+    div.bg-slate-800,
+    div.bg-slate-800\/50 {
+      background-color: #ffffff !important;
+      box-shadow: 0 10px 15px -3px rgba(15, 23, 42, 0.05), 0 4px 6px -2px rgba(15, 23, 42, 0.02) !important;
+      border-color: #e2e8f0 !important;
+      border-radius: 1rem !important;
+      /* rounded-2xl */
+    }
 
-      /* Secondary buttons as neutral surfaces */
-      button.bg-slate-800, button.border-orange-500\/30 {
-        background-color: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        color: #475569 !important;
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-        border-radius: 12px !important;
-      }
+    button.bg-slate-800 {
+      background-color: #ffffff !important;
+      border-color: #e2e8f0 !important;
+    }
 
-      button.bg-slate-800:hover, button.border-orange-500\/30:hover {
-        background-color: #f8fafc !important;
-        color: #0f172a !important;
-      }
-      
-      .admin-sidebar {
-        background-color: #ffffff !important;
-        border-right: 1px solid #e2e8f0 !important;
-        box-shadow: none !important;
-      }
+    .bg-slate-900\/50 {
+      background-color: rgba(248, 250, 252, 0.5) !important;
+    }
 
-      /* Status Badges in Light Mode */
-      .bg-blue-400\/10 { background-color: #eff6ff !important; border-color: #dbeafe !important; color: #1e40af !important; }
-      .bg-orange-400\/10 { background-color: #fff7ed !important; border-color: #ffedd5 !important; color: #9a3412 !important; }
-      .bg-green-400\/10 { background-color: #f0fdfa !important; border-color: #ccfbf1 !important; color: #1a8a6c !important; }
-      .bg-red-400\/10 { background-color: #fef2f2 !important; border-color: #fee2e2 !important; color: #991b1b !important; }
-      .bg-slate-400\/10 { background-color: #f1f5f9 !important; border-color: #e2e8f0 !important; color: #6b7d99 !important; }
-      
-      .text-blue-400 { color: #1e40af !important; }
-      .text-orange-400 { color: #c55f18 !important; }
-      .text-green-400 { color: #1a8a6c !important; }
-      .text-red-400 { color: #991b1b !important; }
-      .text-slate-400 { color: #6b7d99 !important; }
+    .bg-slate-900\/80 {
+      background-color: rgba(255, 255, 255, 0.8) !important;
+    }
 
-      /* Alerts and Info boxes */
-      .bg-blue-500\/10 { background-color: #eff6ff !important; border: 1px solid #dbeafe !important; }
-      .bg-blue-500\/10 p, .bg-blue-500\/10 span { color: #1e40af !important; }
-      .bg-orange-500\/10 { background-color: #fff7ed !important; border: 1px solid #ffedd5 !important; }
-      .bg-orange-500\/10 p, .bg-orange-500\/10 span { color: #9a3412 !important; }
-      
-      /* Active states in button groups */
-      .bg-slate-700.text-white { background-color: #0f172a !important; color: #ffffff !important; }
+    .bg-slate-900\/20 {
+      background-color: rgba(248, 250, 252, 0.2) !important;
+    }
 
-      .color-picker-btn {
-        background-image: none !important;
-        box-shadow: none !important;
-        border-radius: 9999px !important;
-      }
+    .bg-slate-900\/30 {
+      background-color: rgba(248, 250, 252, 0.3) !important;
+    }
 
-      /* Utility Classes */
-      .no-scrollbar::-webkit-scrollbar { display: none; }
-      .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      
-      .mask-fade-right {
-        mask-image: linear-gradient(to right, black 85%, transparent 100%);
-        -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
-      }
+    .bg-slate-800\/20 {
+      background-color: rgba(248, 250, 252, 0.5) !important;
+    }
 
-      /* Custom scrollbar */
-      ::-webkit-scrollbar {
-        width: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: var(--bg-color); 
-      }
-      ::-webkit-scrollbar-thumb {
-        background: var(--border-color); 
-        border-radius: 4px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: var(--muted-text);
-      }
-      
-      /* Grid Texture Pattern */
-      .bg-grid-pattern {
-        background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 17v6M17 20h6' stroke='%23475569' stroke-width='1.5' stroke-opacity='0.15' fill='none' stroke-linecap='square'/%3E%3C/svg%3E");
-        background-size: 40px 40px;
-      }
-    </style>
+    .bg-slate-800\/40 {
+      background-color: rgba(248, 250, 252, 0.7) !important;
+    }
 
-<script type="importmap">
+    .bg-slate-800\/50 {
+      background-color: rgba(248, 250, 252, 0.8) !important;
+    }
+
+    .bg-slate-800\/80 {
+      background-color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .border-slate-800 {
+      border-color: #e2e8f0;
+    }
+
+    .border-slate-700 {
+      border-color: #e2e8f0;
+    }
+
+    .border-slate-700\/30 {
+      border-color: rgba(226, 232, 240, 0.3) !important;
+    }
+
+    .border-slate-700\/50 {
+      border-color: rgba(226, 232, 240, 0.5) !important;
+    }
+
+    .text-slate-100 {
+      color: #0f172a !important;
+    }
+
+    .text-slate-200 {
+      color: #1e293b !important;
+    }
+
+    .text-slate-300 {
+      color: #334155 !important;
+    }
+
+    .text-slate-400 {
+      color: #6b7d99 !important;
+    }
+
+    .text-slate-500 {
+      color: #475569 !important;
+    }
+
+    .text-slate-600 {
+      color: #334155 !important;
+    }
+
+    .text-white {
+      color: #0f172a !important;
+    }
+
+    .hover\:text-white:hover {
+      color: #0f172a !important;
+    }
+
+    .hover\:bg-slate-800:hover {
+      background-color: #f1f5f9 !important;
+    }
+
+    .hover\:bg-slate-700:hover {
+      background-color: #f1f5f9 !important;
+    }
+
+    .bg-black\/80 {
+      background-color: rgba(255, 255, 255, 0.9) !important;
+    }
+
+    .bg-black\/70 {
+      background-color: rgba(255, 255, 255, 0.8) !important;
+    }
+
+    .bg-black\/60 {
+      background-color: rgba(255, 255, 255, 0.7) !important;
+    }
+
+    .backdrop-blur-sm {
+      backdrop-filter: blur(8px) !important;
+      background-color: rgba(255, 255, 255, 0.5) !important;
+    }
+
+    .backdrop-blur-md {
+      backdrop-filter: blur(12px) !important;
+      background-color: rgba(255, 255, 255, 0.6) !important;
+    }
+
+    /* Specific calendar fixes for light mode */
+    .calendar-grid-header {
+      background-color: #f8fafc !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+
+    .calendar-time-column {
+      background-color: #ffffff !important;
+      border-right: 1px solid #e2e8f0 !important;
+    }
+
+    .calendar-cell-today {
+      background-color: rgba(249, 115, 22, 0.03) !important;
+    }
+
+    /* Calendar Specifics */
+    .calendar-header {
+      background-color: #ffffff !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+
+    .calendar-time-column {
+      background-color: #f8fafc !important;
+      border-right: 1px solid #e2e8f0 !important;
+    }
+
+    .calendar-grid-line {
+      border-color: #f1f5f9 !important;
+    }
+
+    .calendar-day-column {
+      border-right: 1px solid #f1f5f9 !important;
+    }
+
+    .calendar-current-time-line {
+      background-color: #ef4444 !important;
+    }
+
+    .calendar-appointment {
+      background-color: #ffffff !important;
+      box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -1px rgba(15, 23, 42, 0.02) !important;
+      border-width: 1px !important;
+      border-style: solid !important;
+      border-color: #e2e8f0;
+      border-left-width: 4px !important;
+      border-radius: 0.5rem !important;
+    }
+
+    .calendar-appointment[style*="border-left-color"] {
+      border-left-color: inherit !important;
+    }
+
+    .appointment-list-item {
+      border-left-width: 4px !important;
+      border-left-style: solid !important;
+    }
+
+    .appointment-list-item[style*="border-left-color"] {
+      border-left-color: inherit !important;
+    }
+
+    .calendar-appointment p {
+      color: #0f172a !important;
+    }
+
+    .calendar-appointment span {
+      color: #475569 !important;
+    }
+
+    /* Input e Textarea no modo claro */
+    input,
+    textarea,
+    select {
+      background-color: #f1f5f9 !important;
+      /* Slate 100 */
+      color: #0f172a !important;
+      border-color: #e2e8f0 !important;
+      border-radius: 0.5rem !important;
+    }
+
+    input:focus,
+    textarea:focus,
+    select:focus {
+      border-color: #f97316 !important;
+      /* Primary focus */
+      background-color: #ffffff !important;
+    }
+
+    input::placeholder {
+      color: #94a3b8 !important;
+    }
+
+    /* Botões e Navegação no modo claro */
+    button.bg-primary,
+    button[style*="background-color"]:not(.color-picker-btn) {
+      border-radius: 12px !important;
+      box-shadow: 0 4px 12px rgba(247, 127, 48, 0.3) !important;
+      background: linear-gradient(to bottom right, #f77f30, #ea580c) !important;
+      color: #ffffff !important;
+      border: none !important;
+    }
+
+    button.bg-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(247, 127, 48, 0.4) !important;
+    }
+
+    /* Secondary buttons as neutral surfaces */
+    button.bg-slate-800,
+    button.border-orange-500\/30 {
+      background-color: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #475569 !important;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
+      border-radius: 12px !important;
+    }
+
+    button.bg-slate-800:hover,
+    button.border-orange-500\/30:hover {
+      background-color: #f8fafc !important;
+      color: #0f172a !important;
+    }
+
+    .admin-sidebar {
+      background-color: #ffffff !important;
+      border-right: 1px solid #e2e8f0 !important;
+      box-shadow: none !important;
+    }
+
+    /* Status Badges in Light Mode */
+    .bg-blue-400\/10 {
+      background-color: #eff6ff !important;
+      border-color: #dbeafe !important;
+      color: #1e40af !important;
+    }
+
+    .bg-orange-400\/10 {
+      background-color: #fff7ed !important;
+      border-color: #ffedd5 !important;
+      color: #9a3412 !important;
+    }
+
+    .bg-green-400\/10 {
+      background-color: #f0fdfa !important;
+      border-color: #ccfbf1 !important;
+      color: #1a8a6c !important;
+    }
+
+    .bg-red-400\/10 {
+      background-color: #fef2f2 !important;
+      border-color: #fee2e2 !important;
+      color: #991b1b !important;
+    }
+
+    .bg-slate-400\/10 {
+      background-color: #f1f5f9 !important;
+      border-color: #e2e8f0 !important;
+      color: #6b7d99 !important;
+    }
+
+    .text-blue-400 {
+      color: #1e40af !important;
+    }
+
+    .text-orange-400 {
+      color: #c55f18 !important;
+    }
+
+    .text-green-400 {
+      color: #1a8a6c !important;
+    }
+
+    .text-red-400 {
+      color: #991b1b !important;
+    }
+
+    .text-slate-400 {
+      color: #6b7d99 !important;
+    }
+
+    /* Alerts and Info boxes */
+    .bg-blue-500\/10 {
+      background-color: #eff6ff !important;
+      border: 1px solid #dbeafe !important;
+    }
+
+    .bg-blue-500\/10 p,
+    .bg-blue-500\/10 span {
+      color: #1e40af !important;
+    }
+
+    .bg-orange-500\/10 {
+      background-color: #fff7ed !important;
+      border: 1px solid #ffedd5 !important;
+    }
+
+    .bg-orange-500\/10 p,
+    .bg-orange-500\/10 span {
+      color: #9a3412 !important;
+    }
+
+    /* Active states in button groups */
+    .bg-slate-700.text-white {
+      background-color: #0f172a !important;
+      color: #ffffff !important;
+    }
+
+    .color-picker-btn {
+      background-image: none !important;
+      box-shadow: none !important;
+      border-radius: 9999px !important;
+    }
+
+    /* Utility Classes */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .mask-fade-right {
+      mask-image: linear-gradient(to right, black 85%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: var(--bg-color);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: var(--border-color);
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--muted-text);
+    }
+
+    /* Grid Texture Pattern */
+    .bg-grid-pattern {
+      background-image: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 17v6M17 20h6' stroke='%23475569' stroke-width='1.5' stroke-opacity='0.15' fill='none' stroke-linecap='square'/%3E%3C/svg%3E");
+      background-size: 40px 40px;
+    }
+  </style>
+
+  <script type="importmap">
 {
   "imports": {
     "react/": "https://esm.sh/react@^19.2.4/",
@@ -307,8 +518,10 @@
 }
 </script>
 </head>
-  <body class="bg-[#0B0F19] text-slate-100 antialiased overflow-x-hidden">
-    <div id="root"></div>
+
+<body class="bg-[#0B0F19] text-slate-100 antialiased overflow-x-hidden">
+  <div id="root"></div>
   <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>
