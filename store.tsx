@@ -180,7 +180,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       loyaltyPointsGoal: data.loyalty_points_goal,
       loyaltyRewardValue: data.loyalty_reward_value,
       loyaltyRewardType: data.loyalty_reward_type,
-      loyaltyRewardValidityDays: data.loyalty_reward_validity_days
+      loyaltyRewardValidityDays: data.loyalty_reward_validity_days,
+      instagram: data.instagram || '',
+      address: data.address || '',
+      businessHours: data.business_hours || null,
   });
 
   const mapClient = (c: any): Client => ({
@@ -1628,6 +1631,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.loyaltyRewardValue !== undefined) payload.loyalty_reward_value = updated.loyaltyRewardValue;
         if (updated.loyaltyRewardType) payload.loyalty_reward_type = updated.loyaltyRewardType;
         if (updated.loyaltyRewardValidityDays !== undefined) payload.loyalty_reward_validity_days = updated.loyaltyRewardValidityDays;
+
+        // Profile & Business info
+        if (updated.instagram !== undefined) payload.instagram = sanitize(updated.instagram);
+        if (updated.address !== undefined) payload.address = sanitize(updated.address);
+        if (updated.businessHours !== undefined) payload.business_hours = updated.businessHours;
 
         let error;
         let newData;

@@ -14,7 +14,7 @@ export const StickyFooter: React.FC<StickyFooterProps> = ({ total, onContinue, d
         <div className="max-w-2xl mx-auto flex items-center justify-between">
             <div>
                 <p className="text-sm" style={{ color: settings.textColor || '#94a3b8' }}>Total Estimado</p>
-                <p className="text-2xl font-bold" style={{ color: settings.titleColor || '#ffffff' }}>R$ {total.toFixed(2)}</p>
+                <p className="text-2xl font-bold" style={{ color: settings.titleColor || '#ffffff' }}>{total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</p>
             </div>
             <button
                 disabled={disabled || loading}

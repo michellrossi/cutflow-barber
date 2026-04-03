@@ -2,22 +2,27 @@
 description: Date Range Picker
 ---
 
-1. Estrutura Superior (Inputs de Data)
-- Container de Seleção: Dois campos de entrada (inputs) posicionados lado a lado, conectados pela palavra "até" em cinza.
-- Estilo do Input Ativo: Um botão com cantos arredondados, fundo laranja vibrante, texto branco exibindo a data inicial (ex: 01/04/2026) e um ícone de calendário à esquerda.
-- Estilo do Input Inativo: Um botão com borda laranja, fundo branco e texto em laranja exibindo a data final.
+Crie um componente de Seleção de Período de Datas (Date Range Picker) focado em um design extremamente limpo e minimalista, evitando poluição visual.
 
-2. Calendário Popover (Interface de Seleção)
-- Janela Flutuante: Um card branco com bordas arredondadas e uma sombra suave (drop shadow) para efeito de elevação.
-- Cabeçalho do Calendário: * Setas de navegação (esquerda/direita) circulares com contorno laranja claro.
-     - Mês e ano centralizados (ex: abril 2026) em fonte sem serifa e peso médio.
-- Grade de Dias:
-     - Dias da semana (dom a sab) em cinza claro, fonte pequena e em negrito.
-     - Dia Selecionado: Um círculo preenchido em laranja vibrante com o número em branco.
-     - Intervalo Selecionado: Os dias entre a data inicial e final devem ter um fundo laranja muito claro (substituindo o verde água da imagem) para indicar a continuidade do período.
-     - Dias Fora do Mês: Números em cinza muito claro para dias pertencentes ao mês anterior ou posterior.
+Estrutura Geral:
 
-3. Comportamento e Lógica 
-- Estado: O componente deve gerenciar uma data de início (startDate) e uma data de fim (endDate).
-- Interação: Ao clicar no primeiro input, o calendário abre; o primeiro clique no calendário define o início e o segundo define o fim do intervalo.
-- Responsividade: Em dispositivos móveis, o calendário deve ocupar a largura total da tela ou alternar para uma visualização simplificada.
+O calendário deve ter controles para avançar e retroceder os meses e exibir o Mês e Ano por extenso no topo.
+
+Abaixo do controle de meses, deve haver um cabeçalho com os dias da semana (D, S, T, Q, Q, S, S) usando uma fonte pequena, em negrito e na cor cinza claro.
+
+A grade de dias deve ter 7 colunas, e os botões de cada dia devem ter bordas levemente arredondadas (ex: 8px) e proporção quadrada (aspect-square).
+
+Lógica de Cores e Estados dos Dias (MUITO IMPORTANTE):
+A cor primária do sistema é Laranja (ex: #F59E0B). Siga rigorosamente as regras abaixo para a renderização dos dias na grade para evitar poluição visual:
+
+Dias de meses anteriores/posteriores: Fundo transparente, texto cinza muito claro (ex: #CBD5E1), cursor default (sem interação).
+
+Dias comuns (não selecionados): Fundo transparente, texto em cinza médio (ex: #64748B). Devem receber um efeito de hover sutil com fundo cinza claro (ex: bg-slate-100).
+
+Dia Atual (Hoje): Não deve ter cor de preenchimento. Fundo deve ser "transparent". O texto deve receber a cor primária, e o contorno do botão deve ter uma borda de 1px sólida na cor primária.
+
+Dias Selecionados (Data de Início e Data Final): Devem ser os únicos elementos com peso visual forte. Fundo preenchido com a cor primária sólida e o texto na cor branca.
+
+Dias no Intervalo (In-between): Dias que caem entre a data de início e a data final devem ter um fundo de preenchimento ultra leve na cor primária (cerca de 10% a 15% de opacidade máxima) e o texto deve ser cinza escuro (ex: #334155) para contraste.
+
+A prioridade de renderização deve garantir que, se o "Dia Atual (Hoje)" for clicado, ele assuma o estado de "Dia Selecionado" (fundo sólido laranja e texto branco).

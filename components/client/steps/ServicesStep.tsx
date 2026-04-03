@@ -69,7 +69,7 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
                             onClick={() => setActiveCategory(cat)}
                             className="shrink-0 px-4 py-2 rounded-full text-sm font-bold border transition-all"
                             style={{
-                                backgroundColor: isActive ? accent : cardBg,
+                                backgroundColor: isActive ? accent : 'transparent',
                                 borderColor: isActive ? accent : border,
                                 color: isActive ? '#fff' : textColor,
                             }}
@@ -80,8 +80,8 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
                 })}
             </div>
 
-            {/* Grid de Serviços */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Grid de Serviços: 4 colunas */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {displayedServices.map(service => {
                     const isSelected = selectedServiceIds.includes(service.id);
                     return (

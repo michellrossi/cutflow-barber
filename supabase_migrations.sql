@@ -37,7 +37,10 @@ ADD COLUMN IF NOT EXISTS loyalty_reward_type TEXT DEFAULT 'percentage',
 ADD COLUMN IF NOT EXISTS loyalty_reward_validity_days INTEGER DEFAULT 90,
 ADD COLUMN IF NOT EXISTS loyalty_enabled BOOLEAN DEFAULT true,
 -- Script 2: horário de funcionamento em JSONB
-ADD COLUMN IF NOT EXISTS business_hours JSONB;
+ADD COLUMN IF NOT EXISTS business_hours JSONB,
+-- Informações da barbearia para a página de agendamento
+ADD COLUMN IF NOT EXISTS instagram TEXT,
+ADD COLUMN IF NOT EXISTS address TEXT;
 
 -- CLIENTS: fidelidade e gastos
 ALTER TABLE public.clients

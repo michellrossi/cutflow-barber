@@ -38,8 +38,8 @@ export const ProfessionalStep: React.FC<ProfessionalStepProps> = ({ professional
             <h2 className="text-3xl font-bold mb-1" style={{ color: titleColor }}>Escolha o profissional</h2>
             <p className="mb-8" style={{ color: textColor }}>Selecione seu barbeiro ou deixe sem preferência</p>
 
-            {/* Grid 5 colunas: cards menores e compactos */}
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+            {/* Grid 4 colunas: cards compactos mas maiores */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 {allOptions.map(pro => {
                     const isSelected = selectedProId === pro.id;
                     return (
@@ -55,13 +55,13 @@ export const ProfessionalStep: React.FC<ProfessionalStepProps> = ({ professional
                         >
                             {/* Foto compacta */}
                             <div
-                                className="w-full aspect-square rounded-lg overflow-hidden flex items-center justify-center"
+                                className="w-full aspect-[4/3] rounded-lg overflow-hidden flex items-center justify-center"
                                 style={{ backgroundColor: inputBg }}
                             >
                                 {pro.photoUrl ? (
                                     <img src={pro.photoUrl} alt={pro.name} className="w-full h-full object-cover" />
                                 ) : (
-                                    <User size={28} style={{ color: textColor }} className="opacity-30" />
+                                    <User size={36} style={{ color: textColor }} className="opacity-30" />
                                 )}
                             </div>
 
