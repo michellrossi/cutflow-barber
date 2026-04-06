@@ -8,10 +8,13 @@ interface ReportsTeamPanelProps {
 
 export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange }) => {
     const { professionals, appointments, services, fetchFinancialReport, settings } = useShop();
-    const [selectedProId, setSelectedProId] = useState<string>(
-        professionals.length > 0 ? professionals[0].id : 'all'
-    );
+    const [selectedProId, setSelectedProId] = useState<string>('all');
     const [filteredAppointments, setFilteredAppointments] = useState(appointments);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     useEffect(() => {
         const loadData = async () => {
@@ -38,6 +41,8 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
         };
         loadData();
     }, [dateRange, fetchFinancialReport]);
+
+    if (!isMounted) return null;
 
     return (
         <div className="space-y-8 animate-fade-in">

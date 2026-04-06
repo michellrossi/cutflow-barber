@@ -1,16 +1,23 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { Users, Scissors, Calendar, Clock, Phone, User, DollarSign, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) => void }> = ({ onNavigate }) => {
     const { appointments, clients, professionals, services, settings } = useShop();
-    const today = new Date().toISOString().split('T')[0];
+    const [today, setToday] = useState<string>('');
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setToday(new Date().toISOString().split('T')[0]);
+        setIsMounted(true);
+    }, []);
 
     // Stats calculations
-    const todayAppointments = useMemo(() =>
-        appointments.filter(apt => apt.date === today && apt.status !== 'cancelled'),
-        [appointments, today]);
+    const todayAppointments = useMemo(() => {
+        if (!today) return [];
+        return appointments.filter(apt => apt.date === today && apt.status !== 'cancelled');
+    }, [appointments, today]);
 
     const inactiveClientsCount = useMemo(() => {
         const thirtyDaysAgo = new Date();
@@ -30,9 +37,10 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
     }, [appointments]);
 
     const birthdayClientsCount = useMemo(() => {
-        const todayStr = new Date().toISOString().split('T')[0].substring(5); // MM-DD
+        if (!today) return 0;
+        const todayStr = today.substring(5); // MM-DD
         return clients.filter(c => c.birthDate && c.birthDate.substring(5) === todayStr).length;
-    }, [clients]);
+    }, [clients, today]);
 
     const noShowRate = useMemo(() => {
         const thirtyDaysAgo = new Date();
@@ -88,6 +96,8 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
     const getServicesNames = (ids: string[]) => {
         return ids.map(id => services.find(s => s.id === id)?.name).join(', ');
     };
+
+    if (!isMounted) return null;
 
     return (
         <div className="space-y-8 animate-fade-in">

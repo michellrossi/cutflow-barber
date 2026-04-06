@@ -5,7 +5,7 @@ import {
   MessageSquare, Calendar, Sparkles, TrendingUp, 
   Target, Users, BarChart3, Palette, ShieldCheck, 
   Ticket, LayoutDashboard, Share2, Star, Zap,
-  Smartphone, Briefcase, Award, Plus, UserPlus
+  Smartphone, Briefcase, Award, Plus, UserPlus as UserPlusIcon
 } from 'lucide-react';
 
 const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ onStart, onLogin }) => {
@@ -480,7 +480,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                 {[
-                    { step: '1', title: 'Crie sua conta', desc: 'Em menos de 2 minutos você cadastra sua barbearia, adiciona seus serviços e define sua agenda de horários.', icon: <UserPlus className="text-[#F97316]" size={32}/> },
+                    { step: '1', title: 'Crie sua conta', desc: 'Em menos de 2 minutos você cadastra sua barbearia, adiciona seus serviços e define sua agenda de horários.', icon: <UserPlusIcon className="text-[#F97316]" size={32}/> },
                     { step: '2', title: 'Compartilhe seu link', desc: 'Divulgue cutflow.app/sua-barbearia no Instagram, WhatsApp, Google — seus clientes já podem agendar.', icon: <Share2 className="text-[#FBBF24]" size={32}/> },
                     { step: '3', title: 'Veja os resultados', desc: 'Acompanhe agendamentos em tempo real, ative as automações de WhatsApp e deixe o sistema trabalhar por você.', icon: <TrendingUp className="text-[#F97316]" size={32}/> }
                 ].map((item, i) => (
@@ -726,10 +726,12 @@ const PricingItem: React.FC<{ text: string, inactive?: boolean, bold?: boolean }
 
 const CountUp: React.FC<{ end: number, prefix?: string, suffix?: string }> = ({ end, prefix, suffix }) => {
     const [count, setCount] = useState(0);
+    const [isMounted, setIsMounted] = useState(false);
     const ref = React.useRef(null);
     const isInView = useInView(ref, { once: true });
 
     useEffect(() => {
+        setIsMounted(true);
         if (isInView) {
             let start = 0;
             const duration = 2000;
@@ -747,6 +749,8 @@ const CountUp: React.FC<{ end: number, prefix?: string, suffix?: string }> = ({ 
             return () => clearInterval(timer);
         }
     }, [isInView, end]);
+
+    if (!isMounted) return null;
 
     return (
         <span ref={ref}>

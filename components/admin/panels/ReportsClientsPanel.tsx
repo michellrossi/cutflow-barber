@@ -10,6 +10,11 @@ interface ReportsClientsPanelProps {
 export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRange }) => {
     const { appointments, clients, clientSubscriptions, fetchFinancialReport, settings } = useShop();
     const [filteredAppointments, setFilteredAppointments] = useState(appointments);
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     useEffect(() => {
         const loadData = async () => {
@@ -167,6 +172,8 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
             noShows: dataMap[k].noshow
         }));
     }, [filteredAppointments]);
+
+    if (!isMounted) return null;
 
     return (
         <div className="w-full space-y-8 animate-fade-in">

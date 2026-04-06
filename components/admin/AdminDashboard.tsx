@@ -27,36 +27,33 @@ type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' |
 type TeamSubTab = 'list' | 'schedules' | 'blocks';
 
 export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () => void }> = ({ onLogout, onViewClient }) => {
-  const [activeTab, setActiveTab] = useState<AdminTab>(() => {
-      const saved = localStorage.getItem('adminActiveTab');
-      return (saved as AdminTab) || 'dashboard';
-  });
-  
+  const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [clientFilter, setClientFilter] = useState<string>('all');
+  const [teamSubTab, setTeamSubTab] = useState<TeamSubTab>('list');
+  const [settingsSubTab, setSettingsSubTab] = useState<SettingsTab>('profile');
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSidebarPinned, setIsSidebarPinned] = useState(true);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
-  const [teamSubTab, setTeamSubTab] = useState<TeamSubTab>(() => {
-      const saved = localStorage.getItem('adminTeamSubTab');
-      return (saved as TeamSubTab) || 'list';
-  });
+  // Load preferences after hydration
+  useEffect(() => {
+    const savedTab = localStorage.getItem('adminActiveTab');
+    if (savedTab) setActiveTab(savedTab as AdminTab);
 
-  const [settingsSubTab, setSettingsSubTab] = useState<SettingsTab>(() => {
-      const saved = localStorage.getItem('adminSettingsSubTab');
-      return (saved as SettingsTab) || 'profile';
-  });
+    const savedTeamSub = localStorage.getItem('adminTeamSubTab');
+    if (savedTeamSub) setTeamSubTab(savedTeamSub as TeamSubTab);
 
-  const [isSettingsOpen, setIsSettingsOpen] = useState(() => {
-      return activeTab === 'settings';
-  });
-  
+    const savedSettingsSub = localStorage.getItem('adminSettingsSubTab');
+    if (savedSettingsSub) setSettingsSubTab(savedSettingsSub as SettingsTab);
+
+    const savedPinned = localStorage.getItem('adminSidebarPinned');
+    if (savedPinned !== null) setIsSidebarPinned(savedPinned === 'true');
+    
+    if (savedTab === 'settings') setIsSettingsOpen(true);
+  }, []);
+
   const { settings, trialStatus, daysRemaining, theme, toggleTheme } = useShop();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-
-  // Retractable Sidebar States
-  const [isSidebarPinned, setIsSidebarPinned] = useState(() => {
-      const saved = localStorage.getItem('adminSidebarPinned');
-      return saved === null ? true : saved === 'true';
-  });
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
   const isSidebarExpanded = isSidebarPinned || isSidebarHovered;
 
