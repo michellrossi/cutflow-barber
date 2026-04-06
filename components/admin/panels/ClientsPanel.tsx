@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { Client, Appointment } from '../../../types';
-import { Search, Filter, ChevronRight, Plus, Star, Edit2, Trash2, X, Save, Phone, Mail, User, Loader2, Eye, Calendar, Clock, DollarSign } from 'lucide-react';
+import { Search, Filter, ChevronRight, Plus, Star, Edit2, Trash2, X, Save, Phone, Mail, User, Loader2, Eye, Calendar, Clock, DollarSign, Download, Upload } from 'lucide-react';
 
 const WhatsappIcon = ({ size = 20, className = '' }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} xmlns="http://www.w3.org/2000/svg">
@@ -195,6 +195,77 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
     setIsViewModalOpen(true);
   };
 
+  const handleExport = () => {
+    if (clients.length === 0) {
+      showToast('Não há clientes para exportar.', 'error');
+      return;
+    }
+
+    const headers = ['Nome', 'Telefone', 'Email', 'Data de Nascimento', 'Notas'];
+    const rows = clients.map(c => [
+      c.name,
+      c.phone,
+      c.email || '',
+      c.birthDate || '',
+      c.notes || ''
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `clientes_insight_barber_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Lista de clientes exportada!');
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const text = event.target?.result as string;
+      const lines = text.split('\n').filter(line => line.trim() !== '');
+      if (lines.length <= 1) {
+        showToast('Arquivo vazio ou sem dados.', 'error');
+        return;
+      }
+
+      // Basic CSV Parser (assuming simple format)
+      // skip header
+      let importedCount = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const columns = lines[i].split(',').map(col => col.replace(/^"|"$/g, '').trim());
+        if (columns.length >= 2) {
+          const [name, phone, email, birthDate, notes] = columns;
+          // Avoid duplicates by phone 
+          if (!clients.find(c => c.phone === phone)) {
+            await addClient({ 
+              name, 
+              phone, 
+              email: email || undefined, 
+              birthDate: birthDate || undefined, 
+              notes: notes || undefined 
+            });
+            importedCount++;
+          }
+        }
+      }
+      showToast(`${importedCount} clientes importados com sucesso!`);
+      // Reset input
+      e.target.value = '';
+    };
+    reader.readAsText(file);
+  };
+
   const getRiskBadgeColor = (risk: string) => {
     switch (risk) {
       case 'Baixo': return 'bg-green-100 text-green-900 border-green-400';
@@ -233,13 +304,36 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
           <h2 className="text-2xl font-bold text-slate-900 mb-1">Gestão de Clientes</h2>
           <p className="text-slate-500 text-sm">Gerencie sua base, identifique oportunidades e recupere clientes inativos.</p>
         </div>
-        <button 
-          onClick={() => handleOpenForm()}
-          className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 md:self-auto self-start whitespace-nowrap"
-        >
-          <Plus size={20} className="stroke-[3px]" />
-          Novo Cliente
-        </button>
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <input 
+            type="file" 
+            accept=".csv" 
+            onChange={handleImport} 
+            className="hidden" 
+            id="csv-import"
+          />
+          <button 
+            onClick={() => document.getElementById('csv-import')?.click()}
+            className="bg-white text-slate-700 font-bold px-4 py-3 rounded-xl flex items-center justify-center gap-2 border border-slate-200 transition-all hover:bg-slate-50"
+          >
+            <Upload size={18} />
+            Importar CSV
+          </button>
+          <button 
+            onClick={handleExport}
+            className="bg-white text-slate-700 font-bold px-4 py-3 rounded-xl flex items-center justify-center gap-2 border border-slate-200 transition-all hover:bg-slate-50"
+          >
+            <Download size={18} />
+            Exportar
+          </button>
+          <button 
+            onClick={() => handleOpenForm()}
+            className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 whitespace-nowrap"
+          >
+            <Plus size={20} className="stroke-[3px]" />
+            Novo Cliente
+          </button>
+        </div>
       </div>
 
       {/* Filters & Search */}

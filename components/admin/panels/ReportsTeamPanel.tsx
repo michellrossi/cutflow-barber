@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../../store';
-import { Users, Scissors, DollarSign, Award, LayoutGrid, Clock } from 'lucide-react';
+import { Users, Scissors, DollarSign, Award, LayoutGrid, Clock, Calendar } from 'lucide-react';
 
 interface ReportsTeamPanelProps {
     dateRange: string;
 }
 
 export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange }) => {
-    const { professionals, appointments, services, fetchFinancialReport } = useShop();
+    const { professionals, appointments, services, fetchFinancialReport, settings } = useShop();
     const [selectedProId, setSelectedProId] = useState<string>(
-        professionals.length > 0 ? professionals[0].id : ''
+        professionals.length > 0 ? professionals[0].id : 'all'
     );
     const [filteredAppointments, setFilteredAppointments] = useState(appointments);
 
@@ -179,26 +179,54 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
                                     </div>
                                 )}
 
-                                {/* Mix de Serviços */}
+                                {/* Dias com Agendamento / Dias Trabalhados */}
                                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
-                                            <LayoutGrid size={20} />
+                                        <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
+                                            <Calendar size={20} />
                                         </div>
-                                        <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Mix de Serviços</span>
+                                        <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Ocupação por Dia</span>
                                     </div>
-                                    <div className="space-y-2 max-h-[120px] overflow-y-auto no-scrollbar">
-                                        {Object.entries(serviceBreakdown).length > 0 ? (
-                                            Object.entries(serviceBreakdown).map(([name, count]) => (
-                                                <div key={name} className="flex justify-between items-center text-sm">
-                                                    <span className="text-slate-600 truncate mr-2">{name}</span>
-                                                    <span className="font-bold text-slate-900">{count}</span>
-                                                </div>
-                                            ))
-                                        ) : (
-                                            <div className="text-xs text-slate-400 italic">Nenhum serviço registrado</div>
-                                        )}
+                                    <div className="text-3xl font-black text-slate-900">
+                                        {(() => {
+                                            const apptDates = new Set(proAppointments.map(a => a.date));
+                                            const daysWithAppts = apptDates.size;
+                                            
+                                            // Calcular dias trabalhados no período
+                                            const startMonthStr = dateRange.includes('|') ? dateRange.split('|')[0] : null;
+                                            const endMonthStr = dateRange.includes('|') ? dateRange.split('|')[1] : null;
+                                            
+                                            let startDate = new Date();
+                                            let endDate = new Date();
+                                            if (startMonthStr && endMonthStr) {
+                                                startDate = new Date(startMonthStr + 'T12:00:00');
+                                                endDate = new Date(endMonthStr + 'T12:00:00');
+                                            } else {
+                                              // Fallback para os últimos 30 dias se não houver range
+                                              startDate.setDate(startDate.getDate() - 30);
+                                            }
+
+                                            let workingDaysCount = 0;
+                                            const schedule = isAll ? settings.businessHours : pro?.workSchedule;
+                                            
+                                            if (schedule) {
+                                                const current = new Date(startDate);
+                                                while (current <= endDate) {
+                                                    const dayName = current.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+                                                    if ((schedule as any)[dayName]?.active) {
+                                                        workingDaysCount++;
+                                                    }
+                                                    current.setDate(current.getDate() + 1);
+                                                }
+                                            } else {
+                                                // Default 22 dias se não houver config
+                                                workingDaysCount = 22;
+                                            }
+
+                                            return `${daysWithAppts}/${workingDaysCount}`;
+                                        })()}
                                     </div>
+                                    <div className="text-xs text-slate-400 mt-1">Dias com agendamento / Dias úteis</div>
                                 </div>
 
                                 {/* Top Profissionais (apenas se for 'Todos') */}
@@ -255,6 +283,56 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
                                         </div>
                                     </div>
                                 )}
+
+                                {/* Card Serviços Executados (Ranking Estilo cutflow4) */}
+                                <div className={`bg-white p-6 rounded-xl border border-slate-200 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] ${isAll ? 'md:col-span-2 lg:col-span-2' : 'md:col-span-2 lg:col-span-2'}`}>
+                                    <h3 className="text-lg font-bold text-[#1E293B] mb-4 flex items-center gap-2">
+                                        <Scissors size={20} className="text-[#1E293B]" />
+                                        Ranking de Serviços
+                                    </h3>
+                                    <div className="flex flex-col divide-y divide-slate-100">
+                                        {(() => {
+                                            const sortedServices = Object.entries(serviceBreakdown)
+                                                .map(([name, count]) => {
+                                                    const srv = services.find(s => s.name === name);
+                                                    return { name, count, price: srv?.price || 0 };
+                                                })
+                                                .sort((a, b) => b.count - a.count)
+                                                .slice(0, 5);
+                                            
+                                            const maxCount = Math.max(...sortedServices.map(s => s.count), 1);
+
+                                            return sortedServices.map((srv, index) => {
+                                                let badgeColor = 'bg-slate-200 text-slate-700';
+                                                if (index === 0) badgeColor = 'bg-yellow-400 text-yellow-900';
+                                                else if (index === 1) badgeColor = 'bg-slate-400 text-white';
+                                                else if (index === 2) badgeColor = 'bg-[#cd6133] text-white';
+
+                                                return (
+                                                    <div key={srv.name} className="py-4 flex items-center gap-4">
+                                                        <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center font-bold text-sm ${badgeColor}`}>
+                                                            {index + 1}º
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex justify-between items-start mb-1">
+                                                                <span className="font-medium text-[#1E293B] truncate">{srv.name}</span>
+                                                                <span className="font-bold text-[#F16A1B] whitespace-nowrap ml-2">
+                                                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(srv.count * srv.price)}
+                                                                </span>
+                                                            </div>
+                                                            <div className="w-full bg-[#F1F5F9] h-1.5 rounded-full overflow-hidden">
+                                                                <div className="bg-[#F16A1B] h-full rounded-full" style={{ width: `${(srv.count / maxCount) * 100}%` }}></div>
+                                                            </div>
+                                                            <div className="text-xs text-slate-500 mt-1 text-right">
+                                                                {srv.count} execuções
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            });
+                                        })()}
+                                    </div>
+                                </div>
 
                                 {/* Tabela Detalhada (REMOVIDA) */}
                             </>

@@ -29,8 +29,22 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
         return Object.values(lastAppByClient).filter(lastDate => lastDate < thirtyDaysAgo).length;
     }, [appointments]);
 
-    const professionalsCount = useMemo(() => professionals.length, [professionals]);
-    const servicesCount = useMemo(() => services.length, [services]);
+    const birthdayClientsCount = useMemo(() => {
+        const todayStr = new Date().toISOString().split('T')[0].substring(5); // MM-DD
+        return clients.filter(c => c.birthDate && c.birthDate.substring(5) === todayStr).length;
+    }, [clients]);
+
+    const noShowRate = useMemo(() => {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const startStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+        const relevantAppts = appointments.filter(a => a.date >= startStr && a.status !== 'cancelled');
+        if (relevantAppts.length === 0) return 0;
+
+        const noShows = relevantAppts.filter(a => a.status === 'noshow').length;
+        return (noShows / relevantAppts.length) * 100;
+    }, [appointments]);
 
     const revenueStats = useMemo(() => {
         const now = new Date();
@@ -97,18 +111,18 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                 <StatCard
                     icon={<User size={18} />}
                     colorClass="text-blue-600 bg-blue-50"
-                    label="Profissionais"
-                    value={professionalsCount.toString()}
-                    subtitle="Corpo técnico"
-                    onClick={() => onNavigate('team')}
+                    label="Aniversariantes"
+                    value={birthdayClientsCount.toString()}
+                    subtitle="Comemorando hoje"
+                    onClick={() => onNavigate('clients', 'birthdays')}
                 />
                 <StatCard
                     icon={<Scissors size={18} />}
                     colorClass="text-purple-600 bg-purple-50"
-                    label="Serviços"
-                    value={servicesCount.toString()}
-                    subtitle="Opções disponíveis"
-                    onClick={() => onNavigate('services')}
+                    label="Faltas (No-Show)"
+                    value={`${noShowRate.toFixed(1)}%`}
+                    subtitle="Últimos 30 dias"
+                    onClick={() => onNavigate('appointments', 'noshow')}
                 />
             </div>
 
