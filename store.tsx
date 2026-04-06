@@ -194,6 +194,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       email: c.email,
       avatarUrl: c.avatar_url,
       notes: c.notes,
+      birthDate: c.birth_date,
       totalSpent: c.total_spent || 0,
       loyaltyPoints: c.loyalty_points || 0,
       loyaltyCardCount: c.loyalty_card_count || 0,
@@ -398,7 +399,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
-  const ensureClientExists = async (shopId: string, name: string, phone: string) => {
+  const ensureClientExists = async (shopId: string, name: string, phone: string, birthDate?: string) => {
       const { data: existing } = await supabase
         .from('clients')
         .select('id')
@@ -410,7 +411,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           await supabase.from('clients').insert({
               shop_id: shopId,
               name: name,
-              phone: phone
+              phone: phone,
+              birth_date: birthDate
           });
           await reloadClients(shopId);
       }
@@ -1055,7 +1057,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.log('addAppointment: Reserva concluída com sucesso no backend.');
         
         // Garantir que o cliente exista na base de clientes
-        await ensureClientExists(shopId, cleanClientName, cleanClientPhone);
+        await ensureClientExists(shopId, cleanClientName, cleanClientPhone, apt.clientBirthDate);
 
         // Como o RPC pode envolver validações complexas e triggers,
         // aqui fazemos um fetch leve apenas dos agendamentos para garantir consistência.
@@ -1103,7 +1105,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (error) throw error;
           
           // Garantir que o cliente exista na base de clientes
-          await ensureClientExists(shopId, cleanClientName, cleanClientPhone);
+          await ensureClientExists(shopId, cleanClientName, cleanClientPhone, apt.clientBirthDate);
 
           // Optimistic Update
           const newApt = mapAppointment(data);
@@ -1276,7 +1278,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             phone: sanitize(client.phone),
             email: client.email ? sanitize(client.email) : null,
             avatar_url: client.avatarUrl,
-            notes: client.notes ? sanitize(client.notes) : null
+            notes: client.notes ? sanitize(client.notes) : null,
+            birth_date: client.birthDate
         }).select().single();
 
         if (error) throw error;
@@ -1310,6 +1313,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (client.email !== undefined) updateData.email = client.email ? sanitize(client.email) : null;
         if (client.avatarUrl !== undefined) updateData.avatar_url = client.avatarUrl;
         if (client.notes !== undefined) updateData.notes = client.notes ? sanitize(client.notes) : null;
+        if (client.birthDate !== undefined) updateData.birth_date = client.birthDate;
 
         const { error } = await supabase.from('clients').update(updateData).eq('id', id).eq('shop_id', shopId);
         if (error) throw error;

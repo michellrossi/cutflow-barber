@@ -97,7 +97,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
     }, [appointments, displayDays, selectedProId]);
 
     const getStatusStyles = (status: string) => {
-        return 'border-slate-200 text-slate-700 calendar-appointment border-l-4';
+        return 'text-slate-700 calendar-appointment border-l-4';
     };
 
     const getStatusLabel = (status: string) => {
@@ -387,8 +387,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                             onClick={() => setSelectedAppointment(apt)}
                                                             className={`p-1.5 rounded-lg border shadow-sm cursor-pointer hover:brightness-95 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
                                                             style={{ 
-                                                                borderLeftColor: getProColor(apt.professionalId),
-                                                                backgroundColor: `${getProColor(apt.professionalId)}15`
+                                                                borderColor: getProColor(apt.professionalId),
+                                                                backgroundColor: `${getProColor(apt.professionalId)}10`
                                                             }}
                                                         >
                                                             <p className="text-[10px] font-bold truncate leading-tight text-slate-900">{apt.clientName}</p>
@@ -415,8 +415,8 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                             onClick={() => setSelectedAppointment(apt)}
                                                             className={`p-1.5 rounded-lg border shadow-sm cursor-pointer hover:brightness-95 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
                                                             style={{ 
-                                                                borderLeftColor: getProColor(apt.professionalId),
-                                                                backgroundColor: `${getProColor(apt.professionalId)}15`
+                                                                borderColor: getProColor(apt.professionalId),
+                                                                backgroundColor: `${getProColor(apt.professionalId)}10`
                                                             }}
                                                         >
                                                             <p className="text-[10px] font-bold truncate leading-tight text-slate-900">{apt.clientName}</p>

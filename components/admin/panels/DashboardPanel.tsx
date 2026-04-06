@@ -1,16 +1,23 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { Users, Scissors, Calendar, Clock, Phone, User, DollarSign, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) => void }> = ({ onNavigate }) => {
     const { appointments, clients, professionals, services, settings } = useShop();
-    const today = new Date().toISOString().split('T')[0];
+    const [today, setToday] = useState<string>('');
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setToday(new Date().toISOString().split('T')[0]);
+        setIsMounted(true);
+    }, []);
 
     // Stats calculations
-    const todayAppointments = useMemo(() =>
-        appointments.filter(apt => apt.date === today && apt.status !== 'cancelled'),
-        [appointments, today]);
+    const todayAppointments = useMemo(() => {
+        if (!today) return [];
+        return appointments.filter(apt => apt.date === today && apt.status !== 'cancelled');
+    }, [appointments, today]);
 
     const inactiveClientsCount = useMemo(() => {
         const thirtyDaysAgo = new Date();
@@ -29,8 +36,23 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
         return Object.values(lastAppByClient).filter(lastDate => lastDate < thirtyDaysAgo).length;
     }, [appointments]);
 
-    const professionalsCount = useMemo(() => professionals.length, [professionals]);
-    const servicesCount = useMemo(() => services.length, [services]);
+    const birthdayClientsCount = useMemo(() => {
+        if (!today) return 0;
+        const todayStr = today.substring(5); // MM-DD
+        return clients.filter(c => c.birthDate && c.birthDate.substring(5) === todayStr).length;
+    }, [clients, today]);
+
+    const noShowRate = useMemo(() => {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const startStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+        const relevantAppts = appointments.filter(a => a.date >= startStr && a.status !== 'cancelled');
+        if (relevantAppts.length === 0) return 0;
+
+        const noShows = relevantAppts.filter(a => a.status === 'noshow').length;
+        return (noShows / relevantAppts.length) * 100;
+    }, [appointments]);
 
     const revenueStats = useMemo(() => {
         const now = new Date();
@@ -75,6 +97,8 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
         return ids.map(id => services.find(s => s.id === id)?.name).join(', ');
     };
 
+    if (!isMounted) return null;
+
     return (
         <div className="space-y-8 animate-fade-in">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -97,18 +121,18 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                 <StatCard
                     icon={<User size={18} />}
                     colorClass="text-blue-600 bg-blue-50"
-                    label="Profissionais"
-                    value={professionalsCount.toString()}
-                    subtitle="Corpo técnico"
-                    onClick={() => onNavigate('team')}
+                    label="Aniversariantes"
+                    value={birthdayClientsCount.toString()}
+                    subtitle="Comemorando hoje"
+                    onClick={() => onNavigate('clients', 'birthdays')}
                 />
                 <StatCard
                     icon={<Scissors size={18} />}
                     colorClass="text-purple-600 bg-purple-50"
-                    label="Serviços"
-                    value={servicesCount.toString()}
-                    subtitle="Opções disponíveis"
-                    onClick={() => onNavigate('services')}
+                    label="Faltas (No-Show)"
+                    value={`${noShowRate.toFixed(1)}%`}
+                    subtitle="Últimos 30 dias"
+                    onClick={() => onNavigate('appointments', 'noshow')}
                 />
             </div>
 

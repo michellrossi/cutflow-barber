@@ -22,7 +22,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     const [selectedProId, setSelectedProId] = useState<string | null>(null);
     const [selectedDate, setSelectedDate] = useState<string>('');
     const [selectedTime, setSelectedTime] = useState<string>('');
-    const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '' });
+    const [customerInfo, setCustomerInfo] = useState({ name: '', phone: '', birthDate: '' });
     const [couponCode, setCouponCode] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
     const [discountAmount, setDiscountAmount] = useState(0);
@@ -46,7 +46,11 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     // Auto-fill customer info if logged in
     useEffect(() => {
         if (currentClient && !customerInfo.name && !customerInfo.phone) {
-            setCustomerInfo({ name: currentClient.name, phone: currentClient.phone });
+            setCustomerInfo({ 
+                name: currentClient.name, 
+                phone: currentClient.phone, 
+                birthDate: currentClient.birthDate || '' 
+            });
         }
     }, [currentClient]);
 
@@ -85,8 +89,8 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     const handleFinish = async (e: React.MouseEvent) => {
         e.preventDefault(); 
         
-        if (!customerInfo.name || !customerInfo.phone) {
-            alert('Por favor, preencha seus dados.');
+        if (!customerInfo.name || !customerInfo.phone || !customerInfo.birthDate) {
+            alert('Por favor, preencha todos os seus dados, incluindo a data de nascimento.');
             return;
         }
         
@@ -172,6 +176,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         const appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'> = {
             clientName: customerInfo.name,
             clientPhone: customerInfo.phone,
+            clientBirthDate: customerInfo.birthDate,
             serviceIds: selectedServiceIds,
             professionalId: finalProId!,
             date: selectedDate,
@@ -223,7 +228,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         setSelectedProId(null);
         setSelectedDate('');
         setSelectedTime('');
-        setCustomerInfo({ name: '', phone: '' });
+        setCustomerInfo({ name: '', phone: '', birthDate: '' });
         setCouponCode('');
         setAppliedCoupon(null);
         setDiscountAmount(0);

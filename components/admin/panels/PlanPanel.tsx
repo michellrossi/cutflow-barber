@@ -250,16 +250,16 @@ export const PlanPanel: React.FC = () => {
             <div className="p-8 flex-1 space-y-8">
               {plan.categories.map((category, idx) => (
                 <div key={idx} className="space-y-3">
-                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
                     {category.title}
                   </h3>
                   <ul className="space-y-3">
                     {category.features.map((feature, fIdx) => (
-                      <li key={fIdx} className={`flex items-start gap-3 text-sm ${feature.included ? 'text-slate-700' : 'text-slate-300'}`}>
-                        <div className={`mt-0.5 shrink-0 w-5 h-5 rounded-sm flex items-center justify-center ${feature.included ? 'bg-green-50 text-green-500' : 'bg-slate-50 text-slate-200'}`}>
+                      <li key={fIdx} className={`flex items-start gap-3 text-sm ${feature.included ? 'text-slate-800' : 'text-slate-500'}`}>
+                        <div className={`mt-0.5 shrink-0 w-5 h-5 rounded-sm flex items-center justify-center ${feature.included ? 'bg-green-50 text-green-500' : 'bg-slate-50 text-slate-300'}`}>
                           {feature.included ? <Check size={12} strokeWidth={3} /> : <div className="w-1.5 h-1.5 rounded-sm bg-current" />}
                         </div>
-                        <span className={feature.included ? 'font-medium' : 'line-through decoration-slate-200'}>
+                        <span className={feature.included ? 'font-semibold text-slate-900' : 'line-through decoration-slate-300'}>
                           {feature.text}
                         </span>
                       </li>

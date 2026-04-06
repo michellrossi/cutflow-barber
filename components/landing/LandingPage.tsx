@@ -1,429 +1,762 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { CheckCircle, ArrowRight, Calendar, Bell, BarChart3, Smartphone, Scissors, TrendingUp, Clock, Check, Link as LinkIcon, Palette, Users, UserPlus, Settings, Share2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform, useInView } from 'framer-motion';
+import { 
+  Scissors, ArrowRight, Play, Check, CheckCircle2, 
+  MessageSquare, Calendar, Sparkles, TrendingUp, 
+  Target, Users, BarChart3, Palette, ShieldCheck, 
+  Ticket, LayoutDashboard, Share2, Star, Zap,
+  Smartphone, Briefcase, Award, Plus, UserPlus as UserPlusIcon
+} from 'lucide-react';
 
-// Hook para detectar quando o elemento entra na tela
-const useIntersectionObserver = () => {
-    const [isVisible, setIsVisible] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
+const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ onStart, onLogin }) => {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                if (entry.isIntersecting) {
-                    setIsVisible(true);
-                    observer.disconnect();
-                }
-            },
-            { threshold: 0.1 } // 10% do elemento visível dispara a animação
-        );
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-        if (ref.current) {
-            observer.observe(ref.current);
-        }
-
-        return () => observer.disconnect();
-    }, []);
-
-    return { ref, isVisible };
-};
-
-export const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ onStart, onLogin }) => {
-  // Refs for Scroll Animations
-  const featuresSection = useIntersectionObserver();
-  const howItWorksSection = useIntersectionObserver();
+  const logoUrl = "https://iili.io/BRAwKWg.md.png";
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-slate-100 font-sans selection:bg-orange-500/30 overflow-x-hidden relative">
-      
-      {/* 1. TEXTURA DE FUNDO (+) - Aplicada globalmente via CSS no index.html */}
-      <div className="absolute inset-0 bg-grid-pattern pointer-events-none z-0 opacity-100 mix-blend-overlay"></div>
+    <div className="min-h-screen bg-[#0B0F19] text-[#F8FAFC] font-sans selection:bg-[#F97316]/30 overflow-x-hidden">
+      {/* Custom Styles for Grid and Glow */}
+      <style>{`
+        .bg-grid-pattern {
+          background-image: 
+            linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+          background-size: 40px 40px;
+        }
+        
+        .hero-glow {
+          background: radial-gradient(
+            circle at 20% 50%,
+            rgba(249, 115, 22, 0.3) 0%,
+            rgba(249, 115, 22, 0.05) 35%,
+            transparent 65%
+          );
+          filter: blur(80px);
+        }
 
-      {/* 1. ÁREA DE LUZ (GLOW RADIAL INTENSO) - LADO ESQUERDO */}
-      <div 
-        className="absolute top-0 left-0 w-[60vw] h-[60vw] md:w-[800px] md:h-[800px] rounded-full pointer-events-none z-0"
-        style={{
-            background: 'radial-gradient(circle at center, rgba(245, 166, 35, 0.4) 0%, rgba(249, 115, 22, 0.15) 40%, transparent 70%)',
-            filter: 'blur(80px)',
-            transform: 'translate(-30%, -30%)'
-        }}
-      ></div>
+        .cta-glow {
+            background: radial-gradient(
+                circle at center,
+                rgba(249, 115, 22, 0.4) 0%,
+                rgba(26, 10, 0, 0) 70%
+            );
+        }
 
-      {/* Hero Section - Padding ajustado pois removemos a Navbar */}
-      <section className="relative pt-20 pb-20 md:pt-32 md:pb-32 px-6">
-        {/* Botão de Login Flutuante (Opcional, para não perder acesso total ao login) */}
-        <div className="absolute top-6 right-6 z-50">
-            <button onClick={onLogin} className="text-sm font-medium text-slate-400 hover:text-white transition-colors">
-              Já tenho conta? Entrar
+        .text-gradient {
+          background: linear-gradient(135deg, #FB923C, #FBBF24);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          filter: drop-shadow(0 0 20px rgba(249, 115, 22, 0.4));
+        }
+
+        .card-premium {
+          background: #1E293B;
+          border: 1px solid #334155;
+          border-radius: 16px;
+          transition: border-color 0.3s, transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card-premium:hover {
+          border-color: #F97316;
+          transform: translateY(-4px);
+          box-shadow: 0 20px 40px rgba(249, 115, 22, 0.15);
+        }
+
+        .whatsapp-bubble {
+          position: relative;
+          max-width: 85%;
+          padding: 12px 16px;
+          border-radius: 12px;
+          margin-bottom: 8px;
+          font-size: 14px;
+          line-height: 1.4;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .whatsapp-left {
+          background: #202C33;
+          color: white;
+          border-top-left-radius: 0;
+          align-self: flex-start;
+        }
+
+        .pricing-active {
+            border-color: #F97316;
+            box-shadow: 0 0 25px rgba(249, 115, 22, 0.2);
+            transform: scale(1.05);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+      `}</style>
+
+      {/* SEÇÃO 1 — NAVBAR FIXA */}
+      <header 
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+          isScrolled ? 'bg-[#0B0F19]/80 backdrop-blur-md border-b border-[#334155] py-3' : 'bg-transparent py-6'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-2">
+            <img src={logoUrl} alt="CutFlow" className="h-10 w-auto" />
+            <span className="text-2xl font-bold tracking-tight hidden sm:block">CutFlow</span>
+          </div>
+
+          {/* Navigation */}
+          <nav className="hidden lg:flex items-center gap-8">
+            <a href="#features" className="text-sm font-medium text-[#94A3B8] hover:text-[#F8FAFC] transition-colors">Funcionalidades</a>
+            <a href="#how-it-works" className="text-sm font-medium text-[#94A3B8] hover:text-[#F8FAFC] transition-colors">Como Funciona</a>
+            <a href="#pricing" className="text-sm font-medium text-[#94A3B8] hover:text-[#F8FAFC] transition-colors">Planos</a>
+            <a href="#testimonials" className="text-sm font-medium text-[#94A3B8] hover:text-[#F8FAFC] transition-colors">Depoimentos</a>
+          </nav>
+
+          {/* Buttons */}
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={onLogin}
+              className="px-4 py-2 text-sm font-medium text-[#F8FAFC] hover:text-white border border-transparent hover:border-white/20 rounded-lg transition-all"
+            >
+              Entrar
             </button>
+            <button 
+              onClick={onStart}
+              className="px-6 py-2 bg-[#F97316] hover:bg-[#EA580C] text-white text-sm font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(249,115,22,0.3)] hover:shadow-[0_0_30px_rgba(249,115,22,0.5)]"
+            >
+              Teste Grátis — 14 dias
+            </button>
+          </div>
         </div>
+      </header>
+
+      {/* SEÇÃO 2 — HERO */}
+      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6 overflow-hidden">
+        {/* Glow & Grid */}
+        <div className="absolute inset-0 z-0 bg-grid-pattern opacity-40"></div>
+        <div className="absolute top-0 left-0 w-full h-full z-0 hero-glow"></div>
 
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center relative z-10">
-          
-          {/* LADO ESQUERDO: TEXTO & CTA */}
-          <div className="space-y-8 relative z-20">
-            
-            {/* Logo & Nome */}
-            <div className="flex items-center gap-3 opacity-0 animate-fade-in" style={{ animationDelay: '0s' }}>
-                <img src="https://iili.io/q2iUbkl.md.png" alt="CutFlow Logo" className="w-10 h-10 object-contain" />
-                <span className="text-2xl font-bold text-white tracking-tight">CutFlow</span>
-            </div>
-
-            <div 
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-bold uppercase tracking-wide opacity-0 animate-fade-in"
-              style={{ animationDelay: '0.2s' }}
+          {/* Coluna Esquerda: Texto */}
+          <div className="space-y-8">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#F97316]/10 border border-[#F97316]/30 text-[#F97316] text-[10px] font-bold uppercase tracking-widest"
             >
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F97316] opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F97316]"></span>
               </span>
               Sistema de Alta Performance
-            </div>
-            
-            <h1 className="text-5xl md:text-7xl font-bold leading-[1.1] tracking-tight">
-              <span className="block opacity-0 animate-slide-up" style={{ animationDelay: '0.4s' }}>Sua barbearia</span>
-              <span className="block opacity-0 animate-slide-up" style={{ animationDelay: '0.6s' }}>no <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-400 drop-shadow-[0_0_15px_rgba(249,115,22,0.3)]">próximo nível</span></span>
-            </h1>
-            
-            <p 
-              className="text-lg text-slate-400 max-w-xl leading-relaxed opacity-0 animate-slide-up" 
-              style={{ animationDelay: '0.8s' }}
-            >
-              Sistema completo de agendamento online. Seus clientes marcam horário 24h por dia, você só se preocupa em cortar.
-            </p>
+            </motion.div>
 
-            <div 
-              className="flex flex-col sm:flex-row gap-4 opacity-0 animate-slide-up"
-              style={{ animationDelay: '1s' }}
+            <h1 className="text-5xl md:text-7xl font-extrabold leading-[1.1] tracking-tight text-white">
+              <motion.span 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="block"
+              >
+                Sua barbearia
+              </motion.span>
+              <motion.span 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="block text-gradient"
+              >
+                no próximo nível
+              </motion.span>
+            </h1>
+
+            <motion.p 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="text-lg md:text-xl text-[#94A3B8] max-w-xl leading-relaxed"
+            >
+              Agendamento online 24h, automação de WhatsApp e inteligência artificial — tudo em um sistema feito para barbearias que querem crescer.
+            </motion.p>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
+              className="flex flex-col sm:flex-row items-center gap-4"
             >
               <button 
                 onClick={onStart}
-                className="px-8 py-4 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-lg transition-all hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/30 flex items-center justify-center gap-2 group"
+                className="w-full sm:w-auto px-8 py-4 bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-lg rounded-xl transition-all hover:scale-105 shadow-xl shadow-[#F97316]/20 flex items-center justify-center gap-2 group"
               >
-                Começar Grátis <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>
+                Começar grátis por 14 dias
+                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </button>
-            </div>
-          </div>
+              <button className="w-full sm:w-auto px-8 py-4 bg-transparent border border-[#334155] hover:bg-white/5 text-white font-bold text-lg rounded-xl transition-all flex items-center justify-center gap-2">
+                <Play size={20} fill="currentColor" />
+                Ver demonstração
+              </button>
+            </motion.div>
 
-          {/* LADO DIREITO: MOCKUP FLUTUANTE 3D */}
-          {/* Wrap animations properly to avoid conflicts: Parent handles entry (Fade/Slide), Child handles Float */}
-          <div 
-            className="relative hidden lg:block perspective-1000 opacity-0 animate-slide-in-right z-10"
-            style={{ animationDelay: '0.8s' }}
-          >
-            {/* Phone Container with Float Animation */}
-            <div 
-                className="relative mx-auto w-[320px] h-[640px] bg-[#121212] rounded-[3.5rem] border-[10px] border-[#1a1a1a] shadow-2xl animate-float"
-                style={{ 
-                    boxShadow: '0 50px 100px -20px rgba(0, 0, 0, 0.7), 0 0 40px rgba(249, 115, 22, 0.15)',
-                    transformStyle: 'preserve-3d',
-                    transform: 'rotateY(-12deg) rotateX(5deg)'
-                }}
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1 }}
+              className="flex flex-wrap items-center gap-x-6 gap-y-3 text-[13px] text-[#94A3B8] font-medium"
             >
-                {/* Gloss/Reflection Effect */}
-                <div className="absolute inset-0 rounded-[3rem] bg-gradient-to-tr from-white/5 to-transparent pointer-events-none z-30"></div>
+              <span className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-[#F97316]" /> Sem cartão de crédito
+              </span>
+              <span className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-[#F97316]" /> Configuração em 5 minutos
+              </span>
+              <span className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-[#F97316]" /> Suporte via WhatsApp
+              </span>
+            </motion.div>
+          </div>
 
-                {/* Notch */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 h-7 w-36 bg-[#1a1a1a] rounded-b-2xl z-20"></div>
+          {/* Coluna Direita: Visual Mockup */}
+          <motion.div 
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.8, type: 'spring' }}
+            className="relative"
+          >
+            {/* Dashboard Mockup */}
+            <motion.div 
+              animate={{ y: [0, -12, 0] }}
+              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              className="relative z-10 bg-[#1E293B] border border-[#334155] rounded-2xl shadow-2xl overflow-hidden p-1 p-b-0"
+            >
+                <div className="bg-[#0B0F19] rounded-t-xl p-4 flex items-center justify-between border-b border-[#334155]">
+                    <div className="flex gap-1.5">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-500/50"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50"></div>
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-500/50"></div>
+                    </div>
+                    <div className="text-[10px] text-[#94A3B8] font-mono">cutflow.app/admin</div>
+                </div>
+                <div className="p-6 grid grid-cols-2 gap-4">
+                    <div className="col-span-2 bg-[#0B0F19] p-4 rounded-xl border border-[#334155]/50">
+                        <p className="text-[10px] text-[#94A3B8] uppercase font-bold tracking-wider mb-2">Faturamento Hoje</p>
+                        <div className="text-2xl font-bold">R$ 1.240,00</div>
+                    </div>
+                    <div className="bg-[#0B0F19] p-4 rounded-xl border border-[#334155]/50">
+                        <p className="text-[10px] text-[#94A3B8] uppercase font-bold tracking-wider mb-1">Agendamentos</p>
+                        <div className="text-xl font-bold">12</div>
+                    </div>
+                    <div className="bg-[#0B0F19] p-4 rounded-xl border border-[#334155]/50">
+                        <p className="text-[10px] text-[#94A3B8] uppercase font-bold tracking-wider mb-1">Taxa Retorno</p>
+                        <div className="text-xl font-bold text-green-400">82%</div>
+                    </div>
+                </div>
+                <div className="px-6 pb-6 mt-2">
+                    <div className="h-24 bg-[#0B0F19] rounded-xl border border-[#334155]/50 flex items-end gap-1 p-3">
+                        {[40, 70, 45, 90, 65, 80, 55].map((h, i) => (
+                            <div key={i} className="flex-1 bg-[#F97316]/20 rounded-t-sm" style={{ height: `${h}%` }}>
+                                <div className="w-full bg-[#F97316] rounded-t-sm" style={{ height: `${h * 0.4}%` }}></div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </motion.div>
 
-                {/* --- 5. INTERFACE DENTRO DO CELULAR --- */}
-                <div className="w-full h-full bg-[#18181b] rounded-[3rem] overflow-hidden flex flex-col relative z-10">
+            {/* Notification Card (WhatsApp) */}
+            <motion.div 
+               animate={{ y: [20, 8, 20], x: [-10, -20, -10] }}
+               transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+               className="absolute -top-12 -left-8 z-20 bg-white p-4 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-200 min-w-[280px]"
+            >
+                <div className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center text-white">
+                    <MessageSquare size={20} fill="currentColor" />
+                </div>
+                <div>
+                    <div className="flex items-center justify-between gap-4">
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">WhatsApp Delivery</p>
+                        <span className="text-[9px] text-slate-400">agora</span>
+                    </div>
+                    <p className="text-xs text-slate-800 font-medium">
+                        Novo agendamento: <span className="font-bold">João Silva</span> 
+                        <br/>Corte Degradê · Hoje 14h
+                    </p>
+                </div>
+            </motion.div>
+
+            {/* Review Card */}
+            <motion.div 
+              animate={{ y: [-10, 2, -10], x: [10, 20, 10] }}
+              transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute -bottom-8 -right-8 z-20 bg-[#1E293B] p-4 rounded-xl shadow-2xl border border-[#334155] flex flex-col gap-2 min-w-[200px]"
+            >
+                <div className="flex items-center gap-1">
+                    {[1,2,3,4,5].map(i => <Star key={i} size={14} fill="#F97316" color="#F97316" />)}
+                </div>
+                <div>
+                   <p className="text-xl font-bold">4.9</p>
+                   <p className="text-[10px] text-[#94A3B8] font-bold uppercase tracking-wider">+120 avaliações este mês</p>
+                </div>
+            </motion.div>
+
+            {/* Glow Background */}
+            <div className="absolute inset-0 bg-[#F97316]/10 blur-[100px] -z-10 rounded-full translate-x-1/4"></div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* SEÇÃO 3 — BARRA DE PROVA SOCIAL */}
+      <section className="bg-[#111827] border-y border-[#334155] py-12 relative z-10 transition-opacity">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12">
+          {[
+            { label: 'Barbearias ativas', value: 1200, prefix: '+' },
+            { label: 'Agendamentos/mês', value: 48000, prefix: '+' },
+            { label: 'Faturamento gerenciado', value: 2.4, suffix: 'M', prefix: 'R$' },
+            { label: 'Taxa de satisfação', value: 98, suffix: '%' },
+          ].map((stat, i) => (
+            <div key={i} className="text-center group">
+               <div className="text-4xl md:text-5xl font-black text-white mb-2 flex items-center justify-center gap-1">
+                   <CountUp end={stat.value} prefix={stat.prefix} suffix={stat.suffix} />
+               </div>
+               <p className="text-[#94A3B8] text-sm uppercase font-bold tracking-widest">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* SEÇÃO 4 — FUNCIONALIDADES PRINCIPAIS */}
+      <section id="features" className="py-24 px-6 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16 space-y-4">
+             <h2 className="text-3xl md:text-5xl font-extrabold text-white">Tudo que sua barbearia precisa, em um só lugar</h2>
+             <p className="text-[#94A3B8] text-lg max-w-2xl mx-auto">
+                Do agendamento ao pós-venda. Do financeiro à fidelização. CutFlow é o sistema que trabalha enquanto você corta.
+             </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              { icon: '📅', title: 'Agendamento Online 24h', desc: 'Seus clientes agendam pelo link exclusivo da sua barbearia, escolhem o serviço, o profissional e o horário.' },
+              { icon: '📱', title: 'WhatsApp Automatizado', desc: 'Instância própria por barbearia. Confirmações, lembretes, pós-venda e reativação — tudo no automático.' },
+              { icon: '🤖', title: 'Inteligência Artificial', desc: 'Chatbot de insights: analise seu barbeiro mais rentável e receba relatórios semanais automáticos.' },
+              { icon: '💰', title: 'Controle Financeiro', desc: 'Caixa diário, relatórios por período, comissões automáticas e todos os métodos de pagamento (PIX, Crédito).' },
+              { icon: '🎯', title: 'Programa de Fidelidade', desc: 'Cartão fidelidade ou sistema de pontos. Cupons gerados e enviados automaticamente via WhatsApp.' },
+              { icon: '📋', title: 'Clube de Assinaturas', desc: 'Planos mensais (ex: 4 cortes/mês). Gestão de assinantes, controle de uso e status de pagamento.' },
+              { icon: '👥', title: 'Gestão de Equipe', desc: 'Perfis individuais por barbeiro, acesso restrito, agenda visual colorida e notificações de novos agendamentos.' },
+              { icon: '📊', title: 'Relatórios Avançados', desc: 'Painéis de serviços mais vendidos, clientes valiosos, análise de cancelamentos e faltas.' },
+              { icon: '🎨', title: 'Personalização Total', desc: 'Logo, cores e serviços com imagens geradas por IA. A página de agendamento com a sua identidade.' },
+              { icon: '🔒', title: 'Login Seguro para Clientes', desc: 'Acesso via link mágico enviado no WhatsApp. Sem senhas para lembrar. Histórico e pontos num só lugar.' },
+              { icon: '🎟️', title: 'Cupons e Promoções', desc: 'Crie cupons com descontos percentuais ou fixos, limites de uso e datas de validade para campanhas.' },
+              { icon: '📆', title: 'Agenda Visual Semanal', desc: 'Calendário com slots por profissional, bloqueios de horário e visualização rápida da semana.' },
+            ].map((f, i) => (
+              <motion.div 
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.05 }}
+                className="card-premium p-8 group cursor-default"
+              >
+                <div className="text-4xl mb-6 group-hover:scale-110 transition-transform origin-left">{f.icon}</div>
+                <h3 className="text-xl font-bold text-white mb-3 group-hover:text-[#F97316] transition-colors">{f.title}</h3>
+                <p className="text-[#94A3B8] text-sm leading-relaxed">{f.desc}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SEÇÃO 5 — DESTAQUE WHATSAPP */}
+      <section className="py-24 px-6 relative bg-gradient-to-b from-[#0B0F19] to-[#040608] overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-5xl font-extrabold text-white">Seu WhatsApp trabalha por você — 24 horas por dia</h2>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+            {/* Esquerda: Mockup Chat */}
+            <div className="relative">
+                <div className="bg-[#121B22] rounded-3xl p-6 border border-[#233138] shadow-2xl max-w-[450px] mx-auto overflow-hidden">
+                    <div className="flex items-center gap-3 mb-8 border-b border-[#233138] pb-4">
+                        <div className="w-10 h-10 rounded-full bg-slate-700"></div>
+                        <div>
+                            <p className="text-sm font-bold text-white uppercase tracking-tight">João Silva</p>
+                            <p className="text-[10px] text-green-500">Online</p>
+                        </div>
+                    </div>
                     
-                    {/* App Header */}
-                    <div className="bg-[#27272a] p-6 pt-12 pb-6 rounded-b-3xl shadow-lg border-b border-white/5">
-                        <div className="flex items-center gap-4">
-                             <div className="w-12 h-12 rounded-full bg-orange-500 text-white font-bold flex items-center justify-center text-lg border-2 border-[#18181b] shadow-md">MK</div>
-                             <div>
-                                 <h3 className="font-bold text-white leading-tight">Mustache King</h3>
-                                 <p className="text-orange-500 text-xs font-medium flex items-center gap-1">
-                                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                                     Aberto agora
-                                 </p>
-                             </div>
-                        </div>
-                    </div>
+                    <div className="flex flex-col gap-4">
+                        <motion.div 
+                          className="whatsapp-bubble whatsapp-left"
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                        >
+                            <div className="text-[#F97316] text-[10px] font-bold mb-1">Confirmação imediata</div>
+                            "Olá João! Seu horário de Corte Degradê com Rafael no dia 15/04 às 14h está confirmado. Até lá! ✂️"
+                        </motion.div>
 
-                    {/* App Body */}
-                    <div className="p-5 space-y-4">
-                        {/* Service Card 1 */}
-                        <div className="bg-[#27272a] p-4 rounded-2xl border border-white/5 flex items-center justify-between group cursor-default hover:bg-[#323236] transition-colors">
-                             <div>
-                                 <p className="font-medium text-white text-sm">Corte Degradê</p>
-                                 <p className="text-xs text-slate-500">45 min</p>
-                             </div>
-                             <span className="text-orange-500 font-bold text-sm">R$ 35</span>
-                        </div>
-                         {/* Service Card 2 */}
-                         <div className="bg-[#27272a] p-4 rounded-2xl border border-white/5 flex items-center justify-between cursor-default hover:bg-[#323236] transition-colors">
-                             <div>
-                                 <p className="font-medium text-white text-sm">Barba Completa</p>
-                                 <p className="text-xs text-slate-500">30 min</p>
-                             </div>
-                             <span className="text-orange-500 font-bold text-sm">R$ 50</span>
-                        </div>
-                        {/* Service Card 3 (Active Style) */}
-                        <div className="bg-gradient-to-r from-slate-800 to-slate-800 p-4 rounded-2xl border border-orange-500/50 shadow-[0_0_20px_rgba(249,115,22,0.15)] flex items-center justify-between cursor-default relative overflow-hidden">
-                             <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500"></div>
-                             <div>
-                                 <p className="font-medium text-white text-sm">Corte + Barba</p>
-                                 <p className="text-xs text-slate-500">60 min</p>
-                             </div>
-                             <span className="text-orange-500 font-bold text-sm">R$ 65</span>
-                        </div>
+                        <motion.div 
+                          className="whatsapp-bubble whatsapp-left opacity-60"
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.2 }}
+                        >
+                            <div className="text-[#94A3B8] text-[10px] font-bold mb-1">24h antes</div>
+                            "Olá João! Lembrando do seu horário amanhã às 14h com Rafael. Nos vemos lá! 💈"
+                        </motion.div>
 
-                        {/* Time Slots */}
-                        <div className="pt-4">
-                             <p className="text-xs text-slate-500 mb-3 font-medium">Horários disponíveis hoje</p>
-                             <div className="flex gap-2">
-                                 <div className="px-3 py-2 rounded-xl bg-[#27272a] text-slate-400 text-xs font-medium border border-white/5">09:00</div>
-                                 <div className="px-3 py-2 rounded-xl bg-orange-500 text-white text-xs font-bold shadow-lg shadow-orange-500/30 scale-105 border border-orange-400">10:00</div>
-                                 <div className="px-3 py-2 rounded-xl bg-[#27272a] text-slate-400 text-xs font-medium border border-white/5">14:00</div>
-                                 <div className="px-3 py-2 rounded-xl bg-[#27272a] text-slate-400 text-xs font-medium border border-white/5 opacity-50 line-through">15:00</div>
-                             </div>
-                        </div>
-                    </div>
+                        <motion.div 
+                          className="whatsapp-bubble whatsapp-left border-l-2 border-[#F97316]"
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.4 }}
+                        >
+                            <div className="text-[#F97316] text-[10px] font-bold mb-1">Pós-venda — 2h depois</div>
+                            "Olá João! O que achou do atendimento hoje? Sua opinião é muito importante pra gente! 🙏"
+                        </motion.div>
 
-                    {/* Bottom Nav Simulation */}
-                    <div className="mt-auto p-6 bg-[#27272a] flex justify-around items-center border-t border-white/5">
-                         <div className="w-6 h-6 rounded bg-slate-700/50"></div>
-                         <div className="w-6 h-6 rounded bg-orange-500/20"></div>
-                         <div className="w-6 h-6 rounded bg-slate-700/50"></div>
+                        <motion.div 
+                          className="whatsapp-bubble whatsapp-left"
+                          initial={{ opacity: 0, x: -20 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.6 }}
+                        >
+                            <div className="text-[#FBBF24] text-[10px] font-bold mb-1">30 dias depois</div>
+                            "Saudades, João! Faz um tempo que não te vemos aqui na Barbearia do Rafael. Que tal agendar? 💈"
+                        </motion.div>
                     </div>
                 </div>
+                {/* Background glow */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-[#25D366]/5 blur-[100px] -z-10"></div>
+            </div>
 
-                {/* --- 6. ELEMENTOS FLUTUANTES ANIMADOS (Fora do celular, mas dentro do container 3D) --- */}
-                
-                {/* Card 1: New Appointment (Left) - Adjusted position to avoid overlap */}
-                <div 
-                    className="absolute top-24 -left-36 bg-[#1e293b]/95 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 shadow-2xl flex items-center gap-3 animate-float-delayed opacity-0 animate-scale-in w-56 z-50"
-                    style={{ 
-                        animationDelay: '1.2s',
-                        transform: 'translateZ(50px)' // Pops out more
-                    }}
-                >
-                    <div className="w-10 h-10 rounded-full bg-green-500/20 text-green-500 flex items-center justify-center shrink-0">
-                        <Calendar size={18} />
-                    </div>
-                    <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Novo agendamento</p>
-                        <p className="font-bold text-sm text-white">Corte + Barba às 14h</p>
-                    </div>
-                </div>
-
-                {/* Card 2: Stats (Right) - Adjusted position to avoid overlap */}
-                <div 
-                    className="absolute bottom-32 -right-36 bg-[#1e293b]/95 backdrop-blur-md p-4 rounded-2xl border border-slate-700/50 shadow-2xl flex items-center gap-3 animate-float opacity-0 animate-scale-in w-56 z-50"
-                    style={{ 
-                        animationDelay: '1.5s',
-                        transform: 'translateZ(70px)' // Stronger pop out
-                    }}
-                >
-                    <div className="w-10 h-10 rounded-full bg-orange-500/20 text-orange-500 flex items-center justify-center shrink-0">
-                        <TrendingUp size={18} />
-                    </div>
-                    <div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Crescimento</p>
-                        <p className="font-bold text-sm text-white flex items-center gap-1">
-                            +32% <span className="text-[10px] text-green-500 bg-green-500/10 px-1 rounded">HOJE</span>
-                        </p>
-                    </div>
-                </div>
-
+            {/* Direita: Bullets */}
+            <div className="space-y-10">
+                {[
+                    'Instância própria de WhatsApp por barbearia — sem misturar mensagens',
+                    'Templates 100% personalizáveis pelo dono',
+                    'Máximo 3 tentativas por mensagem — sem spam',
+                    'Funciona mesmo quando você está dormindo'
+                ].map((item, i) => (
+                    <motion.div 
+                      key={i} 
+                      className="flex gap-4 group"
+                      initial={{ opacity: 0, x: 20 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ delay: i * 0.1 }}
+                    >
+                        <div className="w-8 h-8 rounded-full bg-[#25D366]/10 flex items-center justify-center shrink-0 group-hover:bg-[#25D366]/20 transition-colors">
+                            <Check size={18} className="text-[#25D366]" />
+                        </div>
+                        <p className="text-xl font-medium text-[#F8FAFC]/90">{item}</p>
+                    </motion.div>
+                ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-24 relative border-t border-white/5 bg-[#0B0F19]">
-         <div className="max-w-7xl mx-auto px-6 relative z-10" ref={featuresSection.ref}>
-           
-           {/* Header */}
-           <div className="text-center mb-16">
-               <span className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-4 block">Funcionalidades</span>
-               <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">
-                  Tudo que você precisa para <br className="hidden md:block"/>
-                  <span className="text-orange-500">crescer seu negócio</span>
-               </h2>
-               <p className="text-slate-400 text-lg max-w-2xl mx-auto">
-                  Ferramentas profissionais desenvolvidas especialmente para barbearias modernas.
-               </p>
-           </div>
+      {/* SEÇÃO 6 — COMO FUNCIONA */}
+      <section id="how-it-works" className="py-24 px-6 relative">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-20">
+             <h2 className="text-3xl md:text-5xl font-extrabold text-white">Comece hoje, receba agendamentos ainda esta semana</h2>
+          </div>
 
-           {/* Grid Cards */}
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              
-              {/* Row 1 */}
-              <FeatureCard 
-                icon={<LinkIcon size={24} className="text-orange-500" />}
-                title="Link Exclusivo"
-                description="Seu link personalizado para compartilhar nas redes sociais e WhatsApp."
-                delay={0}
-                isVisible={featuresSection.isVisible}
-              />
+          <div className="relative">
+            {/* Dotted Line connector */}
+            <div className="hidden lg:block absolute top-[45px] left-[10%] right-[10%] border-t-2 border-dashed border-[#334155] -z-10"></div>
 
-              <FeatureCard 
-                icon={<Calendar size={24} className="text-orange-500" />}
-                title="Agenda Online 24h"
-                description="Clientes agendam a qualquer momento. Sem ligações, sem espera."
-                delay={150}
-                isVisible={featuresSection.isVisible}
-              />
-
-              <FeatureCard 
-                icon={<Palette size={24} className="text-orange-500" />}
-                title="Personalização Total"
-                description="Cores, logo e serviços. Deixe a cara da sua barbearia."
-                delay={300}
-                isVisible={featuresSection.isVisible}
-              />
-
-              <FeatureCard 
-                icon={<Bell size={24} className="text-orange-500" />}
-                title="Notificações Automáticas"
-                description="Lembretes por WhatsApp para reduzir faltas."
-                delay={450}
-                isVisible={featuresSection.isVisible}
-              />
-
-              {/* Row 2 */}
-              <FeatureCard 
-                icon={<BarChart3 size={24} className="text-orange-500" />}
-                title="Relatórios Inteligentes"
-                description="Acompanhe faturamento, serviços mais pedidos e horários de pico."
-                delay={600}
-                isVisible={featuresSection.isVisible}
-              />
-
-              <FeatureCard 
-                icon={<Smartphone size={24} className="text-orange-500" />}
-                title="100% Responsivo"
-                description="Funciona perfeitamente no celular dos seus clientes."
-                delay={750}
-                isVisible={featuresSection.isVisible}
-              />
-
-              <FeatureCard 
-                icon={<Clock size={24} className="text-orange-500" />}
-                title="Gestão de Horários"
-                description="Configure folgas, horários de almoço e dias especiais."
-                delay={900}
-                isVisible={featuresSection.isVisible}
-              />
-
-              <FeatureCard 
-                icon={<Users size={24} className="text-orange-500" />}
-                title="Multi-Barbeiros"
-                description="Cadastre sua equipe e gerencie agendas individuais."
-                delay={1050}
-                isVisible={featuresSection.isVisible}
-              />
-
-           </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                {[
+                    { step: '1', title: 'Crie sua conta', desc: 'Em menos de 2 minutos você cadastra sua barbearia, adiciona seus serviços e define sua agenda de horários.', icon: <UserPlusIcon className="text-[#F97316]" size={32}/> },
+                    { step: '2', title: 'Compartilhe seu link', desc: 'Divulgue cutflow.app/sua-barbearia no Instagram, WhatsApp, Google — seus clientes já podem agendar.', icon: <Share2 className="text-[#FBBF24]" size={32}/> },
+                    { step: '3', title: 'Veja os resultados', desc: 'Acompanhe agendamentos em tempo real, ative as automações de WhatsApp e deixe o sistema trabalhar por você.', icon: <TrendingUp className="text-[#F97316]" size={32}/> }
+                ].map((item, i) => (
+                    <div key={i} className="text-center group">
+                        <div className="w-20 h-20 bg-[#1E293B] rounded-2xl flex items-center justify-center shadow-xl border border-[#334155] mx-auto mb-8 relative group-hover:border-[#F97316] transition-all group-hover:-translate-y-2">
+                            <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[#F97316] text-white font-black text-sm flex items-center justify-center border-4 border-[#0B0F19]">
+                                {item.step}
+                            </div>
+                            {item.icon}
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-4">{item.title}</h3>
+                        <p className="text-[#94A3B8] leading-relaxed">{item.desc}</p>
+                    </div>
+                ))}
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-24 bg-[#0B0F19] relative border-t border-white/5">
-         <div className="max-w-7xl mx-auto px-6 relative z-10" ref={howItWorksSection.ref}>
-            <div className="text-center mb-16">
-               <span className="text-orange-500 font-bold tracking-widest text-xs uppercase mb-4 block">Como Funciona</span>
-               <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Simples assim</h2>
-               <p className="text-slate-400 text-lg max-w-2xl mx-auto">Comece a receber agendamentos online em poucos minutos.</p>
+      {/* SEÇÃO 7 — PLANOS E PREÇOS */}
+      <section id="pricing" className="py-24 px-6 bg-[#0B0F19] relative">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16 space-y-4">
+             <h2 className="text-3xl md:text-5xl font-extrabold text-white">Investimento que se paga no primeiro mês</h2>
+             <p className="text-[#94A3B8] text-lg">Sem taxa de adesão. Cancele quando quiser.</p>
+             
+             {/* Toggle */}
+             <div className="flex items-center justify-center gap-4 pt-8">
+                <span className={`text-sm font-bold ${billingCycle === 'monthly' ? 'text-white' : 'text-[#94A3B8]'}`}>Mensal</span>
+                <button 
+                  onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
+                  className="w-14 h-7 bg-[#1E293B] rounded-full p-1 relative transition-colors border border-[#334155]"
+                >
+                    <motion.div 
+                      animate={{ x: billingCycle === 'monthly' ? 0 : 28 }}
+                      className="w-5 h-5 bg-[#F97316] rounded-full"
+                    />
+                </button>
+                <span className={`text-sm font-bold flex items-center gap-2 ${billingCycle === 'yearly' ? 'text-white' : 'text-[#94A3B8]'}`}>
+                    Anual <span className="bg-green-500/10 text-green-500 text-[10px] px-2 py-0.5 rounded-full border border-green-500/20">2 meses grátis</span>
+                </span>
+             </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-end">
+            {/* ESSENCIAL */}
+            <div className="card-premium p-8 h-fit">
+                <div className="text-sm font-bold text-[#94A3B8] uppercase tracking-widest mb-4">ESSENCIAL</div>
+                <div className="mb-6">
+                    <span className="text-4xl font-black">{billingCycle === 'monthly' ? 'R$ 59,90' : 'R$ 49,90'}</span>
+                    <span className="text-[#94A3B8]">/mês</span>
+                </div>
+                <ul className="space-y-4 mb-8">
+                    <PricingItem text="Até 2 profissionais" />
+                    <PricingItem text="Agendamento online 24h" />
+                    <PricingItem text="Notificações WhatsApp (24h/1h)" />
+                    <PricingItem text="Controle financeiro básico" />
+                    <PricingItem text="Relatório de caixa" />
+                    <PricingItem text="Comissão por barbeiro" />
+                    <PricingItem text="Pós-venda e reativação" inactive />
+                    <PricingItem text="IA de insights" inactive />
+                </ul>
+                <button onClick={onStart} className="w-full py-4 rounded-xl border border-[#334155] hover:bg-white/5 font-bold transition-all">
+                    Começar teste grátis
+                </button>
             </div>
 
-            <div className="relative grid grid-cols-1 md:grid-cols-4 gap-8">
-               {/* Connecting Line (Desktop) */}
-               <div className="hidden md:block absolute top-[4rem] left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-slate-700 to-transparent z-0"></div>
-
-               {/* Step 1 */}
-               <div 
-                 className={`relative z-10 flex flex-col items-center text-center group transition-all duration-700 ${howItWorksSection.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-                 style={{ transitionDelay: '0ms' }}
-               >
-                  <div className="w-32 h-32 rounded-3xl bg-[#1A1F2E] border-2 border-slate-700 flex items-center justify-center mb-6 relative shadow-2xl group-hover:-translate-y-2 transition-transform duration-300 group-hover:border-orange-500/50">
-                     <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-orange-500 text-white font-bold text-base flex items-center justify-center border-4 border-[#0B0F19] shadow-lg z-20">01</div>
-                     <UserPlus className="text-orange-500 drop-shadow-lg" size={48} strokeWidth={1.5} />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Cadastre sua barbearia</h3>
-                  <p className="text-slate-300 text-sm leading-relaxed px-4">Em menos de 2 minutos você cria sua conta gratuitamente.</p>
-               </div>
-
-               {/* Step 2 */}
-               <div 
-                 className={`relative z-10 flex flex-col items-center text-center group transition-all duration-700 ${howItWorksSection.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-                 style={{ transitionDelay: '300ms' }}
-               >
-                  <div className="w-32 h-32 rounded-3xl bg-[#1A1F2E] border-2 border-slate-700 flex items-center justify-center mb-6 relative shadow-2xl group-hover:-translate-y-2 transition-transform duration-300 delay-75 group-hover:border-orange-500/50">
-                     <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-orange-500 text-white font-bold text-base flex items-center justify-center border-4 border-[#0B0F19] shadow-lg z-20">02</div>
-                     <Settings className="text-orange-500 drop-shadow-lg" size={48} strokeWidth={1.5} />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Configure seus serviços</h3>
-                  <p className="text-slate-300 text-sm leading-relaxed px-4">Adicione serviços, preços, horários e personalize seu perfil.</p>
-               </div>
-
-               {/* Step 3 */}
-               <div 
-                 className={`relative z-10 flex flex-col items-center text-center group transition-all duration-700 ${howItWorksSection.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-                 style={{ transitionDelay: '600ms' }}
-               >
-                  <div className="w-32 h-32 rounded-3xl bg-[#1A1F2E] border-2 border-slate-700 flex items-center justify-center mb-6 relative shadow-2xl group-hover:-translate-y-2 transition-transform duration-300 delay-150 group-hover:border-orange-500/50">
-                     <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-orange-500 text-white font-bold text-base flex items-center justify-center border-4 border-[#0B0F19] shadow-lg z-20">03</div>
-                     <Share2 className="text-orange-500 drop-shadow-lg" size={48} strokeWidth={1.5} />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Compartilhe seu link</h3>
-                  <p className="text-slate-300 text-sm leading-relaxed px-4">Divulgue seu link exclusivo nas redes sociais e WhatsApp.</p>
-               </div>
-
-               {/* Step 4 */}
-               <div 
-                 className={`relative z-10 flex flex-col items-center text-center group transition-all duration-700 ${howItWorksSection.isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-                 style={{ transitionDelay: '900ms' }}
-               >
-                  <div className="w-32 h-32 rounded-3xl bg-[#1A1F2E] border-2 border-slate-700 flex items-center justify-center mb-6 relative shadow-2xl group-hover:-translate-y-2 transition-transform duration-300 delay-200 group-hover:border-orange-500/50">
-                     <div className="absolute -top-4 -right-4 w-10 h-10 rounded-full bg-orange-500 text-white font-bold text-base flex items-center justify-center border-4 border-[#0B0F19] shadow-lg z-20">04</div>
-                     <TrendingUp className="text-orange-500 drop-shadow-lg" size={48} strokeWidth={1.5} />
-                  </div>
-                  <h3 className="text-xl font-bold text-white mb-3">Veja os resultados</h3>
-                  <p className="text-slate-300 text-sm leading-relaxed px-4">Receba agendamentos automaticamente e foque no que importa.</p>
-               </div>
+            {/* PROFISSIONAL */}
+            <div className="card-premium p-10 relative overflow-hidden border-[#F97316] transform lg:scale-110 shadow-2xl shadow-[#F97316]/10 z-20">
+                <div className="absolute top-4 right-4 bg-[#F97316] text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">MAIS POPULAR</div>
+                <div className="text-sm font-bold text-[#F97316] uppercase tracking-widest mb-4">PROFISSIONAL</div>
+                <div className="mb-6">
+                    <span className="text-5xl font-black">{billingCycle === 'monthly' ? 'R$ 99,90' : 'R$ 82,90'}</span>
+                    <span className="text-[#94A3B8]">/mês</span>
+                </div>
+                <ul className="space-y-4 mb-10">
+                    <PricingItem text="Até 5 profissionais" bold />
+                    <PricingItem text="Tudo do Essencial" />
+                    <PricingItem text="Pós-venda automático (2h)" />
+                    <PricingItem text="Reativação 30 dias inativo" />
+                    <PricingItem text="Instância própria WhatsApp" />
+                    <PricingItem text="Programa de Fidelidade completo" />
+                    <PricingItem text="IA: Chatbot de insights" />
+                    <PricingItem text="Clube de assinatura" inactive />
+                </ul>
+                <button onClick={onStart} className="w-full py-4 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-black transition-all shadow-xl shadow-[#F97316]/30">
+                    Garantir este plano
+                </button>
             </div>
-         </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="py-24 px-6 relative overflow-hidden">
-        <div className="max-w-5xl mx-auto bg-gradient-to-r from-orange-600 to-orange-500 rounded-3xl p-12 text-center relative overflow-hidden shadow-2xl shadow-orange-900/50 group">
-           <div className="absolute inset-0 bg-grid-pattern opacity-10 group-hover:opacity-20 transition-opacity"></div>
-           <div className="absolute -top-24 -right-24 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
-           
-           <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 relative z-10">Pronto para modernizar?</h2>
-           <p className="text-orange-100 text-lg mb-8 max-w-2xl mx-auto relative z-10">Crie sua conta gratuitamente agora mesmo e comece a receber agendamentos online em menos de 5 minutos.</p>
-           <button 
-             onClick={onStart}
-             className="px-10 py-4 bg-white text-orange-600 font-bold rounded-full text-lg shadow-2xl hover:bg-slate-50 transition-all relative z-10 hover:scale-105 active:scale-95"
-           >
-             Criar Minha Conta Grátis
-           </button>
+            {/* PREMIUM */}
+            <div className="card-premium p-8 h-fit">
+                <div className="text-sm font-bold text-[#94A3B8] uppercase tracking-widest mb-4">PREMIUM</div>
+                <div className="mb-6">
+                    <span className="text-4xl font-black">{billingCycle === 'monthly' ? 'R$ 149,90' : 'R$ 124,90'}</span>
+                    <span className="text-[#94A3B8]">/mês</span>
+                </div>
+                <ul className="space-y-4 mb-8">
+                    <PricingItem text="Profissionais ILIMITADOS" bold />
+                    <PricingItem text="Tudo do Profissional" />
+                    <PricingItem text="Clube de assinaturas" />
+                    <PricingItem text="Templates IA ilimitados" />
+                    <PricingItem text="Relatório semanal WhatsApp" />
+                    <PricingItem text="Suporte Prioritário VIP" />
+                </ul>
+                <button onClick={onStart} className="w-full py-4 rounded-xl border border-[#334155] hover:bg-white/5 font-bold transition-all">
+                    Escolher Premium
+                </button>
+            </div>
+          </div>
+
+          <div className="mt-12 text-center text-sm font-medium text-[#94A3B8] flex flex-wrap justify-center gap-x-8 gap-y-2">
+            <span className="flex items-center gap-2 italic">🔒 14 dias grátis em qualquer plano</span>
+            <span className="flex items-center gap-2 italic">Sem cartão de crédito</span>
+            <span className="flex items-center gap-2 italic">Suporte real via WhatsApp</span>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-8 border-t border-white/5 text-center text-slate-500 text-sm bg-[#0B0F19]">
-        <p>© 2024 CutFlow. Todos os direitos reservados.</p>
+      {/* SEÇÃO 8 — DEPOIMENTOS */}
+      <section id="testimonials" className="py-24 px-6 relative bg-gradient-to-b from-[#0B0F19] to-[#111827]">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+             <h2 className="text-3xl md:text-5xl font-extrabold text-white">Barbearias que já transformaram o negócio</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+                { name: 'Marcos', shop: 'Barbearia do Marcos (SP)', comment: 'Antes eu ficava respondendo WhatsApp até meia-noite confirmando horário. Hoje o sistema faz tudo. Minha agenda está cheia há 3 semanas seguidas.' },
+                { name: 'Rafael Souza', shop: 'Kings Barber (RJ)', comment: 'O programa de fidelidade foi um divisor de águas. Meus clientes voltam mais porque querem bater a meta de pontos. Aumentei a frequência de visita em quase 40%.' },
+                { name: 'Diego Lima', shop: 'Barbearia Premium (MG)', comment: 'Cancelamento caiu 70% desde que ativei os lembretes de WhatsApp. O valor da mensalidade eu recupero só com isso no primeiro mês.' }
+            ].map((d, i) => (
+                <div key={i} className="card-premium p-8 flex flex-col gap-4 group">
+                    <div className="flex gap-1">
+                        {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="#F97316" color="#F97316" />)}
+                    </div>
+                    <p className="text-lg italic text-[#F8FAFC]/90">"{d.comment}"</p>
+                    <div className="flex items-center gap-3 mt-4">
+                        <div className="w-10 h-10 rounded-full bg-[#F97316]/20 border border-[#F97316]/20 flex items-center justify-center font-bold text-[#F97316]">
+                            {d.name.charAt(0)}
+                        </div>
+                        <div>
+                            <p className="font-bold text-white">{d.name}</p>
+                            <p className="text-[11px] text-[#94A3B8] uppercase font-bold tracking-wider">{d.shop}</p>
+                        </div>
+                    </div>
+                </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SEÇÃO 9 — CTA FINAL */}
+      <section className="relative h-[600px] flex items-center justify-center px-6 overflow-hidden bg-[#0B0F19]">
+        {/* Background Effects */}
+        <div className="absolute inset-0 z-0 cta-glow"></div>
+        <div className="absolute top-0 left-0 w-full h-full bg-[#1a0a00]/30 z-0"></div>
+        
+        <div className="max-w-4xl mx-auto text-center relative z-10 space-y-10">
+            <motion.h2 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="text-5xl md:text-7xl font-extrabold text-white leading-tight"
+            >
+                Sua barbearia merece um sistema que trabalha por você
+            </motion.h2>
+
+            <motion.p 
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="text-xl md:text-2xl text-[#94A3B8] max-w-2xl mx-auto"
+            >
+                Junte-se a mais de 1.200 barbearias que já transformaram a gestão com o CutFlow.
+            </motion.p>
+
+            <motion.button 
+              onClick={onStart}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.4 }}
+              className="px-10 py-6 bg-[#F97316] hover:bg-[#EA580C] text-white font-black text-2xl rounded-2xl transition-all shadow-2xl shadow-[#F97316]/40 hover:scale-105 active:scale-95 group"
+            >
+                Criar minha conta grátis
+                <ArrowRight size={28} className="inline-block ml-3 group-hover:translate-x-2 transition-transform" />
+            </motion.button>
+
+            <div className="flex justify-center gap-8 text-[#94A3B8] font-bold uppercase tracking-widest text-[11px]">
+                <span className="flex items-center gap-1.5"><ShieldCheck size={16}/> 14 dias grátis</span>
+                <span className="flex items-center gap-1.5"><Zap size={16}/> Sem cartão</span>
+                <span className="flex items-center gap-1.5"><Award size={16}/> Configuração em 5 min</span>
+            </div>
+        </div>
+      </section>
+
+      {/* SEÇÃO 10 — FOOTER */}
+      <footer className="py-20 px-6 bg-[#040608] border-t border-[#334155]/30">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12">
+            <div className="text-center md:text-left space-y-4">
+                <div className="flex items-center justify-center md:justify-start gap-2">
+                    <img src={logoUrl} alt="CutFlow" className="h-8 w-auto" />
+                    <span className="text-2xl font-black">CutFlow</span>
+                </div>
+                <p className="text-[#94A3B8] text-sm max-w-xs font-medium">Gestão inteligente e automação para barbearias de alto padrão.</p>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-x-12 gap-y-6">
+                {[
+                    { label: 'Plataforma', links: ['Funcionalidades', 'Planos', 'Casos de sucesso'] },
+                    { label: 'Acesso', links: ['Entrar', 'Cadastrar', 'Esqueci senha'] },
+                    { label: 'Suporte', links: ['WhatsApp', 'Instagram', 'Dúvidas'] }
+                ].map((g, i) => (
+                    <div key={i} className="text-center md:text-left space-y-4">
+                        <p className="text-[#F97316] text-[10px] uppercase font-black tracking-widest">{g.label}</p>
+                        <div className="flex flex-col gap-2">
+                            {g.links.map((l, j) => <a key={j} href="#" className="text-sm font-medium text-[#94A3B8] hover:text-white transition-colors">{l}</a>)}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+        <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-[#334155]/20 flex flex-col md:flex-row items-center justify-between text-[#94A3B8] text-[11px] font-bold uppercase tracking-widest gap-4">
+            <p>© 2025 CutFlow. Todos os direitos reservados.</p>
+            <div className="flex gap-6">
+                <a href="#">Privacidade</a>
+                <a href="#">Termos</a>
+            </div>
+        </div>
       </footer>
     </div>
   );
 };
 
-const FeatureCard: React.FC<{ icon: React.ReactNode, title: string, description: string, delay?: number, isVisible?: boolean }> = ({ icon, title, description, delay = 0, isVisible = true }) => (
-  <div 
-    className={`bg-[#1A1F2E] p-8 rounded-2xl border border-slate-700 hover:border-orange-500/50 transition-all duration-700 group hover:-translate-y-1 hover:shadow-xl hover:shadow-orange-500/5 flex flex-col items-start text-left ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}
-    style={{ transitionDelay: `${delay}ms` }}
-  >
-    <div className="mb-6 w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center border border-orange-500/10 group-hover:bg-orange-500/20 transition-colors">
-      {icon}
-    </div>
-    <h3 className="text-lg font-bold mb-3 text-white group-hover:text-orange-500 transition-colors">{title}</h3>
-    <p className="text-slate-400 text-sm leading-relaxed">{description}</p>
-  </div>
+const PricingItem: React.FC<{ text: string, inactive?: boolean, bold?: boolean }> = ({ text, inactive, bold }) => (
+    <li className={`flex items-start gap-3 text-sm ${inactive ? 'opacity-30 line-through' : 'opacity-100'}`}>
+        <Check size={18} className={`${inactive ? 'text-[#94A3B8]' : 'text-[#F97316]'} shrink-0`} />
+        <span className={bold ? 'font-bold text-white' : 'font-medium'}>{text}</span>
+    </li>
 );
+
+const CountUp: React.FC<{ end: number, prefix?: string, suffix?: string }> = ({ end, prefix, suffix }) => {
+    const [count, setCount] = useState(0);
+    const [isMounted, setIsMounted] = useState(false);
+    const ref = React.useRef(null);
+    const isInView = useInView(ref, { once: true });
+
+    useEffect(() => {
+        setIsMounted(true);
+        if (isInView) {
+            let start = 0;
+            const duration = 2000;
+            const increment = end / (duration / 16);
+            
+            const timer = setInterval(() => {
+                start += increment;
+                if (start >= end) {
+                    setCount(end);
+                    clearInterval(timer);
+                } else {
+                    setCount(start);
+                }
+            }, 16);
+            return () => clearInterval(timer);
+        }
+    }, [isInView, end]);
+
+    if (!isMounted) return null;
+
+    return (
+        <span ref={ref}>
+            {prefix}{count === end ? end : count.toLocaleString(undefined, { maximumFractionDigits: (end % 1 === 0 ? 0 : 1) })}{suffix}
+        </span>
+    );
+};
+
+export { LandingPage };

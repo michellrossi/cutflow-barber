@@ -22,6 +22,7 @@ export interface Client {
   email?: string;
   avatarUrl?: string;
   notes?: string;
+  birthDate?: string; // ISO Date YYYY-MM-DD
   totalSpent?: number;
   loyaltyPoints?: number;
   loyaltyCardCount?: number;
@@ -91,6 +92,7 @@ export interface Appointment {
   clientId?: string; // Referência ao cliente (novo)
   clientName: string; // Mantido para compatibilidade ou agendamentos rápidos
   clientPhone: string; // Mantido para compatibilidade
+  clientBirthDate?: string; // [NOVO] Para cadastro inicial
   serviceIds: string[];
   professionalId: string | null;
   date: string; // YYYY-MM-DD

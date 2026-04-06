@@ -3,8 +3,8 @@ import { Service, Professional } from '../../../types';
 import { ArrowLeft, Check, AlertCircle } from 'lucide-react';
 
 interface SummaryStepProps {
-    customerInfo: { name: string, phone: string };
-    setCustomerInfo: (info: { name: string, phone: string }) => void;
+    customerInfo: { name: string, phone: string, birthDate: string };
+    setCustomerInfo: (info: { name: string, phone: string, birthDate: string }) => void;
     couponCode: string;
     setCouponCode: (c: string) => void;
     appliedCoupon: string | null;
@@ -66,6 +66,20 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
                                     color: settings.inputTextColor || '#ffffff' 
                                 }}
                                 placeholder="(00) 00000-0000" 
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm mb-1" style={{ color: settings.textColor || '#94a3b8' }}>Data de Nascimento</label>
+                            <input 
+                                type="date"
+                                value={customerInfo.birthDate} 
+                                onChange={e => setCustomerInfo({...customerInfo, birthDate: e.target.value})} 
+                                className="w-full border rounded-lg p-3 focus:outline-none" 
+                                style={{ 
+                                    backgroundColor: settings.inputBackgroundColor || '#0f172a', 
+                                    borderColor: settings.borderColor || '#334155', 
+                                    color: settings.inputTextColor || '#ffffff' 
+                                }}
                             />
                         </div>
                     </div>
