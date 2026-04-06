@@ -127,7 +127,7 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
                         <label className="block text-sm font-medium text-slate-300">Link Personalizado (Slug)</label>
                         <div className="mt-1 flex rounded-md shadow-sm">
                             <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-slate-600 bg-slate-800 text-slate-400 sm:text-sm">
-                            cutflow.com/
+                            insightbarber.com.br/
                             </span>
                             <input type="text" required value={slug} onChange={e => setSlug(e.target.value.toLowerCase())} className="flex-1 min-w-0 block w-full px-3 py-3 rounded-none rounded-r-md border border-slate-600 bg-slate-900 text-white focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="barbearia-do-ze" />
                         </div>

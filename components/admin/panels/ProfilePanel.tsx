@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { User, Store, Shield, Clock, Save, Link as LinkIcon, MapPin, Instagram, Mail, Phone, Lock } from 'lucide-react';
+import { User, Store, Shield, Clock, Save, Link as LinkIcon, MapPin, Instagram, Mail, Phone, Lock, Facebook, MessageCircle, FileText, QrCode, Globe, Download, Copy, Check } from 'lucide-react';
 import { useShop } from '../../../store';
+import { supabase } from '../../../supabaseClient';
 import { useToast } from '../../ui/ToastContext';
 
 type ProfileTab = 'cadastro' | 'barbearia' | 'conta' | 'horarios';
@@ -35,6 +36,11 @@ export const ProfilePanel = () => {
     const [barbName, setBarbName]       = useState(settings?.name || '');
     const [barbAddress, setBarbAddress] = useState(settings?.address || '');
     const [barbInstagram, setBarbInstagram] = useState(settings?.instagram || '');
+    const [barbFacebook, setBarbFacebook] = useState(settings?.facebook || '');
+    const [barbWhatsapp, setBarbWhatsapp] = useState(settings?.whatsapp || '');
+    const [barbDescription, setBarbDescription] = useState(settings?.description || '');
+    const [slug, setSlug] = useState(shop?.slug || '');
+    const [slugSaving, setSlugSaving] = useState(false);
 
     // ---- Horários ----
     const [hours, setHours] = useState<Record<string, { active: boolean; start: string; end: string }>>(
@@ -51,6 +57,20 @@ export const ProfilePanel = () => {
         setSaving(false);
         if (result?.success) showToast(msg, 'success');
         else showToast(result?.error || 'Erro ao salvar.', 'error');
+    };
+
+    const handleUpdateSlug = async () => {
+        if (!slug || slug === shop?.slug) return;
+        setSlugSaving(true);
+        try {
+            const { error } = await supabase.from('shops').update({ slug: slug.toLowerCase().trim() }).eq('id', shop?.id);
+            if (error) throw error;
+            showToast('Slug da barbearia atualizado!', 'success');
+        } catch (e: any) {
+            showToast(e.message || 'Erro ao atualizar link.', 'error');
+        } finally {
+            setSlugSaving(false);
+        }
     };
 
     return (
@@ -114,46 +134,143 @@ export const ProfilePanel = () => {
 
                 {/* ---- BARBEARIA ---- */}
                 {activeTab === 'barbearia' && (
-                    <div className="max-w-2xl animate-fade-in">
-                        <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2"><Store className="text-orange-500" /> Dados do Estabelecimento</h3>
-                        <div className="space-y-4">
-                            <div>
-                                <label className={labelClass}>Nome da Barbearia</label>
-                                <div className="relative">
-                                    <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                    <input type="text" placeholder="Nome oficial" className={inputClass} value={barbName} onChange={e => setBarbName(e.target.value)} />
-                                </div>
-                            </div>
-                            <div>
-                                <label className={labelClass}>Endereço Físico</label>
-                                <div className="relative">
-                                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                    <input type="text" placeholder="Rua, Número, Bairro, Cidade - UF" className={inputClass} value={barbAddress} onChange={e => setBarbAddress(e.target.value)} />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className={labelClass}>Instagram (@)</label>
-                                    <div className="relative">
-                                        <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                        <input type="text" placeholder="@suabarbearia" className={inputClass} value={barbInstagram} onChange={e => setBarbInstagram(e.target.value)} />
+                    <div className="max-w-4xl animate-fade-in space-y-8">
+                        <div>
+                            <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2"><Store className="text-orange-500" /> Dados do Estabelecimento</h3>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className={labelClass}>Nome da Barbearia</label>
+                                        <div className="relative">
+                                            <Store className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                            <input type="text" placeholder="Nome oficial" className={inputClass} value={barbName} onChange={e => setBarbName(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className={labelClass}>Endereço Físico</label>
+                                        <div className="relative">
+                                            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                            <input type="text" placeholder="Rua, Número, Bairro, Cidade - UF" className={inputClass} value={barbAddress} onChange={e => setBarbAddress(e.target.value)} />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className={labelClass}>Descrição (Quem Somos)</label>
+                                        <div className="relative">
+                                            <FileText className="absolute left-3 top-4 w-5 h-5 text-slate-400" />
+                                            <textarea 
+                                                placeholder="Conte um pouco sobre sua barbearia para seus clientes..." 
+                                                className={`${inputClass} !pl-10 h-32 resize-none pt-3`}
+                                                value={barbDescription}
+                                                onChange={e => setBarbDescription(e.target.value)}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <label className={labelClass}>Link Público (Agenda)</label>
-                                    <div className="relative">
-                                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                        <input type="text" className={inputClass} value={`cutflow.com.br/b/${shop?.slug || ''}`} readOnly />
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className={labelClass}>Link Público (Agenda)</label>
+                                        <div className="relative flex gap-2">
+                                            <div className="relative flex-1">
+                                                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
+                                                <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 h-[50px]">
+                                                    <span className="text-slate-400 text-sm font-medium shrink-0">insightbarber.com.br/b/</span>
+                                                    <input 
+                                                        type="text" 
+                                                        className="bg-transparent border-none p-0 focus:ring-0 text-slate-700 font-bold flex-1 text-sm lowercase" 
+                                                        value={slug} 
+                                                        onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))} 
+                                                    />
+                                                </div>
+                                            </div>
+                                            <button 
+                                                onClick={handleUpdateSlug}
+                                                disabled={slugSaving || slug === shop?.slug}
+                                                className="bg-slate-900 text-white px-4 rounded-xl font-bold hover:bg-slate-800 transition-all text-xs h-[50px] disabled:opacity-50 shrink-0"
+                                            >
+                                                {slugSaving ? '...' : 'Alterar'}
+                                            </button>
+                                        </div>
+                                        <p className="text-[10px] text-slate-400 mt-1 ml-1">Cuidado: Alterar o link invalidará links antigos compartilhados.</p>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className={labelClass}>WhatsApp (Comercial)</label>
+                                            <div className="relative">
+                                                <MessageCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                                <input type="tel" placeholder="(00) 00000-0000" className={inputClass} value={barbWhatsapp} onChange={e => setBarbWhatsapp(e.target.value)} />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className={labelClass}>Instagram (@)</label>
+                                            <div className="relative">
+                                                <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                                <input type="text" placeholder="@suabarbearia" className={inputClass} value={barbInstagram} onChange={e => setBarbInstagram(e.target.value)} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className={labelClass}>Facebook (Username)</label>
+                                        <div className="relative">
+                                            <Facebook className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                                            <input type="text" placeholder="facebook.com/suabarbearia" className={inputClass} value={barbFacebook} onChange={e => setBarbFacebook(e.target.value)} />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            
                             <button
                                 disabled={saving}
-                                onClick={() => save({ name: barbName, address: barbAddress, instagram: barbInstagram }, 'Dados da barbearia salvos!')}
+                                onClick={() => save({ 
+                                    name: barbName, 
+                                    address: barbAddress, 
+                                    instagram: barbInstagram,
+                                    facebook: barbFacebook,
+                                    whatsapp: barbWhatsapp,
+                                    description: barbDescription
+                                }, 'Dados da barbearia salvos!')}
                                 className={btnClass}
                             >
-                                <Save size={18} /> {saving ? 'Salvando...' : 'Salvar Barbearia'}
+                                <Save size={18} /> {saving ? 'Salvando...' : 'Salvar Dados da Barbearia'}
                             </button>
+                        </div>
+
+                        <hr className="border-slate-100" />
+
+                        {/* QR Code and Embed Section */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col items-center text-center">
+                                <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mb-4">
+                                    <QrCode size={32} />
+                                </div>
+                                <h4 className="font-bold text-slate-900 mb-2">QR Code de Agendamento</h4>
+                                <p className="text-sm text-slate-500 mb-6">Gere um código QR personalizado para imprimir e colar em seu estabelecimento.</p>
+                                <button 
+                                    onClick={() => window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=https://insightbarber.com.br/b/${shop?.slug}`, '_blank')}
+                                    className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"
+                                >
+                                    <Download size={18} /> Baixar para Imprimir
+                                </button>
+                            </div>
+
+                            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col items-center text-center">
+                                <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-4">
+                                    <Globe size={32} />
+                                </div>
+                                <h4 className="font-bold text-slate-900 mb-2">Botão para seu Site</h4>
+                                <p className="text-sm text-slate-500 mb-6">Obtenha o código HTML para inserir um botão de agendamento em seu site oficial.</p>
+                                <button 
+                                    onClick={() => {
+                                        const code = `<a href="https://insightbarber.com.br/b/${shop?.slug}" style="background:#ea580c;color:#fff;padding:12px 24px;border-radius:30px;font-weight:bold;text-decoration:none;display:inline-block;">Agendar Horário</a>`;
+                                        navigator.clipboard.writeText(code);
+                                        showToast('Código copiado!', 'success');
+                                    }}
+                                    className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"
+                                >
+                                    <Copy size={18} /> Copiar Código HTML
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}

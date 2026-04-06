@@ -110,7 +110,11 @@ const INITIAL_STATE: ShopState = {
     accentColor: "#f97316",
     borderColor: "#334155",
     inputBackgroundColor: "#0f172a",
-    inputTextColor: "#ffffff"
+    inputTextColor: "#ffffff",
+    description: "",
+    facebook: "",
+    whatsapp: "",
+    paymentMethods: ['credit', 'debit', 'cash', 'pix']
   },
   services: [],
   professionals: [],
@@ -182,6 +186,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       loyaltyRewardType: data.loyalty_reward_type,
       loyaltyRewardValidityDays: data.loyalty_reward_validity_days,
       instagram: data.instagram || '',
+      facebook: data.facebook || '',
+      whatsapp: data.whatsapp || '',
+      description: data.description || '',
+      paymentMethods: data.payment_methods || ['credit', 'debit', 'cash', 'pix'],
       address: data.address || '',
       businessHours: data.business_hours || null,
   });
@@ -1638,6 +1646,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // Profile & Business info
         if (updated.instagram !== undefined) payload.instagram = sanitize(updated.instagram);
+        if (updated.facebook !== undefined) payload.facebook = sanitize(updated.facebook);
+        if (updated.whatsapp !== undefined) payload.whatsapp = sanitize(updated.whatsapp);
+        if (updated.description !== undefined) payload.description = sanitize(updated.description);
+        if (updated.paymentMethods !== undefined) payload.payment_methods = updated.paymentMethods;
         if (updated.address !== undefined) payload.address = sanitize(updated.address);
         if (updated.businessHours !== undefined) payload.business_hours = updated.businessHours;
 

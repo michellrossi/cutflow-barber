@@ -40,6 +40,17 @@ export const PlanPanel: React.FC = () => {
       setDaysRemaining(days > 0 ? days : 0);
     }
   }, [shop]);
+
+  const getTotalTrialDays = () => {
+    if (!shop?.trialStartedAt || !shop?.trialEndsAt) return 14;
+    const start = new Date(shop.trialStartedAt);
+    const end = new Date(shop.trialEndsAt);
+    const diff = end.getTime() - start.getTime();
+    return Math.max(1, Math.ceil(diff / (1000 * 3600 * 24)));
+  };
+
+  const totalDays = getTotalTrialDays();
+  const progress = Math.max(0, Math.min(100, ((totalDays - daysRemaining) / totalDays) * 100));
   const plans: Plan[] = [
     {
       id: 'essencial',
@@ -192,8 +203,8 @@ export const PlanPanel: React.FC = () => {
                 </div>
                 <div className="w-full bg-slate-100 rounded-full h-2">
                   <div 
-                    className="bg-orange-500 h-2 rounded-full" 
-                    style={{ width: `${Math.min(100, (daysRemaining / 30) * 100)}%` }}
+                    className="bg-orange-500 h-2 rounded-full transition-all duration-500" 
+                    style={{ width: `${progress}%` }}
                   ></div>
                 </div>
               </div>

@@ -130,6 +130,10 @@ export interface ShopSettings {
   loyaltyRewardType?: 'percentage' | 'fixed';
   loyaltyRewardValidityDays?: number;
   instagram?: string;
+  facebook?: string;
+  whatsapp?: string;
+  description?: string;
+  paymentMethods?: string[];
   address?: string;
   businessHours?: Record<string, { active: boolean; start: string; end: string }>;
 }

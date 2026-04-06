@@ -29,10 +29,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ initialTab, onTabC
 
     const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
         { id: 'profile', label: 'Perfil', icon: <Store size={18} /> },
-        { id: 'account', label: 'Conta', icon: <User size={18} /> },
-        { id: 'hours', label: 'Horários', icon: <Clock size={18} /> },
-        { id: 'billing', label: 'Assinatura', icon: <CreditCard size={18} /> },
-        { id: 'security', label: 'Segurança', icon: <Shield size={18} /> },
         { id: 'booking_page', label: 'Link de Agendamento', icon: <Globe size={18} /> },
     ];
 
@@ -117,7 +113,7 @@ const AccountSettings: React.FC = () => {
                 <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">URL da Barbearia (Slug)</label>
                     <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-md p-4">
-                        <span className="text-slate-500 text-sm">cutflow.com/</span>
+                        <span className="text-slate-500 text-sm">insightbarber.com.br/</span>
                         <input 
                             value={slug} 
                             onChange={e => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))} 
@@ -409,7 +405,7 @@ const IntegrationsSettings: React.FC = () => {
         <div className="max-w-2xl">
             <div className="mb-8">
                 <h3 className="text-xl font-bold text-white mb-2">Integrações</h3>
-                <p className="text-slate-400">Conecte a CutFlow com outras ferramentas que você já utiliza.</p>
+                <p className="text-slate-400">Conecte a insightbarber.com.br outras ferramentas que você já utiliza.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
