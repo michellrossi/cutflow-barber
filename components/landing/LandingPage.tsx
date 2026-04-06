@@ -5,7 +5,7 @@ import {
   MessageSquare, Calendar, Sparkles, TrendingUp, 
   Target, Users, BarChart3, Palette, ShieldCheck, 
   Ticket, LayoutDashboard, Share2, Star, Zap,
-  Smartphone, Briefcase, Award, Plus
+  Smartphone, Briefcase, Award, Plus, UserPlus
 } from 'lucide-react';
 
 const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ onStart, onLogin }) => {
