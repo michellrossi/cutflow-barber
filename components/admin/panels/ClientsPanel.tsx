@@ -55,6 +55,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
     name: '',
     phone: '',
     email: '',
+    birthDate: '',
     notes: ''
   });
 
@@ -146,11 +147,12 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
         name: client.name,
         phone: client.phone,
         email: client.email || '',
+        birthDate: client.birthDate || '',
         notes: client.notes || ''
       });
     } else {
       setEditingClient(null);
-      setFormData({ name: '', phone: '', email: '', notes: '' });
+      setFormData({ name: '', phone: '', email: '', birthDate: '', notes: '' });
     }
     setIsFormOpen(true);
   };
@@ -307,6 +309,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
                 <th className="p-4 font-bold w-1/6">Celular</th>
                 <th className="p-4 font-bold w-1/6">Data Último Corte</th>
                 <th className="p-4 font-bold w-1/6">Status</th>
+                <th className="p-4 font-bold w-32">Nascimento</th>
                 <th className="p-4 font-bold w-1/6 text-center">Frequência</th>
                 <th className="p-4 font-bold w-1/6 text-right">Ações</th>
               </tr>
@@ -354,6 +357,16 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
                       <span className={`px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase border ${getRiskBadgeColor(client.metrics.risk)}`}>
                         {client.metrics.risk}
                       </span>
+                    </td>
+                    <td className="p-4 text-sm text-slate-600 font-medium whitespace-nowrap">
+                      {client.birthDate ? (
+                        <div className="flex items-center gap-2">
+                          <Calendar size={14} className="text-slate-400" />
+                          {new Date(client.birthDate + 'T12:00:00').toLocaleDateString('pt-BR')}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic font-normal">Não info.</span>
+                      )}
                     </td>
                     <td className="p-4">
                       <div className="flex flex-col items-center gap-1">
@@ -501,6 +514,20 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
               </div>
 
               <div>
+                <label className="block text-sm font-bold text-slate-700 mb-1">Data de Nascimento (Obrigatório)</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
+                  <input 
+                    required
+                    type="date" 
+                    value={formData.birthDate}
+                    onChange={e => setFormData({...formData, birthDate: e.target.value})}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Observações</label>
                 <textarea 
                   value={formData.notes}
@@ -589,6 +616,12 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
                   <div className="text-slate-500 text-xs uppercase font-bold mb-1">Último Corte</div>
                   <div className="text-sm font-bold text-slate-900">
                     {viewingClient.metrics.lastCutDate ? new Date(viewingClient.metrics.lastCutDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'N/A'}
+                  </div>
+                </div>
+                <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 text-center border-t-2 border-t-orange-200">
+                  <div className="text-slate-500 text-xs uppercase font-bold mb-1">Data Nascimento</div>
+                  <div className="text-sm font-bold text-slate-900">
+                    {viewingClient.birthDate ? new Date(viewingClient.birthDate + 'T12:00:00').toLocaleDateString('pt-BR') : 'N/A'}
                   </div>
                 </div>
               </div>

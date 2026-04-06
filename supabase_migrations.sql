@@ -42,11 +42,12 @@ ADD COLUMN IF NOT EXISTS business_hours JSONB,
 ADD COLUMN IF NOT EXISTS instagram TEXT,
 ADD COLUMN IF NOT EXISTS address TEXT;
 
--- CLIENTS: fidelidade e gastos
+-- CLIENTS: fidelidade, gastos e nascimento
 ALTER TABLE public.clients
 ADD COLUMN IF NOT EXISTS total_spent NUMERIC DEFAULT 0,
 ADD COLUMN IF NOT EXISTS loyalty_points INTEGER DEFAULT 0,
-ADD COLUMN IF NOT EXISTS loyalty_card_count INTEGER DEFAULT 0;
+ADD COLUMN IF NOT EXISTS loyalty_card_count INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS birth_date DATE;
 
 -- COUPONS: expiração e fidelidade
 ALTER TABLE public.coupons
