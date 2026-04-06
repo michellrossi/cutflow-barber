@@ -247,7 +247,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                     </span>
                 </div>
                 <button 
-                    onClick={() => setIsPaymentModalOpen(true)}
+                    onClick={() => setActiveTab('plan')}
                     className="bg-white text-slate-900 px-4 py-1 rounded-md text-xs font-bold hover:bg-slate-100 transition-colors uppercase tracking-wide"
                 >
                     Assinar Agora
