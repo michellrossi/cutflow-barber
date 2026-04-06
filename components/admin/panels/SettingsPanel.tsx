@@ -29,7 +29,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ initialTab, onTabC
 
     const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
         { id: 'profile', label: 'Perfil', icon: <Store size={18} /> },
-        { id: 'booking_page', label: 'Link de Agendamento', icon: <Globe size={18} /> },
     ];
 
     return (

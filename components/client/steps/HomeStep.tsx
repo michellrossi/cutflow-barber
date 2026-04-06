@@ -64,23 +64,6 @@ export const HomeStep: React.FC<HomeStepProps> = ({ settings, setStep, onAdminCl
 
             <h1 className="text-3xl md:text-4xl font-bold mb-1 text-center" style={{ color: titleColor }}>{settings.name}</h1>
             
-            <div className="flex items-center gap-4 mb-8">
-                {settings.instagram && (
-                    <a href={`https://instagram.com/${settings.instagram.replace('@', '')}`} target="_blank" className="p-2 rounded-full border hover:brightness-125 transition-all" style={{ backgroundColor: cardBg, borderColor: border, color: accent }}>
-                        <Instagram size={20} />
-                    </a>
-                )}
-                {settings.facebook && (
-                    <a href={`https://facebook.com/${settings.facebook}`} target="_blank" className="p-2 rounded-full border hover:brightness-125 transition-all" style={{ backgroundColor: cardBg, borderColor: border, color: accent }}>
-                        <Facebook size={20} />
-                    </a>
-                )}
-                {settings.whatsapp && (
-                    <a href={`https://wa.me/55${settings.whatsapp.replace(/\D/g, '')}`} target="_blank" className="p-2 rounded-full border hover:brightness-125 transition-all" style={{ backgroundColor: cardBg, borderColor: border, color: accent }}>
-                        <MessageCircle size={20} />
-                    </a>
-                )}
-            </div>
 
             <div className="w-full max-w-sm space-y-6 mb-12">
                 {/* Quem Somos / Descrição */}
@@ -126,6 +109,39 @@ export const HomeStep: React.FC<HomeStepProps> = ({ settings, setStep, onAdminCl
                                             </div>
                                         ))}
                                     </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Redes Sociais */}
+                        {(settings.instagram || settings.facebook || settings.whatsapp) && (
+                            <div className="border-t pt-5" style={{ borderColor: border }}>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-4 text-center">Nossas Redes</p>
+                                <div className="flex justify-center gap-6">
+                                    {settings.instagram && (
+                                        <a href={`https://instagram.com/${settings.instagram.replace('@', '')}`} target="_blank" className="flex flex-col items-center gap-1 group">
+                                            <div className="w-10 h-10 rounded-full border flex items-center justify-center transition-all group-hover:scale-110" style={{ backgroundColor: '#e1306c20', borderColor: '#e1306c40', color: '#e1306c' }}>
+                                                <Instagram size={20} />
+                                            </div>
+                                            <span className="text-[9px] font-bold" style={{ color: textColor }}>Instagram</span>
+                                        </a>
+                                    )}
+                                    {settings.facebook && (
+                                        <a href={`https://facebook.com/${settings.facebook}`} target="_blank" className="flex flex-col items-center gap-1 group">
+                                            <div className="w-10 h-10 rounded-full border flex items-center justify-center transition-all group-hover:scale-110" style={{ backgroundColor: '#1877f220', borderColor: '#1877f240', color: '#1877f2' }}>
+                                                <Facebook size={20} />
+                                            </div>
+                                            <span className="text-[9px] font-bold" style={{ color: textColor }}>Facebook</span>
+                                        </a>
+                                    )}
+                                    {settings.whatsapp && (
+                                        <a href={`https://wa.me/55${settings.whatsapp.replace(/\D/g, '')}`} target="_blank" className="flex flex-col items-center gap-1 group">
+                                            <div className="w-10 h-10 rounded-full border flex items-center justify-center transition-all group-hover:scale-110" style={{ backgroundColor: '#25d36620', borderColor: '#25d36640', color: '#25d366' }}>
+                                                <MessageCircle size={20} />
+                                            </div>
+                                            <span className="text-[9px] font-bold" style={{ color: textColor }}>WhatsApp</span>
+                                        </a>
+                                    )}
                                 </div>
                             </div>
                         )}

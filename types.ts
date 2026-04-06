@@ -135,6 +135,7 @@ export interface ShopSettings {
   description?: string;
   paymentMethods?: string[];
   address?: string;
+  phone?: string;
   businessHours?: Record<string, { active: boolean; start: string; end: string }>;
 }
 

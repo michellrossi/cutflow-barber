@@ -6,6 +6,7 @@ ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'trial',
 ADD COLUMN IF NOT EXISTS whatsapp_instance TEXT,
 ADD COLUMN IF NOT EXISTS whatsapp_connected BOOLEAN DEFAULT false;
 
+
 -- SERVICES: imagem do serviço
 ALTER TABLE public.services
 ADD COLUMN IF NOT EXISTS image_url TEXT;
@@ -40,7 +41,17 @@ ADD COLUMN IF NOT EXISTS loyalty_enabled BOOLEAN DEFAULT true,
 ADD COLUMN IF NOT EXISTS business_hours JSONB,
 -- Informações da barbearia para a página de agendamento
 ADD COLUMN IF NOT EXISTS instagram TEXT,
-ADD COLUMN IF NOT EXISTS address TEXT;
+ADD COLUMN IF NOT EXISTS address TEXT,
+ADD COLUMN IF NOT EXISTS facebook TEXT,
+ADD COLUMN IF NOT EXISTS whatsapp TEXT,
+ADD COLUMN IF NOT EXISTS description TEXT,
+ADD COLUMN IF NOT EXISTS phone TEXT,
+ADD COLUMN IF NOT EXISTS payment_methods TEXT[] DEFAULT '{credit,debit,cash,pix}';
+
+-- Comentário opcional para organização
+COMMENT ON COLUMN settings.description IS 'Campo Quem Somos da barbearia';
+COMMENT ON COLUMN settings.payment_methods IS 'Lista de métodos de pagamento aceitos';
+COMMENT ON COLUMN settings.phone IS 'Celular pessoal do dono da barbearia';
 
 -- CLIENTS: fidelidade, gastos e nascimento
 ALTER TABLE public.clients

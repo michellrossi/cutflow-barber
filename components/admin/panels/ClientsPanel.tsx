@@ -427,7 +427,12 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
                             client.name.substring(0, 2).toUpperCase()
                           )}
                         </div>
-                        <div className="font-bold text-slate-900 truncate">{client.name}</div>
+                        <div className="font-bold text-slate-900 truncate flex items-center gap-2">
+                          {client.name}
+                          {client.birthDate && new Date().getDate() === new Date(client.birthDate + 'T12:00:00').getDate() && new Date().getMonth() === new Date(client.birthDate + 'T12:00:00').getMonth() && (
+                            <span className="text-lg animate-bounce" title="Aniversário Hoje! 🎂">🎂</span>
+                          )}
+                        </div>
                       </div>
                     </td>
                     <td className="p-4 text-[#6b7d99] text-sm font-medium">
@@ -455,7 +460,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
                     <td className="p-4 text-sm text-slate-600 font-medium whitespace-nowrap">
                       {client.birthDate ? (
                         <div className="flex items-center gap-2">
-                          <Calendar size={14} className="text-slate-400" />
+                          <Calendar size={16} className="text-slate-400 shrink-0" />
                           {new Date(client.birthDate + 'T12:00:00').toLocaleDateString('pt-BR')}
                         </div>
                       ) : (

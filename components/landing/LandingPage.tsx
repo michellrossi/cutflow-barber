@@ -242,7 +242,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
                         <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50"></div>
                         <div className="w-2.5 h-2.5 rounded-full bg-green-500/50"></div>
                     </div>
-                    <div className="text-[10px] text-[#94A3B8] font-mono">cutflow.app/admin</div>
+                    <div className="text-[10px] text-[#94A3B8] font-mono">insightbarber.com.br/admin</div>
                 </div>
                 <div className="p-6 grid grid-cols-2 gap-4">
                     <div className="col-span-2 bg-[#0B0F19] p-4 rounded-xl border border-[#334155]/50">
@@ -481,7 +481,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                 {[
                     { step: '1', title: 'Crie sua conta', desc: 'Em menos de 2 minutos você cadastra sua barbearia, adiciona seus serviços e define sua agenda de horários.', icon: <UserPlusIcon className="text-[#F97316]" size={32}/> },
-                    { step: '2', title: 'Compartilhe seu link', desc: 'Divulgue cutflow.app/sua-barbearia no Instagram, WhatsApp, Google — seus clientes já podem agendar.', icon: <Share2 className="text-[#FBBF24]" size={32}/> },
+                    { step: '2', title: 'Compartilhe seu link', desc: 'Divulgue insightbarber.com.br/sua-barbearia no Instagram, WhatsApp, Google — seus clientes já podem agendar.', icon: <Share2 className="text-[#FBBF24]" size={32}/> },
                     { step: '3', title: 'Veja os resultados', desc: 'Acompanhe agendamentos em tempo real, ative as automações de WhatsApp e deixe o sistema trabalhar por você.', icon: <TrendingUp className="text-[#F97316]" size={32}/> }
                 ].map((item, i) => (
                     <div key={i} className="text-center group">
@@ -706,7 +706,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
             </div>
         </div>
         <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-[#334155]/20 flex flex-col md:flex-row items-center justify-between text-[#94A3B8] text-[11px] font-bold uppercase tracking-widest gap-4">
-            <p>© 2025 Insight Barber. Todos os direitos reservados.</p>
+            <p>© 2026 Insight Barber. Todos os direitos reservados.</p>
             <div className="flex gap-6">
                 <a href="#">Privacidade</a>
                 <a href="#">Termos</a>

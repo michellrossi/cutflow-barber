@@ -42,6 +42,12 @@ export const ProfilePanel = () => {
     const [slug, setSlug] = useState(shop?.slug || '');
     const [slugSaving, setSlugSaving] = useState(false);
 
+    // ---- Dados do Dono ----
+    const [ownerName, setOwnerName]   = useState(session?.user?.user_metadata?.full_name || '');
+    const [ownerEmail, setOwnerEmail] = useState(session?.user?.email || '');
+    const [ownerPhone, setOwnerPhone] = useState(settings?.phone || '');
+    const [ownerSaving, setOwnerSaving] = useState(false);
+
     // ---- Horários ----
     const [hours, setHours] = useState<Record<string, { active: boolean; start: string; end: string }>>(
         settings?.businessHours || DEFAULT_HOURS
@@ -108,7 +114,7 @@ export const ProfilePanel = () => {
                                 <label className={labelClass}>Nome Completo do Dono</label>
                                 <div className="relative">
                                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                    <input type="text" placeholder="Seu nome" className={inputClass} defaultValue={session?.user?.user_metadata?.full_name || ''} readOnly />
+                                    <input type="text" placeholder="Seu nome" className={inputClass} value={ownerName} onChange={e => setOwnerName(e.target.value)} />
                                 </div>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -116,18 +122,45 @@ export const ProfilePanel = () => {
                                     <label className={labelClass}>E-mail Pessoal</label>
                                     <div className="relative">
                                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                        <input type="email" className={inputClass} defaultValue={session?.user?.email || ''} readOnly />
+                                        <input type="email" className={inputClass} value={ownerEmail} onChange={e => setOwnerEmail(e.target.value)} />
                                     </div>
                                 </div>
                                 <div>
-                                    <label className={labelClass}>Celular (WhatsApp)</label>
+                                    <label className={labelClass}>Celular (Sua Conta)</label>
                                     <div className="relative">
                                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                                        <input type="tel" placeholder="(00) 00000-0000" className={inputClass} defaultValue={(settings as any)?.phone || ''} readOnly />
+                                        <input type="tel" placeholder="(00) 00000-0000" className={inputClass} value={ownerPhone} onChange={e => setOwnerPhone(e.target.value)} />
                                     </div>
                                 </div>
                             </div>
-                            <p className="text-xs text-slate-400 mt-2">Os dados de cadastro estão vinculados ao seu login. Para alterá-los, use a aba "Dados da Conta".</p>
+                            <button
+                                disabled={ownerSaving}
+                                onClick={async () => {
+                                    setOwnerSaving(true);
+                                    try {
+                                        // Update Auth Metadata (Name)
+                                        const { error: authError } = await supabase.auth.updateUser({ 
+                                            email: ownerEmail !== session?.user?.email ? ownerEmail : undefined,
+                                            data: { full_name: ownerName } 
+                                        });
+                                        if (authError) throw authError;
+
+                                        // Update Shop Settings (Phone)
+                                        const { success, error: settingsError } = await updateSettings({ phone: ownerPhone });
+                                        if (!success) throw new Error(settingsError);
+
+                                        showToast('Informações atualizadas com sucesso!', 'success');
+                                    } catch (e: any) {
+                                        showToast(e.message || 'Erro ao atualizar dados.', 'error');
+                                    } finally {
+                                        setOwnerSaving(false);
+                                    }
+                                }}
+                                className={btnClass}
+                            >
+                                <Save size={18} /> {ownerSaving ? 'Salvando...' : 'Salvar Minhas Informações'}
+                            </button>
+                            <p className="text-xs text-slate-400 mt-2">Dica: O e-mail e nome são usados para seu login administrativo.</p>
                         </div>
                     </div>
                 )}
@@ -174,7 +207,7 @@ export const ProfilePanel = () => {
                                             <div className="relative flex-1">
                                                 <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 z-10" />
                                                 <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 h-[50px]">
-                                                    <span className="text-slate-400 text-sm font-medium shrink-0">insightbarber.com.br/b/</span>
+                                                    <span className="text-slate-400 text-sm font-medium shrink-0">insightbarber.com.br/</span>
                                                     <input 
                                                         type="text" 
                                                         className="bg-transparent border-none p-0 focus:ring-0 text-slate-700 font-bold flex-1 text-sm lowercase" 
@@ -238,38 +271,61 @@ export const ProfilePanel = () => {
 
                         <hr className="border-slate-100" />
 
-                        {/* QR Code and Embed Section */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col items-center text-center">
-                                <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600 mb-4">
-                                    <QrCode size={32} />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
+                            {/* Card QR Code */}
+                            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center text-orange-600">
+                                        <QrCode size={24} />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-lg font-bold text-slate-900">QR Code para Divulgação</h4>
+                                        <p className="text-xs text-slate-500">Imprima para seus clientes agendarem</p>
+                                    </div>
                                 </div>
-                                <h4 className="font-bold text-slate-900 mb-2">QR Code de Agendamento</h4>
-                                <p className="text-sm text-slate-500 mb-6">Gere um código QR personalizado para imprimir e colar em seu estabelecimento.</p>
-                                <button 
-                                    onClick={() => window.open(`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=https://insightbarber.com.br/b/${shop?.slug}`, '_blank')}
-                                    className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"
-                                >
-                                    <Download size={18} /> Baixar para Imprimir
-                                </button>
+                                <div className="bg-slate-50 p-6 rounded-xl flex flex-col items-center gap-4 border border-slate-100 mb-4">
+                                    <div className="w-40 h-40 bg-white p-2 rounded-lg shadow-sm border border-slate-200 flex items-center justify-center">
+                                       <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=https://insightbarber.com.br/${shop?.slug}`} alt="QR Code" className="w-full h-full" />
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            window.open(`https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=https://insightbarber.com.br/${shop?.slug}`, '_blank')
+                                            showToast('QR Code aberto para impressão!');
+                                        }}
+                                        className="text-orange-600 font-bold text-sm flex items-center gap-2 hover:underline"
+                                    >
+                                        <Download size={16} /> Baixar Versão Impressão
+                                    </button>
+                                </div>
                             </div>
 
-                            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-6 flex flex-col items-center text-center">
-                                <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600 mb-4">
-                                    <Globe size={32} />
+                            {/* Card Botão Site */}
+                            <div className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm transition-all hover:shadow-md">
+                                <div className="flex items-center gap-4 mb-6">
+                                    <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                                        <Globe size={24} />
+                                    </div>
+                                    <div>
+                                        <h4 className="text-lg font-bold text-slate-900">Botão para seu Site</h4>
+                                        <p className="text-xs text-slate-500">Integre a agenda no seu site oficial</p>
+                                    </div>
                                 </div>
-                                <h4 className="font-bold text-slate-900 mb-2">Botão para seu Site</h4>
-                                <p className="text-sm text-slate-500 mb-6">Obtenha o código HTML para inserir um botão de agendamento em seu site oficial.</p>
-                                <button 
-                                    onClick={() => {
-                                        const code = `<a href="https://insightbarber.com.br/b/${shop?.slug}" style="background:#ea580c;color:#fff;padding:12px 24px;border-radius:30px;font-weight:bold;text-decoration:none;display:inline-block;">Agendar Horário</a>`;
-                                        navigator.clipboard.writeText(code);
-                                        showToast('Código copiado!', 'success');
-                                    }}
-                                    className="w-full py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"
-                                >
-                                    <Copy size={18} /> Copiar Código HTML
-                                </button>
+                                <div className="space-y-4">
+                                    <div className="p-4 bg-slate-950 rounded-xl font-mono text-[10px] text-slate-400 break-all leading-relaxed relative group overflow-hidden h-32 flex items-center">
+                                        <code>
+                                            {`<a href="https://insightbarber.com.br/${shop?.slug}" style="display:inline-flex;align-items:center;padding:12px 24px;background:#f97316;color:#fff;text-decoration:none;border-radius:12px;font-weight:bold;font-family:sans-serif;">Agendar na ${shop?.name}</a>`}
+                                        </code>
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(`<a href="https://insightbarber.com.br/${shop?.slug}" style="display:inline-flex;align-items:center;padding:12px 24px;background:#f97316;color:#fff;text-decoration:none;border-radius:12px;font-weight:bold;font-family:sans-serif;">Agendar na ${shop?.name}</a>`);
+                                            showToast('Código HTML copiado!', 'success');
+                                        }}
+                                        className="w-full py-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Copy size={18} /> Copiar Código HTML
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -191,6 +191,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       description: data.description || '',
       paymentMethods: data.payment_methods || ['credit', 'debit', 'cash', 'pix'],
       address: data.address || '',
+      phone: data.phone || '',
       businessHours: data.business_hours || null,
   });
 
@@ -1651,6 +1652,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.description !== undefined) payload.description = sanitize(updated.description);
         if (updated.paymentMethods !== undefined) payload.payment_methods = updated.paymentMethods;
         if (updated.address !== undefined) payload.address = sanitize(updated.address);
+        if (updated.phone !== undefined) payload.phone = sanitize(updated.phone);
         if (updated.businessHours !== undefined) payload.business_hours = updated.businessHours;
 
         let error;

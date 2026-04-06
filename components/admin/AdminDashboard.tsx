@@ -139,18 +139,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
         className={`bg-white border-r border-slate-200 flex flex-col hidden md:flex transition-all duration-300 ease-in-out relative z-40 ${isSidebarExpanded ? 'w-64' : 'w-20'} admin-sidebar`}
       >
         <div className={`p-6 flex items-center border-b border-slate-200 transition-all duration-300 ${isSidebarExpanded ? 'gap-3' : 'justify-center p-4'}`}>
-          <div className="w-8 h-8 rounded bg-orange-500 flex items-center justify-center text-white font-bold overflow-hidden shrink-0">
-             <img src="https://i.freeimage.host/qD9Rddv.png" alt="Insight Barber Logo" className="w-full h-full object-cover" />
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
+             <img src="https://iili.io/BRpSlzQ.md.png" alt="Insight Barber Logo" className="w-full h-full object-contain" />
           </div>
-          {isSidebarExpanded && (
-            <motion.span 
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="font-bold text-lg tracking-tight truncate text-slate-900"
-            >
-              INSIGHT BARBER
-            </motion.span>
-          )}
           
           {isSidebarExpanded && (
             <button 
