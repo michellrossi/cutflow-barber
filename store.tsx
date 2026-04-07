@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory } from './types';
+import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger } from './types';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import DOMPurify from 'dompurify';
@@ -50,6 +50,10 @@ interface ShopContextType extends ShopState {
   addMessageTemplate: (template: Omit<MessageTemplate, 'id' | 'shopId'>) => MutationResult;
   updateMessageTemplate: (id: string, template: Partial<MessageTemplate>) => MutationResult;
   removeMessageTemplate: (id: string) => MutationResult;
+
+  addAutomationTrigger: (trigger: Omit<AutomationTrigger, 'id' | 'shopId'>) => MutationResult;
+  updateAutomationTrigger: (id: string, trigger: Partial<AutomationTrigger>) => MutationResult;
+  removeAutomationTrigger: (id: string) => MutationResult;
 
   addMessageCategory: (name: string) => MutationResult;
   removeMessageCategory: (id: string) => MutationResult;
@@ -130,7 +134,8 @@ const INITIAL_STATE: ShopState = {
   clientSession: null,
   trialStatus: 'active',
   daysRemaining: 14,
-  theme: 'dark'
+  theme: 'dark',
+  automationTriggers: []
 };
 
 const sanitize = (text: string): string => {
@@ -193,6 +198,17 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       address: data.address || '',
       phone: data.phone || '',
       businessHours: data.business_hours || null,
+      automationTriggers: data.automation_triggers || [],
+  });
+
+  const mapAutomationTrigger = (data: any): AutomationTrigger => ({
+      id: data.id,
+      shopId: data.shop_id,
+      name: data.name,
+      value: data.value,
+      unit: data.unit,
+      period: data.period,
+      active: data.active
   });
 
   const mapClient = (c: any): Client => ({
@@ -289,9 +305,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       shopId: data.shop_id,
       title: data.title,
       content: data.content,
-      trigger: data.trigger,
-      delayValue: data.delay_value || 0,
-      delayUnit: data.delay_unit || 'minutes',
+      triggerId: data.trigger_id || data.trigger, // Fallback for old data
       active: data.active,
       target: data.target || 'client',
       category: data.category
@@ -475,7 +489,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Executa queries de configurações e dados estáticos em paralelo
-        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, categoriesRes, plansRes, subsRes] = await Promise.all([
+        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes] = await Promise.all([
             supabase.from('settings').select('*').eq('shop_id', shopId).single(),
             supabase.from('services').select('*').eq('shop_id', shopId),
             supabase.from('professionals').select('*').eq('shop_id', shopId),
@@ -485,7 +499,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             supabase.from('message_templates').select('*').eq('shop_id', shopId),
             supabase.from('message_categories').select('*').eq('shop_id', shopId),
             supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
-            supabase.from('client_subscriptions').select('*').eq('shop_id', shopId)
+            supabase.from('client_subscriptions').select('*').eq('shop_id', shopId),
+            supabase.from('automation_triggers').select('*').eq('shop_id', shopId)
         ]);
 
         // OTIMIZAÇÃO: Carregar apenas agendamentos recentes e futuros
@@ -510,6 +525,19 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const mappedPlans = (plansRes.data || []).map(mapSubscriptionPlan);
         const mappedSubs = (subsRes.data || []).map(mapClientSubscription);
         const mappedCategories = (categoriesRes.data || []).map(mapMessageCategory);
+        
+        let mappedTriggers = (triggersRes.data || []).map(mapAutomationTrigger);
+
+        // --- INIT DEFAULT TRIGGERS IF EMPTY ---
+        if (mappedTriggers.length === 0 && userRole === 'owner') {
+             const { data: defaults } = await supabase.from('automation_triggers').insert([
+                { shop_id: shopId, name: 'Confirmação Imediata', value: 0, unit: 'minutes', period: 'immediate', active: true },
+                { shop_id: shopId, name: 'Lembrete de Agendamento', value: 1, unit: 'hours', period: 'before', active: true },
+                { shop_id: shopId, name: 'Pós-Venda e Avaliação', value: 2, unit: 'hours', period: 'after', active: true },
+                { shop_id: shopId, name: 'Reagendamento', value: 1, unit: 'hours', period: 'after', active: true }
+             ]).select();
+             if (defaults) mappedTriggers = defaults.map(mapAutomationTrigger);
+        }
 
         // --- LÓGICA DE ROLES ---
         if (currentSession?.user) {
@@ -554,6 +582,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             messageTemplates: (templatesRes.data || []).map(mapMessageTemplate),
             messageCategories: mappedCategories,
             blockedSlots: (blocksRes.data || []).map(mapBlockedSlot),
+            automationTriggers: mappedTriggers,
             trialStatus: trialInfo.status,
             daysRemaining: trialInfo.days
         }));
@@ -1354,70 +1383,76 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const addMessageTemplate = async (template: Omit<MessageTemplate, 'id' | 'shopId'>): MutationResult => {
-    try {
-        const shopId = ensureShopId();
-        const { data, error } = await supabase.from('message_templates').insert({
-            shop_id: shopId,
-            title: sanitize(template.title),
-            content: template.content, // Not sanitizing to allow variables like [CLIENTE]
-            trigger: template.trigger,
-            delay_value: template.delayValue,
-            delay_unit: template.delayUnit,
-            active: template.active,
-            target: template.target || 'client',
-            category: template.category
-        }).select().single();
+      if (!state.shop) return { success: false, error: 'Shop not found' };
+      const { data, error } = await supabase.from('message_templates').insert({
+          shop_id: state.shop.id,
+          title: template.title,
+          content: template.content,
+          trigger_id: template.triggerId,
+          active: template.active,
+          target: template.target,
+          category: template.category
+      }).select().single();
 
-        if (error) throw error;
-        
-        const newTemplate = mapMessageTemplate(data);
-        setState(prev => ({ ...prev, messageTemplates: [...prev.messageTemplates, newTemplate] }));
-        return { success: true };
-    } catch (e: any) {
-        return { success: false, error: e.message };
-    }
+      if (error) return { success: false, error: error.message };
+      setState(prev => ({ ...prev, messageTemplates: [...prev.messageTemplates, mapMessageTemplate(data)] }));
+      return { success: true, data: mapMessageTemplate(data) };
   };
 
   const updateMessageTemplate = async (id: string, template: Partial<MessageTemplate>): MutationResult => {
-    try {
-        const shopId = ensureShopId();
-        const updateData: any = {};
-        if (template.title !== undefined) updateData.title = sanitize(template.title);
-        if (template.content !== undefined) updateData.content = template.content;
-        if (template.trigger !== undefined) updateData.trigger = template.trigger;
-        if (template.delayValue !== undefined) updateData.delay_value = template.delayValue;
-        if (template.delayUnit !== undefined) updateData.delay_unit = template.delayUnit;
-        if (template.active !== undefined) updateData.active = template.active;
-        if (template.target !== undefined) updateData.target = template.target;
-        if (template.category !== undefined) updateData.category = template.category;
-
-        const { error } = await supabase.from('message_templates').update(updateData).eq('id', id).eq('shop_id', shopId);
-        if (error) throw error;
-
-        setState(prev => ({
-            ...prev,
-            messageTemplates: prev.messageTemplates.map(t => t.id === id ? { ...t, ...template } : t)
-        }));
-        return { success: true };
-    } catch (e: any) {
-        return { success: false, error: e.message };
-    }
+      const updateData: any = { ...template };
+      if (template.triggerId) {
+          updateData.trigger_id = template.triggerId;
+          delete updateData.triggerId;
+      }
+      
+      const { error } = await supabase.from('message_templates').update(updateData).eq('id', id);
+      if (error) return { success: false, error: error.message };
+      setState(prev => ({
+          ...prev,
+          messageTemplates: prev.messageTemplates.map(t => t.id === id ? { ...t, ...template } : t)
+      }));
+      return { success: true };
   };
 
   const removeMessageTemplate = async (id: string): MutationResult => {
-    try {
-        const shopId = ensureShopId();
-        const { error } = await supabase.from('message_templates').delete().eq('id', id).eq('shop_id', shopId);
-        if (error) throw error;
+      const { error } = await supabase.from('message_templates').delete().eq('id', id);
+      if (error) return { success: false, error: error.message };
+      setState(prev => ({ ...prev, messageTemplates: prev.messageTemplates.filter(t => t.id !== id) }));
+      return { success: true };
+  };
 
-        setState(prev => ({
-            ...prev,
-            messageTemplates: prev.messageTemplates.filter(t => t.id !== id)
-        }));
-        return { success: true };
-    } catch (e: any) {
-        return { success: false, error: e.message };
-    }
+  const addAutomationTrigger = async (trigger: Omit<AutomationTrigger, 'id' | 'shopId'>): MutationResult => {
+      if (!state.shop) return { success: false, error: 'Shop not found' };
+      const { data, error } = await supabase.from('automation_triggers').insert({
+          shop_id: state.shop.id,
+          name: trigger.name,
+          value: trigger.value,
+          unit: trigger.unit,
+          period: trigger.period,
+          active: trigger.active
+      }).select().single();
+
+      if (error) return { success: false, error: error.message };
+      setState(prev => ({ ...prev, automationTriggers: [...prev.automationTriggers, mapAutomationTrigger(data)] }));
+      return { success: true, data: mapAutomationTrigger(data) };
+  };
+
+  const updateAutomationTrigger = async (id: string, trigger: Partial<AutomationTrigger>): MutationResult => {
+      const { error } = await supabase.from('automation_triggers').update(trigger).eq('id', id);
+      if (error) return { success: false, error: error.message };
+      setState(prev => ({
+          ...prev,
+          automationTriggers: prev.automationTriggers.map(t => t.id === id ? { ...t, ...trigger } : t)
+      }));
+      return { success: true };
+  };
+
+  const removeAutomationTrigger = async (id: string): MutationResult => {
+      const { error } = await supabase.from('automation_triggers').delete().eq('id', id);
+      if (error) return { success: false, error: error.message };
+      setState(prev => ({ ...prev, automationTriggers: prev.automationTriggers.filter(t => t.id !== id) }));
+      return { success: true };
   };
 
   const addMessageCategory = async (name: string): MutationResult => {
@@ -1590,7 +1625,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (error) throw error;
         
-        // Optimistic Update
         const newBlock = mapBlockedSlot(data);
         setState(prev => ({ ...prev, blockedSlots: [...prev.blockedSlots, newBlock] }));
 
@@ -1606,7 +1640,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const { error } = await supabase.from('blocked_slots').delete().eq('id', id);
         if (error) throw error;
         
-        // Optimistic Update
         setState(prev => ({ ...prev, blockedSlots: prev.blockedSlots.filter(b => b.id !== id) }));
 
         return { success: true };
@@ -1636,7 +1669,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.inputBackgroundColor) payload.input_background_color = sanitize(updated.inputBackgroundColor);
         if (updated.inputTextColor) payload.input_text_color = sanitize(updated.inputTextColor);
         
-        // Loyalty settings
         if (updated.loyaltyMode) payload.loyalty_mode = updated.loyaltyMode;
         if (updated.loyaltyCardGoal !== undefined) payload.loyalty_card_goal = updated.loyaltyCardGoal;
         if (updated.loyaltyPointsRatio !== undefined) payload.loyalty_points_ratio = updated.loyaltyPointsRatio;
@@ -1645,7 +1677,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.loyaltyRewardType) payload.loyalty_reward_type = updated.loyaltyRewardType;
         if (updated.loyaltyRewardValidityDays !== undefined) payload.loyalty_reward_validity_days = updated.loyaltyRewardValidityDays;
 
-        // Profile & Business info
         if (updated.instagram !== undefined) payload.instagram = sanitize(updated.instagram);
         if (updated.facebook !== undefined) payload.facebook = sanitize(updated.facebook);
         if (updated.whatsapp !== undefined) payload.whatsapp = sanitize(updated.whatsapp);
@@ -1666,7 +1697,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         if (error) throw error;
 
-        // Optimistic Update
         const newSettings = mapSettings(newData);
         setState(prev => ({ ...prev, settings: newSettings }));
         
@@ -1702,7 +1732,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           const cleanPhone = sanitize(phone).replace(/\D/g, '');
           
-          // Find or create client
           let { data: client } = await supabase.from('clients').select('*').eq('shop_id', shopId).eq('phone', cleanPhone).maybeSingle();
           
           if (!client) {
@@ -1715,9 +1744,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               client = newClient;
           }
 
-          // Generate Token
           const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-          const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+          const expiresAt = new Date(Date.now() + 15 * 60 * 1000); 
 
           console.log("[Auth] Gerando token para cliente:", { clientId: client.id, token, expiresAt });
 
@@ -1734,7 +1762,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           const loginUrl = `${window.location.origin}/acesso/${token}`;
           
-          // Enviar via WhatsApp automaticamente
           fetch('/api/notify/login-link', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -1768,7 +1795,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           
           const clientSession = { clientId: client.id, token: token };
           
-          // Persist session
           sessionStorage.setItem('currentClient', JSON.stringify(client));
           sessionStorage.setItem('clientSession', JSON.stringify(clientSession));
 
@@ -1778,7 +1804,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               clientSession: clientSession
           }));
 
-          // Delete token after use
           await supabase.from('client_auth_tokens').delete().eq('id', tokenData.id);
 
           return { success: true, slug: shopSlug };
@@ -1868,6 +1893,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       updateAppointmentPaymentMethod,
       addClient, updateClient, removeClient,
       addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
+      addAutomationTrigger,
+      updateAutomationTrigger,
+      removeAutomationTrigger,
       addMessageCategory, removeMessageCategory,
       addSubscriptionPlan, updateSubscriptionPlan, removeSubscriptionPlan,
       addClientSubscription, updateClientSubscription, removeClientSubscription,

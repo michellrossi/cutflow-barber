@@ -10,6 +10,7 @@ export const RemindersPanel: React.FC = () => {
     const {
         messageTemplates, addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
         messageCategories, addMessageCategory, removeMessageCategory,
+        automationTriggers, addAutomationTrigger, updateAutomationTrigger, removeAutomationTrigger,
         settings, professionals, services, shop,
         getWhatsAppQRCode, getWhatsAppStatus, disconnectWhatsApp
     } = useShop();
@@ -95,9 +96,7 @@ export const RemindersPanel: React.FC = () => {
             await addMessageTemplate({
                 title: editingTemplate.title,
                 content: editingTemplate.content,
-                trigger: editingTemplate.trigger || 'custom',
-                delayValue: editingTemplate.delayValue || 0,
-                delayUnit: editingTemplate.delayUnit || 'minutes',
+                triggerId: editingTemplate.triggerId || '',
                 active: editingTemplate.active ?? true,
                 target,
                 category: editingTemplate.category
@@ -112,6 +111,18 @@ export const RemindersPanel: React.FC = () => {
         if (!newCategoryName.trim()) return;
         await addMessageCategory(newCategoryName.trim());
         setNewCategoryName('');
+    };
+
+    const handleAddTrigger = async () => {
+        const name = prompt('Nome do Gatilho:');
+        if (!name) return;
+        await addAutomationTrigger({
+            name,
+            value: 1,
+            unit: 'hours',
+            period: 'before',
+            active: true
+        });
     };
 
     const onEmojiClick = (emojiData: EmojiClickData) => {
@@ -130,14 +141,10 @@ export const RemindersPanel: React.FC = () => {
             .replace(/\[BARBEARIA\]/g, settings.name || 'Barbearia Premium');
     };
 
-    const getTriggerLabel = (trigger: string) => {
-        switch (trigger) {
-            case 'immediate_confirmation': return 'Confirmação Imediata';
-            case 'appointment_reminder': return 'Lembrete';
-            case 'rescheduling_request': return 'Reagendamento';
-            case 'post_sale': return 'Pós-venda';
-            default: return 'Personalizado';
-        }
+    const getTriggerName = (triggerId?: string) => {
+        if (!triggerId) return 'Personalizado';
+        const trigger = automationTriggers.find(t => t.id === triggerId);
+        return trigger ? trigger.name : 'Personalizado';
     };
 
     const [testPhone, setTestPhone] = useState('');
@@ -145,7 +152,8 @@ export const RemindersPanel: React.FC = () => {
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
     const handleGenerateAI = async () => {
-        if (!editingTemplate?.trigger) return;
+        if (!editingTemplate?.triggerId) return;
+        const triggerName = getTriggerName(editingTemplate.triggerId);
 
         setIsGeneratingAI(true);
         try {
@@ -153,7 +161,7 @@ export const RemindersPanel: React.FC = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    trigger: editingTemplate.trigger,
+                    trigger: triggerName,
                     shopName: settings.name || 'Nossa Barbearia',
                     tone: 'amigável e profissional'
                 })
@@ -170,7 +178,7 @@ export const RemindersPanel: React.FC = () => {
             }
         } catch (error) {
             console.error('Erro ao gerar template com IA:', error);
-            alert('Erro ao gerar mensagem com IA. Tente novamente.');
+            showToast('Erro ao gerar mensagem com IA.', 'error');
         } finally {
             setIsGeneratingAI(false);
         }
@@ -207,7 +215,7 @@ export const RemindersPanel: React.FC = () => {
                     <p className="text-slate-500">Se conecte e gerencie suas mensagens automáticas do WhatsApp</p>
                 </div>
                 <div className="flex flex-wrap gap-3">
-                    {activeTab !== 'triggers' && (
+                    {activeTab !== 'whatsapp' && activeTab !== 'triggers' && activeTab !== 'notifications' && (
                         <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-md border border-slate-200">
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Testar em:</span>
                             <input
@@ -219,10 +227,10 @@ export const RemindersPanel: React.FC = () => {
                             />
                         </div>
                     )}
-                    {activeTab !== 'triggers' && (
+                    {activeTab !== 'whatsapp' && activeTab !== 'triggers' && activeTab !== 'notifications' && (
                         <button
                             onClick={() => {
-                                setEditingTemplate({ trigger: 'custom', delayUnit: 'minutes', delayValue: 0, active: true });
+                                setEditingTemplate({ triggerId: '', active: true });
                                 setIsModalOpen(true);
                             }}
                             className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-[0px_4px_10px_rgba(234,88,12,0.2)] hover:bg-orange-700 whitespace-nowrap"
@@ -349,66 +357,105 @@ export const RemindersPanel: React.FC = () => {
                 </div>
             ) : activeTab === 'notifications' ? (
                 <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-sm">
-                    <h2 className="text-lg font-bold text-slate-900 mb-6">Preferências de Notificação</h2>
+                    <h2 className="text-lg font-bold text-slate-900 mb-6">Preferências de Mensagens Automáticas</h2>
                     <div className="space-y-6 max-w-2xl">
-                        <NotificationToggle
-                            title="Confirmação de Agendamento"
-                            desc="Envia uma mensagem assim que o cliente realiza o agendamento."
-                            active={true}
-                        />
-                        <NotificationToggle
-                            title="Lembrete de 24 horas"
-                            desc="Envia um lembrete automático um dia antes do horário marcado."
-                            active={true}
-                        />
-                        <NotificationToggle
-                            title="Lembrete de 1 hora"
-                            desc="Envia um lembrete final uma hora antes do atendimento."
-                            active={true}
-                        />
-                        <NotificationToggle
-                            title="Solicitação de Avaliação"
-                            desc="Envia uma mensagem de agradecimento e link para avaliação após o serviço."
-                            active={false}
-                        />
+                        {automationTriggers.map(trigger => (
+                            <NotificationToggle
+                                key={trigger.id}
+                                title={trigger.name}
+                                desc={`${trigger.period === 'immediate' ? 'Envia imediatamente' : `Envia ${trigger.value} ${trigger.unit === 'minutes' ? 'minutos' : trigger.unit === 'hours' ? 'horas' : 'dias'} ${trigger.period === 'before' ? 'antes' : 'após'} o agendamento`}.`}
+                                active={trigger.active}
+                                onToggle={(active) => updateAutomationTrigger(trigger.id, { active })}
+                            />
+                        ))}
                     </div>
                 </div>
             ) : activeTab === 'triggers' ? (
                 <div className="space-y-6">
-                    <div className="bg-white rounded-lg border border-slate-200 p-8 shadow-sm">
-                        <h2 className="text-lg font-bold text-slate-900 mb-6">Gerenciar Gatilhos</h2>
-                        <div className="flex gap-4 mb-8">
-                            <input
-                                type="text"
-                                value={newCategoryName}
-                                onChange={(e) => setNewCategoryName(e.target.value)}
-                                placeholder="Nome do novo gatilho..."
-                                className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
-                            />
-                            <button
-                                onClick={handleAddCategory}
-                                className="px-6 py-3 bg-orange-500 text-white rounded-md font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200 flex items-center gap-2"
+                    <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+                        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <div>
+                                <h2 className="text-lg font-bold text-slate-900">Configuração de Gatilhos</h2>
+                                <p className="text-sm text-slate-500">Defina os momentos exatos que as mensagens devem ser enviadas.</p>
+                            </div>
+                            <button 
+                                onClick={handleAddTrigger}
+                                className="bg-orange-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600 transition-all flex items-center gap-2 shadow-sm"
                             >
-                                <Plus size={20} />
-                                Adicionar
+                                <Plus size={18} /> Novo Gatilho
                             </button>
                         </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {messageCategories.map((category) => (
-                                <div
-                                    key={category.id}
-                                    className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100 group"
-                                >
-                                    <span className="font-bold text-slate-700">{category.name}</span>
-                                    <button
-                                        onClick={() => removeMessageCategory(category.id)}
-                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all opacity-0 group-hover:opacity-100"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                </div>
-                            ))}
+                        
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-[0.1em]">
+                                    <tr>
+                                        <th className="px-8 py-4">Nome do Gatilho</th>
+                                        <th className="px-8 py-4">Valor</th>
+                                        <th className="px-8 py-4">Tempo</th>
+                                        <th className="px-8 py-4">Período</th>
+                                        <th className="px-8 py-4 text-center">Status</th>
+                                        <th className="px-8 py-4 text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {automationTriggers.map(trigger => (
+                                        <tr key={trigger.id} className="hover:bg-slate-50/50 transition-colors">
+                                            <td className="px-8 py-5 font-bold text-slate-700">{trigger.name}</td>
+                                            <td className="px-8 py-5 font-medium text-slate-600">
+                                                <input 
+                                                    type="number" 
+                                                    value={trigger.value} 
+                                                    onChange={(e) => updateAutomationTrigger(trigger.id, { value: parseInt(e.target.value) })}
+                                                    className="w-16 px-2 py-1 bg-slate-50 border border-slate-200 rounded outline-none"
+                                                />
+                                            </td>
+                                            <td className="px-8 py-5 font-medium text-slate-600">
+                                                <select 
+                                                    value={trigger.unit} 
+                                                    onChange={(e) => updateAutomationTrigger(trigger.id, { unit: e.target.value as any })}
+                                                    className="px-2 py-1 bg-slate-50 border border-slate-200 rounded outline-none"
+                                                >
+                                                    <option value="minutes">Minutos</option>
+                                                    <option value="hours">Horas</option>
+                                                    <option value="days">Dias</option>
+                                                </select>
+                                            </td>
+                                            <td className="px-8 py-5">
+                                                <select 
+                                                    value={trigger.period} 
+                                                    onChange={(e) => updateAutomationTrigger(trigger.id, { period: e.target.value as any })}
+                                                    className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase transition-all outline-none ${
+                                                        trigger.period === 'immediate' ? 'bg-blue-50 text-blue-600' :
+                                                        trigger.period === 'before' ? 'bg-orange-50 text-orange-600' :
+                                                        'bg-green-50 text-green-600'
+                                                    }`}
+                                                >
+                                                    <option value="immediate">Imediato</option>
+                                                    <option value="before">Antes</option>
+                                                    <option value="after">Após</option>
+                                                </select>
+                                            </td>
+                                            <td className="px-8 py-5 text-center">
+                                                <button 
+                                                    onClick={() => updateAutomationTrigger(trigger.id, { active: !trigger.active })}
+                                                    className={`w-10 h-5 rounded-full relative transition-all ${trigger.active ? 'bg-green-500' : 'bg-slate-200'}`}
+                                                >
+                                                    <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${trigger.active ? 'left-5.5' : 'left-0.5'}`} />
+                                                </button>
+                                            </td>
+                                            <td className="px-8 py-5 text-right">
+                                                <button 
+                                                    onClick={() => removeAutomationTrigger(trigger.id)}
+                                                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                >
+                                                    <Trash2 size={18} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -455,15 +502,9 @@ export const RemindersPanel: React.FC = () => {
 
                             <h3 className="font-bold text-slate-900 text-lg mb-1">{template.title}</h3>
                             <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 mb-4">
-                                <span className="px-2 py-0.5 bg-slate-100 rounded-md">{getTriggerLabel(template.trigger)}</span>
+                                <span className="px-2 py-0.5 bg-slate-100 rounded-md truncate max-w-[120px]">{getTriggerName(template.triggerId)}</span>
                                 {template.category && (
-                                    <span className="px-2 py-0.5 bg-orange-50 text-orange-600 rounded-md border border-orange-100">{template.category}</span>
-                                )}
-                                {template.delayValue > 0 && (
-                                    <span className="flex items-center gap-1">
-                                        <Clock size={12} />
-                                        {template.delayValue} {template.delayUnit === 'minutes' ? 'min' : template.delayUnit === 'hours' ? 'h' : 'd'}
-                                    </span>
+                                    <span className="px-2 py-0.5 bg-orange-50 text-orange-600 rounded-md border border-orange-100 truncate max-w-[100px]">{template.category}</span>
                                 )}
                             </div>
 
@@ -527,38 +568,17 @@ export const RemindersPanel: React.FC = () => {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Gatilho</label>
+                                            <label className="block text-sm font-bold text-slate-700 mb-2">Gatilh Selecionado</label>
                                             <select
-                                                value={editingTemplate?.trigger || 'custom'}
-                                                onChange={(e) => setEditingTemplate(prev => ({ ...prev, trigger: e.target.value as any }))}
-                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                                value={editingTemplate?.triggerId || ''}
+                                                onChange={(e) => setEditingTemplate(prev => ({ ...prev, triggerId: e.target.value }))}
+                                                className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all font-bold text-slate-700"
                                             >
-                                                <option value="immediate_confirmation">Confirmação Imediata</option>
-                                                <option value="appointment_reminder">Lembrete de Agendamento</option>
-                                                <option value="rescheduling_request">Solicitação Reagendamento</option>
-                                                <option value="post_sale">Pós-venda e Avaliação</option>
-                                                <option value="custom">Personalizado</option>
+                                                <option value="">Selecione um gatilho</option>
+                                                {automationTriggers.map(t => (
+                                                    <option key={t.id} value={t.id}>{t.name}</option>
+                                                ))}
                                             </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-bold text-slate-700 mb-2">Tempo de Envio</label>
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="number"
-                                                    value={editingTemplate?.delayValue || 0}
-                                                    onChange={(e) => setEditingTemplate(prev => ({ ...prev, delayValue: parseInt(e.target.value) }))}
-                                                    className="w-20 px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
-                                                />
-                                                <select
-                                                    value={editingTemplate?.delayUnit || 'minutes'}
-                                                    onChange={(e) => setEditingTemplate(prev => ({ ...prev, delayUnit: e.target.value as any }))}
-                                                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
-                                                >
-                                                    <option value="minutes">Minutos</option>
-                                                    <option value="hours">Horas</option>
-                                                    <option value="days">Dias</option>
-                                                </select>
-                                            </div>
                                         </div>
                                     </div>
 
@@ -676,7 +696,7 @@ export const RemindersPanel: React.FC = () => {
                                             Configuração Ativa
                                         </div>
                                         <p className="text-[10px] text-orange-600 leading-relaxed">
-                                            Este modelo será disparado {editingTemplate?.delayValue || 0} {editingTemplate?.delayUnit === 'minutes' ? 'minutos' : editingTemplate?.delayUnit === 'hours' ? 'horas' : 'dias'} após o gatilho ser ativado.
+                                            Este modelo será disparado automaticamente seguindo as regras do gatilho <strong>{getTriggerName(editingTemplate?.triggerId || '')}</strong>.
                                         </p>
                                     </div>
                                 </div>
@@ -689,8 +709,7 @@ export const RemindersPanel: React.FC = () => {
     );
 };
 
-const NotificationToggle: React.FC<{ title: string, desc: string, active: boolean }> = ({ title, desc, active }) => {
-    const [isEnabled, setIsEnabled] = useState(active);
+const NotificationToggle: React.FC<{ title: string, desc: string, active: boolean, onToggle: (active: boolean) => void }> = ({ title, desc, active, onToggle }) => {
     return (
         <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
             <div className="pr-8">
@@ -698,10 +717,10 @@ const NotificationToggle: React.FC<{ title: string, desc: string, active: boolea
                 <p className="text-xs text-slate-500">{desc}</p>
             </div>
             <button
-                onClick={() => setIsEnabled(!isEnabled)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${isEnabled ? 'bg-orange-500' : 'bg-slate-300'}`}
+                onClick={() => onToggle(!active)}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${active ? 'bg-orange-500' : 'bg-slate-300'}`}
             >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${active ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
         </div>
     );

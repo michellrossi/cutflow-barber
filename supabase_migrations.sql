@@ -17,6 +17,23 @@ ADD COLUMN IF NOT EXISTS commission_percentage INTEGER DEFAULT 50,
 ADD COLUMN IF NOT EXISTS color TEXT DEFAULT '#f97316',
 ADD COLUMN IF NOT EXISTS phone TEXT;
 
+
+-- AUTOMATION TRIGGERS
+CREATE TABLE IF NOT EXISTS public.automation_triggers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID REFERENCES public.shops(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    value INTEGER DEFAULT 0,
+    unit TEXT CHECK (unit IN ('minutes', 'hours', 'days')),
+    period TEXT CHECK (period IN ('before', 'immediate', 'after')),
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- UPDATE MESSAGE TEMPLATES to use trigger_id instead of trigger enum (optional/partial)
+ALTER TABLE public.message_templates
+ADD COLUMN IF NOT EXISTS trigger_id UUID REFERENCES public.automation_triggers(id) ON DELETE SET NULL;
+
 -- SETTINGS: personalização visual, fidelidade e horário de funcionamento
 ALTER TABLE public.settings
 ADD COLUMN IF NOT EXISTS title_color TEXT DEFAULT '#ffffff',
