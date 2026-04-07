@@ -33,46 +33,57 @@ if (!serviceRoleKey) {
 export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseKey || 'placeholder');
 
 // 2. Cliente Administrativo (Usa SERVICE_ROLE - Ignora RLS)
-// USE ISSO PARA O CRON JOB E OPERAÇÕES DE SISTEMA NO BACKEND
 export const supabaseAdmin = createClient(supabaseUrl || 'https://placeholder.supabase.co', serviceRoleKey || 'placeholder');
 
 /**
  * GERA MENSAGEM (TEMPLATE)
  * Busca do banco de dados usando supabaseAdmin para evitar bloqueios de RLS
  */
-async function generateWhatsAppMessage(trigger: string, data: any, shopId: string, delayValue?: number, delayUnit?: string, target: string = 'client') {
-    // Ajustado para supabaseAdmin
+async function generateWhatsAppMessage(triggerId: string, data: any, shopId: string, target: string = 'client') {
+    // 1. Verifica se o gatilho está ativo
+    const { data: triggerObj } = await supabaseAdmin.from('automation_triggers').select('active, name').eq('id', triggerId).maybeSingle();
+    if (triggerObj && !triggerObj.active) return '';
+
+    // 2. Tenta buscar pelo triggerId (UUID) ou trigger string legada
     let query = supabaseAdmin
         .from('message_templates')
         .select('content')
-        .eq('shop_id', shopId)
-        .eq('trigger', trigger)
-        .eq('target', target)
-        .eq('active', true);
-
-    if (delayValue !== undefined) query = query.eq('delay_value', delayValue);
-    if (delayUnit !== undefined) query = query.eq('delay_unit', delayUnit);
+        .eq('shop_id', shopId);
+    
+    if (triggerId.length > 30) { // Provável UUID
+        query = query.eq('trigger_id', triggerId);
+    } else {
+        query = query.eq('trigger', triggerId);
+    }
 
     const { data: templateData } = await query
+        .eq('target', target)
+        .eq('active', true)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
     let content = templateData?.content;
 
-    // Fallbacks caso não encontre template no banco
+    // 3. Fallback: Se não achou no banco, usa padrões
     if (!content) {
-        if (trigger === 'link de acesso') {
-            content = `Olá [CLIENTE]!\nAqui está seu link de acesso único para a barbearia: [URL].\nEle expira em 15 minutos e não deve ser compartilhado. 🔐💈`;
-        } else if (trigger === 'appointment_reminder' || trigger === 'lembrete de 24 horas' || trigger === 'lembrete de 1 hora') {
-            content = `Olá [CLIENTE]!\nPassando para lembrar do seu horário de [SERVICO] com [BARBEIRO] em [DATA] às [HORA]. Nos vemos lá! ✂️💈`;
-        } else if (trigger === 'rescheduling_request') {
-            content = `Olá [CLIENTE], notamos que você não conseguiu comparecer ao seu horário de [SERVICO].\nGostaria de escolher uma nova data para seu atendimento na [BARBEARIA]?`;
-        } else if (trigger === 'post_sale') {
+        const triggerName = triggerObj?.name?.toLowerCase() || triggerId.toLowerCase();
+
+        if (triggerName.includes('confirmação') || triggerId === 'immediate_confirmation' || triggerId === 'link de acesso') {
+             if (triggerId === 'link de acesso') {
+                content = `Olá [CLIENTE]!\nAqui está seu link de acesso único para a barbearia: [URL].\nEle expira em 15 minutos e não deve ser compartilhado. 🔐💈`;
+             } else {
+                content = `Olá [CLIENTE]!\nSeu horário de [SERVICO] com [BARBEIRO] no dia [DATA] às [HORA] foi pré-agendado na [BARBEARIA]. Até logo! ✂️💈`;
+             }
+        } else if (triggerName.includes('lembrete') || triggerId === 'appointment_reminder') {
+            content = `Olá [CLIENTE]!\nPassando para lembrar do seu horário de [SERVICO] com [BARBEIRO] em [DATA] às [HORA] na [BARBEARIA]. Nos vemos lá! ✂️💈`;
+        } else if (triggerName.includes('pós-venda') || triggerName.includes('avaliação') || triggerId === 'post_sale') {
             content = `Olá [CLIENTE]!\nO que achou do seu atendimento hoje com [BARBEIRO]? Sua opinião é muito importante para nós da [BARBEARIA].`;
-        } else if (trigger === 'retention_30d') {
+        } else if (triggerName.includes('reagendamento') || triggerId === 'rescheduling_request') {
+            content = `Olá [CLIENTE], notamos que você não conseguiu comparecer ao seu horário de [SERVICO].\nGostaria de escolher uma nova data para seu atendimento na [BARBEARIA]?`;
+        } else if (triggerId === 'retention_30d') {
             content = `Olá [CLIENTE]!\nFaz um tempo que não nos vemos na [BARBEARIA]. Que tal agendar um novo horário para manter o visual em dia?\n✂️💈`;
-        } else if (trigger === 'loyalty_reward') {
+        } else if (triggerId === 'loyalty_reward') {
             content = `Olá [CLIENTE], parabéns!\nVocê atingiu a meta de fidelidade e ganhou um cupom de [DESCONTO]! Use o código: [CODIGO]. Validade: [VALIDADE] dias.`;
         } else {
             if (target === 'professional') {
@@ -139,12 +150,10 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
 async function runCronLogic() {
     console.log("[Cron] Iniciando verificação de lembretes (Timezone SP - GMT-3)...");
 
-    // Solução de Fuso Horário: Forçar leitura no relógio de São Paulo independentemente de onde o Node roda
     const nowUtc = new Date();
     const spTimeString = nowUtc.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
     const now = new Date(spTimeString);
     
-    // Obter strings perfeitas garantindo que o limite do dia não vire por conversões para ISOString (UTC zero)
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
@@ -155,9 +164,7 @@ async function runCronLogic() {
 
     const maxRetries = 3;
 
-    // =========================================================
-    // 1. Lembretes de 24 Horas (Ajustado para supabaseAdmin)
-    // =========================================================
+    // 1. Lembretes de 24 Horas
     const { data: apts24h } = await supabaseAdmin
         .from('appointments')
         .select('*, professionals(name), shops(id, name, whatsapp_instance)')
@@ -183,7 +190,8 @@ async function runCronLogic() {
                     time: formattedTime,
                     proName: apt.professionals?.name || "seu barbeiro",
                     shopName: apt.shops?.name
-                }, apt.shop_id, 24, 'hours');
+                }, apt.shop_id);
+                if (!msg) continue;
                 const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
 
                 if (ok) {
@@ -196,9 +204,7 @@ async function runCronLogic() {
         }
     }
 
-    // =========================================================
-    // 2. Lembretes de 1 Hora (Ajustado para supabaseAdmin)
-    // =========================================================
+    // 2. Lembretes de 1 Hora
     const { data: apts1h } = await supabaseAdmin
         .from('appointments')
         .select('*, professionals(name), shops(id, name, whatsapp_instance)')
@@ -224,7 +230,8 @@ async function runCronLogic() {
                     time: formattedTime,
                     proName: apt.professionals?.name || "seu barbeiro",
                     shopName: apt.shops?.name
-                }, apt.shop_id, 1, 'hours');
+                }, apt.shop_id);
+                if (!msg) continue;
                 const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
 
                 if (ok) {
@@ -237,9 +244,7 @@ async function runCronLogic() {
         }
     }
 
-    // =========================================================
-    // 3. Reagendamento (Ajustado para supabaseAdmin)
-    // =========================================================
+    // 3. Reagendamento
     const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
     const twoDaysAgoStr = twoDaysAgo.toISOString().split('T')[0];
 
@@ -265,7 +270,8 @@ async function runCronLogic() {
                 time: formattedTime,
                 proName: apt.professionals?.name || "seu barbeiro",
                 shopName: apt.shops?.name
-            }, apt.shop_id, 0, 'minutes');
+            }, apt.shop_id);
+            if (!msg) continue;
             const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
 
             if (ok) {
@@ -277,9 +283,7 @@ async function runCronLogic() {
         }
     }
 
-    // =========================================================
-    // 4. Pós-venda (Ajustado para supabaseAdmin)
-    // =========================================================
+    // 4. Pós-venda
     const { data: aptsPostSale } = await supabaseAdmin
         .from('appointments')
         .select('*, professionals(name), shops(id, name, whatsapp_instance)')
@@ -305,7 +309,8 @@ async function runCronLogic() {
                     time: formattedTime,
                     proName: apt.professionals?.name || "seu barbeiro",
                     shopName: apt.shops?.name
-                }, apt.shop_id, 2, 'hours');
+                }, apt.shop_id);
+                if (!msg) continue;
                 const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
 
                 if (ok) {
@@ -318,9 +323,7 @@ async function runCronLogic() {
         }
     }
 
-    // =========================================================
-    // 5. Retenção 30 Dias (Ajustado para supabaseAdmin)
-    // =========================================================
+    // 5. Retenção 30 Dias
     const { data: apts30d } = await supabaseAdmin
         .from('appointments')
         .select('*, shops(id, name, whatsapp_instance)')
@@ -335,7 +338,8 @@ async function runCronLogic() {
             const msg = await generateWhatsAppMessage('retention_30d', {
                 clientName: apt.client_name,
                 shopName: apt.shops?.name
-            }, apt.shop_id, 30, 'days');
+            }, apt.shop_id);
+            if (!msg) continue;
             const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
 
             if (ok) {
@@ -353,10 +357,9 @@ async function startServer() {
     app.use(cors());
     app.use(express.json());
 
-    // Rate Limiting: proteção contra abuso nos endpoints de notificação e fidelidade
     const notifyLimiter = rateLimit({
-        windowMs: 60_000, // 1 minuto
-        max: 10,          // máximo 10 requisições por IP por minuto
+        windowMs: 60_000, 
+        max: 10,
         standardHeaders: true,
         legacyHeaders: false,
         message: { error: 'Muitas requisições. Aguarde 1 minuto.' }
@@ -368,7 +371,6 @@ async function startServer() {
         res.json({ status: 'ok' });
     });
 
-    // Rota para Testar Notificação (Ajustado para supabaseAdmin)
     app.post('/api/notify/test', async (req, res) => {
         const { phone, templateId } = req.body;
         if (!phone || !templateId) return res.status(400).json({ error: "Telefone e ID do modelo são obrigatórios" });
@@ -388,7 +390,7 @@ async function startServer() {
                 shopName: shop?.name || "Minha Barbearia",
                 url: "https://google.com"
             };
-            const message = await generateWhatsAppMessage(template.trigger, testData, template.shop_id, template.delay_value, template.delay_unit);
+            const message = await generateWhatsAppMessage(template.trigger_id || template.trigger, testData, template.shop_id);
             const ok = await sendWhatsApp(phone, message, shop?.whatsapp_instance);
             res.json({ success: ok });
         } catch (error: any) {
@@ -396,7 +398,6 @@ async function startServer() {
         }
     });
 
-    // Insights da IA
     app.post('/api/admin/insights', async (req, res) => {
         const { prompt, context, history } = req.body;
         try {
@@ -404,7 +405,7 @@ async function startServer() {
             const chatHistory = history.map((msg: any) => ({ role: msg.role === 'assistant' ? 'model' : 'user', parts: [{ text: msg.content }] }));
             const genAI = new GoogleGenAI({ apiKey: geminiKey });
             const response = await genAI.models.generateContent({
-                model: "gemini-2.0-flash",
+                model: "gemini-1.5-flash",
                 contents: [...chatHistory, { role: 'user', parts: [{ text: prompt }] }],
                 config: { systemInstruction }
             });
@@ -414,7 +415,26 @@ async function startServer() {
         }
     });
 
-    // Confirmação Imediata (Ajustado para supabaseAdmin)
+    app.post('/api/ai/generate-template', async (req, res) => {
+        const { trigger, shopName, tone } = req.body;
+        try {
+            const genAI = new GoogleGenAI({ apiKey: geminiKey });
+            const promptContent = `Crie um modelo de mensagem de WhatsApp para uma barbearia chamada "${shopName}". 
+            O gatilho da mensagem é: "${trigger}". 
+            O tom deve ser: "${tone}".
+            Use as seguintes variáveis: [CLIENTE], [SERVICO], [DATA], [HORA], [BARBEIRO], [BARBEARIA].
+            Retorne apenas o texto da mensagem, sem explicações.`;
+            
+            const response = await genAI.models.generateContent({
+                model: "gemini-1.5-flash",
+                contents: [{ role: 'user', parts: [{ text: promptContent }] }]
+            });
+            res.json({ success: true, text: response.text });
+        } catch (error: any) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
     app.post('/api/notify/confirmation', async (req, res) => {
         const { appointmentId } = req.body;
         const { data: apt } = await supabaseAdmin.from('appointments').select('*, professionals(name, phone), shops(id, name, whatsapp_instance)').eq('id', appointmentId).single();
@@ -433,12 +453,13 @@ async function startServer() {
             time: formattedTime,
             proName: apt.professionals?.name || "um de nossos profissionais",
             shopName: apt.shops?.name
-        }, apt.shop_id, undefined, undefined, 'client');
+        }, apt.shop_id, 'client');
 
-        const clientOk = await sendWhatsApp(apt.client_phone, clientMessage, apt.shops?.whatsapp_instance);
-        if (clientOk) await supabaseAdmin.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
+        if (clientMessage) {
+            const clientOk = await sendWhatsApp(apt.client_phone, clientMessage, apt.shops?.whatsapp_instance);
+            if (clientOk) await supabaseAdmin.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
+        }
         
-        // Notificação para o Barbeiro
         if (apt.professionals?.phone) {
             const proMessage = await generateWhatsAppMessage('immediate_confirmation', {
                 clientName: apt.client_name,
@@ -447,15 +468,16 @@ async function startServer() {
                 time: formattedTime,
                 proName: apt.professionals.name,
                 shopName: apt.shops?.name
-            }, apt.shop_id, undefined, undefined, 'professional');
+            }, apt.shop_id, 'professional');
             
-            await sendWhatsApp(apt.professionals.phone, proMessage, apt.shops?.whatsapp_instance);
+            if (proMessage) {
+              await sendWhatsApp(apt.professionals.phone, proMessage, apt.shops?.whatsapp_instance);
+            }
         }
         
-        res.json({ success: clientOk || true });
+        res.json({ success: true });
     });
 
-    // Fidelidade (Ajustado para supabaseAdmin)
     app.post('/api/loyalty/check-reward', async (req, res) => {
         const { clientId, shopId } = req.body;
         try {
@@ -478,14 +500,15 @@ async function startServer() {
                 clientName: client.name, discount: `${settings.loyalty_reward_value}${settings.loyalty_reward_type === 'percentage' ? '%' : ' R$'}`,
                 code: couponCode, validity: settings.loyalty_reward_validity_days, shopName: shop?.name
             }, shopId);
-            await sendWhatsApp(client.phone, msg, shop?.whatsapp_instance);
+            if (msg) {
+              await sendWhatsApp(client.phone, msg, shop?.whatsapp_instance);
+            }
             res.json({ success: true, couponCode });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
     });
 
-    // Link de Login (Ajustado para supabaseAdmin)
     app.post('/api/notify/login-link', async (req, res) => {
         const { phone, url, shopId } = req.body;
         const { data: shop } = await supabaseAdmin.from('shops').select('name, whatsapp_instance').eq('id', shopId).single();
@@ -494,11 +517,14 @@ async function startServer() {
         if (!shop) return res.status(404).json({ error: "Loja não encontrada" });
 
         const msg = await generateWhatsAppMessage('link de acesso', { clientName: client?.name || "Cliente", url, shopName: shop.name }, shopId);
-        const ok = await sendWhatsApp(phone, msg, shop.whatsapp_instance);
-        res.json({ success: ok });
+        if (msg) {
+          const ok = await sendWhatsApp(phone, msg, shop.whatsapp_instance);
+          res.json({ success: ok });
+        } else {
+          res.json({ success: false, error: "Gatilho desativado" });
+        }
     });
 
-    // Cron manual
     app.get('/api/notify/cron', async (req, res) => {
         try {
             await runCronLogic();
@@ -508,7 +534,6 @@ async function startServer() {
         }
     });
 
-    // WhatsApp Management (Ajustado para supabaseAdmin)
     app.post('/api/whatsapp/qrcode', async (req, res) => {
         const { shopId } = req.body;
         const instanceName = `shop-${shopId}`;
@@ -527,7 +552,6 @@ async function startServer() {
         }
     });
 
-    // Status da instância WhatsApp
     app.post('/api/whatsapp/status', async (req, res) => {
         const { shopId } = req.body;
         try {
@@ -544,7 +568,6 @@ async function startServer() {
         }
     });
 
-    // Desconectar instância WhatsApp
     app.post('/api/whatsapp/disconnect', async (req, res) => {
         const { shopId } = req.body;
         try {
@@ -559,7 +582,6 @@ async function startServer() {
         }
     });
 
-    // Servidor estático e Produção
     if (process.env.NODE_ENV === 'production') {
         const distPath = path.resolve(__dirname, 'dist');
         app.use(express.static(distPath));

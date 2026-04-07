@@ -107,8 +107,8 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
           {/* Logo */}
           <div className="flex items-center gap-2">
-            <img src={logoUrl} alt="CutFlow" className="h-10 w-auto" />
-            <span className="text-2xl font-bold tracking-tight hidden sm:block">CutFlow</span>
+            <img src={logoUrl} alt="Insight Barber" className="h-10 w-auto" />
+            <span className="text-2xl font-bold tracking-tight hidden sm:block">Insight Barber</span>
           </div>
 
           {/* Navigation */}
@@ -242,7 +242,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
                         <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50"></div>
                         <div className="w-2.5 h-2.5 rounded-full bg-green-500/50"></div>
                     </div>
-                    <div className="text-[10px] text-[#94A3B8] font-mono">cutflow.app/admin</div>
+                    <div className="text-[10px] text-[#94A3B8] font-mono">insightbarber.com.br/admin</div>
                 </div>
                 <div className="p-6 grid grid-cols-2 gap-4">
                     <div className="col-span-2 bg-[#0B0F19] p-4 rounded-xl border border-[#334155]/50">
@@ -336,7 +336,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
           <div className="text-center mb-16 space-y-4">
              <h2 className="text-3xl md:text-5xl font-extrabold text-white">Tudo que sua barbearia precisa, em um só lugar</h2>
              <p className="text-[#94A3B8] text-lg max-w-2xl mx-auto">
-                Do agendamento ao pós-venda. Do financeiro à fidelização. CutFlow é o sistema que trabalha enquanto você corta.
+                Do agendamento ao pós-venda. Do financeiro à fidelização. Insight Barber é o sistema que trabalha enquanto você corta.
              </p>
           </div>
 
@@ -481,7 +481,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
                 {[
                     { step: '1', title: 'Crie sua conta', desc: 'Em menos de 2 minutos você cadastra sua barbearia, adiciona seus serviços e define sua agenda de horários.', icon: <UserPlusIcon className="text-[#F97316]" size={32}/> },
-                    { step: '2', title: 'Compartilhe seu link', desc: 'Divulgue cutflow.app/sua-barbearia no Instagram, WhatsApp, Google — seus clientes já podem agendar.', icon: <Share2 className="text-[#FBBF24]" size={32}/> },
+                    { step: '2', title: 'Compartilhe seu link', desc: 'Divulgue insightbarber.com.br/sua-barbearia no Instagram, WhatsApp, Google — seus clientes já podem agendar.', icon: <Share2 className="text-[#FBBF24]" size={32}/> },
                     { step: '3', title: 'Veja os resultados', desc: 'Acompanhe agendamentos em tempo real, ative as automações de WhatsApp e deixe o sistema trabalhar por você.', icon: <TrendingUp className="text-[#F97316]" size={32}/> }
                 ].map((item, i) => (
                     <div key={i} className="text-center group">
@@ -656,7 +656,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
               transition={{ delay: 0.2 }}
               className="text-xl md:text-2xl text-[#94A3B8] max-w-2xl mx-auto"
             >
-                Junte-se a mais de 1.200 barbearias que já transformaram a gestão com o CutFlow.
+                Junte-se a mais de 1.200 barbearias que já transformaram a gestão com o Insight Barber.
             </motion.p>
 
             <motion.button 
@@ -684,8 +684,8 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-12">
             <div className="text-center md:text-left space-y-4">
                 <div className="flex items-center justify-center md:justify-start gap-2">
-                    <img src={logoUrl} alt="CutFlow" className="h-8 w-auto" />
-                    <span className="text-2xl font-black">CutFlow</span>
+                    <img src={logoUrl} alt="Insight Barber" className="h-8 w-auto" />
+                    <span className="text-2xl font-black">Insight Barber</span>
                 </div>
                 <p className="text-[#94A3B8] text-sm max-w-xs font-medium">Gestão inteligente e automação para barbearias de alto padrão.</p>
             </div>
@@ -706,7 +706,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
             </div>
         </div>
         <div className="max-w-7xl mx-auto mt-20 pt-8 border-t border-[#334155]/20 flex flex-col md:flex-row items-center justify-between text-[#94A3B8] text-[11px] font-bold uppercase tracking-widest gap-4">
-            <p>© 2025 CutFlow. Todos os direitos reservados.</p>
+            <p>© 2026 Insight Barber. Todos os direitos reservados.</p>
             <div className="flex gap-6">
                 <a href="#">Privacidade</a>
                 <a href="#">Termos</a>

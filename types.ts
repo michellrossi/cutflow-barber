@@ -130,8 +130,24 @@ export interface ShopSettings {
   loyaltyRewardType?: 'percentage' | 'fixed';
   loyaltyRewardValidityDays?: number;
   instagram?: string;
+  facebook?: string;
+  whatsapp?: string;
+  description?: string;
+  paymentMethods?: string[];
   address?: string;
+  phone?: string;
   businessHours?: Record<string, { active: boolean; start: string; end: string }>;
+  automationTriggers?: AutomationTrigger[];
+}
+
+export interface AutomationTrigger {
+  id: string;
+  shopId: string;
+  name: string;
+  value: number;
+  unit: 'minutes' | 'hours' | 'days';
+  period: 'before' | 'immediate' | 'after';
+  active: boolean;
 }
 
 export interface BlockedSlot {
@@ -149,9 +165,7 @@ export interface MessageTemplate {
   shopId: string;
   title: string;
   content: string;
-  trigger: 'immediate_confirmation' | 'appointment_reminder' | 'rescheduling_request' | 'post_sale' | 'custom';
-  delayValue: number;
-  delayUnit: 'minutes' | 'hours' | 'days';
+  triggerId: string;
   active: boolean;
   target?: 'client' | 'professional';
   category?: string;
@@ -209,4 +223,5 @@ export interface ShopState {
   trialStatus: 'active' | 'expired' | 'paid';
   daysRemaining: number;
   theme: 'dark' | 'light';
+  automationTriggers: AutomationTrigger[];
 }

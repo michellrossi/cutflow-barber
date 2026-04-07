@@ -6,6 +6,7 @@ ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'trial',
 ADD COLUMN IF NOT EXISTS whatsapp_instance TEXT,
 ADD COLUMN IF NOT EXISTS whatsapp_connected BOOLEAN DEFAULT false;
 
+
 -- SERVICES: imagem do serviço
 ALTER TABLE public.services
 ADD COLUMN IF NOT EXISTS image_url TEXT;
@@ -15,6 +16,23 @@ ALTER TABLE public.professionals
 ADD COLUMN IF NOT EXISTS commission_percentage INTEGER DEFAULT 50,
 ADD COLUMN IF NOT EXISTS color TEXT DEFAULT '#f97316',
 ADD COLUMN IF NOT EXISTS phone TEXT;
+
+
+-- AUTOMATION TRIGGERS
+CREATE TABLE IF NOT EXISTS public.automation_triggers (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID REFERENCES public.shops(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    value INTEGER DEFAULT 0,
+    unit TEXT CHECK (unit IN ('minutes', 'hours', 'days')),
+    period TEXT CHECK (period IN ('before', 'immediate', 'after')),
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- UPDATE MESSAGE TEMPLATES to use trigger_id instead of trigger enum (optional/partial)
+ALTER TABLE public.message_templates
+ADD COLUMN IF NOT EXISTS trigger_id UUID REFERENCES public.automation_triggers(id) ON DELETE SET NULL;
 
 -- SETTINGS: personalização visual, fidelidade e horário de funcionamento
 ALTER TABLE public.settings
@@ -40,7 +58,17 @@ ADD COLUMN IF NOT EXISTS loyalty_enabled BOOLEAN DEFAULT true,
 ADD COLUMN IF NOT EXISTS business_hours JSONB,
 -- Informações da barbearia para a página de agendamento
 ADD COLUMN IF NOT EXISTS instagram TEXT,
-ADD COLUMN IF NOT EXISTS address TEXT;
+ADD COLUMN IF NOT EXISTS address TEXT,
+ADD COLUMN IF NOT EXISTS facebook TEXT,
+ADD COLUMN IF NOT EXISTS whatsapp TEXT,
+ADD COLUMN IF NOT EXISTS description TEXT,
+ADD COLUMN IF NOT EXISTS phone TEXT,
+ADD COLUMN IF NOT EXISTS payment_methods TEXT[] DEFAULT '{credit,debit,cash,pix}';
+
+-- Comentário opcional para organização
+COMMENT ON COLUMN settings.description IS 'Campo Quem Somos da barbearia';
+COMMENT ON COLUMN settings.payment_methods IS 'Lista de métodos de pagamento aceitos';
+COMMENT ON COLUMN settings.phone IS 'Celular pessoal do dono da barbearia';
 
 -- CLIENTS: fidelidade, gastos e nascimento
 ALTER TABLE public.clients
@@ -220,9 +248,7 @@ CREATE POLICY "Criar Agendamento Paywall" ON public.appointments
 DROP POLICY IF EXISTS "Publico_Le_Agendamentos" ON public.appointments;
 DROP POLICY IF EXISTS "Enable read access for all users" ON public.appointments;
 CREATE POLICY "Publico_Le_Agendamentos" ON public.appointments
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM shops WHERE id = appointments.shop_id AND owner_id = auth.uid())
-  );
+  FOR SELECT USING (true);
 
 -- Permite que supabaseAdmin (service_role) atualize flags de notificação.
 -- Com service_role, esta policy é ignorada. Mantida para clareza de intenção.
@@ -248,14 +274,21 @@ CREATE POLICY "Dono_Gere_Templates" ON public.message_templates
   );
 
 -- ---- MESSAGE_CATEGORIES (FIX NOVO: estava sem policy) ----
-DROP POLICY IF EXISTS "Publico_Ve_Categorias" ON public.message_categories;
-CREATE POLICY "Publico_Ve_Categorias" ON public.message_categories
-  FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "Dono_Gere_Categorias" ON public.message_categories;
 CREATE POLICY "Dono_Gere_Categorias" ON public.message_categories
   FOR ALL USING (
     EXISTS (SELECT 1 FROM public.shops WHERE id = message_categories.shop_id AND owner_id = auth.uid())
+  );
+
+-- ---- AUTOMATION_TRIGGERS ----
+DROP POLICY IF EXISTS "Publico_Ve_Gatilhos" ON public.automation_triggers;
+CREATE POLICY "Publico_Ve_Gatilhos" ON public.automation_triggers
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Dono_Gere_Gatilhos" ON public.automation_triggers;
+CREATE POLICY "Dono_Gere_Gatilhos" ON public.automation_triggers
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.shops WHERE id = automation_triggers.shop_id AND owner_id = auth.uid())
   );
 
 NOTIFY pgrst, 'reload schema';

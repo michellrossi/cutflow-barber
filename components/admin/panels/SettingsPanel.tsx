@@ -29,11 +29,6 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ initialTab, onTabC
 
     const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
         { id: 'profile', label: 'Perfil', icon: <Store size={18} /> },
-        { id: 'account', label: 'Conta', icon: <User size={18} /> },
-        { id: 'hours', label: 'Horários', icon: <Clock size={18} /> },
-        { id: 'billing', label: 'Assinatura', icon: <CreditCard size={18} /> },
-        { id: 'security', label: 'Segurança', icon: <Shield size={18} /> },
-        { id: 'booking_page', label: 'Link de Agendamento', icon: <Globe size={18} /> },
     ];
 
     return (
@@ -43,32 +38,9 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ initialTab, onTabC
                 <p className="text-slate-500">Gerencie as configurações da sua barbearia e conta</p>
             </div>
 
-            {/* Horizontal Tabs */}
-            <div className="flex flex-wrap gap-2 p-1 bg-slate-100 rounded-lg w-fit">
-                {tabs.map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => handleTabChange(tab.id)}
-                        className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${
-                            activeTab === tab.id 
-                            ? 'bg-white text-orange-600 shadow-sm' 
-                            : 'text-slate-500 hover:text-slate-700'
-                        }`}
-                    >
-                        {tab.icon}
-                        {tab.label}
-                    </button>
-                ))}
-            </div>
-
             {/* Settings Content */}
             <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-sm">
-                {activeTab === 'profile' && <ProfileSettings />}
-                {activeTab === 'account' && <AccountSettings />}
-                {activeTab === 'hours' && <HoursSettings />}
-                {activeTab === 'billing' && <BillingSettings />}
-                {activeTab === 'security' && <SecuritySettings />}
-                {activeTab === 'booking_page' && <BookingPageSettings />}
+                <ProfileSettings />
             </div>
         </div>
     );
@@ -117,7 +89,7 @@ const AccountSettings: React.FC = () => {
                 <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">URL da Barbearia (Slug)</label>
                     <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-md p-4">
-                        <span className="text-slate-500 text-sm">cutflow.com/</span>
+                        <span className="text-slate-500 text-sm">insightbarber.com.br/</span>
                         <input 
                             value={slug} 
                             onChange={e => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))} 
@@ -409,7 +381,7 @@ const IntegrationsSettings: React.FC = () => {
         <div className="max-w-2xl">
             <div className="mb-8">
                 <h3 className="text-xl font-bold text-white mb-2">Integrações</h3>
-                <p className="text-slate-400">Conecte a CutFlow com outras ferramentas que você já utiliza.</p>
+                <p className="text-slate-400">Conecte a insightbarber.com.br outras ferramentas que você já utiliza.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -505,10 +477,17 @@ const BookingPageSettings: React.FC = () => {
 };
 
 const ProfileSettings: React.FC = () => {
-    const { settings, updateSettings } = useShop();
+    const { settings, shop, updateSettings } = useShop();
     const { showToast } = useToast();
     
     const [name, setName] = useState(settings.name);
+    const [slug, setSlug] = useState(shop?.slug || '');
+    const [description, setDescription] = useState(settings.description || '');
+    const [phone, setPhone] = useState(settings.phone || '');
+    const [instagram, setInstagram] = useState(settings.instagram || '');
+    const [address, setAddress] = useState(settings.address || '');
+    const [paymentMethods, setPaymentMethods] = useState(settings.paymentMethods || []);
+    
     const [primary, setPrimary] = useState(settings.primaryColor);
     const [secondary, setSecondary] = useState(settings.secondaryColor);
     const [titleColor, setTitleColor] = useState(settings.titleColor || '#ffffff');
@@ -556,6 +535,12 @@ const ProfileSettings: React.FC = () => {
         setIsSaving(true);
         const { success, error } = await updateSettings({ 
             name, 
+            slug,
+            description,
+            phone,
+            instagram,
+            address,
+            paymentMethods,
             primaryColor: primary, 
             secondaryColor: secondary, 
             titleColor,
@@ -594,7 +579,7 @@ const ProfileSettings: React.FC = () => {
                 <div className="lg:col-span-5 space-y-8">
                     {/* Logo Upload */}
                     <div className="bg-slate-950/50 p-6 rounded-lg border border-slate-800">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Logotipo da Barbearia</label>
+                        <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-4">Logotipo da Barbearia</label>
                         <div className="flex items-center gap-4">
                             <div onClick={() => !isUploading && fileInputRef.current?.click()} className={`w-24 h-24 bg-slate-950 rounded-lg border border-dashed border-slate-700 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative group ${isUploading ? 'cursor-not-allowed opacity-50' : ''}`}>
                                 {isUploading ? (
@@ -619,8 +604,83 @@ const ProfileSettings: React.FC = () => {
                     </div>
 
                     <div className="bg-slate-950/50 p-6 rounded-lg border border-slate-800">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Informações Básicas</label>
-                        <input value={name} onChange={e => setName(e.target.value)} placeholder="Nome da Barbearia" className="w-full bg-slate-950 border border-slate-700 rounded-md p-4 text-white focus:outline-none focus:border-orange-500 font-bold" />
+                        <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-4">Informações da Barbearia</label>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-2">Nome da Barbearia</p>
+                                <input value={name} onChange={e => setName(e.target.value)} placeholder="Nome da Barbearia" className="w-full bg-slate-950 border border-slate-700 rounded-md p-4 text-white focus:outline-none focus:border-orange-500 font-bold" />
+                            </div>
+                            
+                            <div>
+                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-2">Link Público (Agenda)</p>
+                                <div className="flex items-center bg-slate-900 border border-slate-700 rounded-md overflow-hidden">
+                                    <span className="px-4 py-4 bg-slate-800 text-slate-300 text-sm font-medium border-r border-slate-700 whitespace-nowrap">insightbarber.com.br/</span>
+                                    <input 
+                                        value={slug} 
+                                        onChange={e => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))} 
+                                        className="flex-1 bg-transparent px-4 py-4 text-white font-bold focus:outline-none" 
+                                        placeholder="seu-link"
+                                    />
+                                </div>
+                                <p className="text-[10px] text-slate-500 mt-2 italic">Este link é exclusivo para seus clientes agendarem.</p>
+                            </div>
+
+                            <div>
+                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-2">Quem Somos (Descrição)</p>
+                                <textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Breve descrição sobre seu negócio..." rows={3} className="w-full bg-slate-950 border border-slate-700 rounded-md p-4 text-white focus:outline-none focus:border-orange-500 font-medium" />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-2">WhatsApp para Contato</p>
+                                    <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Ex: 11999999999" className="w-full bg-slate-950 border border-slate-700 rounded-md p-4 text-white focus:outline-none focus:border-orange-500 font-medium" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-2">Instagram (apenas o @)</p>
+                                    <input value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="Ex: barbearia_premium" className="w-full bg-slate-950 border border-slate-700 rounded-md p-4 text-white focus:outline-none focus:border-orange-500 font-medium" />
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-2">Endereço Completo</p>
+                                <input value={address} onChange={e => setAddress(e.target.value)} placeholder="Rua, Número, Bairro, Cidade" className="w-full bg-slate-950 border border-slate-700 rounded-md p-4 text-white focus:outline-none focus:border-orange-500 font-medium" />
+                            </div>
+
+                            <div>
+                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-2">Formas de Pagamento Aceitas</p>
+                                <div className="flex flex-wrap gap-2">
+                                    {['Dinheiro', 'Cartão de Débito', 'Cartão de Crédito', 'Pix', 'Assinatura'].map(method => (
+                                        <button 
+                                            key={method}
+                                            onClick={() => {
+                                                if (paymentMethods.includes(method)) {
+                                                    setPaymentMethods(paymentMethods.filter(m => m !== method));
+                                                } else {
+                                                    setPaymentMethods([...paymentMethods, method]);
+                                                }
+                                            }}
+                                            className={`px-4 py-2 rounded-full text-xs font-bold transition-all ${paymentMethods.includes(method) ? 'bg-orange-500 text-white' : 'bg-slate-900 text-slate-400 border border-slate-700'}`}
+                                        >
+                                            {method}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-950/50 p-6 rounded-lg border border-slate-800">
+                        <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-4">Divulgação</label>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="p-4 bg-slate-900 rounded-lg border border-slate-700 text-center">
+                                <h4 className="text-white font-bold text-xs mb-2">QR Code para Imprimir</h4>
+                                <button className="text-orange-500 text-[10px] font-bold uppercase hover:underline">Baixar PDF/PNG</button>
+                            </div>
+                            <div className="p-4 bg-slate-900 rounded-lg border border-slate-700 text-center">
+                                <h4 className="text-white font-bold text-xs mb-2">Botão para Site</h4>
+                                <button className="text-orange-500 text-[10px] font-bold uppercase hover:underline">Obter Código</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="bg-slate-950/50 p-6 rounded-lg border border-slate-800">
@@ -962,7 +1022,7 @@ const AutomationSettings: React.FC = () => {
 const ColorPicker: React.FC<{ label: string, value: string, onChange: (val: string) => void }> = ({ label, value, onChange }) => {
     return (
         <div>
-            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">{label}</label>
+            <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-2">{label}</label>
             <div className="flex items-center gap-3 p-2 bg-slate-950 border border-slate-700 rounded-md">
                 <div className="relative w-10 h-10 rounded-md overflow-hidden border border-slate-700 shrink-0">
                     <input 
