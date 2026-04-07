@@ -529,7 +529,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         let mappedTriggers = (triggersRes.data || []).map(mapAutomationTrigger);
 
         // --- INIT DEFAULT TRIGGERS IF EMPTY ---
-        if (mappedTriggers.length === 0 && userRole === 'owner') {
+        const { data: { session: checkSession } } = await supabase.auth.getSession();
+        if (mappedTriggers.length === 0 && checkSession?.user?.id === currentShopData?.ownerId) {
+             console.log("Iniciando gatilhos padrão para a loja:", shopId);
              const { data: defaults } = await supabase.from('automation_triggers').insert([
                 { shop_id: shopId, name: 'Confirmação Imediata', value: 0, unit: 'minutes', period: 'immediate', active: true },
                 { shop_id: shopId, name: 'Lembrete de Agendamento', value: 1, unit: 'hours', period: 'before', active: true },
@@ -750,62 +752,52 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ];
       await supabase.from('message_categories').insert(defaultCategories);
 
+      // Default Triggers
+      const defaultTriggers = [
+          { shop_id: shopData.id, name: 'Confirmação Imediata', value: 0, unit: 'minutes', period: 'immediate', active: true },
+          { shop_id: shopData.id, name: 'Lembrete de Agendamento', value: 1, unit: 'hours', period: 'before', active: true },
+          { shop_id: shopData.id, name: 'Pós-Venda e Avaliação', value: 2, unit: 'hours', period: 'after', active: true },
+          { shop_id: shopData.id, name: 'Reagendamento', value: 1, unit: 'hours', period: 'after', active: true }
+      ];
+      const { data: insertedTriggers } = await supabase.from('automation_triggers').insert(defaultTriggers).select();
+
       // Default message templates
       const defaultTemplates = [
         {
             shop_id: shopData.id,
             title: 'Confirmação Imediata',
-            trigger: 'immediate_confirmation',
+            trigger_id: insertedTriggers?.find(t => t.name === 'Confirmação Imediata')?.id,
             content: 'Olá [CLIENTE]! Seu agendamento para [SERVICO] na [BARBEARIA] foi realizado com sucesso para o dia [DATA] às [HORA] com o profissional [BARBEIRO]. Te esperamos!',
-            delay_value: 0,
-            delay_unit: 'minutes',
             active: true,
             target: 'client',
             category: 'Confirmação Imediata'
         },
         {
             shop_id: shopData.id,
-            title: 'Lembrete de Agendamento (24h)',
-            trigger: 'appointment_reminder',
+            title: 'Lembrete de Agendamento',
+            trigger_id: insertedTriggers?.find(t => t.name === 'Lembrete de Agendamento')?.id,
             content: 'Olá [CLIENTE], passando para lembrar do seu horário amanhã às [HORA] na [BARBEARIA] para o serviço [SERVICO]. Até logo!',
-            delay_value: 24,
-            delay_unit: 'hours',
             active: true,
             target: 'client',
             category: 'Lembrete 24h'
         },
         {
             shop_id: shopData.id,
-            title: 'Lembrete de Agendamento (1h)',
-            trigger: 'appointment_reminder',
-            content: 'Olá [CLIENTE], seu horário na [BARBEARIA] é daqui a pouco, às [HORA]. Já estamos te esperando para o seu [SERVICO]!',
-            delay_value: 1,
-            delay_unit: 'hours',
+            title: 'Pós-Venda e Avaliação',
+            trigger_id: insertedTriggers?.find(t => t.name === 'Pós-Venda e Avaliação')?.id,
+            content: 'Olá [CLIENTE], foi um prazer te atender hoje na [BARBEARIA]! Como foi sua experiência? [LINK_AVALIACAO]',
             active: true,
             target: 'client',
-            category: 'Lembrete 1h'
+            category: 'Pós-venda e Avaliação'
         },
         {
             shop_id: shopData.id,
             title: 'Solicitação de Reagendamento',
-            trigger: 'rescheduling_request',
+            trigger_id: insertedTriggers?.find(t => t.name === 'Reagendamento')?.id,
             content: 'Olá [CLIENTE], notamos que você não conseguiu comparecer ao seu horário de [SERVICO]. Gostaria de escolher uma nova data para seu atendimento na [BARBEARIA]?',
-            delay_value: 1,
-            delay_unit: 'hours',
             active: true,
             target: 'client',
             category: 'Reagendamento'
-        },
-        {
-            shop_id: shopData.id,
-            title: 'Pós-venda e Avaliação',
-            trigger: 'post_sale',
-            content: 'Olá [CLIENTE]! O que achou do seu atendimento hoje com [BARBEIRO]? Sua opinião é muito importante para nós da [BARBEARIA]. Se puder, nos avalie no Google!',
-            delay_value: 2,
-            delay_unit: 'hours',
-            active: true,
-            target: 'client',
-            category: 'Pós-venda e Avaliação'
         }
       ];
       await supabase.from('message_templates').insert(defaultTemplates);
@@ -1648,14 +1640,25 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const updateSettings = async (updated: Partial<ShopSettings>): MutationResult => {
+  const updateSettings = async (updated: any): MutationResult => {
     try {
         const shopId = ensureShopId();
+
+        // 1. Update Shop Table (Name and Slug)
+        if (updated.name || updated.slug) {
+            const shopPayload: any = {};
+            if (updated.name) shopPayload.name = sanitize(updated.name);
+            if (updated.slug) shopPayload.slug = sanitize(updated.slug).toLowerCase().replace(/\s+/g, '-');
+            const { error: shopErr } = await supabase.from('shops').update(shopPayload).eq('id', shopId);
+            if (shopErr) throw shopErr;
+        }
+
+        // 2. Update Settings Table
         const { data: current } = await supabase.from('settings').select('id').eq('shop_id', shopId).single();
         
         const payload: any = {};
         if (updated.name) payload.name = sanitize(updated.name);
-        if (updated.logoUrl) payload.logo_url = updated.logoUrl;
+        if (updated.logoUrl !== undefined) payload.logo_url = updated.logoUrl;
         if (updated.primaryColor) payload.primary_color = sanitize(updated.primaryColor);
         if (updated.secondaryColor) payload.secondary_color = sanitize(updated.secondaryColor);
         if (updated.titleColor) payload.title_color = sanitize(updated.titleColor);
@@ -1668,14 +1671,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.borderColor) payload.border_color = sanitize(updated.borderColor);
         if (updated.inputBackgroundColor) payload.input_background_color = sanitize(updated.inputBackgroundColor);
         if (updated.inputTextColor) payload.input_text_color = sanitize(updated.inputTextColor);
-        
-        if (updated.loyaltyMode) payload.loyalty_mode = updated.loyaltyMode;
-        if (updated.loyaltyCardGoal !== undefined) payload.loyalty_card_goal = updated.loyaltyCardGoal;
-        if (updated.loyaltyPointsRatio !== undefined) payload.loyalty_points_ratio = updated.loyaltyPointsRatio;
-        if (updated.loyaltyPointsGoal !== undefined) payload.loyalty_points_goal = updated.loyaltyPointsGoal;
-        if (updated.loyaltyRewardValue !== undefined) payload.loyalty_reward_value = updated.loyaltyRewardValue;
-        if (updated.loyaltyRewardType) payload.loyalty_reward_type = updated.loyaltyRewardType;
-        if (updated.loyaltyRewardValidityDays !== undefined) payload.loyalty_reward_validity_days = updated.loyaltyRewardValidityDays;
 
         if (updated.instagram !== undefined) payload.instagram = sanitize(updated.instagram);
         if (updated.facebook !== undefined) payload.facebook = sanitize(updated.facebook);
@@ -1684,21 +1679,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.paymentMethods !== undefined) payload.payment_methods = updated.paymentMethods;
         if (updated.address !== undefined) payload.address = sanitize(updated.address);
         if (updated.phone !== undefined) payload.phone = sanitize(updated.phone);
-        if (updated.businessHours !== undefined) payload.business_hours = updated.businessHours;
 
-        let error;
-        let newData;
-
-        if (current && current.id) {
-            ({ data: newData, error } = await supabase.from('settings').update(payload).eq('id', current.id).select().single());
-        } else {
-            ({ data: newData, error } = await supabase.from('settings').insert({ ...payload, shop_id: shopId }).select().single());
-        }
-        
+        const { data, error } = await supabase.from('settings').update(payload).eq('shop_id', shopId).select().single();
         if (error) throw error;
-
-        const newSettings = mapSettings(newData);
-        setState(prev => ({ ...prev, settings: newSettings }));
+        
+        const newSettings = mapSettings(data);
+        setState(prev => ({ 
+            ...prev, 
+            settings: newSettings,
+            shop: (updated.name || updated.slug) ? { ...prev.shop!, name: updated.name || prev.shop!.name, slug: updated.slug || prev.shop!.slug } : prev.shop
+        }));
         
         return { success: true };
     } catch (e: any) {

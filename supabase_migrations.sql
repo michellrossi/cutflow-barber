@@ -248,9 +248,7 @@ CREATE POLICY "Criar Agendamento Paywall" ON public.appointments
 DROP POLICY IF EXISTS "Publico_Le_Agendamentos" ON public.appointments;
 DROP POLICY IF EXISTS "Enable read access for all users" ON public.appointments;
 CREATE POLICY "Publico_Le_Agendamentos" ON public.appointments
-  FOR SELECT USING (
-    EXISTS (SELECT 1 FROM shops WHERE id = appointments.shop_id AND owner_id = auth.uid())
-  );
+  FOR SELECT USING (true);
 
 -- Permite que supabaseAdmin (service_role) atualize flags de notificação.
 -- Com service_role, esta policy é ignorada. Mantida para clareza de intenção.
@@ -276,14 +274,21 @@ CREATE POLICY "Dono_Gere_Templates" ON public.message_templates
   );
 
 -- ---- MESSAGE_CATEGORIES (FIX NOVO: estava sem policy) ----
-DROP POLICY IF EXISTS "Publico_Ve_Categorias" ON public.message_categories;
-CREATE POLICY "Publico_Ve_Categorias" ON public.message_categories
-  FOR SELECT USING (true);
-
 DROP POLICY IF EXISTS "Dono_Gere_Categorias" ON public.message_categories;
 CREATE POLICY "Dono_Gere_Categorias" ON public.message_categories
   FOR ALL USING (
     EXISTS (SELECT 1 FROM public.shops WHERE id = message_categories.shop_id AND owner_id = auth.uid())
+  );
+
+-- ---- AUTOMATION_TRIGGERS ----
+DROP POLICY IF EXISTS "Publico_Ve_Gatilhos" ON public.automation_triggers;
+CREATE POLICY "Publico_Ve_Gatilhos" ON public.automation_triggers
+  FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Dono_Gere_Gatilhos" ON public.automation_triggers;
+CREATE POLICY "Dono_Gere_Gatilhos" ON public.automation_triggers
+  FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.shops WHERE id = automation_triggers.shop_id AND owner_id = auth.uid())
   );
 
 NOTIFY pgrst, 'reload schema';

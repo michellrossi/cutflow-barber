@@ -21,6 +21,10 @@ export const RemindersPanel: React.FC = () => {
     const [editingTemplate, setEditingTemplate] = useState<Partial<MessageTemplate> | null>(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [newCategoryName, setNewCategoryName] = useState('');
+    
+    // Trigger Modal State
+    const [isTriggerModalOpen, setIsTriggerModalOpen] = useState(false);
+    const [editingTrigger, setEditingTrigger] = useState<any>(null);
 
     // WhatsApp State
     const [qrCode, setQrCode] = useState<string | null>(null);
@@ -113,16 +117,22 @@ export const RemindersPanel: React.FC = () => {
         setNewCategoryName('');
     };
 
-    const handleAddTrigger = async () => {
-        const name = prompt('Nome do Gatilho:');
-        if (!name) return;
-        await addAutomationTrigger({
-            name,
-            value: 1,
-            unit: 'hours',
-            period: 'before',
-            active: true
-        });
+    const handleTriggerSave = async () => {
+        if (!editingTrigger?.name) return;
+        
+        if (editingTrigger.id) {
+            await updateAutomationTrigger(editingTrigger.id, editingTrigger);
+        } else {
+            await addAutomationTrigger({
+                name: editingTrigger.name,
+                value: editingTrigger.value || 1,
+                unit: editingTrigger.unit || 'hours',
+                period: editingTrigger.period || 'before',
+                active: true
+            });
+        }
+        setIsTriggerModalOpen(false);
+        setEditingTrigger(null);
     };
 
     const onEmojiClick = (emojiData: EmojiClickData) => {
@@ -378,8 +388,11 @@ export const RemindersPanel: React.FC = () => {
                                 <h2 className="text-lg font-bold text-slate-900">Configuração de Gatilhos</h2>
                                 <p className="text-sm text-slate-500">Defina os momentos exatos que as mensagens devem ser enviadas.</p>
                             </div>
-                            <button 
-                                onClick={handleAddTrigger}
+                             <button 
+                                onClick={() => {
+                                    setEditingTrigger({ name: '', value: 1, unit: 'hours', period: 'before' });
+                                    setIsTriggerModalOpen(true);
+                                }}
                                 className="bg-orange-500 text-white px-4 py-2 rounded-lg font-bold hover:bg-orange-600 transition-all flex items-center gap-2 shadow-sm"
                             >
                                 <Plus size={18} /> Novo Gatilho
@@ -699,6 +712,97 @@ export const RemindersPanel: React.FC = () => {
                                             Este modelo será disparado automaticamente seguindo as regras do gatilho <strong>{getTriggerName(editingTemplate?.triggerId || '')}</strong>.
                                         </p>
                                     </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
+
+            {/* Modal de Gatilho */}
+            <AnimatePresence>
+                {isTriggerModalOpen && (
+                    <div
+                        className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+                        onClick={(e) => e.target === e.currentTarget && setIsTriggerModalOpen(false)}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white rounded-lg w-full max-w-md overflow-hidden shadow-2xl p-8"
+                        >
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-xl font-bold text-slate-900">
+                                    {editingTrigger?.id ? 'Editar Gatilho' : 'Novo Gatilho'}
+                                </h2>
+                                <button onClick={() => setIsTriggerModalOpen(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                                    <Plus className="rotate-45" size={24} />
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Nome do Gatilho</label>
+                                    <input
+                                        type="text"
+                                        value={editingTrigger?.name || ''}
+                                        onChange={(e) => setEditingTrigger({ ...editingTrigger, name: e.target.value })}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                                        placeholder="Ex: Lembrete de Agendamento"
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">Valor</label>
+                                        <input
+                                            type="number"
+                                            value={editingTrigger?.value || 0}
+                                            onChange={(e) => setEditingTrigger({ ...editingTrigger, value: parseInt(e.target.value) })}
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all font-bold"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-bold text-slate-700 mb-2">Unidade</label>
+                                        <select
+                                            value={editingTrigger?.unit || 'hours'}
+                                            onChange={(e) => setEditingTrigger({ ...editingTrigger, unit: e.target.value })}
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all font-bold"
+                                        >
+                                            <option value="minutes">Minutos</option>
+                                            <option value="hours">Horas</option>
+                                            <option value="days">Dias</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-bold text-slate-700 mb-2">Período de Disparo</label>
+                                    <select
+                                        value={editingTrigger?.period || 'before'}
+                                        onChange={(e) => setEditingTrigger({ ...editingTrigger, period: e.target.value })}
+                                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-md focus:ring-2 focus:ring-orange-500 outline-none transition-all font-bold"
+                                    >
+                                        <option value="immediate">Imediato (ao agendar)</option>
+                                        <option value="before">Antes do horário</option>
+                                        <option value="after">Após o horário</option>
+                                    </select>
+                                </div>
+
+                                <div className="flex gap-4 pt-4">
+                                    <button
+                                        onClick={() => setIsTriggerModalOpen(false)}
+                                        className="flex-1 px-6 py-3 bg-slate-100 text-slate-700 rounded-md font-bold hover:bg-slate-200 transition-all"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={handleTriggerSave}
+                                        className="flex-1 px-6 py-3 bg-orange-500 text-white rounded-md font-bold hover:bg-orange-600 transition-all shadow-lg shadow-orange-200"
+                                    >
+                                        Salvar
+                                    </button>
                                 </div>
                             </div>
                         </motion.div>

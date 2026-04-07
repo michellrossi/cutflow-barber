@@ -253,8 +253,12 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                     <ExternalLink size={16}/> Ver Agenda
                 </button>
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold">A</div>
-                    <span className="text-sm text-slate-600 hidden md:inline font-medium">Admin</span>
+                    <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold uppercase">
+                        {settings.name?.charAt(0) || 'A'}
+                    </div>
+                    <span className="text-sm text-slate-800 hidden md:inline font-bold">
+                        {settings.name || 'Admin'}
+                    </span>
                 </div>
              </div>
         </header>

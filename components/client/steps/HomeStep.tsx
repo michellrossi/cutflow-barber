@@ -181,7 +181,7 @@ export const HomeStep: React.FC<HomeStepProps> = ({ settings, setStep, onAdminCl
                     style={{ backgroundColor: cardBg, borderColor: border, color: btnTextColor }}
                 >
                     <User size={20} style={{ color: accent }} />
-                    Área do Cliente & Fidelidade
+                    Área do Cliente
                 </button>
             </div>
 
