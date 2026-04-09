@@ -1393,7 +1393,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const updateMessageTemplate = async (id: string, template: Partial<MessageTemplate>): MutationResult => {
       const updateData: any = { ...template };
-      if (template.triggerId) {
+      
+      // Remover campos de controle e IDs que não devem ser alterados no PATCH
+      delete updateData.id;
+      delete updateData.shopId;
+      
+      // Mapear camelCase para snake_case
+      if (template.triggerId !== undefined) {
           updateData.trigger_id = template.triggerId;
           delete updateData.triggerId;
       }
