@@ -40,34 +40,74 @@ export const supabaseAdmin = createClient(supabaseUrl || 'https://placeholder.su
  * Busca do banco de dados usando supabaseAdmin para evitar bloqueios de RLS
  */
 async function generateWhatsAppMessage(triggerId: string, data: any, shopId: string, target: string = 'client') {
-    // 1. Verifica se o gatilho está ativo
-    const { data: triggerObj } = await supabaseAdmin.from('automation_triggers').select('active, name').eq('id', triggerId).maybeSingle();
-    if (triggerObj && !triggerObj.active) return '';
+    console.log(`[MessageGen] Buscando template para Gatilho: ${triggerId} | Loja: ${shopId} | Alvo: ${target}`);
 
-    // 2. Tenta buscar pelo triggerId (UUID) ou trigger string legada
+    // 1. Tenta identificar se o triggerId é um slug (ex: 'appointment_reminder')
+    // Se for um slug, tentamos encontrar um gatilho UUID correspondente no banco
+    let effectiveTriggerId = triggerId;
+    
+    if (triggerId.length < 30) {
+        const { data: relatedTriggers } = await supabaseAdmin
+            .from('automation_triggers')
+            .select('id, name')
+            .eq('shop_id', shopId)
+            .eq('active', true);
+            
+        if (relatedTriggers) {
+            // Busca um gatilho cujo nome combine com o slug
+            const match = relatedTriggers.find(t => {
+                const name = t.name.toLowerCase();
+                if (triggerId === 'appointment_reminder') return name.includes('lembrete');
+                if (triggerId === 'immediate_confirmation') return name.includes('confirmação');
+                if (triggerId === 'post_sale') return name.includes('pós-venda') || name.includes('avaliação');
+                if (triggerId === 'rescheduling_request') return name.includes('reagendamento');
+                if (triggerId === 'retention_30d') return name.includes('retenção') || name.includes('30 dias');
+                return false;
+            });
+            
+            if (match) {
+                console.log(`[MessageGen] Slug '${triggerId}' mapeado para Gatilho ID: ${match.id} (${match.name})`);
+                effectiveTriggerId = match.id;
+            }
+        }
+    }
+
+    // 2. Busca o modelo de mensagem
     let query = supabaseAdmin
         .from('message_templates')
-        .select('content')
-        .eq('shop_id', shopId);
+        .select('content, title')
+        .eq('shop_id', shopId)
+        .eq('target', target)
+        .eq('active', true);
     
-    if (triggerId.length > 30) { // Provável UUID
-        query = query.eq('trigger_id', triggerId);
+    if (effectiveTriggerId.length > 30) {
+        query = query.eq('trigger_id', effectiveTriggerId);
     } else {
-        query = query.eq('trigger', triggerId);
+        query = query.eq('trigger', effectiveTriggerId);
     }
 
     const { data: templateData } = await query
-        .eq('target', target)
-        .eq('active', true)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
     let content = templateData?.content;
+    if (content) {
+        console.log(`[MessageGen] Modelo encontrado: "${templateData?.title}"`);
+    } else {
+        console.log(`[MessageGen] Nenhum modelo customizado encontrado. Usando padrão do sistema.`);
+    }
+
 
     // 3. Fallback: Se não achou no banco, usa padrões
     if (!content) {
-        const triggerName = triggerObj?.name?.toLowerCase() || triggerId.toLowerCase();
+        // Tenta obter o nome do gatilho para o fallback
+        let triggerName = triggerId.toLowerCase();
+        
+        if (effectiveTriggerId.length > 30) {
+            const { data: triggerObj } = await supabaseAdmin.from('automation_triggers').select('name').eq('id', effectiveTriggerId).maybeSingle();
+            if (triggerObj) triggerName = triggerObj.name.toLowerCase();
+        }
 
         if (triggerName.includes('confirmação') || triggerId === 'immediate_confirmation' || triggerId === 'link de acesso') {
              if (triggerId === 'link de acesso') {
@@ -93,6 +133,8 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
             }
         }
     }
+
+    if (!content) return ''; // Segurança final
 
     // Substituição de variáveis
     return content
