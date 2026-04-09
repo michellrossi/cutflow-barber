@@ -1376,11 +1376,15 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const addMessageTemplate = async (template: Omit<MessageTemplate, 'id' | 'shopId'>): MutationResult => {
       if (!state.shop) return { success: false, error: 'Shop not found' };
+      
+      const triggerId = template.triggerId && template.triggerId !== "" ? template.triggerId : null;
+
       const { data, error } = await supabase.from('message_templates').insert({
           shop_id: state.shop.id,
           title: template.title,
           content: template.content,
-          trigger_id: template.triggerId,
+          trigger_id: triggerId,
+          trigger: template.triggerId || 'custom', // Campo legado obrigatório
           active: template.active,
           target: template.target,
           category: template.category
@@ -1398,9 +1402,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       delete updateData.id;
       delete updateData.shopId;
       
-      // Mapear camelCase para snake_case
+      // Mapear camelCase para snake_case e tratar UUIDs vazios
       if (template.triggerId !== undefined) {
-          updateData.trigger_id = template.triggerId;
+          const triggerId = template.triggerId && template.triggerId !== "" ? template.triggerId : null;
+          updateData.trigger_id = triggerId;
+          updateData.trigger = template.triggerId || 'custom'; // Garantir campo legado
           delete updateData.triggerId;
       }
       
