@@ -445,13 +445,16 @@ async function startServer() {
         try {
             const systemInstruction = `Você é um consultor de negócios especializado em barbearias. Use os dados de "${context.shopName}".`;
             const chatHistory = history.map((msg: any) => ({ role: msg.role === 'assistant' ? 'model' : 'user', parts: [{ text: msg.content }] }));
-            const genAI = new GoogleGenAI({ apiKey: geminiKey });
-            const response = await genAI.models.generateContent({
+            const genAI = new GoogleGenAI({ 
+                apiKey: geminiKey,
+                apiVersion: 'v1' 
+            });
+            const result = await genAI.models.generateContent({
                 model: "gemini-1.5-flash",
                 contents: [...chatHistory, { role: 'user', parts: [{ text: prompt }] }],
                 config: { systemInstruction }
             });
-            res.json({ success: true, answer: response.text });
+            res.json({ success: true, answer: result.candidates?.[0]?.content?.parts?.[0]?.text || '' });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
@@ -460,18 +463,22 @@ async function startServer() {
     app.post('/api/ai/generate-template', async (req, res) => {
         const { trigger, shopName, tone } = req.body;
         try {
-            const genAI = new GoogleGenAI({ apiKey: geminiKey });
+            const genAI = new GoogleGenAI({ 
+                apiKey: geminiKey,
+                apiVersion: 'v1' 
+            });
+
             const promptContent = `Crie um modelo de mensagem de WhatsApp para uma barbearia chamada "${shopName}". 
             O gatilho da mensagem é: "${trigger}". 
             O tom deve ser: "${tone}".
             Use as seguintes variáveis: [CLIENTE], [SERVICO], [DATA], [HORA], [BARBEIRO], [BARBEARIA].
             Retorne apenas o texto da mensagem, sem explicações.`;
             
-            const response = await genAI.models.generateContent({
+            const result = await genAI.models.generateContent({
                 model: "gemini-1.5-flash",
                 contents: [{ role: 'user', parts: [{ text: promptContent }] }]
             });
-            res.json({ success: true, text: response.text });
+            res.json({ success: true, text: result.candidates?.[0]?.content?.parts?.[0]?.text || '' });
         } catch (error: any) {
             res.status(500).json({ success: false, error: error.message });
         }

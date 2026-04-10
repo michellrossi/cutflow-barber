@@ -480,7 +480,8 @@ export const RemindersPanel: React.FC = () => {
                             layout
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col"
+                            onClick={() => { setEditingTemplate(template); setIsModalOpen(true); }}
+                            className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col cursor-pointer"
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-orange-50 text-orange-600 rounded-md">
@@ -488,7 +489,7 @@ export const RemindersPanel: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
-                                        onClick={() => handleTest(template.id)}
+                                        onClick={(e) => { e.stopPropagation(); handleTest(template.id); }}
                                         disabled={isTesting}
                                         className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
                                         title="Enviar Teste"
@@ -496,16 +497,13 @@ export const RemindersPanel: React.FC = () => {
                                         <Copy size={18} />
                                     </button>
                                     <button
-                                        onClick={() => {
-                                            setEditingTemplate(template);
-                                            setIsModalOpen(true);
-                                        }}
+                                        onClick={(e) => { e.stopPropagation(); setEditingTemplate(template); setIsModalOpen(true); }}
                                         className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-md transition-colors"
                                     >
                                         <Eye size={18} />
                                     </button>
                                     <button
-                                        onClick={() => removeMessageTemplate(template.id)}
+                                        onClick={(e) => { e.stopPropagation(); removeMessageTemplate(template.id); }}
                                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                                     >
                                         <Trash2 size={18} />
@@ -530,7 +528,7 @@ export const RemindersPanel: React.FC = () => {
                                     {template.active ? 'Ativo' : 'Inativo'}
                                 </span>
                                 <button
-                                    onClick={() => updateMessageTemplate(template.id, { active: !template.active })}
+                                    onClick={(e) => { e.stopPropagation(); updateMessageTemplate(template.id, { active: !template.active }); }}
                                     className="text-xs font-medium text-orange-600 hover:underline"
                                 >
                                     {template.active ? 'Desativar' : 'Ativar'}

@@ -153,15 +153,15 @@ const HoursSettings: React.FC = () => {
 
             <div className="space-y-4">
                 {days.map(day => (
-                    <div key={day.id} className="flex items-center justify-between p-4 bg-slate-950 border border-slate-800 rounded-md">
+                    <div key={day.id} className="flex items-center justify-between p-4 bg-white border border-slate-200 rounded-md shadow-sm">
                         <div className="flex items-center gap-4">
                             <div 
                                 onClick={() => setHours({...hours, [day.id]: {...hours[day.id as keyof typeof hours], active: !hours[day.id as keyof typeof hours].active}})}
-                                className={`w-12 h-6 rounded-full relative cursor-pointer transition-colors ${hours[day.id as keyof typeof hours].active ? 'bg-green-600' : 'bg-slate-800'}`}
+                                className={`w-12 h-6 rounded-full relative cursor-pointer transition-colors ${hours[day.id as keyof typeof hours].active ? 'bg-green-600' : 'bg-slate-200'}`}
                             >
                                 <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${hours[day.id as keyof typeof hours].active ? 'left-7' : 'left-1'}`} />
                             </div>
-                            <span className={`font-medium ${hours[day.id as keyof typeof hours].active ? 'text-white' : 'text-slate-500'}`}>{day.label}</span>
+                            <span className={`font-bold ${hours[day.id as keyof typeof hours].active ? 'text-slate-900' : 'text-slate-400'}`}>{day.label}</span>
                         </div>
 
                         {hours[day.id as keyof typeof hours].active ? (
@@ -170,14 +170,14 @@ const HoursSettings: React.FC = () => {
                                     type="time" 
                                     value={hours[day.id as keyof typeof hours].start} 
                                     onChange={e => setHours({...hours, [day.id]: {...hours[day.id as keyof typeof hours], start: e.target.value}})}
-                                    className="bg-slate-900 border border-slate-700 rounded-md p-2 text-sm text-white focus:outline-none focus:border-green-500"
+                                    className="bg-white border border-slate-300 rounded-md p-2 text-sm text-slate-900 focus:outline-none focus:border-green-500 font-bold"
                                 />
-                                <span className="text-slate-500">até</span>
+                                <span className="text-slate-400 uppercase text-[10px] font-bold">até</span>
                                 <input 
                                     type="time" 
                                     value={hours[day.id as keyof typeof hours].end} 
                                     onChange={e => setHours({...hours, [day.id]: {...hours[day.id as keyof typeof hours], end: e.target.value}})}
-                                    className="bg-slate-900 border border-slate-700 rounded-md p-2 text-sm text-white focus:outline-none focus:border-green-500"
+                                    className="bg-white border border-slate-300 rounded-md p-2 text-sm text-slate-900 focus:outline-none focus:border-green-500 font-bold"
                                 />
                             </div>
                         ) : (
@@ -406,18 +406,18 @@ const IntegrationsSettings: React.FC = () => {
 };
 
 const IntegrationCard: React.FC<{ name: string, desc: string, connected: boolean }> = ({ name, desc, connected }) => (
-    <div className="p-6 bg-slate-950 border border-slate-800 rounded-lg hover:border-slate-700 transition-all group">
+    <div className="p-6 bg-white border border-slate-200 rounded-lg hover:border-slate-300 transition-all group shadow-sm">
         <div className="flex justify-between items-start mb-4">
-            <div className="w-10 h-10 bg-slate-900 rounded-md flex items-center justify-center group-hover:bg-slate-800 transition-colors">
-                <Globe size={20} className="text-slate-500" />
+            <div className="w-10 h-10 bg-slate-50 rounded-md flex items-center justify-center group-hover:bg-slate-100 transition-colors">
+                <Globe size={20} className="text-slate-400" />
             </div>
             {connected ? (
-                <span className="text-[10px] font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded uppercase tracking-widest">Conectado</span>
+                <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded uppercase tracking-widest">Conectado</span>
             ) : (
-                <button className="text-[10px] font-bold text-slate-400 hover:text-white uppercase tracking-widest">Conectar</button>
+                <button className="text-[10px] font-bold text-slate-400 hover:text-slate-900 uppercase tracking-widest">Conectar</button>
             )}
         </div>
-        <h4 className="text-white font-bold mb-1">{name}</h4>
+        <h4 className="text-slate-900 font-bold mb-1">{name}</h4>
         <p className="text-xs text-slate-500 leading-relaxed">{desc}</p>
     </div>
 );
@@ -443,7 +443,7 @@ const BookingPageSettings: React.FC = () => {
                 <div className="bg-slate-950 border border-slate-800 rounded-lg p-8">
                     <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Seu Link de Agendamento</p>
                     <div className="flex flex-col sm:flex-row gap-2">
-                        <div className="flex-1 bg-slate-900 border border-slate-700 rounded-md p-4 text-slate-300 font-mono text-sm truncate">
+                        <div className="flex-1 bg-slate-50 border border-slate-200 rounded-md p-4 text-slate-600 font-mono text-sm truncate">
                             {bookingUrl}
                         </div>
                         <button 
@@ -567,9 +567,9 @@ const ProfileSettings: React.FC = () => {
     return (
         <div className="max-w-6xl">
             <div className="mb-8">
-                <h3 className="text-xl font-bold text-white mb-2">Personalização da Agenda Digital</h3>
-                <p className="text-slate-400">Personalize a identidade visual que seus clientes verão ao agendar.</p>
-                <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-md flex items-center gap-3 text-blue-400 text-xs">
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Personalização da Agenda Digital</h3>
+                <p className="text-slate-500">Personalize a identidade visual que seus clientes verão ao agendar.</p>
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-md flex items-center gap-3 text-blue-600 text-xs">
                     <Info size={16} />
                     <span>O painel administrativo e do barbeiro possuem identidade visual fixa (INSIGHT BARBER).</span>
                 </div>
@@ -578,7 +578,7 @@ const ProfileSettings: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                 <div className="lg:col-span-5 space-y-8">
                     {/* Logo Upload */}
-                    <div className="bg-slate-950/50 p-6 rounded-lg border border-slate-800">
+                    <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
                         <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-4">Logotipo da Barbearia</label>
                         <div className="flex items-center gap-4">
                             <div onClick={() => !isUploading && fileInputRef.current?.click()} className={`w-24 h-24 bg-slate-950 rounded-lg border border-dashed border-slate-700 flex items-center justify-center cursor-pointer hover:border-orange-500 overflow-hidden relative group ${isUploading ? 'cursor-not-allowed opacity-50' : ''}`}>
@@ -595,17 +595,17 @@ const ProfileSettings: React.FC = () => {
                             </div>
                             <input type="file" ref={fileInputRef} onChange={handleLogoUpload} className="hidden" accept="image/*" disabled={isUploading} />
                             <div>
-                                <button type="button" onClick={() => !isUploading && fileInputRef.current?.click()} className="text-sm font-bold text-slate-300 hover:text-white underline mb-1" disabled={isUploading}>
+                                <button type="button" onClick={() => !isUploading && fileInputRef.current?.click()} className="text-sm font-bold text-slate-600 hover:text-slate-900 underline mb-1" disabled={isUploading}>
                                     {isUploading ? 'Enviando...' : 'Alterar logotipo'}
                                 </button>
-                                <p className="text-xs text-slate-500">Recomendado: 512x512px</p>
+                                <p className="text-xs text-slate-400">Recomendado: 512x512px</p>
                             </div>
                         </div>
                     </div>
 
 
 
-                    <div className="bg-slate-950/50 p-6 rounded-lg border border-slate-800">
+                    <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Cores do Painel</label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <ColorPicker label="Cor de Fundo" value={backgroundColor} onChange={setBackgroundColor} />
@@ -617,7 +617,7 @@ const ProfileSettings: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-slate-950/50 p-6 rounded-lg border border-slate-800">
+                    <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Cores de Elementos</label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <ColorPicker label="Cor do Botão" value={primary} onChange={setPrimary} />
@@ -627,7 +627,7 @@ const ProfileSettings: React.FC = () => {
                         </div>
                     </div>
 
-                    <div className="bg-slate-950/50 p-6 rounded-lg border border-slate-800">
+                    <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-4">Inputs e Formulários</label>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <ColorPicker label="Fundo do Input" value={inputBackgroundColor} onChange={setInputBackgroundColor} />
@@ -647,8 +647,8 @@ const ProfileSettings: React.FC = () => {
                 <div className="lg:col-span-7 space-y-6">
                     <div className="sticky top-6">
                         <div className="flex items-center justify-between mb-4">
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">Pré-visualização em Tempo Real</label>
-                            <div className="flex bg-slate-950 p-1 rounded-md border border-slate-800">
+                            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest">Pré-visualização em Tempo Real</label>
+                            <div className="flex bg-slate-100 p-1 rounded-md border border-slate-200">
                                 <button onClick={() => setPreviewScreen('home')} className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-sm transition-all ${previewScreen === 'home' ? 'bg-orange-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}>Início</button>
                                 <button onClick={() => setPreviewScreen('services')} className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-sm transition-all ${previewScreen === 'services' ? 'bg-orange-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}>Serviços</button>
                                 <button onClick={() => setPreviewScreen('professional')} className={`px-3 py-1.5 text-[10px] font-bold uppercase rounded-sm transition-all ${previewScreen === 'professional' ? 'bg-orange-500 text-white' : 'text-slate-500 hover:text-slate-300'}`}>Equipe</button>
