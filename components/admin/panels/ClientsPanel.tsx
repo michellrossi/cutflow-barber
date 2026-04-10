@@ -53,11 +53,24 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
   // Form State
   const [formData, setFormData] = useState({
     name: '',
+    lastName: '',
     phone: '',
     email: '',
     birthDate: '',
+    cpf: '',
+    gender: 'prefiro_nao_dizer',
+    cep: '',
+    street: '',
+    number: '',
+    complement: '',
+    neighborhood: '',
+    city: '',
+    state: '',
     notes: ''
   });
+
+  // [NOVO] Tab state for form
+  const [formTab, setFormTab] = useState<'personal' | 'address' | 'notes'>('personal');
 
   // Process Data
   const processedClients = useMemo(() => {
@@ -121,8 +134,9 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
   // Filter Data
   const filteredClients = useMemo(() => {
     return processedClients.filter(client => {
+      const fullName = `${client.name} ${client.lastName || ''}`.trim();
       const matchesSearch = 
-        client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         client.phone.includes(searchTerm) ||
         (client.email && client.email.toLowerCase().includes(searchTerm.toLowerCase()));
 
@@ -141,18 +155,45 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
 
   // Handlers
   const handleOpenForm = (client?: Client) => {
+    setFormTab('personal');
     if (client) {
       setEditingClient(client);
       setFormData({
         name: client.name,
+        lastName: client.lastName || '',
         phone: client.phone,
         email: client.email || '',
         birthDate: client.birthDate || '',
+        cpf: client.cpf || '',
+        gender: client.gender || 'prefiro_nao_dizer',
+        cep: client.cep || '',
+        street: client.street || '',
+        number: client.number || '',
+        complement: client.complement || '',
+        neighborhood: client.neighborhood || '',
+        city: client.city || '',
+        state: client.state || '',
         notes: client.notes || ''
       });
     } else {
       setEditingClient(null);
-      setFormData({ name: '', phone: '', email: '', birthDate: '', notes: '' });
+      setFormData({ 
+        name: '', 
+        lastName: '',
+        phone: '', 
+        email: '', 
+        birthDate: '', 
+        cpf: '',
+        gender: 'prefiro_nao_dizer',
+        cep: '',
+        street: '',
+        number: '',
+        complement: '',
+        neighborhood: '',
+        city: '',
+        state: '',
+        notes: '' 
+      });
     }
     setIsFormOpen(true);
   };
@@ -195,34 +236,59 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
     setIsViewModalOpen(true);
   };
 
+  const downloadCSV = (headers: string[], rows: any[][], fileName: string) => {
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => {
+        const str = cell?.toString() || '';
+        return `"${str.replace(/"/g, '""')}"`;
+      }).join(','))
+    ].join('\n');
+
+    const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = ['Nome', 'Sobrenome', 'Telefone', 'Email', 'CPF', 'Data de Nascimento', 'Gênero', 'CEP', 'Rua', 'Número', 'Complemento', 'Bairro', 'Cidade', 'Estado'];
+    const example = ['João', 'Silva', '11999999999', 'joao@email.com', '123.456.789-00', '1990-05-15', 'Masculino', '01234-567', 'Rua das Flores', '123', 'Apto 45', 'Centro', 'São Paulo', 'SP'];
+    
+    downloadCSV(headers, [example], 'template_importacao_clientes.csv');
+    showToast('Template baixado! Preencha e importe.');
+  };
+
   const handleExport = () => {
     if (clients.length === 0) {
       showToast('Não há clientes para exportar.', 'error');
       return;
     }
 
-    const headers = ['Nome', 'Telefone', 'Email', 'Data de Nascimento', 'Notas'];
+    const headers = ['Nome', 'Sobrenome', 'Telefone', 'Email', 'CPF', 'Data de Nascimento', 'Gênero', 'CEP', 'Rua', 'Número', 'Complemento', 'Bairro', 'Cidade', 'Estado', 'Notas'];
     const rows = clients.map(c => [
       c.name,
+      c.lastName || '',
       c.phone,
       c.email || '',
+      c.cpf || '',
       c.birthDate || '',
+      c.gender || '',
+      c.cep || '',
+      c.street || '',
+      c.number || '',
+      c.complement || '',
+      c.neighborhood || '',
+      c.city || '',
+      c.state || '',
       c.notes || ''
     ]);
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell.toString().replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `clientes_insight_barber_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCSV(headers, rows, `clientes_insight_barber_${new Date().toISOString().split('T')[0]}.csv`);
     showToast('Lista de clientes exportada!');
   };
 
@@ -239,28 +305,43 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
         return;
       }
 
-      // Basic CSV Parser (assuming simple format)
       // skip header
       let importedCount = 0;
+      let skippedCount = 0;
+      
       for (let i = 1; i < lines.length; i++) {
-        const columns = lines[i].split(',').map(col => col.replace(/^"|"$/g, '').trim());
-        if (columns.length >= 2) {
-          const [name, phone, email, birthDate, notes] = columns;
-          // Avoid duplicates by phone 
-          if (!clients.find(c => c.phone === phone)) {
-            await addClient({ 
-              name, 
-              phone, 
-              email: email || undefined, 
-              birthDate: birthDate || undefined, 
-              notes: notes || undefined 
-            });
-            importedCount++;
-          }
+        // Improved CSV Split with quotes support
+        const columns = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
+        if (!columns || columns.length < 3) continue;
+
+        const cleanCols = columns.map(col => col.replace(/^"|"$/g, '').trim());
+        const [name, lastName, phone, email, cpf, birthDate, gender, cep, street, number, complement, neighborhood, city, state, notes] = cleanCols;
+
+        // Skip if phone already exists
+        if (!clients.find(c => c.phone === phone)) {
+          await addClient({ 
+            name, 
+            lastName: lastName || undefined,
+            phone, 
+            email: email || undefined, 
+            cpf: cpf || undefined,
+            birthDate: birthDate || undefined, 
+            gender: gender || undefined,
+            cep: cep || undefined,
+            street: street || undefined,
+            number: number || undefined,
+            complement: complement || undefined,
+            neighborhood: neighborhood || undefined,
+            city: city || undefined,
+            state: state || undefined,
+            notes: notes || undefined 
+          });
+          importedCount++;
+        } else {
+            skippedCount++;
         }
       }
-      showToast(`${importedCount} clientes importados com sucesso!`);
-      // Reset input
+      showToast(`${importedCount} clientes importados! ${skippedCount ? `(${skippedCount} já existiam)` : ''}`);
       e.target.value = '';
     };
     reader.readAsText(file);
@@ -318,6 +399,14 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
           >
             <Upload size={18} />
             Importar CSV
+          </button>
+          <button 
+            onClick={handleDownloadTemplate}
+            className="bg-white text-orange-600 font-bold px-4 py-3 rounded-xl flex items-center justify-center gap-2 border border-orange-200 transition-all hover:bg-orange-50"
+            title="Baixar modelo de planilha para importação"
+          >
+            <Download size={18} />
+            Baixar Template
           </button>
           <button 
             onClick={handleExport}
@@ -566,88 +655,152 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
               {editingClient ? 'Editar Cliente' : 'Novo Cliente'}
             </h3>
 
+            {/* Tabs */}
+            <div className="flex border-b border-slate-200 mb-6">
+              <button 
+                onClick={() => setFormTab('personal')}
+                className={`px-4 py-2 text-sm font-bold transition-all border-b-2 ${formTab === 'personal' ? 'border-orange-500 text-orange-500' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+              >
+                Dados Pessoais
+              </button>
+              <button 
+                onClick={() => setFormTab('address')}
+                className={`px-4 py-2 text-sm font-bold transition-all border-b-2 ${formTab === 'address' ? 'border-orange-500 text-orange-500' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+              >
+                Endereço
+              </button>
+              <button 
+                onClick={() => setFormTab('notes')}
+                className={`px-4 py-2 text-sm font-bold transition-all border-b-2 ${formTab === 'notes' ? 'border-orange-500 text-orange-500' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+              >
+                Notas & Preferências
+              </button>
+            </div>
+
             <form onSubmit={handleSave} className="space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Nome Completo</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
-                  <input 
-                    required
-                    type="text" 
-                    value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none"
-                    placeholder="Ex: João Silva"
-                  />
-                </div>
-              </div>
+              {formTab === 'personal' && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Nome</label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
+                        <input required type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" placeholder="Ex: João" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Sobrenome</label>
+                      <input type="text" value={formData.lastName} onChange={e => setFormData({...formData, lastName: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" placeholder="Ex: Silva" />
+                    </div>
+                  </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Telefone (WhatsApp)</label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
-                    <input 
-                      required
-                      type="tel" 
-                      value={formData.phone}
-                      onChange={e => setFormData({...formData, phone: e.target.value})}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none"
-                      placeholder="(00) 00000-0000"
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Telefone (WhatsApp)</label>
+                      <div className="relative">
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
+                        <input required type="tel" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" placeholder="(00) 00000-0000" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">CPF</label>
+                      <input type="text" value={formData.cpf} onChange={e => setFormData({...formData, cpf: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" placeholder="000.000.000-00" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Nascimento</label>
+                      <input type="date" value={formData.birthDate} onChange={e => setFormData({...formData, birthDate: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Gênero</label>
+                      <select value={formData.gender} onChange={e => setFormData({...formData, gender: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none">
+                        <option value="masculino">Masculino</option>
+                        <option value="feminino">Feminino</option>
+                        <option value="outro">Outro</option>
+                        <option value="prefiro_nao_dizer">Prefiro não dizer</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Email</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
+                      <input type="email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" placeholder="joao@email.com" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {formTab === 'address' && (
+                <div className="space-y-4 animate-fade-in">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="md:col-span-1">
+                      <label className="block text-sm font-bold text-slate-700 mb-1">CEP</label>
+                      <input type="text" value={formData.cep} onChange={e => setFormData({...formData, cep: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" placeholder="00000-000" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Rua / Logradouro</label>
+                      <input type="text" value={formData.street} onChange={e => setFormData({...formData, street: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" placeholder="Ex: Rua das Flores" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Número</label>
+                      <input type="text" value={formData.number} onChange={e => setFormData({...formData, number: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" placeholder="Ex: 123" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Complemento</label>
+                      <input type="text" value={formData.complement} onChange={e => setFormData({...formData, complement: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" placeholder="Ex: Apto 45" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Bairro</label>
+                      <input type="text" value={formData.neighborhood} onChange={e => setFormData({...formData, neighborhood: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" placeholder="Ex: Centro" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Cidade</label>
+                      <input type="text" value={formData.city} onChange={e => setFormData({...formData, city: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" placeholder="Ex: São Paulo" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-bold text-slate-700 mb-1">Estado (UF)</label>
+                      <input type="text" value={formData.state} onChange={e => setFormData({...formData, state: e.target.value})} maxLength={2} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none" placeholder="SP" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {formTab === 'notes' && (
+                <div className="space-y-4 animate-fade-in">
+                  <div>
+                    <label className="block text-sm font-bold text-slate-700 mb-1">Observações Privadas</label>
+                    <textarea 
+                      value={formData.notes}
+                      onChange={e => setFormData({...formData, notes: e.target.value})}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:border-orange-500 focus:outline-none min-h-[200px]"
+                      placeholder="Preferências de corte, alergias, restrições ou notas importantes sobre o cliente..."
                     />
                   </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1">Email (Opcional)</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
-                    <input 
-                      type="email" 
-                      value={formData.email}
-                      onChange={e => setFormData({...formData, email: e.target.value})}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none"
-                      placeholder="joao@email.com"
-                    />
-                  </div>
-                </div>
-              </div>
+              )}
 
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Data de Nascimento (Obrigatório)</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-[#6b7d99]" size={18} />
-                  <input 
-                    required
-                    type="date" 
-                    value={formData.birthDate}
-                    onChange={e => setFormData({...formData, birthDate: e.target.value})}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-10 pr-4 py-2.5 text-slate-900 focus:border-orange-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Observações</label>
-                <textarea 
-                  value={formData.notes}
-                  onChange={e => setFormData({...formData, notes: e.target.value})}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:border-orange-500 focus:outline-none min-h-[100px]"
-                  placeholder="Preferências, alergias, etc..."
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4">
+              <div className="flex gap-3 pt-6 border-t border-slate-100">
                 <button 
                   type="button" 
                   onClick={() => setIsFormOpen(false)}
-                  className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-bold transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-colors"
                 >
                   Cancelar
                 </button>
                 <button 
                   type="submit" 
                   disabled={isSaving}
-                  className="flex-1 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-4 py-2.5 bg-orange-600 text-white rounded-xl font-bold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-orange-500/20"
                 >
                   {isSaving ? <Loader2 className="animate-spin" size={20}/> : <Save size={20} />}
                   {editingClient ? 'Salvar Alterações' : 'Cadastrar Cliente'}

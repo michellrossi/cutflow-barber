@@ -215,11 +215,21 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       id: c.id,
       shopId: c.shop_id,
       name: c.name,
+      lastName: c.last_name,
       phone: c.phone,
       email: c.email,
       avatarUrl: c.avatar_url,
       notes: c.notes,
       birthDate: c.birth_date,
+      cpf: c.cpf,
+      gender: c.gender,
+      cep: c.cep,
+      street: c.street,
+      number: c.number,
+      complement: c.complement,
+      neighborhood: c.neighborhood,
+      city: c.city,
+      state: c.state,
       totalSpent: c.total_spent || 0,
       loyaltyPoints: c.loyalty_points || 0,
       loyaltyCardCount: c.loyalty_card_count || 0,
@@ -1305,11 +1315,21 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const { data, error } = await supabase.from('clients').insert({
             shop_id: shopId,
             name: sanitize(client.name),
+            last_name: client.lastName ? sanitize(client.lastName) : null,
             phone: sanitize(client.phone),
             email: client.email ? sanitize(client.email) : null,
             avatar_url: client.avatarUrl,
             notes: client.notes ? sanitize(client.notes) : null,
-            birth_date: client.birthDate
+            birth_date: client.birthDate,
+            cpf: client.cpf ? sanitize(client.cpf) : null,
+            gender: client.gender,
+            cep: client.cep ? sanitize(client.cep) : null,
+            street: client.street ? sanitize(client.street) : null,
+            number: client.number ? sanitize(client.number) : null,
+            complement: client.complement ? sanitize(client.complement) : null,
+            neighborhood: client.neighborhood ? sanitize(client.neighborhood) : null,
+            city: client.city ? sanitize(client.city) : null,
+            state: client.state ? sanitize(client.state) : null
         }).select().single();
 
         if (error) throw error;
@@ -1339,11 +1359,21 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const shopId = ensureShopId();
         const updateData: any = {};
         if (client.name !== undefined) updateData.name = sanitize(client.name);
+        if (client.lastName !== undefined) updateData.last_name = client.lastName ? sanitize(client.lastName) : null;
         if (client.phone !== undefined) updateData.phone = sanitize(client.phone);
         if (client.email !== undefined) updateData.email = client.email ? sanitize(client.email) : null;
         if (client.avatarUrl !== undefined) updateData.avatar_url = client.avatarUrl;
         if (client.notes !== undefined) updateData.notes = client.notes ? sanitize(client.notes) : null;
         if (client.birthDate !== undefined) updateData.birth_date = client.birthDate;
+        if (client.cpf !== undefined) updateData.cpf = client.cpf ? sanitize(client.cpf) : null;
+        if (client.gender !== undefined) updateData.gender = client.gender;
+        if (client.cep !== undefined) updateData.cep = client.cep ? sanitize(client.cep) : null;
+        if (client.street !== undefined) updateData.street = client.street ? sanitize(client.street) : null;
+        if (client.number !== undefined) updateData.number = client.number ? sanitize(client.number) : null;
+        if (client.complement !== undefined) updateData.complement = client.complement ? sanitize(client.complement) : null;
+        if (client.neighborhood !== undefined) updateData.neighborhood = client.neighborhood ? sanitize(client.neighborhood) : null;
+        if (client.city !== undefined) updateData.city = client.city ? sanitize(client.city) : null;
+        if (client.state !== undefined) updateData.state = client.state ? sanitize(client.state) : null;
 
         const { error } = await supabase.from('clients').update(updateData).eq('id', id).eq('shop_id', shopId);
         if (error) throw error;

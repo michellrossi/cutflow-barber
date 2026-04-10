@@ -293,9 +293,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                             : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 rounded-md'
                         }`}
                         style={{ 
-                            borderColor: selectedProId === 'all' ? settings.primaryColor : undefined,
-                            backgroundColor: selectedProId === 'all' ? `${settings.primaryColor}10` : undefined,
-                            color: selectedProId === 'all' ? settings.primaryColor : undefined
+                            borderColor: selectedProId === 'all' ? settings.primaryColor : 'transparent',
+                            backgroundColor: selectedProId === 'all' ? `${settings.primaryColor}20` : 'transparent',
+                            color: selectedProId === 'all' ? settings.primaryColor : '#64748b'
                         }}
                     >
                         <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: selectedProId === 'all' ? settings.primaryColor : '#94a3b8' }} />
@@ -307,13 +307,13 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                             onClick={() => setSelectedProId(pro.id)}
                             className={`flex items-center gap-2 px-4 py-2 font-medium transition-all border whitespace-nowrap ${
                                 selectedProId === pro.id 
-                                ? 'shadow-sm rounded-[2rem]' 
+                                ? 'shadow-sm rounded-[2rem] border-2' 
                                 : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 rounded-md'
                             }`}
                             style={{ 
-                                borderColor: selectedProId === pro.id ? pro.color : undefined,
-                                backgroundColor: selectedProId === pro.id ? `${pro.color}10` : undefined,
-                                color: selectedProId === pro.id ? pro.color : undefined
+                                borderColor: selectedProId === pro.id ? pro.color : 'transparent',
+                                backgroundColor: 'transparent',
+                                color: selectedProId === pro.id ? pro.color : '#64748b'
                             }}
                         >
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pro.color }} />
