@@ -445,10 +445,10 @@ async function startServer() {
         try {
             const systemInstruction = `Você é um consultor de negócios especializado em barbearias. Use os dados de "${context.shopName}".`;
             const chatHistory = history.map((msg: any) => ({ role: msg.role === 'assistant' ? 'model' : 'user', parts: [{ text: msg.content }] }));
-            
+
             const genAI = new GoogleGenerativeAI(geminiKey);
-            const model = genAI.getGenerativeModel({ 
-                model: "gemini-1.5-pro",
+            const model = genAI.getGenerativeModel({
+                model: "gemini-1.5-flash",
                 systemInstruction
             });
 
@@ -467,7 +467,7 @@ async function startServer() {
         const { trigger, shopName, tone } = req.body;
         try {
             const genAI = new GoogleGenerativeAI(geminiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
             const promptContent = `Crie um modelo de mensagem de WhatsApp para uma barbearia chamada "${shopName}". 
             O gatilho da mensagem é: "${trigger}". 
@@ -477,7 +477,7 @@ async function startServer() {
 
             const result = await model.generateContent(promptContent);
             const response = await result.response;
-            
+
             res.json({ success: true, text: response.text() || '' });
         } catch (error: any) {
             res.status(500).json({ success: false, error: error.message });
