@@ -100,7 +100,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
     if (!isMounted) return null;
 
     return (
-        <div className="animate-fade-in -m-4 md:-m-8 p-4 md:p-8 bg-[#f8fafc] min-h-[calc(100vh-64px)] space-y-8">
+        <div className="animate-fade-in -m-4 md:-m-8 p-4 md:p-8 bg-[#f1f5f9] min-h-[calc(100vh-64px)] space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     icon={<Calendar size={18} />}

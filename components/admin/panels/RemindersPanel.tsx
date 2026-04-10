@@ -30,6 +30,7 @@ export const RemindersPanel: React.FC = () => {
     const [qrCode, setQrCode] = useState<string | null>(null);
     const [wsLoading, setWsLoading] = useState(false);
     const [wsStatus, setWsStatus] = useState<'connected' | 'disconnected' | 'loading'>('loading');
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
     const checkStatus = async () => {
         const res = await getWhatsAppStatus();
@@ -634,16 +635,38 @@ export const RemindersPanel: React.FC = () => {
                                                 <button
                                                     key={v.value}
                                                     onClick={() => {
-                                                        const content = editingTemplate?.content || '';
-                                                        setEditingTemplate(prev => ({ ...prev, content: content + ' ' + v.value }));
+                                                        const textarea = textareaRef.current;
+                                                        if (textarea) {
+                                                            textarea.focus();
+                                                            // Tenta usar execCommand para preservar o histórico de desfazer (Ctrl+Z)
+                                                            const inserted = document.execCommand('insertText', false, v.value);
+                                                            
+                                                            // Fallback caso execCommand não funcione (embora funcione na maioria dos browsers modernos para insertText)
+                                                            if (!inserted) {
+                                                                const start = textarea.selectionStart;
+                                                                const end = textarea.selectionEnd;
+                                                                const content = editingTemplate?.content || '';
+                                                                const newContent = content.substring(0, start) + v.value + content.substring(end);
+                                                                setEditingTemplate(prev => ({ ...prev, content: newContent }));
+                                                                
+                                                                // Re-posiciona o cursor após o state update (com delay para o React renderizar)
+                                                                setTimeout(() => {
+                                                                    textarea.selectionStart = textarea.selectionEnd = start + v.value.length;
+                                                                }, 0);
+                                                            }
+                                                        } else {
+                                                            const content = editingTemplate?.content || '';
+                                                            setEditingTemplate(prev => ({ ...prev, content: content + ' ' + v.value }));
+                                                        }
                                                     }}
                                                     className="px-2 py-1 bg-slate-100 hover:bg-orange-100 hover:text-orange-700 text-slate-600 rounded-md text-xs font-bold transition-colors border border-slate-200"
                                                 >
-                                                    {v.value}
+                                                    {v.label}
                                                 </button>
                                             ))}
                                         </div>
                                         <textarea
+                                            ref={textareaRef}
                                             value={editingTemplate?.content || ''}
                                             onChange={(e) => setEditingTemplate(prev => ({ ...prev, content: e.target.value }))}
                                             rows={6}

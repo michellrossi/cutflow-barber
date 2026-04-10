@@ -45,14 +45,14 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
     // 1. Tenta identificar se o triggerId é um slug (ex: 'appointment_reminder')
     // Se for um slug, tentamos encontrar um gatilho UUID correspondente no banco
     let effectiveTriggerId = triggerId;
-    
+
     if (triggerId.length < 30) {
         const { data: relatedTriggers } = await supabaseAdmin
             .from('automation_triggers')
             .select('id, name')
             .eq('shop_id', shopId)
             .eq('active', true);
-            
+
         if (relatedTriggers) {
             // Busca um gatilho cujo nome combine com o slug
             const match = relatedTriggers.find(t => {
@@ -64,7 +64,7 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
                 if (triggerId === 'retention_30d') return name.includes('retenção') || name.includes('30 dias');
                 return false;
             });
-            
+
             if (match) {
                 console.log(`[MessageGen] Slug '${triggerId}' mapeado para Gatilho ID: ${match.id} (${match.name})`);
                 effectiveTriggerId = match.id;
@@ -79,7 +79,7 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
         .eq('shop_id', shopId)
         .eq('target', target)
         .eq('active', true);
-    
+
     if (effectiveTriggerId.length > 30) {
         query = query.eq('trigger_id', effectiveTriggerId);
     } else {
@@ -103,18 +103,18 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
     if (!content) {
         // Tenta obter o nome do gatilho para o fallback
         let triggerName = triggerId.toLowerCase();
-        
+
         if (effectiveTriggerId.length > 30) {
             const { data: triggerObj } = await supabaseAdmin.from('automation_triggers').select('name').eq('id', effectiveTriggerId).maybeSingle();
             if (triggerObj) triggerName = triggerObj.name.toLowerCase();
         }
 
         if (triggerName.includes('confirmação') || triggerId === 'immediate_confirmation' || triggerId === 'link de acesso') {
-             if (triggerId === 'link de acesso') {
+            if (triggerId === 'link de acesso') {
                 content = `Olá [CLIENTE]!\nAqui está seu link de acesso único para a barbearia: [URL].\nEle expira em 15 minutos e não deve ser compartilhado. 🔐💈`;
-             } else {
+            } else {
                 content = `Olá [CLIENTE]!\nSeu horário de [SERVICO] com [BARBEIRO] no dia [DATA] às [HORA] foi pré-agendado na [BARBEARIA]. Até logo! ✂️💈`;
-             }
+            }
         } else if (triggerName.includes('lembrete') || triggerId === 'appointment_reminder') {
             content = `Olá [CLIENTE]!\nPassando para lembrar do seu horário de [SERVICO] com [BARBEIRO] em [DATA] às [HORA] na [BARBEARIA]. Nos vemos lá! ✂️💈`;
         } else if (triggerName.includes('pós-venda') || triggerName.includes('avaliação') || triggerId === 'post_sale') {
@@ -195,7 +195,7 @@ async function runCronLogic() {
     const nowUtc = new Date();
     const spTimeString = nowUtc.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
     const now = new Date(spTimeString);
-    
+
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
@@ -400,7 +400,7 @@ async function startServer() {
     app.use(express.json());
 
     const notifyLimiter = rateLimit({
-        windowMs: 60_000, 
+        windowMs: 60_000,
         max: 10,
         standardHeaders: true,
         legacyHeaders: false,
@@ -445,9 +445,9 @@ async function startServer() {
         try {
             const systemInstruction = `Você é um consultor de negócios especializado em barbearias. Use os dados de "${context.shopName}".`;
             const chatHistory = history.map((msg: any) => ({ role: msg.role === 'assistant' ? 'model' : 'user', parts: [{ text: msg.content }] }));
-            const genAI = new GoogleGenAI({ 
+            const genAI = new GoogleGenAI({
                 apiKey: geminiKey,
-                apiVersion: 'v1' 
+                apiVersion: 'v1beta'
             });
             const result = await genAI.models.generateContent({
                 model: "gemini-1.5-flash",
@@ -463,9 +463,9 @@ async function startServer() {
     app.post('/api/ai/generate-template', async (req, res) => {
         const { trigger, shopName, tone } = req.body;
         try {
-            const genAI = new GoogleGenAI({ 
+            const genAI = new GoogleGenAI({
                 apiKey: geminiKey,
-                apiVersion: 'v1' 
+                apiVersion: 'v1beta'
             });
 
             const promptContent = `Crie um modelo de mensagem de WhatsApp para uma barbearia chamada "${shopName}". 
@@ -473,7 +473,7 @@ async function startServer() {
             O tom deve ser: "${tone}".
             Use as seguintes variáveis: [CLIENTE], [SERVICO], [DATA], [HORA], [BARBEIRO], [BARBEARIA].
             Retorne apenas o texto da mensagem, sem explicações.`;
-            
+
             const result = await genAI.models.generateContent({
                 model: "gemini-1.5-flash",
                 contents: [{ role: 'user', parts: [{ text: promptContent }] }]
@@ -508,7 +508,7 @@ async function startServer() {
             const clientOk = await sendWhatsApp(apt.client_phone, clientMessage, apt.shops?.whatsapp_instance);
             if (clientOk) await supabaseAdmin.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
         }
-        
+
         if (apt.professionals?.phone) {
             const proMessage = await generateWhatsAppMessage('immediate_confirmation', {
                 clientName: apt.client_name,
@@ -518,12 +518,12 @@ async function startServer() {
                 proName: apt.professionals.name,
                 shopName: apt.shops?.name
             }, apt.shop_id, 'professional');
-            
+
             if (proMessage) {
-              await sendWhatsApp(apt.professionals.phone, proMessage, apt.shops?.whatsapp_instance);
+                await sendWhatsApp(apt.professionals.phone, proMessage, apt.shops?.whatsapp_instance);
             }
         }
-        
+
         res.json({ success: true });
     });
 
@@ -550,7 +550,7 @@ async function startServer() {
                 code: couponCode, validity: settings.loyalty_reward_validity_days, shopName: shop?.name
             }, shopId);
             if (msg) {
-              await sendWhatsApp(client.phone, msg, shop?.whatsapp_instance);
+                await sendWhatsApp(client.phone, msg, shop?.whatsapp_instance);
             }
             res.json({ success: true, couponCode });
         } catch (error: any) {
@@ -567,10 +567,10 @@ async function startServer() {
 
         const msg = await generateWhatsAppMessage('link de acesso', { clientName: client?.name || "Cliente", url, shopName: shop.name }, shopId);
         if (msg) {
-          const ok = await sendWhatsApp(phone, msg, shop.whatsapp_instance);
-          res.json({ success: ok });
+            const ok = await sendWhatsApp(phone, msg, shop.whatsapp_instance);
+            res.json({ success: ok });
         } else {
-          res.json({ success: false, error: "Gatilho desativado" });
+            res.json({ success: false, error: "Gatilho desativado" });
         }
     });
 

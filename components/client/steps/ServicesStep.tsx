@@ -67,12 +67,11 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
                         <button
                             key={cat}
                             onClick={() => setActiveCategory(cat)}
-                            className="shrink-0 px-4 py-2 rounded-full text-sm font-bold border transition-all"
-                            style={{
-                                backgroundColor: isActive ? accent : 'transparent',
-                                borderColor: isActive ? accent : border,
-                                color: isActive ? '#fff' : textColor,
-                            }}
+                            className={`shrink-0 px-4 py-2 rounded-md text-sm font-bold border transition-all bg-white ${
+                                isActive 
+                                ? 'border-2 border-orange-500 text-orange-500 shadow-sm' 
+                                : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                            }`}
                         >
                             {cat}
                         </button>

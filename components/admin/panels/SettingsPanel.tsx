@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { supabase } from '../../../supabaseClient';
-import { Upload, Edit2, Loader2, Store, User, Clock, MessageSquare, Bell, CreditCard, Shield, Smartphone, Globe, CheckCircle2, Info } from 'lucide-react';
+import { Upload, Edit2, Loader2, Store, User, Clock, MessageSquare, Bell, CreditCard, Shield, Smartphone, Globe, CheckCircle2, Info, Palette } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 
 export type SettingsTab = 'profile' | 'account' | 'hours' | 'billing' | 'security' | 'booking_page';
@@ -28,19 +28,50 @@ export const SettingsPanel: React.FC<SettingsPanelProps> = ({ initialTab, onTabC
     };
 
     const tabs: { id: SettingsTab; label: string; icon: React.ReactNode }[] = [
-        { id: 'profile', label: 'Perfil', icon: <Store size={18} /> },
+        { id: 'profile', label: 'Design da Agenda', icon: <Palette size={18} /> },
+        { id: 'account', label: 'Minha Conta', icon: <Store size={18} /> },
+        { id: 'hours', label: 'Horários', icon: <Clock size={18} /> },
+        { id: 'booking_page', label: 'Link de Agendamento', icon: <Globe size={18} /> },
+        { id: 'billing', label: 'Assinatura', icon: <CreditCard size={18} /> },
+        { id: 'security', label: 'Segurança', icon: <Shield size={18} /> },
     ];
 
     return (
-        <div className="p-6 max-w-7xl mx-auto space-y-8">
-            <div>
-                <h1 className="text-2xl font-bold text-slate-900">Configurações</h1>
-                <p className="text-slate-500">Gerencie as configurações da sua barbearia e conta</p>
+        <div className="animate-fade-in p-6 max-w-7xl">
+            <div className="mb-8">
+                <h2 className="text-2xl font-bold text-slate-900 mb-1">Configurações</h2>
+                <p className="text-[#6b7d99] text-sm font-medium">Gerencie o design da sua agenda digital e as configurações da sua conta de barbeiro.</p>
+            </div>
+
+            {/* Sub-menu Estilo 'Interruptor' (Tabs) */}
+            <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
+                {tabs.map(tab => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => handleTabChange(tab.id)}
+                            className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
+                                isActive 
+                                ? 'bg-white text-orange-600 shadow-sm' 
+                                : 'text-slate-500 hover:text-slate-700'
+                            }`}
+                        >
+                            {tab.icon}
+                            <span>{tab.label}</span>
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Settings Content */}
-            <div className="bg-white border border-slate-200 rounded-lg p-8 shadow-sm">
-                <ProfileSettings />
+            <div className="bg-white border-slate-200 rounded-xl">
+                {activeTab === 'profile' && <ProfileSettings />}
+                {activeTab === 'account' && <AccountSettings />}
+                {activeTab === 'hours' && <HoursSettings />}
+                {activeTab === 'billing' && <BillingSettings />}
+                {activeTab === 'security' && <SecuritySettings />}
+                {activeTab === 'booking_page' && <BookingPageSettings />}
             </div>
         </div>
     );
@@ -828,15 +859,13 @@ const AutomationSettings: React.FC = () => {
     const { showToast } = useToast();
     const [qrCode, setQrCode] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
-    const [status, setStatus] = useState<'connected' | 'disconnected' | 'loading'>('loading');
+    const [wsStatus, setWsStatus] = useState<'connected' | 'disconnected' | 'loading'>('loading');
 
     const checkStatus = async () => {
         const res = await getWhatsAppStatus();
         if (res.connected) {
-            setStatus('connected');
-            setQrCode(null);
         } else {
-            setStatus('disconnected');
+            setWsStatus('disconnected');
         }
     };
 
@@ -853,7 +882,7 @@ const AutomationSettings: React.FC = () => {
         if (res.qrcode) {
             setQrCode(res.qrcode);
         } else if (res.connected) {
-            setStatus('connected');
+            setWsStatus('connected');
         } else {
             showToast(res.error || 'Erro ao gerar QR Code', 'error');
         }
@@ -864,7 +893,7 @@ const AutomationSettings: React.FC = () => {
         const res = await disconnectWhatsApp();
         setLoading(false);
         if (res.success) {
-            setStatus('disconnected');
+            setWsStatus('disconnected');
             setQrCode(null);
             showToast('WhatsApp desconectado com sucesso!');
         } else {
