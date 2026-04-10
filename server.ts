@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
@@ -445,16 +445,19 @@ async function startServer() {
         try {
             const systemInstruction = `Você é um consultor de negócios especializado em barbearias. Use os dados de "${context.shopName}".`;
             const chatHistory = history.map((msg: any) => ({ role: msg.role === 'assistant' ? 'model' : 'user', parts: [{ text: msg.content }] }));
-            const genAI = new GoogleGenAI({
-                apiKey: geminiKey,
-                apiVersion: 'v1beta'
+            
+            const genAI = new GoogleGenerativeAI(geminiKey);
+            const model = genAI.getGenerativeModel({ 
+                model: "gemini-1.5-flash",
+                systemInstruction
             });
-            const result = await genAI.models.generateContent({
-                model: "gemini-1.5-flash-latest",
+
+            const result = await model.generateContent({
                 contents: [...chatHistory, { role: 'user', parts: [{ text: prompt }] }],
-                config: { systemInstruction }
             });
-            res.json({ success: true, answer: result.candidates?.[0]?.content?.parts?.[0]?.text || '' });
+            const response = await result.response;
+
+            res.json({ success: true, answer: response.text() || '' });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
@@ -463,10 +466,8 @@ async function startServer() {
     app.post('/api/ai/generate-template', async (req, res) => {
         const { trigger, shopName, tone } = req.body;
         try {
-            const genAI = new GoogleGenAI({
-                apiKey: geminiKey,
-                apiVersion: 'v1beta'
-            });
+            const genAI = new GoogleGenerativeAI(geminiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
             const promptContent = `Crie um modelo de mensagem de WhatsApp para uma barbearia chamada "${shopName}". 
             O gatilho da mensagem é: "${trigger}". 
@@ -474,11 +475,10 @@ async function startServer() {
             Use as seguintes variáveis: [CLIENTE], [SERVICO], [DATA], [HORA], [BARBEIRO], [BARBEARIA].
             Retorne apenas o texto da mensagem, sem explicações.`;
 
-            const result = await genAI.models.generateContent({
-                model: "gemini-1.5-flash-latest",
-                contents: [{ role: 'user', parts: [{ text: promptContent }] }]
-            });
-            res.json({ success: true, text: result.candidates?.[0]?.content?.parts?.[0]?.text || '' });
+            const result = await model.generateContent(promptContent);
+            const response = await result.response;
+            
+            res.json({ success: true, text: response.text() || '' });
         } catch (error: any) {
             res.status(500).json({ success: false, error: error.message });
         }
