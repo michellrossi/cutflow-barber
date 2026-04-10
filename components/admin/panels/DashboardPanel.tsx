@@ -100,7 +100,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
     if (!isMounted) return null;
 
     return (
-        <div className="space-y-8 animate-fade-in">
+        <div className="animate-fade-in -m-4 md:-m-8 p-4 md:p-8 bg-[#f8fafc] min-h-[calc(100vh-64px)] space-y-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     icon={<Calendar size={18} />}
@@ -171,15 +171,15 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                 />
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+            <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
                 <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50/50">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm" style={{ color: settings.primaryColor }}>
+                        <div className="p-2 bg-white rounded-lg shadow-sm" style={{ color: settings.primaryColor }}>
                             <Clock size={20} />
                         </div>
                         <h3 className="text-lg font-bold text-slate-900">Resumo da Agenda de Hoje</h3>
                     </div>
-                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-200">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest bg-[#f8fafc] px-3 py-1 rounded-full">
                         {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' })}
                     </span>
                 </div>
@@ -188,7 +188,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                     {todayAgenda.length > 0 ? (
                         todayAgenda.map((apt) => (
                             <div key={apt.id} className="p-4 hover:bg-slate-50 transition-colors grid grid-cols-1 sm:grid-cols-12 items-center gap-4">
-                                <div className="sm:col-span-1 flex flex-col items-center justify-center bg-slate-50 border border-slate-200 rounded-xl p-2 min-w-[70px]">
+                                <div className="sm:col-span-1 flex flex-col items-center justify-center bg-[#f8fafc] rounded-xl p-2 min-w-[70px]">
                                     <span className="text-lg font-black text-slate-900">{apt.time.substring(0, 5)}</span>
                                     <span className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter">Horário</span>
                                 </div>
@@ -246,7 +246,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon, label, value, subtitle, color
     <motion.div
         whileHover={{ y: -4 }}
         onClick={onClick}
-        className={`bg-white p-6 rounded-2xl border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-md ${onClick ? 'cursor-pointer' : ''}`}
+        className={`bg-white p-6 rounded-2xl shadow-sm transition-all duration-300 hover:shadow-md ${onClick ? 'cursor-pointer' : ''}`}
     >
         <div className="flex items-center gap-3 mb-6">
             <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${colorClass.split(' ')[1]}`}>
