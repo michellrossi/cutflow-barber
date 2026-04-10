@@ -19,7 +19,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
     // Atualiza a linha do tempo a cada minuto
     useEffect(() => {
         const timer = setInterval(() => setCurrentTime(new Date()), 60000);
-        
+
         const handleResize = () => {
             if (window.innerWidth < 768 && viewType === 'week') {
                 setViewType('day');
@@ -116,7 +116,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
         const hour = currentTime.getHours();
         const minutes = currentTime.getMinutes();
         if (hour < 8 || hour >= 21) return null;
-        
+
         const startHour = 8;
         const pixelsPerHour = 100; // Altura de cada slot de hora
         const totalMinutes = (hour - startHour) * 60 + minutes;
@@ -132,16 +132,16 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
         <div className="flex flex-col gap-6 animate-fade-in">
             {/* Modal de Detalhes do Agendamento */}
             {selectedAppointment && (
-                <div 
+                <div
                     className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in"
                     onClick={(e) => e.target === e.currentTarget && setSelectedAppointment(null)}
                 >
                     <div className="bg-white rounded-2xl border border-slate-200 w-full max-w-md shadow-2xl relative animate-scale-up overflow-hidden">
                         <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
                             <h3 className="text-xl font-bold text-slate-900">Detalhes do Agendamento</h3>
-                            <button onClick={() => setSelectedAppointment(null)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={24}/></button>
+                            <button onClick={() => setSelectedAppointment(null)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={24} /></button>
                         </div>
-                        
+
                         <div className="p-6 space-y-6">
                             <div className="flex items-center gap-4">
                                 <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xl border border-slate-200">
@@ -194,12 +194,12 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-200">
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Status</label>
-                                    <select 
+                                    <select
                                         value={selectedAppointment.status}
                                         onChange={(e) => {
                                             const newStatus = e.target.value as any;
                                             updateAppointmentStatus(selectedAppointment.id, newStatus);
-                                            setSelectedAppointment({...selectedAppointment, status: newStatus});
+                                            setSelectedAppointment({ ...selectedAppointment, status: newStatus });
                                         }}
                                         className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm text-slate-900 focus:outline-none focus:border-orange-500"
                                     >
@@ -212,13 +212,13 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                 </div>
                                 <div>
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Pagamento</label>
-                                    <select 
+                                    <select
                                         value={selectedAppointment.paymentMethod || 'pix'}
                                         disabled={selectedAppointment.status !== 'completed'}
                                         onChange={(e) => {
                                             const newMethod = e.target.value as any;
                                             updateAppointmentPaymentMethod(selectedAppointment.id, newMethod);
-                                            setSelectedAppointment({...selectedAppointment, paymentMethod: newMethod});
+                                            setSelectedAppointment({ ...selectedAppointment, paymentMethod: newMethod });
                                         }}
                                         className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm text-slate-900 focus:outline-none focus:border-orange-500 disabled:opacity-50"
                                     >
@@ -237,13 +237,13 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200 text-[10px] font-bold uppercase tracking-wider">
-                        <button 
+                        <button
                             onClick={() => setViewType('day')}
                             className={`px-2 py-1 rounded transition-all ${viewType === 'day' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
                         >
                             Dia
                         </button>
-                        <button 
+                        <button
                             onClick={() => setViewType('week')}
                             className={`px-2 py-1 rounded transition-all ${viewType === 'week' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500'}`}
                         >
@@ -255,22 +255,22 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                         <span className="text-xs md:text-sm font-medium whitespace-nowrap">{dateRangeLabel}</span>
                     </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2 w-full md:w-auto">
                     <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200 flex-1 md:flex-none justify-between">
-                        <button 
+                        <button
                             onClick={() => navigate('prev')}
                             className="p-2 hover:bg-white rounded-md text-slate-600 transition-colors"
                         >
                             <ChevronLeft size={20} />
                         </button>
-                        <button 
+                        <button
                             onClick={() => setCurrentDate(new Date())}
                             className="px-3 py-1 text-xs font-bold text-slate-500 hover:text-slate-900 uppercase tracking-widest"
                         >
                             Hoje
                         </button>
-                        <button 
+                        <button
                             onClick={() => navigate('next')}
                             className="p-2 hover:bg-white rounded-md text-slate-600 transition-colors"
                         >
@@ -287,15 +287,15 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                 <div className="flex gap-2 overflow-x-auto py-2 hide-scrollbar">
                     <button
                         onClick={() => setSelectedProId('all')}
-                        className={`flex items-center gap-2 px-4 py-2 font-medium transition-all border ${
-                            selectedProId === 'all' 
-                            ? 'shadow-sm rounded-[2rem]' 
-                            : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 rounded-md'
-                        }`}
-                        style={{ 
-                            borderColor: selectedProId === 'all' ? settings.primaryColor : 'transparent',
-                            backgroundColor: selectedProId === 'all' ? `${settings.primaryColor}20` : 'transparent',
-                            color: selectedProId === 'all' ? settings.primaryColor : '#64748b'
+                        className={`flex items-center gap-2 px-4 py-2 font-medium transition-all border bg-white ${selectedProId === 'all'
+                                ? 'shadow-sm rounded-[2rem] border-2'
+                                : 'border-slate-200 text-slate-500 hover:border-slate-300 rounded-md'
+                            }`}
+                        style={{
+                            // Apenas borda e texto coloridos quando selecionado
+                            borderColor: selectedProId === 'all' ? settings.primaryColor : undefined,
+                            color: selectedProId === 'all' ? settings.primaryColor : '#64748b',
+                            backgroundColor: 'white' // Garante fundo branco sempre
                         }}
                     >
                         <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: selectedProId === 'all' ? settings.primaryColor : '#94a3b8' }} />
@@ -305,15 +305,15 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                         <button
                             key={pro.id}
                             onClick={() => setSelectedProId(pro.id)}
-                            className={`flex items-center gap-2 px-4 py-2 font-medium transition-all border whitespace-nowrap ${
-                                selectedProId === pro.id 
-                                ? 'shadow-sm rounded-[2rem] border-2' 
-                                : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300 rounded-md'
-                            }`}
-                            style={{ 
-                                borderColor: selectedProId === pro.id ? pro.color : 'transparent',
-                                backgroundColor: 'transparent',
-                                color: selectedProId === pro.id ? pro.color : '#64748b'
+                            className={`flex items-center gap-2 px-4 py-2 font-medium transition-all border whitespace-nowrap bg-white ${selectedProId === pro.id
+                                    ? 'shadow-sm rounded-[2rem] border-2'
+                                    : 'border-slate-200 text-slate-500 hover:border-slate-300 rounded-md'
+                                }`}
+                            style={{
+                                // Aplica a cor do barbeiro na borda e no texto apenas se selecionado
+                                borderColor: selectedProId === pro.id ? pro.color : undefined,
+                                color: selectedProId === pro.id ? pro.color : '#64748b',
+                                backgroundColor: 'white' // Garante fundo branco sempre
                             }}
                         >
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pro.color }} />
@@ -351,7 +351,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                         <div className="relative">
                             {/* Linha de Horário Atual */}
                             {timeLinePosition !== null && (
-                                <div 
+                                <div
                                     className={`absolute ${viewType === 'week' ? 'left-[80px]' : 'left-[60px]'} right-0 z-20 flex items-center pointer-events-none`}
                                     style={{ top: `${timeLinePosition}px` }}
                                 >
@@ -371,9 +371,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                     {displayDays.map((day, dayIdx) => {
                                         const dateStr = day.toISOString().split('T')[0];
                                         const hour = parseInt(time.split(':')[0]);
-                                        
+
                                         // Agendamentos neste slot de hora
-                                        const slotAppointments = filteredAppointments.filter(apt => 
+                                        const slotAppointments = filteredAppointments.filter(apt =>
                                             apt.date === dateStr && parseInt(apt.time.split(':')[0]) === hour
                                         );
 
@@ -382,11 +382,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                 {/* Top half: :00 to :29 */}
                                                 <div className="border-b border-slate-50 p-0.5 flex gap-1 overflow-hidden">
                                                     {slotAppointments.filter(a => parseInt(a.time.split(':')[1]) < 30).map(apt => (
-                                                        <div 
+                                                        <div
                                                             key={apt.id}
                                                             onClick={() => setSelectedAppointment(apt)}
                                                             className={`p-1.5 rounded-lg border shadow-sm cursor-pointer hover:brightness-95 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
-                                                            style={{ 
+                                                            style={{
                                                                 borderColor: getProColor(apt.professionalId),
                                                                 backgroundColor: `${getProColor(apt.professionalId)}10`
                                                             }}
@@ -396,12 +396,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                                 {apt.serviceIds.map(sid => services.find(s => s.id === sid)?.name).join(', ')}
                                                             </p>
                                                             <div className="flex items-center gap-1">
-                                                                <div className={`w-1 h-1 rounded-full ${
-                                                                    apt.status === 'completed' ? 'bg-[#1a8a6c]' : 
-                                                                    apt.status === 'noshow' ? 'bg-red-400' : 
-                                                                    apt.status === 'cancelled' ? 'bg-red-500' :
-                                                                    apt.status === 'confirmed' ? 'bg-blue-500' : 'bg-orange-500'
-                                                                }`} />
+                                                                <div className={`w-1 h-1 rounded-full ${apt.status === 'completed' ? 'bg-[#1a8a6c]' :
+                                                                        apt.status === 'noshow' ? 'bg-red-400' :
+                                                                            apt.status === 'cancelled' ? 'bg-red-500' :
+                                                                                apt.status === 'confirmed' ? 'bg-blue-500' : 'bg-orange-500'
+                                                                    }`} />
                                                                 <span className={`text-[7px] font-bold uppercase tracking-tighter ${apt.status === 'cancelled' ? 'text-red-500' : 'text-slate-500'}`}>{getStatusLabel(apt.status)}</span>
                                                             </div>
                                                         </div>
@@ -410,11 +409,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                 {/* Bottom half: :30 to :59 */}
                                                 <div className="p-0.5 flex gap-1 overflow-hidden">
                                                     {slotAppointments.filter(a => parseInt(a.time.split(':')[1]) >= 30).map(apt => (
-                                                        <div 
+                                                        <div
                                                             key={apt.id}
                                                             onClick={() => setSelectedAppointment(apt)}
                                                             className={`p-1.5 rounded-lg border shadow-sm cursor-pointer hover:brightness-95 transition-all flex-1 min-w-0 border-l-4 h-fit max-h-full ${getStatusStyles(apt.status)}`}
-                                                            style={{ 
+                                                            style={{
                                                                 borderColor: getProColor(apt.professionalId),
                                                                 backgroundColor: `${getProColor(apt.professionalId)}10`
                                                             }}
@@ -424,12 +423,11 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                                 {apt.serviceIds.map(sid => services.find(s => s.id === sid)?.name).join(', ')}
                                                             </p>
                                                             <div className="flex items-center gap-1">
-                                                                <div className={`w-1 h-1 rounded-full ${
-                                                                    apt.status === 'completed' ? 'bg-[#1a8a6c]' : 
-                                                                    apt.status === 'noshow' ? 'bg-red-400' : 
-                                                                    apt.status === 'cancelled' ? 'bg-red-500' :
-                                                                    apt.status === 'confirmed' ? 'bg-blue-500' : 'bg-orange-500'
-                                                                }`} />
+                                                                <div className={`w-1 h-1 rounded-full ${apt.status === 'completed' ? 'bg-[#1a8a6c]' :
+                                                                        apt.status === 'noshow' ? 'bg-red-400' :
+                                                                            apt.status === 'cancelled' ? 'bg-red-500' :
+                                                                                apt.status === 'confirmed' ? 'bg-blue-500' : 'bg-orange-500'
+                                                                    }`} />
                                                                 <span className={`text-[7px] font-bold uppercase tracking-tighter ${apt.status === 'cancelled' ? 'text-red-500' : 'text-slate-500'}`}>{getStatusLabel(apt.status)}</span>
                                                             </div>
                                                         </div>
@@ -442,13 +440,13 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                     {/* Horário de Almoço Dinâmico */}
                                     {(() => {
                                         if (selectedProId === 'all') return null;
-                                        
+
                                         const pro = professionals.find(p => p.id === selectedProId);
                                         if (!pro?.workSchedule) return null;
 
                                         const dayName = displayDays[0].toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase() as keyof typeof pro.workSchedule;
                                         const schedule = pro.workSchedule[dayName];
-                                        
+
                                         if (!schedule || !schedule.active) return null;
 
                                         const [lStartH] = schedule.lunchStart.split(':').map(Number);
