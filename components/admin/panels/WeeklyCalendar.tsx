@@ -285,35 +285,36 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
             <div className="flex flex-col gap-3">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Filtrar por:</span>
                 <div className="flex gap-2 overflow-x-auto py-2 hide-scrollbar">
+                    {/* Botão "Todos" */}
                     <button
                         onClick={() => setSelectedProId('all')}
-                        className={`flex items-center gap-2 px-4 py-2 font-medium transition-all border bg-white ${selectedProId === 'all'
-                                ? 'shadow-sm rounded-[2rem] border-2'
+                        className={`flex items-center gap-2 px-4 py-2 font-medium transition-all border bg-white shadow-sm ${selectedProId === 'all'
+                                ? 'rounded-[2rem] border-2'
                                 : 'border-slate-200 text-slate-500 hover:border-slate-300 rounded-md'
                             }`}
                         style={{
-                            // Apenas borda e texto coloridos quando selecionado
                             borderColor: selectedProId === 'all' ? settings.primaryColor : undefined,
                             color: selectedProId === 'all' ? settings.primaryColor : '#64748b',
-                            backgroundColor: 'white' // Garante fundo branco sempre
+                            backgroundColor: 'white' // Força o fundo branco
                         }}
                     >
                         <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: selectedProId === 'all' ? settings.primaryColor : '#94a3b8' }} />
                         Todos
                     </button>
+
+                    {/* Mapeamento dos Barbeiros */}
                     {professionals.map(pro => (
                         <button
                             key={pro.id}
                             onClick={() => setSelectedProId(pro.id)}
-                            className={`flex items-center gap-2 px-4 py-2 font-medium transition-all border whitespace-nowrap bg-white ${selectedProId === pro.id
-                                    ? 'shadow-sm rounded-[2rem] border-2'
+                            className={`flex items-center gap-2 px-4 py-2 font-medium transition-all border bg-white shadow-sm whitespace-nowrap ${selectedProId === pro.id
+                                    ? 'rounded-[2rem] border-2'
                                     : 'border-slate-200 text-slate-500 hover:border-slate-300 rounded-md'
                                 }`}
                             style={{
-                                // Aplica a cor do barbeiro na borda e no texto apenas se selecionado
                                 borderColor: selectedProId === pro.id ? pro.color : undefined,
                                 color: selectedProId === pro.id ? pro.color : '#64748b',
-                                backgroundColor: 'white' // Garante fundo branco sempre
+                                backgroundColor: 'white' // Força o fundo branco
                             }}
                         >
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pro.color }} />
@@ -397,9 +398,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                             </p>
                                                             <div className="flex items-center gap-1">
                                                                 <div className={`w-1 h-1 rounded-full ${apt.status === 'completed' ? 'bg-[#1a8a6c]' :
-                                                                        apt.status === 'noshow' ? 'bg-red-400' :
-                                                                            apt.status === 'cancelled' ? 'bg-red-500' :
-                                                                                apt.status === 'confirmed' ? 'bg-blue-500' : 'bg-orange-500'
+                                                                    apt.status === 'noshow' ? 'bg-red-400' :
+                                                                        apt.status === 'cancelled' ? 'bg-red-500' :
+                                                                            apt.status === 'confirmed' ? 'bg-blue-500' : 'bg-orange-500'
                                                                     }`} />
                                                                 <span className={`text-[7px] font-bold uppercase tracking-tighter ${apt.status === 'cancelled' ? 'text-red-500' : 'text-slate-500'}`}>{getStatusLabel(apt.status)}</span>
                                                             </div>
@@ -424,9 +425,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                                             </p>
                                                             <div className="flex items-center gap-1">
                                                                 <div className={`w-1 h-1 rounded-full ${apt.status === 'completed' ? 'bg-[#1a8a6c]' :
-                                                                        apt.status === 'noshow' ? 'bg-red-400' :
-                                                                            apt.status === 'cancelled' ? 'bg-red-500' :
-                                                                                apt.status === 'confirmed' ? 'bg-blue-500' : 'bg-orange-500'
+                                                                    apt.status === 'noshow' ? 'bg-red-400' :
+                                                                        apt.status === 'cancelled' ? 'bg-red-500' :
+                                                                            apt.status === 'confirmed' ? 'bg-blue-500' : 'bg-orange-500'
                                                                     }`} />
                                                                 <span className={`text-[7px] font-bold uppercase tracking-tighter ${apt.status === 'cancelled' ? 'text-red-500' : 'text-slate-500'}`}>{getStatusLabel(apt.status)}</span>
                                                             </div>
