@@ -10,7 +10,7 @@ import { CouponsPanel } from './panels/CouponsPanel';
 import { AppointmentsPanel } from './panels/AppointmentsPanel';
 import { FinancePanel } from './panels/FinancePanel';
 import { ClientsPanel } from './panels/ClientsPanel';
-import { SettingsPanel, SettingsTab } from './panels/SettingsPanel';
+import { SettingsPanel } from './panels/SettingsPanel';
 import { LoyaltyPanel } from './panels/LoyaltyPanel';
 import { ReportsPanel } from './panels/ReportsPanel';
 import { InsightPanel } from './panels/InsightPanel';
@@ -30,7 +30,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [clientFilter, setClientFilter] = useState<string>('all');
   const [teamSubTab, setTeamSubTab] = useState<TeamSubTab>('list');
-  const [settingsSubTab, setSettingsSubTab] = useState<SettingsTab>('profile');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarPinned, setIsSidebarPinned] = useState(true);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
@@ -42,9 +41,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
 
     const savedTeamSub = localStorage.getItem('adminTeamSubTab');
     if (savedTeamSub) setTeamSubTab(savedTeamSub as TeamSubTab);
-
-    const savedSettingsSub = localStorage.getItem('adminSettingsSubTab');
-    if (savedSettingsSub) setSettingsSubTab(savedSettingsSub as SettingsTab);
 
     const savedPinned = localStorage.getItem('adminSidebarPinned');
     if (savedPinned !== null) setIsSidebarPinned(savedPinned === 'true');
@@ -77,10 +73,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       localStorage.setItem('adminTeamSubTab', teamSubTab);
   }, [teamSubTab]);
 
-  useEffect(() => {
-      localStorage.setItem('adminSettingsSubTab', settingsSubTab);
-  }, [settingsSubTab]);
-
   // --- 1. PAYWALL CHECK ---
   if (trialStatus === 'expired') {
       return <PaywallScreen />;
@@ -97,7 +89,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'clients': return <ClientsPanel initialFilter={clientFilter as any} />;
       case 'loyalty': return <LoyaltyPanel />;
       case 'reports': return <ReportsPanel />;
-      case 'settings': return <SettingsPanel initialTab={settingsSubTab} onTabChange={setSettingsSubTab} />;
+      case 'settings': return <SettingsPanel />;
       case 'insight': return <InsightPanel />;
       case 'reminders': return <RemindersPanel />;
       case 'subscriptions': return <SubscriptionsPanel />;
