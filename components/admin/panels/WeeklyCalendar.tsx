@@ -285,7 +285,7 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
             <div className="flex flex-col gap-3">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Filtrar por:</span>
                 <div className="flex gap-2 overflow-x-auto py-2 hide-scrollbar">
-                    {/* Botão "Todos" */}
+                    {/* Botão TODOS */}
                     <button
                         onClick={() => setSelectedProId('all')}
                         className={`flex items-center gap-2 px-4 py-2 font-medium transition-all border bg-white shadow-sm ${selectedProId === 'all'
@@ -293,16 +293,15 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                 : 'border-slate-200 text-slate-500 hover:border-slate-300 rounded-md'
                             }`}
                         style={{
-                            borderColor: selectedProId === 'all' ? settings.primaryColor : undefined,
-                            color: selectedProId === 'all' ? settings.primaryColor : '#64748b',
-                            backgroundColor: 'white' // Força o fundo branco
+                            borderColor: selectedProId === 'all' ? settings.primaryColor : 'transparent',
+                            color: selectedProId === 'all' ? settings.primaryColor : '#64748b'
                         }}
                     >
                         <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: selectedProId === 'all' ? settings.primaryColor : '#94a3b8' }} />
                         Todos
                     </button>
 
-                    {/* Mapeamento dos Barbeiros */}
+                    {/* Botões dos BARBEIROS */}
                     {professionals.map(pro => (
                         <button
                             key={pro.id}
@@ -312,9 +311,9 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                     : 'border-slate-200 text-slate-500 hover:border-slate-300 rounded-md'
                                 }`}
                             style={{
-                                borderColor: selectedProId === pro.id ? pro.color : undefined,
-                                color: selectedProId === pro.id ? pro.color : '#64748b',
-                                backgroundColor: 'white' // Força o fundo branco
+                                // Se selecionado, aplica a cor do barbeiro na borda e no texto. Se não, fica transparente/cinza.
+                                borderColor: selectedProId === pro.id ? pro.color : 'transparent',
+                                color: selectedProId === pro.id ? pro.color : '#64748b'
                             }}
                         >
                             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pro.color }} />
