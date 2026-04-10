@@ -450,7 +450,7 @@ async function startServer() {
                 apiVersion: 'v1beta'
             });
             const result = await genAI.models.generateContent({
-                model: "gemini-1.5-flash",
+                model: "gemini-1.5-flash-latest",
                 contents: [...chatHistory, { role: 'user', parts: [{ text: prompt }] }],
                 config: { systemInstruction }
             });
@@ -475,7 +475,7 @@ async function startServer() {
             Retorne apenas o texto da mensagem, sem explicações.`;
 
             const result = await genAI.models.generateContent({
-                model: "gemini-1.5-flash",
+                model: "gemini-1.5-flash-latest",
                 contents: [{ role: 'user', parts: [{ text: promptContent }] }]
             });
             res.json({ success: true, text: result.candidates?.[0]?.content?.parts?.[0]?.text || '' });
