@@ -23,6 +23,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
     const [loading, setLoading] = useState(false);
     
     // Pix State
+    const [cpfPix, setCpfPix] = useState('');
     const [pixData, setPixData] = useState<{ payload: string, encodedImage: string } | null>(null);
 
     // CC Form State
@@ -50,12 +51,17 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
     ];
 
     const generatePix = async () => {
+        if (!cpfPix || cpfPix.replace(/\D/g, '').length < 11) {
+            showToast("Informe um CPF ou CNPJ válido antes de gerar o PIX.", "error");
+            return;
+        }
+
         setLoading(true);
         try {
             const customerParams = {
                 name: settings.name || "Dono da Barbearia",
                 email: settings.email || "contato@barbearia.com",
-                cpfCnpj: "94285188049", // CPF Matemático válido para Sandbox para evitar bloqueio API Asaas
+                cpfCnpj: cpfPix.replace(/\D/g, ''),
                 phone: settings.phone || "11999999999"
             };
 
@@ -163,15 +169,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
             className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in"
             onClick={(e) => { if (e.target === e.currentTarget && !loading) onClose() }}
         >
-            <div className="bg-slate-800 w-full max-w-lg rounded-2xl border border-slate-700 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="bg-[#1e293b] w-full max-w-lg rounded-2xl border border-[#334155] shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
                 <div className="absolute top-4 right-4 z-10 flex gap-2">
                     {step !== 'plan_selection' && step !== 'success' && !loading && (
-                        <button onClick={() => setStep('plan_selection')} className="w-8 h-8 flex items-center justify-center bg-slate-700 rounded-full text-slate-300 hover:text-white transition-colors">
+                        <button onClick={() => setStep('plan_selection')} className="w-8 h-8 flex items-center justify-center bg-[#334155] rounded-full text-slate-300 hover:text-white transition-colors">
                             <ArrowLeft size={16} />
                         </button>
                     )}
                     {!loading && (
-                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-slate-700 rounded-full text-slate-300 hover:text-white transition-colors">
+                        <button onClick={onClose} className="w-8 h-8 flex items-center justify-center bg-[#334155] rounded-full text-slate-300 hover:text-white transition-colors">
                             <X size={16} />
                         </button>
                     )}
@@ -180,7 +186,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                 <div className="overflow-y-auto w-full scrollbar-hide flex-1">
                 {step === 'plan_selection' && (
                     <>
-                        <div className="p-8 text-center border-b border-slate-700 bg-slate-900/50">
+                        <div className="p-8 text-center border-b border-[#334155] bg-[#0f172a]/50">
                             <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/20 overflow-hidden">
                                 <img src={DEFAULT_LOGO} className="w-full h-full object-contain p-1" alt="Logo CutFlow" />
                             </div>
@@ -189,7 +195,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                         </div>
 
                         <div className="p-8">
-                            <div className="bg-slate-900 border border-orange-500/30 rounded-xl p-6 mb-8 relative overflow-hidden">
+                            <div className="bg-[#0f172a] border border-orange-500/30 rounded-xl p-6 mb-6 relative overflow-hidden">
                                 <div className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
                                     RECOMENDADO
                                 </div>
@@ -215,11 +221,23 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                                 </div>
                             </div>
 
-                            <div className="space-y-3 mb-6">
+                            <div className="space-y-3 mb-2">
+                                <div className="mb-4">
+                                    <label className="text-sm text-slate-300 font-medium mb-1 block">Insira seu CPF ou CNPJ para gerar o PIX</label>
+                                    <input 
+                                        type="text" 
+                                        placeholder="000.000.000-00" 
+                                        value={cpfPix} 
+                                        onChange={e => setCpfPix(e.target.value)} 
+                                        className="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500 transition-colors"
+                                    />
+                                    <p className="text-xs text-slate-500 mt-1">Obrigatório para emissão de cobranças transparentes pela Asaas.</p>
+                                </div>
+
                                 <button 
                                     onClick={generatePix}
                                     disabled={loading}
-                                    className="w-full py-4 bg-slate-700 hover:bg-slate-600 rounded-xl border border-slate-600 flex items-center justify-center gap-3 text-white font-medium transition-all"
+                                    className="w-full py-4 bg-[#334155] hover:bg-[#475569] rounded-xl border border-[#475569] flex items-center justify-center gap-3 text-white font-medium transition-all"
                                 >
                                     {loading ? <Loader2 size={20} className="animate-spin text-orange-500" /> : <QrCode size={20} className="text-orange-500" />}
                                     <span>Pagar com PIX</span>
@@ -228,7 +246,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                                 <button 
                                     onClick={() => setStep('checkout_card')}
                                     disabled={loading}
-                                    className="w-full py-4 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center justify-center gap-3 text-slate-300 font-medium transition-all"
+                                    className="w-full py-4 bg-[#0f172a] hover:bg-[#1e293b] rounded-xl border border-[#334155] flex items-center justify-center gap-3 text-slate-300 font-medium transition-all"
                                 >
                                     <CreditCard size={20} />
                                     <span>Cartão de Crédito</span>
@@ -250,7 +268,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                          <div className="w-full mb-6">
                              <label className="text-sm text-slate-400 font-medium mb-1 block">Pix Copia e Cola</label>
                              <div className="flex gap-2">
-                                <input readOnly value={pixData.payload} className="w-full bg-slate-900 border border-slate-700 text-slate-300 rounded-lg px-4 py-2 text-sm outline-none" />
+                                <input readOnly value={pixData.payload} className="w-full bg-[#0f172a] border border-[#334155] text-slate-300 rounded-lg px-4 py-2 text-sm outline-none" />
                                 <button onClick={copyToClipboard} className="bg-orange-500 hover:bg-orange-600 text-white px-4 rounded-lg flex items-center justify-center transition-colors">
                                     <Copy size={18} />
                                 </button>
@@ -272,46 +290,46 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                          <form onSubmit={processCreditCard} className="space-y-4">
                              <div>
                                  <label className="text-sm font-medium text-slate-300 mb-1 block">Número do Cartão</label>
-                                 <input required value={cardForm.number} onChange={e => setCardForm({...cardForm, number: e.target.value})} type="text" placeholder="0000 0000 0000 0000" className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
+                                 <input required value={cardForm.number} onChange={e => setCardForm({...cardForm, number: e.target.value})} type="text" placeholder="0000 0000 0000 0000" className="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
                              </div>
                              
                              <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <label className="text-sm font-medium text-slate-300 mb-1 block">Validade</label>
-                                    <input required value={cardForm.expiry} onChange={e => setCardForm({...cardForm, expiry: e.target.value})} type="text" placeholder="MM/AA" className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
+                                    <input required value={cardForm.expiry} onChange={e => setCardForm({...cardForm, expiry: e.target.value})} type="text" placeholder="MM/AA" className="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-slate-300 mb-1 block">CVV</label>
-                                    <input required value={cardForm.ccv} onChange={e => setCardForm({...cardForm, ccv: e.target.value})} type="text" placeholder="123" className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
+                                    <input required value={cardForm.ccv} onChange={e => setCardForm({...cardForm, ccv: e.target.value})} type="text" placeholder="123" className="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
                                 </div>
                              </div>
 
                              <div>
                                  <label className="text-sm font-medium text-slate-300 mb-1 block">Nome Impresso no Cartão</label>
-                                 <input required value={cardForm.name} onChange={e => setCardForm({...cardForm, name: e.target.value.toUpperCase()})} type="text" placeholder="JOAO S SILVA" className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
+                                 <input required value={cardForm.name} onChange={e => setCardForm({...cardForm, name: e.target.value.toUpperCase()})} type="text" placeholder="JOAO S SILVA" className="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
                              </div>
 
-                             <div className="pt-4 border-t border-slate-700 mt-2">
+                             <div className="pt-4 border-t border-[#334155] mt-2">
                                 <p className="text-xs text-slate-400 font-bold mb-3 uppercase tracking-wider">Dados do Titular</p>
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div>
                                             <label className="text-sm font-medium text-slate-300 mb-1 block">CPF/CNPJ</label>
-                                            <input required value={cardForm.cpfCnpj} onChange={e => setCardForm({...cardForm, cpfCnpj: e.target.value})} type="text" placeholder="000.000.000-00" className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
+                                            <input required value={cardForm.cpfCnpj} onChange={e => setCardForm({...cardForm, cpfCnpj: e.target.value})} type="text" placeholder="000.000.000-00" className="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
                                         </div>
                                         <div>
                                             <label className="text-sm font-medium text-slate-300 mb-1 block">Telefone/Celular</label>
-                                            <input required value={cardForm.phone} onChange={e => setCardForm({...cardForm, phone: e.target.value})} type="text" placeholder="(11) 99999-9999" className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
+                                            <input required value={cardForm.phone} onChange={e => setCardForm({...cardForm, phone: e.target.value})} type="text" placeholder="(11) 99999-9999" className="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-3 gap-4">
                                         <div className="col-span-2">
                                             <label className="text-sm font-medium text-slate-300 mb-1 block">CEP</label>
-                                            <input required value={cardForm.postalCode} onChange={e => setCardForm({...cardForm, postalCode: e.target.value})} type="text" placeholder="00000-000" className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
+                                            <input required value={cardForm.postalCode} onChange={e => setCardForm({...cardForm, postalCode: e.target.value})} type="text" placeholder="00000-000" className="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
                                         </div>
                                         <div>
                                             <label className="text-sm font-medium text-slate-300 mb-1 block">Número Res.</label>
-                                            <input required value={cardForm.addressNumber} onChange={e => setCardForm({...cardForm, addressNumber: e.target.value})} type="text" placeholder="123" className="w-full bg-slate-900 border border-slate-700 text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
+                                            <input required value={cardForm.addressNumber} onChange={e => setCardForm({...cardForm, addressNumber: e.target.value})} type="text" placeholder="123" className="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500" />
                                         </div>
                                     </div>
                                 </div>
