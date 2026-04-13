@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 
 const ASAAS_API_KEY = process.env.ASAAS_API_KEY || '';
 const ASAAS_API_URL = process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3';
