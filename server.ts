@@ -172,7 +172,11 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
     if (!cleanPhone.startsWith('55')) cleanPhone = `55${cleanPhone}`;
 
     try {
-        const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+        let baseUrl = apiUrl.trim();
+        if (!baseUrl.startsWith('http')) {
+            baseUrl = `https://${baseUrl}`;
+        }
+        baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
         const url = `${baseUrl}/message/sendText/${instance}`;
 
         const response = await fetch(url, {
