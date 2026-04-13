@@ -98,7 +98,7 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
             )}
 
             <div>
-              <label className="block text-sm font-medium text-slate-300">Email</label>
+              <label className="block text-sm font-medium text-slate-900">Email</label>
               <div className="mt-1">
                 <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="appearance-none block w-full px-3 py-3 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="seu@email.com" />
               </div>

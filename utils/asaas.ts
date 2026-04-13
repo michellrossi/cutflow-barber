@@ -46,3 +46,30 @@ export async function getAsaasSubscriptions(customerId: string) {
     if (!response.ok) throw new Error('Erro ao listar assinaturas');
     return result;
 }
+
+// 3 - Criar Pagamento Transparente
+export async function createAsaasPayment(data: any) {
+    const response = await fetch(`${ASAAS_API_URL}/payments`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data)
+    });
+    const result = await response.json();
+    if (!response.ok) {
+        throw new Error(result.errors?.[0]?.description || 'Erro ao criar pagamento no Asaas');
+    }
+    return result;
+}
+
+// 4 - Obter QR Code PIX
+export async function getAsaasPixQrCode(paymentId: string) {
+    const response = await fetch(`${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`, {
+        method: 'GET',
+        headers
+    });
+    const result = await response.json();
+    if (!response.ok) {
+        throw new Error(result.errors?.[0]?.description || 'Erro ao obter QR Code PIX no Asaas');
+    }
+    return result;
+}

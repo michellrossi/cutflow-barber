@@ -19,7 +19,7 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import { createAsaasCustomer, createAsaasSubscription, getAsaasSubscriptions } from './utils/asaas.js';
+import { createAsaasCustomer, createAsaasSubscription, getAsaasSubscriptions, createAsaasPayment, getAsaasPixQrCode } from './utils/asaas.js';
 
 // Configurações base
 const PORT = process.env.PORT || 3000;
@@ -663,6 +663,46 @@ async function startServer() {
             const subscription = await createAsaasSubscription(req.body);
             // Salvar a assinatura no banco se necessário
             res.json({ success: true, subscription });
+        } catch (error: any) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 4. Checkout Transparente (Cartão e PIX)
+    app.post('/api/asaas/checkout', async (req, res) => {
+        try {
+            const { shopId, customerParams, paymentParams } = req.body;
+            
+            // 1. Criar Cliente
+            const customer = await createAsaasCustomer(customerParams);
+
+            // 2. Criar Pagamento
+            const payload = {
+                customer: customer.id,
+                billingType: paymentParams.billingType,
+                value: paymentParams.value || 59.90,
+                dueDate: paymentParams.dueDate || new Date().toISOString().split('T')[0],
+            };
+
+            if (paymentParams.billingType === 'CREDIT_CARD') {
+                Object.assign(payload, {
+                    creditCard: paymentParams.creditCard,
+                    creditCardHolderInfo: paymentParams.creditCardHolderInfo
+                });
+            }
+
+            const payment = await createAsaasPayment(payload);
+
+            let qrCode = null;
+            if (payment.billingType === 'PIX') {
+                qrCode = await getAsaasPixQrCode(payment.id);
+            }
+
+            if (shopId) {
+                await supabaseAdmin.from('shops').update({ asaas_customer_id: customer.id }).eq('id', shopId);
+            }
+
+            res.json({ success: true, payment, qrCode });
         } catch (error: any) {
             res.status(500).json({ success: false, error: error.message });
         }
