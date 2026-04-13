@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check, QrCode, CreditCard, MessageCircle, ArrowLeft, Loader2, Copy } from 'lucide-react';
+import { X, Check, QrCode, CreditCard, ArrowLeft, Loader2, Copy, Star } from 'lucide-react';
 import { useShop } from '../../store';
 import { useToast } from '../ui/ToastContext';
 
@@ -8,8 +8,33 @@ interface PaymentModalProps {
     onClose: () => void;
 }
 
-const PLAN_PRICE = "R$ 99,90";
-const PLAN_VALUE = 99.90;
+const PLANS = [
+    {
+        id: 'essencial',
+        name: 'Essencial',
+        price: '59,90',
+        value: 59.90,
+        description: 'Até 2 profissionais',
+        popular: false
+    },
+    {
+        id: 'profissional',
+        name: 'Profissional',
+        price: '99,90',
+        value: 99.90,
+        description: 'Até 5 profissionais e ferramentas IA',
+        popular: true
+    },
+    {
+        id: 'premium',
+        name: 'Premium',
+        price: '149,90',
+        value: 149.90,
+        description: 'Profissionais Ilimitados VIP',
+        popular: false
+    }
+];
+
 const DEFAULT_LOGO = "https://iili.io/q2ivL1j.png";
 
 type PaymentStep = 'plan_selection' | 'checkout_pix' | 'checkout_card' | 'success';
@@ -21,6 +46,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
     // States
     const [step, setStep] = useState<PaymentStep>('plan_selection');
     const [loading, setLoading] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState(PLANS[1]); // Default ao Profissional
     
     // Pix State
     const [cpfPix, setCpfPix] = useState('');
@@ -39,16 +65,6 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
     });
 
     if (!isOpen) return null;
-
-    const benefits = [
-        "Até 5 profissionais e Múltiplos Serviços",
-        "Confirmações e Lembretes (24h/1h antes)",
-        "Pós-venda e Reativação de Clientes (30 dias)",
-        "Relatórios Financeiros e Históricos Completos",
-        "Chatbot Inteligente (Insights IA)",
-        "Programa de Fidelidade Automatizado",
-        "Link de site/Acesso da sua Barbearia"
-    ];
 
     const generatePix = async () => {
         if (!cpfPix || cpfPix.replace(/\D/g, '').length < 11) {
@@ -73,7 +89,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                     customerParams,
                     paymentParams: {
                         billingType: 'PIX',
-                        value: PLAN_VALUE
+                        value: selectedPlan.value
                     }
                 })
             });
@@ -137,7 +153,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                     customerParams,
                     paymentParams: {
                         billingType: 'CREDIT_CARD',
-                        value: PLAN_VALUE,
+                        value: selectedPlan.value,
                         creditCard,
                         creditCardHolderInfo
                     }
@@ -187,43 +203,49 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                 {step === 'plan_selection' && (
                     <>
                         <div className="p-8 text-center border-b border-[#334155] bg-[#0f172a]/50">
-                            <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-orange-500/20 overflow-hidden">
-                                <img src={DEFAULT_LOGO} className="w-full h-full object-contain p-1" alt="Logo CutFlow" />
-                            </div>
-                            <h2 className="text-2xl font-bold text-white">Assine o CutFlow Barber</h2>
-                            <p className="text-slate-400 mt-1">Gerencie seu negócio como um profissional</p>
+                            <h2 className="text-2xl font-bold text-white">Escolha um Plano</h2>
+                            <p className="text-slate-400 mt-1 text-sm">Selecione o plano ideal para a sua barbearia</p>
                         </div>
 
-                        <div className="p-8">
-                            <div className="bg-[#0f172a] border border-orange-500/30 rounded-xl p-6 mb-6 relative overflow-hidden">
-                                <div className="absolute top-0 right-0 bg-orange-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
-                                    RECOMENDADO
-                                </div>
-                                <div className="flex justify-between items-end mb-4">
-                                    <div>
-                                        <h3 className="text-lg font-bold text-white">Plano Profissional</h3>
-                                        <p className="text-slate-400 text-sm">Tudo o que você precisa</p>
-                                    </div>
-                                    <div className="text-right">
-                                        <span className="text-3xl font-bold text-white">{PLAN_PRICE}</span>
-                                        <span className="text-slate-500 text-sm">/mês</span>
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    {benefits.map((benefit, idx) => (
-                                        <div key={idx} className="flex items-center gap-3 text-sm text-slate-300">
-                                            <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center text-green-500 shrink-0">
-                                                <Check size={12} strokeWidth={3} />
+                        <div className="p-6">
+                            <div className="space-y-3 mb-6">
+                                {PLANS.map((plan) => (
+                                    <button 
+                                        key={plan.id}
+                                        onClick={() => setSelectedPlan(plan)}
+                                        className={`w-full text-left p-4 rounded-xl border-2 transition-all relative overflow-hidden ${
+                                            selectedPlan.id === plan.id 
+                                                ? 'bg-[#0f172a] border-orange-500 shadow-lg shadow-orange-500/10' 
+                                                : 'bg-[#0f172a]/50 border-[#334155] hover:border-[#475569]'
+                                        }`}
+                                    >
+                                        {plan.popular && (
+                                            <div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-bl-lg flex items-center gap-1 uppercase">
+                                                <Star size={10} fill="currentColor" /> Recomendado
                                             </div>
-                                            {benefit}
+                                        )}
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${selectedPlan.id === plan.id ? 'border-orange-500' : 'border-slate-500'}`}>
+                                                        {selectedPlan.id === plan.id && <div className="w-2 h-2 rounded-full bg-orange-500" />}
+                                                    </div>
+                                                    <h3 className="font-bold text-white">{plan.name}</h3>
+                                                </div>
+                                                <p className="text-xs text-slate-400 mt-1 ml-6">{plan.description}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-xl font-bold text-white">R$ {plan.price}</span>
+                                                <span className="text-slate-500 text-xs">/mês</span>
+                                            </div>
                                         </div>
-                                    ))}
-                                </div>
+                                    </button>
+                                ))}
                             </div>
 
-                            <div className="space-y-3 mb-2">
+                            <div className="space-y-3 mb-2 pt-6 border-t border-[#334155]">
                                 <div className="mb-4">
-                                    <label className="text-sm text-slate-300 font-medium mb-1 block">Insira seu CPF ou CNPJ para gerar o PIX</label>
+                                    <label className="text-sm text-slate-300 font-medium mb-1 block">Insira seu CPF ou CNPJ (obrigatório para NF/PIX)</label>
                                     <input 
                                         type="text" 
                                         placeholder="000.000.000-00" 
@@ -231,13 +253,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                                         onChange={e => setCpfPix(e.target.value)} 
                                         className="w-full bg-[#0f172a] border border-[#334155] text-white rounded-lg px-4 py-3 outline-none focus:border-orange-500 transition-colors"
                                     />
-                                    <p className="text-xs text-slate-500 mt-1">Obrigatório para emissão de cobranças transparentes pela Asaas.</p>
                                 </div>
 
                                 <button 
                                     onClick={generatePix}
                                     disabled={loading}
-                                    className="w-full py-4 bg-[#334155] hover:bg-[#475569] rounded-xl border border-[#475569] flex items-center justify-center gap-3 text-white font-medium transition-all"
+                                    className="w-full py-4 bg-[#334155] hover:bg-[#475569] rounded-xl border border-[#475569] flex items-center justify-center gap-3 text-white font-medium transition-all shadow-md"
                                 >
                                     {loading ? <Loader2 size={20} className="animate-spin text-orange-500" /> : <QrCode size={20} className="text-orange-500" />}
                                     <span>Pagar com PIX</span>
@@ -249,7 +270,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                                     className="w-full py-4 bg-[#0f172a] hover:bg-[#1e293b] rounded-xl border border-[#334155] flex items-center justify-center gap-3 text-slate-300 font-medium transition-all"
                                 >
                                     <CreditCard size={20} />
-                                    <span>Cartão de Crédito</span>
+                                    <span>Pagar com Cartão de Crédito</span>
                                 </button>
                             </div>
                         </div>
@@ -259,7 +280,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                 {step === 'checkout_pix' && pixData && (
                      <div className="p-8 flex flex-col items-center">
                          <h2 className="text-2xl font-bold text-white mb-2">Escaneie o QR Code</h2>
-                         <p className="text-slate-400 text-center text-sm mb-6">Abra o app do seu banco e escaneie a imagem abaixo para ativar sua assinatura PIX.</p>
+                         <p className="text-slate-400 text-center text-sm mb-6">Você está atinando o <b>Plano {selectedPlan.name}</b> (R$ {selectedPlan.price}). Abra o app para pagar.</p>
                          
                          <div className="bg-white p-4 rounded-xl shadow-inner mb-6 border border-slate-300">
                              <img src={`data:image/png;base64,${pixData.encodedImage}`} alt="PIX QR Code" className="w-64 h-64 object-contain" />
@@ -285,7 +306,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                 {step === 'checkout_card' && (
                      <div className="p-8">
                          <h2 className="text-2xl font-bold text-white mb-1">Pagamento com Cartão</h2>
-                         <p className="text-slate-400 text-sm mb-6">Transação segura e criptografada via Asaas</p>
+                         <p className="text-slate-400 text-sm mb-6">Você selecionou o <b>Plano {selectedPlan.name}</b>. Transação segura.</p>
                          
                          <form onSubmit={processCreditCard} className="space-y-4">
                              <div>
@@ -341,7 +362,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
                                  className="w-full py-4 mt-6 bg-orange-600 hover:bg-orange-500 rounded-xl flex items-center justify-center gap-2 text-white font-bold transition-all shadow-lg active:scale-95"
                              >
                                  {loading && <Loader2 size={20} className="animate-spin" />}
-                                 {loading ? 'Processando Pagamento...' : `Pagar ${PLAN_PRICE}`}
+                                 {loading ? 'Processando...' : `Pagar R$ ${selectedPlan.price}`}
                              </button>
                          </form>
                      </div>

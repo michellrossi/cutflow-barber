@@ -16,7 +16,7 @@ export const PaywallScreen: React.FC = () => {
             <div className="absolute inset-0 bg-grid-pattern opacity-20 pointer-events-none"></div>
             
             <div className="relative z-10 max-w-2xl w-full text-center">
-                <div className="w-24 h-24 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl border-4 border-slate-700 relative">
+                <div className="w-24 h-24 bg-[#1e293b] rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl border-4 border-[#334155] relative">
                     <Lock size={40} className="text-red-500" />
                     <div className="absolute -bottom-2 -right-2 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full border-4 border-[#0B0F19]">
                         EXPIRADO
@@ -28,8 +28,8 @@ export const PaywallScreen: React.FC = () => {
                     Não perca o acesso à gestão da sua barbearia. Assine agora para continuar agendando e faturando.
                 </p>
 
-                <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-2xl p-8 mb-10 text-left">
-                    <h3 className="text-white font-bold mb-4">O Plano Profissional inclui:</h3>
+                <div className="bg-[#1e293b]/50 backdrop-blur-sm border border-[#334155] rounded-2xl p-8 mb-10 text-left">
+                    <h3 className="text-white font-bold mb-4">Escolha um plano com recursos como:</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="flex items-center gap-3 text-slate-300">
                             <CheckCircle size={18} className="text-green-500" /> Agendamentos Ilimitados
@@ -51,11 +51,11 @@ export const PaywallScreen: React.FC = () => {
                         onClick={() => setIsModalOpen(true)}
                         className="px-8 py-4 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-lg shadow-lg shadow-orange-500/20 transition-all hover:scale-105 w-full md:w-auto"
                     >
-                        Quero assinar — R$ 59,90/mês
+                        Quero assinar a CutFlow
                     </button>
                     <button 
-                        onClick={() => window.open('https://wa.me/5511999999999', '_blank')}
-                        className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium rounded-xl transition-all w-full md:w-auto"
+                        onClick={() => window.open('https://wa.me/5513988091839', '_blank')}
+                        className="px-8 py-4 bg-[#1e293b] hover:bg-[#334155] text-[#cbd5e1] font-medium rounded-xl transition-all w-full md:w-auto"
                     >
                         Falar com Suporte
                     </button>
