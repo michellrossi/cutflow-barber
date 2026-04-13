@@ -1781,14 +1781,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
           console.log("[Auth] Gerando token para cliente:", { clientId: client.id, token, expiresAt });
 
-          const { error: tokenError } = await supabase.from('client_auth_tokens').insert({
-              client_id: client.id,
-              token: token,
-              expires_at: expiresAt.toISOString()
+          const { error: tokenError } = await supabase.rpc('create_client_token', { 
+              p_client_id: client.id, 
+              p_token: token, 
+              p_expires_at: expiresAt.toISOString() 
           });
 
           if (tokenError) {
-              console.error("[Auth] Erro ao inserir token no Supabase:", tokenError);
+              console.error("[Auth] Erro ao inserir token no Supabase via RPC:", tokenError);
               throw tokenError;
           }
 
@@ -1808,22 +1808,17 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const validateClientToken = useCallback(async (token: string) => {
       try {
-          console.log("[Auth] Validando token:", token);
-          const { data: tokenData, error: tokenError } = await supabase
-              .from('client_auth_tokens')
-              .select('*, clients(*, shops(slug))')
-              .eq('token', token)
-              .gt('expires_at', new Date().toISOString())
-              .single();
+          console.log("[Auth] Validando token via RPC:", token);
+          const { data: tokenData, error: tokenError } = await supabase.rpc('validate_client_token', { p_token: token });
 
           if (tokenError || !tokenData) {
               console.error("[Auth] Erro na validação do token:", tokenError || "Token não encontrado ou expirado");
               throw new Error("Token inválido ou expirado");
           }
 
-          console.log("[Auth] Token válido! Cliente identificado:", tokenData.clients);
-          const client = mapClient(tokenData.clients);
-          const shopSlug = tokenData.clients.shops?.slug;
+          console.log("[Auth] Token válido e deletado! Cliente identificado:", tokenData);
+          const client = mapClient(tokenData);
+          const shopSlug = tokenData.shops?.slug;
           
           const clientSession = { clientId: client.id, token: token };
           
@@ -1835,8 +1830,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               currentClient: client,
               clientSession: clientSession
           }));
-
-          await supabase.from('client_auth_tokens').delete().eq('id', tokenData.id);
 
           return { success: true, slug: shopSlug };
       } catch (e: any) {

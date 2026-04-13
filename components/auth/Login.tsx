@@ -86,7 +86,7 @@ export const Login: React.FC<{ onComplete: () => void, onBack: () => void }> = (
                         <label className="text-sm font-medium text-slate-300">Email</label>
                         <input 
                             required type="email" value={email} onChange={e => setEmail(e.target.value)}
-                            className="w-full bg-[#0B0F19] border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500 transition-colors"
+                            className="appearance-none block w-full px-3 py-3 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
                         />
                     </div>
 
@@ -105,7 +105,7 @@ export const Login: React.FC<{ onComplete: () => void, onBack: () => void }> = (
                             </div>
                             <input 
                                 required type="password" value={password} onChange={e => setPassword(e.target.value)}
-                                className="w-full bg-[#0B0F19] border border-slate-700 rounded-lg p-3 text-white focus:outline-none focus:border-orange-500 transition-colors"
+                                className="appearance-none block w-full px-3 py-3 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm"
                             />
                         </div>
                     )}

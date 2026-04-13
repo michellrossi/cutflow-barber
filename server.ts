@@ -29,9 +29,6 @@ if (!serviceRoleKey) {
     console.warn("⚠️ AVISO: SUPABASE_SERVICE_ROLE_KEY não configurada. O Cron Job pode falhar devido a RLS.");
 }
 
-// 1. Cliente comum (Usa ANON_KEY - Respeita RLS)
-export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseKey || 'placeholder');
-
 // 2. Cliente Administrativo (Usa SERVICE_ROLE - Ignora RLS)
 export const supabaseAdmin = createClient(supabaseUrl || 'https://placeholder.supabase.co', serviceRoleKey || 'placeholder');
 

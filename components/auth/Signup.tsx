@@ -113,18 +113,21 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
               </div>
             </div>
 
-            {/* Campos exclusivos para DONO */}
-            {intent === 'create_shop' && (
-                <div className="space-y-6 animate-fade-in">
+            {/* Campos da Barbearia (Slug para todos, Nome para dono) */}
+            <div className="space-y-6 animate-fade-in">
+                {intent === 'create_shop' && (
                     <div>
                         <label className="block text-sm font-medium text-slate-300">Nome da Barbearia</label>
                         <div className="mt-1">
                             <input type="text" required value={shopName} onChange={e => setShopName(e.target.value)} className="appearance-none block w-full px-3 py-3 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="Ex: Barbearia do Zé" />
                         </div>
                     </div>
+                )}
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-300">Link Personalizado (Slug)</label>
+                        <label className="block text-sm font-medium text-slate-300">
+                            {intent === 'join_team' ? 'Link da barbearia que você trabalha (Slug)' : 'Link Personalizado (Slug)'}
+                        </label>
                         <div className="mt-1 flex rounded-md shadow-sm">
                             <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-slate-600 bg-slate-800 text-slate-400 sm:text-sm">
                             insightbarber.com.br/

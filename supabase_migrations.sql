@@ -248,7 +248,10 @@ CREATE POLICY "Criar Agendamento Paywall" ON public.appointments
 DROP POLICY IF EXISTS "Publico_Le_Agendamentos" ON public.appointments;
 DROP POLICY IF EXISTS "Enable read access for all users" ON public.appointments;
 CREATE POLICY "Publico_Le_Agendamentos" ON public.appointments
-  FOR SELECT USING (true);
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.shops WHERE id = appointments.shop_id AND owner_id = auth.uid()) OR
+    EXISTS (SELECT 1 FROM public.professionals WHERE user_id = auth.uid() AND shop_id = appointments.shop_id)
+  );
 
 -- Permite que supabaseAdmin (service_role) atualize flags de notificação.
 -- Com service_role, esta policy é ignorada. Mantida para clareza de intenção.
@@ -265,6 +268,55 @@ DROP POLICY IF EXISTS "Leitura segura de tokens" ON public.client_auth_tokens;
 DROP POLICY IF EXISTS "Server_Only_Tokens" ON public.client_auth_tokens; -- 
 CREATE POLICY "Server_Only_Tokens" ON public.client_auth_tokens
   FOR ALL USING (false) WITH CHECK (false);
+
+-- RPCS para tokens de cliente (ignoram RLS com SECURITY DEFINER)
+CREATE OR REPLACE FUNCTION public.create_client_token(p_client_id UUID, p_token TEXT, p_expires_at TIMESTAMPTZ)
+RETURNS VOID AS $$
+BEGIN
+  INSERT INTO public.client_auth_tokens (client_id, token, expires_at)
+  VALUES (p_client_id, p_token, p_expires_at);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.validate_client_token(p_token TEXT)
+RETURNS JSON AS $$
+DECLARE
+  v_token_id UUID;
+  v_client_id UUID;
+  v_client_data JSON;
+BEGIN
+  -- Busca o token e garante que nao expirou
+  SELECT id, client_id INTO v_token_id, v_client_id 
+  FROM public.client_auth_tokens 
+  WHERE token = p_token AND expires_at > NOW();
+
+  IF v_token_id IS NULL THEN
+    RAISE EXCEPTION 'Token inválido ou expirado';
+  END IF;
+
+  -- Deleta para garantir uso unico
+  DELETE FROM public.client_auth_tokens WHERE id = v_token_id;
+
+  -- Retorna os dados mapeados
+  SELECT json_build_object(
+    'id', c.id,
+    'shop_id', c.shop_id,
+    'name', c.name,
+    'phone', c.phone,
+    'avatar_url', c.avatar_url,
+    'total_spent', c.total_spent,
+    'loyalty_points', c.loyalty_points,
+    'loyalty_card_count', c.loyalty_card_count,
+    'created_at', c.created_at,
+    'shops', json_build_object('slug', s.slug)
+  ) INTO v_client_data
+  FROM public.clients c
+  JOIN public.shops s ON s.id = c.shop_id
+  WHERE c.id = v_client_id;
+
+  RETURN v_client_data;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ---- MESSAGE_TEMPLATES ----
 DROP POLICY IF EXISTS "Dono_Gere_Templates" ON public.message_templates;
