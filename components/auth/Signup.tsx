@@ -59,7 +59,7 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
             <Scissors size={24} />
           </div>
         </div>
-        <h2 className="text-3xl font-extrabold text-white">
+        <h2 className="text-3xl font-extrabold text-black">
           {intent === 'create_shop' ? 'Criar Barbearia' : 'Acesso da Equipe'}
         </h2>
         <p className="mt-2 text-sm text-slate-400">
@@ -92,7 +92,7 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
 
             {/* Aviso para Barbeiro */}
             {intent === 'join_team' && (
-              <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg text-sm text-blue-300">
+              <div className="bg-blue-500/10 border border-blue-500/20 p-4 rounded-lg text-sm text-blue-900">
                 <p>Para confirmar seu acesso, use o <strong>mesmo email</strong> que o dono da barbearia cadastrou para você.</p>
               </div>
             )}
@@ -105,7 +105,7 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-300">
+              <label className="block text-sm font-medium text-slate-900">
                 {intent === 'join_team' ? 'Crie sua Senha' : 'Senha'}
               </label>
               <div className="mt-1">
@@ -117,7 +117,7 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
             <div className="space-y-6 animate-fade-in">
               {intent === 'create_shop' && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-300">Nome da Barbearia</label>
+                  <label className="block text-sm font-medium text-slate-900">Nome da Barbearia</label>
                   <div className="mt-1">
                     <input type="text" required value={shopName} onChange={e => setShopName(e.target.value)} className="appearance-none block w-full px-3 py-3 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="Ex: Barbearia do Zé" />
                   </div>
@@ -125,7 +125,7 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
               )}
 
               <div>
-                <label className="block text-sm font-medium text-slate-300">
+                <label className="block text-sm font-medium text-slate-900">
                   {intent === 'join_team' ? 'Link da barbearia que você trabalha (Slug)' : 'Link Personalizado (Slug)'}
                 </label>
                 <div className="mt-1 flex rounded-md shadow-sm">
