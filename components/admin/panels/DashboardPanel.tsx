@@ -132,7 +132,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                             {whatsappStatus === null ? 'Verificando Saúde do WhatsApp...' : (whatsappStatus.connected ? 'WhatsApp Conectado e Operante' : 'WhatsApp Desconectado!')}
                         </h4>
                         <p className={`text-sm ${whatsappStatus?.connected ? 'text-emerald-600' : (whatsappStatus ? 'text-red-600 font-medium' : 'text-slate-500')}`}>
-                            {whatsappStatus?.connected ? 'Suas mensagens automáticas e lembretes estão sendo enviados normalmente.' : 'Atenção crítica: reconecte sua instância imediatamente para voltar a enviar lembretes e confirmar agendamentos.'}
+                            {whatsappStatus?.connected ? 'Suas mensagens automáticas e lembretes estão sendo enviados normalmente.' : 'Atenção: conecte (ou reconecte) sua instância para conseguir enviar lembretes e confirmar agendamentos.'}
                         </p>
                     </div>
                 </div>
@@ -145,20 +145,57 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
 
             {/* Guia de Onboarding (Anti-Churn Checklist) */}
             {(services.length === 0 || professionals.length === 0 || appointments.length === 0 || !whatsappStatus?.connected) && (
-                <div className="bg-[#0B0F19] text-white p-8 rounded-2xl border border-slate-800 shadow-2xl relative overflow-hidden">
-                    <div className="absolute -top-10 -right-10 p-8 opacity-5 transform rotate-12 scale-150"><Scissors size={180} /></div>
+                <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white p-8 rounded-2xl border border-slate-800/50 shadow-2xl relative overflow-hidden group">
+                    <div className="absolute -top-10 -right-10 p-8 opacity-[0.03] transform rotate-12 scale-150 transition-transform group-hover:scale-[1.6] duration-700">
+                        <Scissors size={220} />
+                    </div>
                     <div className="relative z-10">
-                        <h3 className="text-2xl font-black mb-2 flex items-center gap-2">Checklist de Ativação 🚀</h3>
-                        <p className="text-slate-400 text-sm mb-8 max-w-2xl leading-relaxed">
-                            Bem-vindo! Usuários que concluem esses passos básicos nos primeiros dias aumentam em até 40% a redução de faltas nas suas barbearias. Siga a ordem e prepare a sua estufa digital para rodar.
-                        </p>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                            <div>
+                                <h3 className="text-2xl font-black mb-2 flex items-center gap-3">
+                                    Checklist de Ativação <span className="animate-bounce">🚀</span>
+                                </h3>
+                                <p className="text-slate-400 text-sm max-w-2xl leading-relaxed">
+                                    Bem-vindo! Usuários que concluem esses passos básicos nos primeiros dias aumentam em até 40% a redução de faltas nas suas barbearias. Siga a ordem e prepare a sua estufa digital para rodar.
+                                </p>
+                            </div>
+                        </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <CheckStep done={services.length > 0} text="Adicione seu primeiro serviço" icon={<Scissors size={18}/>} onClick={() => onNavigate('settings')} />
-                            <CheckStep done={professionals.length > 0} text="Adicione um profissional" icon={<User size={18}/>} onClick={() => onNavigate('settings')} />
-                            <CheckStep done={whatsappStatus?.connected === true} text="Configure seu WhatsApp" icon={<Smartphone size={18}/>} onClick={() => onNavigate('settings', 'whatsapp')} />
-                            <CheckStep done={false} text="Compartilhe seu link público" icon={<Share2 size={18}/>} onClick={() => { navigator.clipboard.writeText(`https://${settings?.slug || 'seu-link'}.cutflow.com.br`); alert('Link copiado! Coloque-o em sua Bio do Instagram.'); }} />
-                            <CheckStep done={appointments.length > 0} text="Faça um agendamento de teste" icon={<Calendar size={18}/>} onClick={() => onNavigate('appointments')} />
+                            <CheckStep 
+                                done={services.length > 0} 
+                                text="Adicione seu primeiro serviço" 
+                                icon={<Scissors size={18}/>} 
+                                onClick={() => onNavigate('services')} 
+                            />
+                            <CheckStep 
+                                done={professionals.length > 0} 
+                                text="Adicione um profissional" 
+                                icon={<User size={18}/>} 
+                                onClick={() => onNavigate('team')} 
+                            />
+                            <CheckStep 
+                                done={whatsappStatus?.connected === true} 
+                                text="Configure seu WhatsApp" 
+                                icon={<Smartphone size={18}/>} 
+                                onClick={() => onNavigate('settings')} 
+                            />
+                            <CheckStep 
+                                done={false} 
+                                text="Compartilhe seu link público" 
+                                icon={<Share2 size={18}/>} 
+                                onClick={() => { 
+                                    const url = `https://${settings?.slug || 'agendar'}.cutflow.com.br`;
+                                    navigator.clipboard.writeText(url); 
+                                    alert('Link copiado! Coloque-o em sua Bio do Instagram.'); 
+                                }} 
+                            />
+                            <CheckStep 
+                                done={appointments.length > 0} 
+                                text="Faça um agendamento de teste" 
+                                icon={<Calendar size={18}/>} 
+                                onClick={() => onNavigate('appointments')} 
+                            />
                         </div>
                     </div>
                 </div>
@@ -350,13 +387,17 @@ const getStatusLabel = (status: string) => {
 };
 
 const CheckStep = ({ done, text, icon, onClick }: { done: boolean, text: string, icon: React.ReactNode, onClick: () => void }) => (
-    <div onClick={onClick} className={`p-4 flex items-center justify-between rounded-xl border transition-all cursor-pointer ${done ? 'bg-slate-800/50 border-emerald-500/30 opacity-60' : 'bg-slate-800 border-slate-700 hover:border-orange-500/50 hover:bg-slate-800/80 shadow-md'}`}>
-        <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
-                {done ? <CheckCircle size={18} /> : icon}
+    <div onClick={onClick} className={`p-4 flex items-center justify-between rounded-xl border transition-all duration-300 cursor-pointer ${done ? 'bg-slate-900 border-emerald-500/20 opacity-50 select-none' : 'bg-slate-900 border-slate-800 hover:border-orange-500/50 hover:bg-slate-800/80 shadow-lg active:scale-[0.98]'}`}>
+        <div className="flex items-center gap-4">
+            <div className={`p-2.5 rounded-xl transition-colors ${done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400 group-hover:bg-orange-500/10 group-hover:text-orange-500'}`}>
+                {done ? <CheckCircle size={20} /> : icon}
             </div>
-            <span className={`font-bold text-sm ${done ? 'text-slate-500 line-through' : 'text-slate-200'}`}>{text}</span>
+            <span className={`font-bold text-sm tracking-tight ${done ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{text}</span>
         </div>
-        {!done && <span className="text-orange-900 text-[10px] font-bold px-2 py-1 bg-orange-500/20 uppercase tracking-widest rounded shadow-sm">Pendente</span>}
+        {!done && (
+            <div className="flex items-center gap-2">
+                <span className="text-orange-400 text-[10px] font-black px-2 py-1 bg-orange-500/10 uppercase tracking-widest rounded border border-orange-500/20">Pendente</span>
+            </div>
+        )}
     </div>
 );

@@ -210,13 +210,13 @@ export const PlanPanel: React.FC = () => {
               </div>
             </div>
           )}
-          <div className="bg-orange-50 border border-orange-100 px-4 py-2 rounded-lg flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center text-white">
+          <div className="bg-slate-800 border border-slate-700 px-4 py-2 rounded-lg flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
               <ShieldCheck size={20} />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-orange-600 uppercase tracking-wider">Plano Atual</p>
-              <p className="text-sm font-bold text-slate-900">Profissional (Trial)</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Plano Atual</p>
+              <p className="text-sm font-bold text-white">Profissional (Trial)</p>
             </div>
           </div>
         </div>
@@ -227,8 +227,8 @@ export const PlanPanel: React.FC = () => {
           <motion.div
             key={plan.id}
             whileHover={{ y: -5 }}
-            className={`relative bg-white rounded-lg border-2 transition-all duration-300 flex flex-col ${
-              plan.popular ? 'border-amber-500 shadow-xl shadow-amber-100' : 'border-slate-100 hover:border-slate-200 shadow-sm'
+            className={`relative bg-slate-900 rounded-lg border-2 transition-all duration-300 flex flex-col ${
+              plan.popular ? 'border-amber-500 shadow-xl shadow-amber-500/10' : 'border-slate-800 hover:border-slate-700 shadow-sm'
             }`}
           >
             {plan.popular && (
@@ -238,22 +238,22 @@ export const PlanPanel: React.FC = () => {
               </div>
             )}
 
-            <div className="p-8 border-b border-slate-50">
+            <div className="p-8 border-b border-slate-800">
               <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-lg bg-${plan.color}-50`}>
+                <div className={`p-3 rounded-lg bg-slate-800`}>
                   {plan.icon}
                 </div>
                 {plan.id === 'profissional' && (
-                  <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-lg uppercase">Ativo</span>
+                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-lg uppercase">Ativo</span>
                 )}
               </div>
-              <h2 className="text-xl font-bold text-slate-900 mb-1">{plan.name}</h2>
+              <h2 className="text-xl font-bold text-white mb-1">{plan.name}</h2>
               <div className="flex items-baseline gap-1 mb-3">
-                <span className="text-3xl font-black text-slate-900">R${plan.price.split(',')[0]}</span>
-                <span className="text-lg font-bold text-slate-900">,{plan.price.split(',')[1]}</span>
-                <span className="text-slate-400 text-sm font-medium">/mês</span>
+                <span className="text-3xl font-black text-white">R${plan.price.split(',')[0]}</span>
+                <span className="text-lg font-bold text-white">,{plan.price.split(',')[1]}</span>
+                <span className="text-slate-500 text-sm font-medium">/mês</span>
               </div>
-              <p className="text-xs text-slate-500 leading-relaxed min-h-[32px]">
+              <p className="text-xs text-slate-400 leading-relaxed min-h-[32px]">
                 {plan.description}
               </p>
             </div>
@@ -266,11 +266,11 @@ export const PlanPanel: React.FC = () => {
                   </h3>
                   <ul className="space-y-3">
                     {category.features.map((feature, fIdx) => (
-                      <li key={fIdx} className={`flex items-start gap-3 text-sm ${feature.included ? 'text-slate-800' : 'text-slate-500'}`}>
-                        <div className={`mt-0.5 shrink-0 w-5 h-5 rounded-sm flex items-center justify-center ${feature.included ? 'bg-green-50 text-green-500' : 'bg-slate-50 text-slate-300'}`}>
+                      <li key={fIdx} className={`flex items-start gap-3 text-sm ${feature.included ? 'text-slate-200' : 'text-slate-600'}`}>
+                        <div className={`mt-0.5 shrink-0 w-5 h-5 rounded-sm flex items-center justify-center ${feature.included ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-800 text-slate-700'}`}>
                           {feature.included ? <Check size={12} strokeWidth={3} /> : <div className="w-1.5 h-1.5 rounded-sm bg-current" />}
                         </div>
-                        <span className={feature.included ? 'font-semibold text-slate-900' : 'line-through decoration-slate-300'}>
+                        <span className={feature.included ? 'font-medium text-slate-200' : 'line-through decoration-slate-700'}>
                           {feature.text}
                         </span>
                       </li>
@@ -282,13 +282,19 @@ export const PlanPanel: React.FC = () => {
 
             <div className="p-8 pt-0 mt-auto">
               <button
-                onClick={() => plan.id !== 'profissional' && setIsUpgradeModalOpen(true)}
+                onClick={() => {
+                    if (plan.id !== 'profissional') {
+                        alert('Você será redirecionado para o checkout seguro da Asaas para finalizar sua assinatura.');
+                        window.open('https://sandbox.asaas.com/checkout/id-do-plano', '_blank');
+                        setIsUpgradeModalOpen(false);
+                    }
+                }}
                 className={`w-full py-4 rounded-lg font-bold text-sm transition-all duration-300 ${
                   plan.id === 'profissional'
-                    ? 'bg-slate-100 text-slate-400 cursor-default'
+                    ? 'bg-slate-800 text-slate-400 cursor-default'
                     : plan.popular
-                    ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-lg shadow-amber-200'
-                    : 'bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-200'
+                    ? 'bg-amber-500 text-white hover:bg-amber-600'
+                    : 'bg-slate-700 text-white hover:bg-slate-600'
                 }`}
               >
                 {plan.id === 'profissional' ? 'Plano Atual' : 'Fazer Upgrade'}
@@ -316,7 +322,7 @@ export const PlanPanel: React.FC = () => {
           <div className="hidden lg:block">
              <div className="w-64 h-64 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg blur-3xl opacity-20 absolute -right-20 -bottom-20"></div>
              <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg blur-3xl opacity-20 absolute right-40 top-0"></div>
-             <img src="https://i.freeimage.host/qD9Rddv.png" alt="Insight Barber" className="w-48 h-48 object-contain opacity-20 grayscale brightness-200" />
+             <Scissors size={120} className="text-orange-500 opacity-20" />
           </div>
         </div>
       </div>
