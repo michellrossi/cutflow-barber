@@ -96,7 +96,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'insight': return <InsightPanel />;
       case 'reminders': return <RemindersPanel initialTab={remindersSubTab} />;
       case 'subscriptions': return <SubscriptionsPanel />;
-      case 'plan': return <PlanPanel />;
+      case 'plan': return <PlanPanel onUpgrade={() => setIsPaymentModalOpen(true)} />;
       case 'profile': return <ProfilePanel />;
       default: return <DashboardPanel />;
     }

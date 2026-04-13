@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Check, Star, Zap, Crown, ShieldCheck, MessageCircle, Clock, Scissors } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -26,7 +25,7 @@ interface Plan {
   color: string;
 }
 
-export const PlanPanel: React.FC = () => {
+export const PlanPanel: React.FC<{ onUpgrade?: () => void }> = ({ onUpgrade }) => {
   const { shop } = useShop();
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(0);
@@ -210,13 +209,13 @@ export const PlanPanel: React.FC = () => {
               </div>
             </div>
           )}
-          <div className="bg-slate-800 border border-slate-700 px-4 py-2 rounded-lg flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/20 text-emerald-500 flex items-center justify-center">
+          <div className="bg-white border border-slate-200 px-4 py-2 rounded-lg flex items-center gap-3 shadow-sm">
+            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <ShieldCheck size={20} />
             </div>
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Plano Atual</p>
-              <p className="text-sm font-bold text-white">Profissional (Trial)</p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Plano Atual</p>
+              <p className="text-sm font-bold text-slate-900">Profissional (Trial)</p>
             </div>
           </div>
         </div>
@@ -227,8 +226,8 @@ export const PlanPanel: React.FC = () => {
           <motion.div
             key={plan.id}
             whileHover={{ y: -5 }}
-            className={`relative bg-slate-900 rounded-lg border-2 transition-all duration-300 flex flex-col ${
-              plan.popular ? 'border-amber-500 shadow-xl shadow-amber-500/10' : 'border-slate-800 hover:border-slate-700 shadow-sm'
+            className={`relative bg-white rounded-lg border-2 transition-all duration-300 flex flex-col ${
+              plan.popular ? 'border-amber-500 shadow-xl shadow-amber-500/10' : 'border-slate-200 hover:border-slate-300 shadow-sm'
             }`}
           >
             {plan.popular && (
@@ -238,22 +237,22 @@ export const PlanPanel: React.FC = () => {
               </div>
             )}
 
-            <div className="p-8 border-b border-slate-800">
+            <div className="p-8 border-b border-slate-100">
               <div className="flex items-center justify-between mb-4">
-                <div className={`p-3 rounded-lg bg-slate-800`}>
+                <div className={`p-3 rounded-lg bg-slate-50 border border-slate-100`}>
                   {plan.icon}
                 </div>
                 {plan.id === 'profissional' && (
-                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded-lg uppercase">Ativo</span>
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg uppercase">Ativo</span>
                 )}
               </div>
-              <h2 className="text-xl font-bold text-white mb-1">{plan.name}</h2>
+              <h2 className="text-xl font-bold text-slate-900 mb-1">{plan.name}</h2>
               <div className="flex items-baseline gap-1 mb-3">
-                <span className="text-3xl font-black text-white">R${plan.price.split(',')[0]}</span>
-                <span className="text-lg font-bold text-white">,{plan.price.split(',')[1]}</span>
+                <span className="text-3xl font-black text-slate-900">R${plan.price.split(',')[0]}</span>
+                <span className="text-lg font-bold text-slate-900">,{plan.price.split(',')[1]}</span>
                 <span className="text-slate-500 text-sm font-medium">/mês</span>
               </div>
-              <p className="text-xs text-slate-400 leading-relaxed min-h-[32px]">
+              <p className="text-xs text-slate-500 leading-relaxed min-h-[32px]">
                 {plan.description}
               </p>
             </div>
@@ -261,16 +260,16 @@ export const PlanPanel: React.FC = () => {
             <div className="p-8 flex-1 space-y-8">
               {plan.categories.map((category, idx) => (
                 <div key={idx} className="space-y-3">
-                  <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
+                  <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
                     {category.title}
                   </h3>
                   <ul className="space-y-3">
                     {category.features.map((feature, fIdx) => (
-                      <li key={fIdx} className={`flex items-start gap-3 text-sm ${feature.included ? 'text-slate-200' : 'text-slate-600'}`}>
-                        <div className={`mt-0.5 shrink-0 w-5 h-5 rounded-sm flex items-center justify-center ${feature.included ? 'bg-emerald-500/10 text-emerald-500' : 'bg-slate-800 text-slate-700'}`}>
+                      <li key={fIdx} className={`flex items-start gap-3 text-sm ${feature.included ? 'text-slate-700' : 'text-slate-400'}`}>
+                        <div className={`mt-0.5 shrink-0 w-5 h-5 rounded-sm flex items-center justify-center ${feature.included ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-300'}`}>
                           {feature.included ? <Check size={12} strokeWidth={3} /> : <div className="w-1.5 h-1.5 rounded-sm bg-current" />}
                         </div>
-                        <span className={feature.included ? 'font-medium text-slate-200' : 'line-through decoration-slate-700'}>
+                        <span className={feature.included ? 'font-medium text-slate-700' : 'line-through decoration-slate-300'}>
                           {feature.text}
                         </span>
                       </li>
@@ -284,17 +283,15 @@ export const PlanPanel: React.FC = () => {
               <button
                 onClick={() => {
                     if (plan.id !== 'profissional') {
-                        alert('Você será redirecionado para o checkout seguro da Asaas para finalizar sua assinatura.');
-                        window.open('https://sandbox.asaas.com/checkout/id-do-plano', '_blank');
-                        setIsUpgradeModalOpen(false);
+                        if (onUpgrade) onUpgrade();
                     }
                 }}
                 className={`w-full py-4 rounded-lg font-bold text-sm transition-all duration-300 ${
                   plan.id === 'profissional'
-                    ? 'bg-slate-800 text-slate-400 cursor-default'
+                    ? 'bg-slate-100 text-slate-400 cursor-default border border-slate-200'
                     : plan.popular
-                    ? 'bg-amber-500 text-white hover:bg-amber-600'
-                    : 'bg-slate-700 text-white hover:bg-slate-600'
+                    ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-md'
+                    : 'bg-slate-800 text-white hover:bg-slate-700 shadow-md'
                 }`}
               >
                 {plan.id === 'profissional' ? 'Plano Atual' : 'Fazer Upgrade'}
@@ -304,17 +301,17 @@ export const PlanPanel: React.FC = () => {
         ))}
       </div>
 
-      <div className="bg-slate-900 rounded-lg p-8 md:p-12 text-white relative overflow-hidden">
+      <div className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-lg p-8 md:p-12 text-white relative overflow-hidden shadow-xl">
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="max-w-xl text-center md:text-left">
             <h2 className="text-3xl font-bold mb-4">Dúvidas sobre os planos?</h2>
-            <p className="text-slate-400 mb-8">Nossa equipe está pronta para te ajudar a escolher a melhor opção para o seu negócio.</p>
+            <p className="text-slate-300 mb-8">Nossa equipe está pronta para te ajudar a escolher a melhor opção para o seu negócio.</p>
             <div className="flex flex-wrap justify-center md:justify-start gap-4">
               <button className="bg-white text-slate-900 px-8 py-4 rounded-lg font-bold hover:bg-slate-100 transition-all flex items-center gap-2">
                 <MessageCircle size={20} />
                 Falar no WhatsApp
               </button>
-              <button className="bg-slate-800 text-white px-8 py-4 rounded-lg font-bold hover:bg-slate-700 transition-all border border-slate-700">
+              <button className="bg-slate-800/80 backdrop-blur text-white px-8 py-4 rounded-lg font-bold hover:bg-slate-700 transition-all border border-slate-700">
                 Ver Comparativo Completo
               </button>
             </div>
