@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -120,7 +119,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   }
 
   return (
-    <div className="flex h-screen bg-[#0B0F19] text-slate-100 overflow-hidden flex-col md:flex-row w-full">
+    <div className="flex h-screen bg-white text-slate-900 overflow-hidden flex-col md:flex-row w-full">
       
       <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
 
@@ -128,9 +127,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       <aside 
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`bg-slate-950 border-r border-slate-800 flex flex-col hidden md:flex transition-all duration-300 ease-in-out relative z-40 ${isSidebarExpanded ? 'w-64' : 'w-20'} admin-sidebar`}
+        className={`bg-white border-r border-slate-200 flex flex-col hidden md:flex transition-all duration-300 ease-in-out relative z-40 ${isSidebarExpanded ? 'w-64' : 'w-20'} admin-sidebar`}
       >
-        <div className={`p-6 flex items-center border-b border-slate-800 transition-all duration-300 ${isSidebarExpanded ? 'gap-3' : 'justify-center p-4'}`}>
+        <div className={`p-6 flex items-center border-b border-slate-200 transition-all duration-300 ${isSidebarExpanded ? 'gap-3' : 'justify-center p-4'}`}>
           <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden shrink-0">
              <img src="https://iili.io/BRpSlzQ.md.png" alt="Insight Barber Logo" className="w-full h-full object-contain" />
           </div>
@@ -138,10 +137,10 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           {isSidebarExpanded && (
             <button 
               onClick={() => setIsSidebarPinned(!isSidebarPinned)}
-              className={`ml-auto p-1.5 rounded-lg transition-colors ${isSidebarPinned ? 'text-orange-500 bg-orange-500/10' : 'text-slate-500 hover:bg-slate-800'}`}
+              className={`ml-auto p-1.5 rounded-lg transition-colors ${isSidebarPinned ? 'text-orange-50' : 'text-slate-400 hover:bg-slate-50'}`}
               title={isSidebarPinned ? "Desafixar Menu" : "Fixar Menu"}
             >
-              <Pin size={16} className={isSidebarPinned ? 'fill-current rotate-45' : ''} />
+              <Pin size={16} className={isSidebarPinned ? 'fill-current rotate-45 text-orange-500' : ''} />
             </button>
           )}
         </div>
@@ -190,10 +189,10 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   <SidebarItem icon={<Settings size={18} />} label="Configurações" active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} expanded={isSidebarExpanded} />
   
   <div className="pt-2 mt-1">
-      <div className="h-px bg-slate-800 mb-2 mx-2"></div>
+      <div className="h-px bg-slate-100 mb-2 mx-2"></div>
       <button 
           onClick={onViewClient}
-          className={`flex items-center px-4 py-2 w-full rounded-lg text-slate-400 hover:bg-slate-900 hover:text-white transition-colors group ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}
+          className={`flex items-center px-4 py-2 w-full rounded-lg text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}
       >
           <Smartphone size={18} className="group-hover:text-orange-500 transition-colors shrink-0" />
           {isSidebarExpanded && (
@@ -206,8 +205,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   </div>
 </nav>
 
-        <div className="p-4 border-t border-slate-800">
-          <button onClick={onLogout} className={`flex items-center px-4 py-3 w-full text-slate-400 hover:text-white hover:bg-slate-900 rounded-lg transition-colors ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}>
+        <div className="p-4 border-t border-slate-100">
+          <button onClick={onLogout} className={`flex items-center px-4 py-3 w-full text-slate-700 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}>
             <LogOut size={20} className="shrink-0" />
             {isSidebarExpanded && <span>Sair / Home</span>}
           </button>
@@ -219,7 +218,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
         
         {/* --- 2. TRIAL BANNER --- */}
         {trialStatus === 'active' && (
-            <div className={`w-full px-4 py-2 flex items-center justify-between shadow-md z-20 ${daysRemaining <= 3 ? 'bg-red-600 text-white' : 'bg-orange-500 text-white'}`}>
+            <div className={`w-full px-4 py-2 flex items-center justify-between shadow-md z-20 ${daysRemaining <= 3 ? 'bg-red-600 text-white' : 'bg-amber-500 text-slate-900'}`}>
                 <div className="flex items-center gap-2 text-sm font-bold">
                     {daysRemaining <= 3 ? <AlertTriangle size={18} /> : <Lock size={18} />}
                     <span>
@@ -228,27 +227,27 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                 </div>
                 <button 
                     onClick={() => setActiveTab('plan')}
-                    className="bg-white text-slate-900 px-4 py-1 rounded-md text-[10px] font-black hover:bg-slate-100 transition-colors uppercase tracking-widest shadow-sm"
+                    className="bg-white text-slate-900 px-4 py-1 rounded-md text-xs font-bold hover:bg-slate-100 transition-colors uppercase tracking-wide"
                 >
                     Assinar Agora
                 </button>
             </div>
         )}
 
-        <header className="h-16 bg-slate-900 border-b border-slate-800 flex items-center px-4 md:px-8 justify-between shrink-0">
-             <h2 className="text-xl md:text-2xl font-bold text-white">{getTabLabel(activeTab)}</h2>
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center px-4 md:px-8 justify-between shrink-0">
+             <h2 className="text-xl md:text-2xl font-bold text-slate-900">{getTabLabel(activeTab)}</h2>
              <div className="flex items-center gap-4">
                 <button 
                     onClick={onViewClient}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-orange-500/30 text-orange-400 hover:bg-orange-500/10 text-sm font-medium transition-colors md:hidden"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 text-sm font-medium transition-colors md:hidden"
                 >
                     <ExternalLink size={16}/> Ver Agenda
                 </button>
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-orange-600 flex items-center justify-center text-white font-bold uppercase shadow-lg shadow-orange-500/20">
+                    <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold uppercase">
                         {settings.name?.charAt(0) || 'A'}
                     </div>
-                    <span className="text-sm text-slate-300 hidden md:inline font-bold">
+                    <span className="text-sm text-slate-800 hidden md:inline font-bold">
                         {settings.name || 'Admin'}
                     </span>
                 </div>
@@ -256,7 +255,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
         </header>
         
         {/* Mobile Nav (Improved) */}
-        <div className="md:hidden bg-slate-900 border-b border-slate-800 shrink-0 sticky top-0 z-30">
+        <div className="md:hidden bg-white border-b border-slate-200 shrink-0 sticky top-0 z-30">
             <div className="relative">
                 <div className="flex overflow-x-auto gap-1 p-2 scrollbar-hide no-scrollbar mask-fade-right">
     <MobileNavItem icon={<LayoutGrid size={16} />} label="Dashboard" active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} />
@@ -290,9 +289,9 @@ const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: bool
     return (
         <button 
             onClick={onClick}
-            className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${expanded ? 'gap-3' : 'justify-center'} ${active ? 'bg-orange-500/10 text-orange-400 font-bold border-l-4 border-orange-500 shadow-lg shadow-orange-500/5' : 'text-slate-400 hover:bg-slate-900 hover:text-white'}`}
+            className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${expanded ? 'gap-3' : 'justify-center'} ${active ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
         >
-            <span className={`shrink-0 ${active ? 'text-orange-500' : 'text-slate-500'}`}>{icon}</span>
+            <span className={`shrink-0 ${active ? 'text-orange-500' : 'text-slate-700'}`}>{icon}</span>
             {expanded && <span>{label}</span>}
         </button>
     );
@@ -311,10 +310,12 @@ const SubSidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: b
 }
 
 const MobileNavItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void }> = ({ icon, label, active, onClick }) => {
+    const { settings } = useShop();
     return (
         <button 
             onClick={onClick}
-            className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all min-w-[64px] ${active ? 'bg-slate-800 text-orange-400 shadow-sm' : 'text-slate-500 active:bg-slate-800'}`}
+            className={`flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-lg transition-all min-w-[64px] ${active ? 'bg-slate-100 text-orange-600 shadow-sm' : 'text-slate-500 active:bg-slate-50'}`}
+            style={active ? { color: settings.primaryColor } : {}}
         >
             <span className={active ? 'scale-110 transition-transform' : 'opacity-70'}>{icon}</span>
             <span className="text-[9px] font-bold uppercase tracking-tighter whitespace-nowrap">{label}</span>

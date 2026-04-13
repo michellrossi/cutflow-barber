@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Check, Star, Zap, Crown, ShieldCheck, MessageCircle, Clock } from 'lucide-react';
+import { Check, Star, Zap, Crown, ShieldCheck, MessageCircle, Clock, Scissors } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useShop } from '../../../store';
 import { UpgradeModal } from '../../ui/UpgradeModal';

@@ -137,8 +137,8 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                     </div>
                 </div>
                 {whatsappStatus && !whatsappStatus.connected && (
-                    <button onClick={() => onNavigate('settings', 'whatsapp')} className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-sm transition-all shadow-md active:scale-95">
-                        Reconectar Agora
+                    <button onClick={() => onNavigate('reminders', 'whatsapp')} className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-sm transition-all shadow-md active:scale-95">
+                        Conectar Agora
                     </button>
                 )}
             </div>
@@ -178,7 +178,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                                 done={whatsappStatus?.connected === true} 
                                 text="Configure seu WhatsApp" 
                                 icon={<Smartphone size={18}/>} 
-                                onClick={() => onNavigate('settings')} 
+                                onClick={() => onNavigate('reminders', 'whatsapp')} 
                             />
                             <CheckStep 
                                 done={false} 
