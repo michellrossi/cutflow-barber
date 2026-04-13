@@ -7,6 +7,12 @@ import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 dotenv.config();
 
@@ -189,9 +195,7 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
 async function runCronLogic() {
     console.log("[Cron] Iniciando verificação de lembretes (Timezone SP - GMT-3)...");
 
-    const nowUtc = new Date();
-    const spTimeString = nowUtc.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-    const now = new Date(spTimeString);
+    const now = dayjs().tz('America/Sao_Paulo').toDate();
 
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -527,29 +531,26 @@ async function startServer() {
     app.post('/api/loyalty/check-reward', async (req, res) => {
         const { clientId, shopId } = req.body;
         try {
-            const { data: client } = await supabaseAdmin.from('clients').select('*').eq('id', clientId).single();
-            const { data: settings } = await supabaseAdmin.from('settings').select('*').eq('shop_id', shopId).single();
+            const { data: result, error } = await supabaseAdmin.rpc('award_loyalty_reward', { p_client_id: clientId, p_shop_id: shopId });
+            
+            if (error || !result?.success) {
+                return res.json({ success: false });
+            }
+
             const { data: shop } = await supabaseAdmin.from('shops').select('name, whatsapp_instance').eq('id', shopId).single();
 
-            if (!client || !settings?.loyalty_enabled || client.loyalty_points < settings.loyalty_points_goal) return res.json({ success: false });
-
-            const couponCode = `${client.name.split(' ')[0]}${client.phone.slice(-4)}${new Date().getDate()}`.toUpperCase();
-            await supabaseAdmin.from('coupons').insert({
-                shop_id: shopId, client_id: clientId, code: couponCode,
-                discount_value: settings.loyalty_reward_value, discount_type: settings.loyalty_reward_type,
-                expires_at: new Date(Date.now() + settings.loyalty_reward_validity_days * 24 * 60 * 60 * 1000).toISOString(),
-                is_loyalty_reward: true
-            });
-            await supabaseAdmin.from('clients').update({ loyalty_points: 0 }).eq('id', clientId);
-
             const msg = await generateWhatsAppMessage('loyalty_reward', {
-                clientName: client.name, discount: `${settings.loyalty_reward_value}${settings.loyalty_reward_type === 'percentage' ? '%' : ' R$'}`,
-                code: couponCode, validity: settings.loyalty_reward_validity_days, shopName: shop?.name
+                clientName: result.clientName, 
+                discount: `${result.discount}${result.discountType === 'percentage' ? '%' : ' R$'}`,
+                code: result.couponCode, 
+                validity: result.validityDays, 
+                shopName: shop?.name
             }, shopId);
+
             if (msg) {
-                await sendWhatsApp(client.phone, msg, shop?.whatsapp_instance);
+                await sendWhatsApp(result.clientPhone, msg, shop?.whatsapp_instance);
             }
-            res.json({ success: true, couponCode });
+            res.json({ success: true, couponCode: result.couponCode });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
