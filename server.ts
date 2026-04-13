@@ -130,6 +130,8 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
             content = `Olá [CLIENTE]!\nFaz um tempo que não nos vemos na [BARBEARIA]. Que tal agendar um novo horário para manter o visual em dia?\n✂️💈`;
         } else if (triggerId === 'loyalty_reward') {
             content = `Olá [CLIENTE], parabéns!\nVocê atingiu a meta de fidelidade e ganhou um cupom de [DESCONTO]! Use o código: [CODIGO]. Validade: [VALIDADE] dias.`;
+        } else if (triggerId === 'birthday') {
+            content = `Parabéns, [CLIENTE]! 🎈\nA equipe da [BARBEARIA] deseja a você um feliz aniversário e muito sucesso! Que tal vir dar um trato no visual hoje? ✂️💈`;
         } else {
             if (target === 'professional') {
                 content = `💇‍♂️ *Novo Agendamento!*\nOlá [BARBEIRO], você tem um novo horário com [CLIENTE] para [SERVICO] no dia [DATA] às [HORA].`;
@@ -396,6 +398,30 @@ async function runCronLogic() {
             } else {
                 const attempts = (apt.send_attempts_30d || 0) + 1;
                 await supabaseAdmin.from('appointments').update({ send_attempts_30d: attempts }).eq('id', apt.id);
+            }
+        }
+    }
+
+    // 6. Aniversariantes do Dia
+    const todayMMDD = dayjs(now).format('MM-DD');
+    const { data: bdayClients } = await supabaseAdmin
+        .from('clients')
+        .select('*, shops(id, name, whatsapp_instance)')
+        .filter('birth_date', 'ilike', `%-${todayMMDD}`)
+        .or(`birthday_last_sent_year.is.null,birthday_last_sent_year.neq.${now.getFullYear()}`);
+
+    if (bdayClients) {
+        for (const client of bdayClients) {
+            const msg = await generateWhatsAppMessage('birthday', {
+                clientName: client.name,
+                shopName: client.shops?.name
+            }, client.shop_id);
+            
+            if (msg) {
+                const ok = await sendWhatsApp(client.phone, msg, client.shops?.whatsapp_instance);
+                if (ok) {
+                    await supabaseAdmin.from('clients').update({ birthday_last_sent_year: now.getFullYear() }).eq('id', client.id);
+                }
             }
         }
     }
