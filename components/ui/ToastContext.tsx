@@ -39,10 +39,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {toasts.map((toast) => (
           <div
             key={toast.id}
-            className={`pointer-events-auto min-w-[300px] max-w-md flex items-start gap-3 p-4 rounded-lg shadow-lg border animate-slide-in-right backdrop-blur-md ${
-              toast.type === 'success' ? 'bg-slate-900/90 border-green-500/50 text-green-400' :
-              toast.type === 'error' ? 'bg-slate-900/90 border-red-500/50 text-red-400' :
-              'bg-slate-900/90 border-blue-500/50 text-blue-400'
+            className={`pointer-events-auto min-w-[300px] max-w-md flex items-start gap-3 p-4 rounded-lg shadow-xl border animate-slide-in-right bg-white ${
+              toast.type === 'success' ? 'border-green-500/30 text-green-600' :
+              toast.type === 'error' ? 'border-red-500/30 text-red-600' :
+              'border-blue-500/30 text-blue-600'
             }`}
           >
             <div className="mt-0.5">
@@ -50,8 +50,8 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
               {toast.type === 'error' && <AlertCircle size={18} />}
               {toast.type === 'info' && <Info size={18} />}
             </div>
-            <p className="text-sm font-medium text-slate-200 flex-1">{toast.message}</p>
-            <button onClick={() => removeToast(toast.id)} className="text-slate-500 hover:text-white transition-colors">
+            <p className="text-sm font-medium text-slate-800 flex-1">{toast.message}</p>
+            <button onClick={() => removeToast(toast.id)} className="text-slate-400 hover:text-slate-600 transition-colors">
               <X size={16} />
             </button>
           </div>

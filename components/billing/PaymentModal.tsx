@@ -53,7 +53,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
             const customerParams = {
                 name: settings.name || "Dono da Barbearia",
                 email: settings.email || "contato@barbearia.com",
-                cpfCnpj: "00000000000", // CPF Placeholder required for API
+                cpfCnpj: "94285188049", // CPF Matemático válido para Sandbox para evitar bloqueio API Asaas
                 phone: settings.phone || "11999999999"
             };
 
