@@ -28,6 +28,7 @@ type TeamSubTab = 'list' | 'schedules' | 'blocks';
 export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () => void }> = ({ onLogout, onViewClient }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [clientFilter, setClientFilter] = useState<string>('all');
+  const [remindersSubTab, setRemindersSubTab] = useState<string>('clients');
   const [teamSubTab, setTeamSubTab] = useState<TeamSubTab>('list');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarPinned, setIsSidebarPinned] = useState(true);
@@ -61,6 +62,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       if (filter && tab === 'clients') {
           setClientFilter(filter);
       }
+      if (filter && tab === 'reminders') {
+          setRemindersSubTab(filter);
+      }
       if (tab !== 'settings') setIsSettingsOpen(false);
   };
 
@@ -90,7 +94,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'reports': return <ReportsPanel />;
       case 'settings': return <SettingsPanel />;
       case 'insight': return <InsightPanel />;
-      case 'reminders': return <RemindersPanel />;
+      case 'reminders': return <RemindersPanel initialTab={remindersSubTab} />;
       case 'subscriptions': return <SubscriptionsPanel />;
       case 'plan': return <PlanPanel />;
       case 'profile': return <ProfilePanel />;
@@ -226,7 +230,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                     </span>
                 </div>
                 <button 
-                    onClick={() => setActiveTab('plan')}
+                    onClick={() => handleTabChange('plan')}
                     className="bg-white text-slate-900 px-4 py-1 rounded-md text-xs font-bold hover:bg-slate-100 transition-colors uppercase tracking-wide"
                 >
                     Assinar Agora

@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { useToast } from '../../ui/ToastContext';
 
-export const RemindersPanel: React.FC = () => {
+export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab = 'clients' }) => {
     const {
         messageTemplates, addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
         messageCategories, addMessageCategory, removeMessageCategory,
@@ -16,7 +16,14 @@ export const RemindersPanel: React.FC = () => {
     } = useShop();
     const { showToast } = useToast();
 
-    const [activeTab, setActiveTab] = useState<'clients' | 'team' | 'triggers' | 'whatsapp' | 'notifications'>('clients');
+    const [activeTab, setActiveTab] = useState<any>(initialTab);
+
+    useEffect(() => {
+        if (initialTab) {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab]);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<Partial<MessageTemplate> | null>(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);

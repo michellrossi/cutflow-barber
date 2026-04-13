@@ -387,16 +387,16 @@ const getStatusLabel = (status: string) => {
 };
 
 const CheckStep = ({ done, text, icon, onClick }: { done: boolean, text: string, icon: React.ReactNode, onClick: () => void }) => (
-    <div onClick={onClick} className={`p-4 flex items-center justify-between rounded-xl border transition-all duration-300 cursor-pointer ${done ? 'bg-slate-900 border-emerald-500/20 opacity-50 select-none' : 'bg-slate-900 border-slate-800 hover:border-orange-500/50 hover:bg-slate-800/80 shadow-lg active:scale-[0.98]'}`}>
+    <div onClick={onClick} className={`p-4 flex items-center justify-between rounded-xl border transition-all duration-300 cursor-pointer ${done ? 'bg-white/5 border-emerald-500/30 opacity-60 select-none' : 'bg-white/10 border-white/10 hover:border-orange-500/50 hover:bg-white/20 shadow-lg active:scale-[0.98]'}`}>
         <div className="flex items-center gap-4">
-            <div className={`p-2.5 rounded-xl transition-colors ${done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400 group-hover:bg-orange-500/10 group-hover:text-orange-500'}`}>
+            <div className={`p-2.5 rounded-xl transition-colors ${done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/10 text-white group-hover:bg-orange-500/20 group-hover:text-orange-400'}`}>
                 {done ? <CheckCircle size={20} /> : icon}
             </div>
-            <span className={`font-bold text-sm tracking-tight ${done ? 'text-slate-500 line-through' : 'text-slate-100'}`}>{text}</span>
+            <span className={`font-bold text-sm tracking-tight ${done ? 'text-slate-400 line-through' : 'text-white'}`}>{text}</span>
         </div>
         {!done && (
             <div className="flex items-center gap-2">
-                <span className="text-orange-400 text-[10px] font-black px-2 py-1 bg-orange-500/10 uppercase tracking-widest rounded border border-orange-500/20">Pendente</span>
+                <span className="text-orange-400 text-[10px] font-black px-2 py-1 bg-orange-500/20 uppercase tracking-widest rounded border border-orange-500/20">Pendente</span>
             </div>
         )}
     </div>
