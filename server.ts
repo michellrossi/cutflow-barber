@@ -699,7 +699,14 @@ async function startServer() {
             }
 
             if (shopId) {
-                await supabaseAdmin.from('shops').update({ asaas_customer_id: customer.id }).eq('id', shopId);
+                let updates: any = { asaas_customer_id: customer.id };
+                
+                // Se for cartão de crédito e já aprovar na mesma hora, libera o acesso imediatamente
+                if (payment.status === 'CONFIRMED' || payment.status === 'RECEIVED') {
+                    updates.plan = 'active';
+                }
+
+                await supabaseAdmin.from('shops').update(updates).eq('id', shopId);
             }
 
             res.json({ success: true, payment, qrCode });
@@ -717,12 +724,14 @@ async function startServer() {
 
         try {
             if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
-                // Pagamento aprovado!
-                // Atualizar o status da assinatura / plano da loja no banco de dados.
-                // Exemplo:
-                // const asaasCustomerId = payment.customer;
-                // await supabaseAdmin.from('shops').update({ plan: 'active' }).eq('asaas_customer_id', asaasCustomerId);
-                console.log(`[Asaas Webhook] Pagamento confirmado para o cliente Asaas: ${payment.customer}`);
+                // Pagamento aprovado via Webhook (Ex: Retorno do banco PIX)!
+                const asaasCustomerId = payment.customer;
+                
+                console.log(`[Asaas Webhook] Pagamento confirmado para o cliente Asaas: ${asaasCustomerId}. Desbloqueando plataforma...`);
+                
+                if (asaasCustomerId) {
+                    await supabaseAdmin.from('shops').update({ plan: 'active' }).eq('asaas_customer_id', asaasCustomerId);
+                }
             }
 
             res.json({ success: true });
