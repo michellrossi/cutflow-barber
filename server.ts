@@ -602,13 +602,23 @@ async function startServer() {
     app.post('/api/whatsapp/status', async (req, res) => {
         const { shopId } = req.body;
         try {
-            const { data: shop } = await supabaseAdmin.from('shops').select('whatsapp_instance').eq('id', shopId).single();
+            const { data: shop } = await supabaseAdmin.from('shops').select('whatsapp_instance, whatsapp_connected').eq('id', shopId).single();
             if (!shop?.whatsapp_instance) return res.json({ connected: false });
             const r = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connectionState/${shop.whatsapp_instance}`,
                 { headers: { apikey: process.env.WHATSAPP_API_KEY || '' } });
             const d = await r.json();
             const connected = d.instance?.state === 'open';
-            await supabaseAdmin.from('shops').update({ whatsapp_connected: connected }).eq('id', shopId);
+
+            // ALERT TRIGGER: Status drops from connected -> disconnected
+            if (shop.whatsapp_connected === true && !connected) {
+                console.log(`[ALERT] CRITICAL Notificação de E-mail Despachada para o Dono da Barbearia ${shopId}: A instância do WhatsApp Desconectou! Acesso imediato necessário para retomada das automações.`);
+                // NOTE: Implementação do SendGrid / Resend webhook call passaria aqui.
+            }
+
+            if (shop.whatsapp_connected !== connected) {
+                await supabaseAdmin.from('shops').update({ whatsapp_connected: connected }).eq('id', shopId);
+            }
+
             res.json({ connected });
         } catch (error: any) {
             res.status(500).json({ error: error.message });

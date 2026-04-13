@@ -1,16 +1,32 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useShop } from '../../../store';
-import { Users, Scissors, Calendar, Clock, Phone, User, DollarSign, TrendingUp } from 'lucide-react';
+import { Users, Scissors, Calendar, Clock, Phone, User, DollarSign, TrendingUp, Smartphone, CheckCircle, Share2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) => void }> = ({ onNavigate }) => {
-    const { appointments, clients, professionals, services, settings } = useShop();
+    const { appointments, clients, professionals, services, settings, getWhatsAppStatus } = useShop();
     const [today, setToday] = useState<string>('');
     const [isMounted, setIsMounted] = useState(false);
+    const [whatsappStatus, setWhatsappStatus] = useState<{ connected: boolean } | null>(null);
 
     useEffect(() => {
+        let isMountedComponent = true;
         setToday(new Date().toISOString().split('T')[0]);
         setIsMounted(true);
+
+        const fetchWaStatus = async () => {
+            const res = await getWhatsAppStatus();
+            if (isMountedComponent && !res.error) {
+                setWhatsappStatus({ connected: res.connected });
+            }
+        };
+
+        fetchWaStatus();
+        const intv = setInterval(fetchWaStatus, 60000); // Poll a cada minuto em tempo real real
+        return () => {
+            isMountedComponent = false;
+            clearInterval(intv);
+        };
     }, []);
 
     // Stats calculations
@@ -101,6 +117,53 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
 
     return (
         <div className="space-y-8 animate-fade-in">
+
+            {/* WA Health Indicator e Botão de Ação Crítica */}
+            <div className={`p-4 rounded-xl flex items-center justify-between shadow-sm border ${whatsappStatus?.connected ? 'bg-emerald-50 border-emerald-100' : (whatsappStatus ? 'bg-red-50 border-red-200 shadow-red-500/10' : 'bg-slate-50 border-slate-100')}`}>
+                <div className="flex items-center gap-4">
+                    <div className="relative">
+                        <Smartphone className={whatsappStatus?.connected ? 'text-emerald-500' : (whatsappStatus ? 'text-red-500' : 'text-slate-400')} size={28} />
+                        {whatsappStatus && !whatsappStatus.connected && (
+                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 border border-white rounded-full animate-ping" />
+                        )}
+                    </div>
+                    <div>
+                        <h4 className={`font-bold text-lg ${whatsappStatus?.connected ? 'text-emerald-800' : (whatsappStatus ? 'text-red-800' : 'text-slate-600')}`}>
+                            {whatsappStatus === null ? 'Verificando Saúde do WhatsApp...' : (whatsappStatus.connected ? 'WhatsApp Conectado e Operante' : 'WhatsApp Desconectado!')}
+                        </h4>
+                        <p className={`text-sm ${whatsappStatus?.connected ? 'text-emerald-600' : (whatsappStatus ? 'text-red-600 font-medium' : 'text-slate-500')}`}>
+                            {whatsappStatus?.connected ? 'Suas mensagens automáticas e lembretes estão sendo enviados normalmente.' : 'Atenção crítica: reconecte sua instância imediatamente para voltar a enviar lembretes e confirmar agendamentos.'}
+                        </p>
+                    </div>
+                </div>
+                {whatsappStatus && !whatsappStatus.connected && (
+                    <button onClick={() => onNavigate('settings', 'whatsapp')} className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-bold text-sm transition-all shadow-md active:scale-95">
+                        Reconectar Agora
+                    </button>
+                )}
+            </div>
+
+            {/* Guia de Onboarding (Anti-Churn Checklist) */}
+            {(services.length === 0 || professionals.length === 0 || appointments.length === 0 || !whatsappStatus?.connected) && (
+                <div className="bg-[#0B0F19] text-white p-8 rounded-2xl border border-slate-800 shadow-2xl relative overflow-hidden">
+                    <div className="absolute -top-10 -right-10 p-8 opacity-5 transform rotate-12 scale-150"><Scissors size={180} /></div>
+                    <div className="relative z-10">
+                        <h3 className="text-2xl font-black mb-2 flex items-center gap-2">Checklist de Ativação 🚀</h3>
+                        <p className="text-slate-400 text-sm mb-8 max-w-2xl leading-relaxed">
+                            Bem-vindo! Usuários que concluem esses passos básicos nos primeiros dias aumentam em até 40% a redução de faltas nas suas barbearias. Siga a ordem e prepare a sua estufa digital para rodar.
+                        </p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <CheckStep done={services.length > 0} text="Adicione seu primeiro serviço" icon={<Scissors size={18}/>} onClick={() => onNavigate('settings')} />
+                            <CheckStep done={professionals.length > 0} text="Adicione um profissional" icon={<User size={18}/>} onClick={() => onNavigate('settings')} />
+                            <CheckStep done={whatsappStatus?.connected === true} text="Configure seu WhatsApp" icon={<Smartphone size={18}/>} onClick={() => onNavigate('settings', 'whatsapp')} />
+                            <CheckStep done={false} text="Compartilhe seu link público" icon={<Share2 size={18}/>} onClick={() => { navigator.clipboard.writeText(`https://${settings?.slug || 'seu-link'}.cutflow.com.br`); alert('Link copiado! Coloque-o em sua Bio do Instagram.'); }} />
+                            <CheckStep done={appointments.length > 0} text="Faça um agendamento de teste" icon={<Calendar size={18}/>} onClick={() => onNavigate('appointments')} />
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     icon={<Calendar size={18} />}
@@ -285,3 +348,15 @@ const getStatusLabel = (status: string) => {
         default: return status;
     }
 };
+
+const CheckStep = ({ done, text, icon, onClick }: { done: boolean, text: string, icon: React.ReactNode, onClick: () => void }) => (
+    <div onClick={onClick} className={`p-4 flex items-center justify-between rounded-xl border transition-all cursor-pointer ${done ? 'bg-slate-800/50 border-emerald-500/30 opacity-60' : 'bg-slate-800 border-slate-700 hover:border-orange-500/50 hover:bg-slate-800/80 shadow-md'}`}>
+        <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${done ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-700 text-slate-400'}`}>
+                {done ? <CheckCircle size={18} /> : icon}
+            </div>
+            <span className={`font-bold text-sm ${done ? 'text-slate-500 line-through' : 'text-slate-200'}`}>{text}</span>
+        </div>
+        {!done && <span className="text-orange-900 text-[10px] font-bold px-2 py-1 bg-orange-500/20 uppercase tracking-widest rounded shadow-sm">Pendente</span>}
+    </div>
+);
