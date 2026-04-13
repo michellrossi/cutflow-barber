@@ -1,18 +1,16 @@
+const getApiUrl = () => process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3';
 
-const ASAAS_API_KEY = process.env.ASAAS_API_KEY || '';
-const ASAAS_API_URL = process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3';
-
-const headers = {
+const getHeaders = () => ({
     'Content-Type': 'application/json',
-    'access_token': ASAAS_API_KEY,
+    'access_token': process.env.ASAAS_API_KEY || '',
     'User-Agent': 'CutFlow/1.0'
-};
+});
 
 // 1 - Criar o Cliente no Asaas
 export async function createAsaasCustomer(data: { name: string; cpfCnpj: string; email: string; phone?: string; mobilePhone?: string }) {
-    const response = await fetch(`${ASAAS_API_URL}/customers`, {
+    const response = await fetch(`${getApiUrl()}/customers`, {
         method: 'POST',
-        headers,
+        headers: getHeaders(),
         body: JSON.stringify(data)
     });
     const result = await response.json();
@@ -24,9 +22,9 @@ export async function createAsaasCustomer(data: { name: string; cpfCnpj: string;
 
 // 2 - Configurar Assinatura Recorrente no Asaas
 export async function createAsaasSubscription(data: { customer: string; billingType: 'BOLETO' | 'CREDIT_CARD' | 'PIX'; value: number; nextDueDate: string; description: string; cycle: 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'SEMIANNUALLY' | 'YEARLY' }) {
-    const response = await fetch(`${ASAAS_API_URL}/subscriptions`, {
+    const response = await fetch(`${getApiUrl()}/subscriptions`, {
         method: 'POST',
-        headers,
+        headers: getHeaders(),
         body: JSON.stringify(data)
     });
     const result = await response.json();
@@ -38,9 +36,9 @@ export async function createAsaasSubscription(data: { customer: string; billingT
 
 // Obter Assinaturas de um cliente
 export async function getAsaasSubscriptions(customerId: string) {
-    const response = await fetch(`${ASAAS_API_URL}/subscriptions?customer=${customerId}`, {
+    const response = await fetch(`${getApiUrl()}/subscriptions?customer=${customerId}`, {
         method: 'GET',
-        headers
+        headers: getHeaders()
     });
     const result = await response.json();
     if (!response.ok) throw new Error('Erro ao listar assinaturas');
@@ -49,9 +47,9 @@ export async function getAsaasSubscriptions(customerId: string) {
 
 // 3 - Criar Pagamento Transparente
 export async function createAsaasPayment(data: any) {
-    const response = await fetch(`${ASAAS_API_URL}/payments`, {
+    const response = await fetch(`${getApiUrl()}/payments`, {
         method: 'POST',
-        headers,
+        headers: getHeaders(),
         body: JSON.stringify(data)
     });
     const result = await response.json();
@@ -63,9 +61,9 @@ export async function createAsaasPayment(data: any) {
 
 // 4 - Obter QR Code PIX
 export async function getAsaasPixQrCode(paymentId: string) {
-    const response = await fetch(`${ASAAS_API_URL}/payments/${paymentId}/pixQrCode`, {
+    const response = await fetch(`${getApiUrl()}/payments/${paymentId}/pixQrCode`, {
         method: 'GET',
-        headers
+        headers: getHeaders()
     });
     const result = await response.json();
     if (!response.ok) {

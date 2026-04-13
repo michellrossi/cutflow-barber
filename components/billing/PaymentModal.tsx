@@ -8,8 +8,8 @@ interface PaymentModalProps {
     onClose: () => void;
 }
 
-const PLAN_PRICE = "R$ 59,90";
-const PLAN_VALUE = 59.90;
+const PLAN_PRICE = "R$ 99,90";
+const PLAN_VALUE = 99.90;
 const DEFAULT_LOGO = "https://iili.io/q2ivL1j.png";
 
 type PaymentStep = 'plan_selection' | 'checkout_pix' | 'checkout_card' | 'success';
@@ -40,11 +40,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
     if (!isOpen) return null;
 
     const benefits = [
-        "Agendamentos ilimitados",
-        "Gestão de equipe e comissões",
-        "Cupons de desconto ilimitados",
-        "Link personalizado (sua-marca)",
-        "Suporte prioritário via WhatsApp"
+        "Até 5 profissionais e Múltiplos Serviços",
+        "Confirmações e Lembretes (24h/1h antes)",
+        "Pós-venda e Reativação de Clientes (30 dias)",
+        "Relatórios Financeiros e Históricos Completos",
+        "Chatbot Inteligente (Insights IA)",
+        "Programa de Fidelidade Automatizado",
+        "Link de site/Acesso da sua Barbearia"
     ];
 
     const generatePix = async () => {
