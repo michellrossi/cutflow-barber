@@ -19,6 +19,8 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+import { createAsaasCustomer, createAsaasSubscription, getAsaasSubscriptions } from './utils/asaas.js';
+
 // Configurações base
 const PORT = process.env.PORT || 3000;
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
@@ -635,6 +637,57 @@ async function startServer() {
             await supabaseAdmin.from('shops').update({ whatsapp_connected: false }).eq('id', shopId);
             res.json({ success: true });
         } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // ==========================================
+    // ROTAS DO ASAAS (PAGAMENTOS & ASSINATURAS)
+    // ==========================================
+
+    // 1. Criar Cliente no Asaas
+    app.post('/api/asaas/customers', async (req, res) => {
+        try {
+            // Requer name, cpfCnpj, email, phone...
+            const customer = await createAsaasCustomer(req.body);
+            // Salvar customer.id (asaas_customer_id) no banco (referente à barbearia/shop)
+            res.json({ success: true, customer });
+        } catch (error: any) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 2. Criar Assinatura Recorrente
+    app.post('/api/asaas/subscriptions', async (req, res) => {
+        try {
+            const subscription = await createAsaasSubscription(req.body);
+            // Salvar a assinatura no banco se necessário
+            res.json({ success: true, subscription });
+        } catch (error: any) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 3. Webhook do Asaas (Confirmação de Pagamento)
+    app.post('/api/asaas/webhook', async (req, res) => {
+        const event = req.body.event;
+        const payment = req.body.payment;
+
+        console.log(`[Asaas Webhook] Evento recebido: ${event}`);
+
+        try {
+            if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
+                // Pagamento aprovado!
+                // Atualizar o status da assinatura / plano da loja no banco de dados.
+                // Exemplo:
+                // const asaasCustomerId = payment.customer;
+                // await supabaseAdmin.from('shops').update({ plan: 'active' }).eq('asaas_customer_id', asaasCustomerId);
+                console.log(`[Asaas Webhook] Pagamento confirmado para o cliente Asaas: ${payment.customer}`);
+            }
+
+            res.json({ success: true });
+        } catch (error: any) {
+            console.error('[Asaas Webhook] Erro ao processar:', error.message);
             res.status(500).json({ error: error.message });
         }
     });
