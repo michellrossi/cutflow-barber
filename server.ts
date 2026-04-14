@@ -500,7 +500,7 @@ async function startServer() {
 
             const genAI = new GoogleGenerativeAI(geminiKey);
             const model = genAI.getGenerativeModel({
-                model: "gemini-3.1-flash-lite",
+                model: "gemini-2.5-flash-lite",
                 systemInstruction
             });
 
@@ -519,7 +519,7 @@ async function startServer() {
         const { trigger, shopName, tone } = req.body;
         try {
             const genAI = new GoogleGenerativeAI(geminiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
             const promptContent = `Crie um modelo de mensagem de WhatsApp para uma barbearia chamada "${shopName}". 
             O gatilho da mensagem é: "${trigger}". 
@@ -539,28 +539,27 @@ async function startServer() {
     app.post('/api/ai/generate-image', async (req, res) => {
         const { serviceName } = req.body;
         try {
-            console.log(`[AI Image] Gerando imagem para: ${serviceName}`);
+            console.log(`[AI Image] Gerando imagem Premium (Flux) para: ${serviceName}`);
 
-            // 1. Usamos o Gemini para criar um prompt fotográfico rico em inglês
             const genAI = new GoogleGenerativeAI(geminiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
-            const promptContext = `Create a professional photography prompt for an AI image generator. 
-            The subject is a barbershop service called "${serviceName}".
-            Style: professional, high-end barbershop, cinematic lighting, ultra-realistic, 2k, sharp focus.
-            Return ONLY the prompt in English, nothing else.`;
+            const promptContext = `Create a high-end, realistic photography prompt for an AI image generator (Flux model). 
+            The subject is a professional barbershop service: "${serviceName}".
+            Technical details: Cinematic lighting, shallow depth of field, 8k resolution, professional photography, hyper-realistic, elegant atmosphere.
+            Rule: Return ONLY the prompt in English, no introductory text.`;
 
             const result = await model.generateContent(promptContext);
             const generatedPrompt = result.response.text().trim();
 
-            console.log(`[AI Image] Prompt gerado: ${generatedPrompt}`);
+            console.log(`[AI Image] Prompt Flux: ${generatedPrompt}`);
 
-            // 2. Buscamos a imagem de um provedor gratuito de alta qualidade (Pollinations)
+            // Usando o modelo FLUX que é consideravelmente superior para temas realistas
             const encodedPrompt = encodeURIComponent(generatedPrompt);
-            const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 999999)}`;
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&model=flux&seed=${Math.floor(Math.random() * 999999)}`;
 
             const imageResponse = await fetch(imageUrl);
-            if (!imageResponse.ok) throw new Error("Falha ao buscar imagem do gerador");
+            if (!imageResponse.ok) throw new Error("Falha ao gerar imagem premium");
 
             const buffer = await imageResponse.arrayBuffer();
             const base64 = Buffer.from(buffer).toString('base64');
