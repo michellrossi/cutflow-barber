@@ -435,7 +435,7 @@ async function runCronLogic() {
                 clientName: client.name,
                 shopName: client.shops?.name
             }, client.shop_id);
-            
+
             if (msg) {
                 const ok = await sendWhatsApp(client.phone, msg, client.shops?.whatsapp_instance);
                 if (ok) {
@@ -500,7 +500,7 @@ async function startServer() {
 
             const genAI = new GoogleGenerativeAI(geminiKey);
             const model = genAI.getGenerativeModel({
-                model: "gemini-1.5-flash",
+                model: "gemini-3-flash-preview",
                 systemInstruction
             });
 
@@ -519,7 +519,7 @@ async function startServer() {
         const { trigger, shopName, tone } = req.body;
         try {
             const genAI = new GoogleGenerativeAI(geminiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
             const promptContent = `Crie um modelo de mensagem de WhatsApp para uma barbearia chamada "${shopName}". 
             O gatilho da mensagem é: "${trigger}". 
@@ -540,19 +540,19 @@ async function startServer() {
         const { serviceName } = req.body;
         try {
             console.log(`[AI Image] Gerando imagem para: ${serviceName}`);
-            
+
             // 1. Usamos o Gemini para criar um prompt fotográfico rico em inglês
             const genAI = new GoogleGenerativeAI(geminiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-            
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
             const promptContext = `Create a professional photography prompt for an AI image generator. 
             The subject is a barbershop service called "${serviceName}".
             Style: professional, high-end barbershop, cinematic lighting, ultra-realistic, 8k, sharp focus.
             Return ONLY the prompt in English, nothing else.`;
-            
+
             const result = await model.generateContent(promptContext);
             const generatedPrompt = result.response.text().trim();
-            
+
             console.log(`[AI Image] Prompt gerado: ${generatedPrompt}`);
 
             // 2. Buscamos a imagem de um provedor gratuito de alta qualidade (Pollinations)
@@ -561,7 +561,7 @@ async function startServer() {
 
             const imageResponse = await fetch(imageUrl);
             if (!imageResponse.ok) throw new Error("Falha ao buscar imagem do gerador");
-            
+
             const buffer = await imageResponse.arrayBuffer();
             const base64 = Buffer.from(buffer).toString('base64');
             const dataUrl = `data:image/png;base64,${base64}`;
@@ -620,7 +620,7 @@ async function startServer() {
         const { clientId, shopId } = req.body;
         try {
             const { data: result, error } = await supabaseAdmin.rpc('award_loyalty_reward', { p_client_id: clientId, p_shop_id: shopId });
-            
+
             if (error || !result?.success) {
                 return res.json({ success: false });
             }
@@ -628,10 +628,10 @@ async function startServer() {
             const { data: shop } = await supabaseAdmin.from('shops').select('name, whatsapp_instance').eq('id', shopId).single();
 
             const msg = await generateWhatsAppMessage('loyalty_reward', {
-                clientName: result.clientName, 
+                clientName: result.clientName,
                 discount: `${result.discount}${result.discountType === 'percentage' ? '%' : ' R$'}`,
-                code: result.couponCode, 
-                validity: result.validityDays, 
+                code: result.couponCode,
+                validity: result.validityDays,
                 shopName: shop?.name
             }, shopId);
 
@@ -759,7 +759,7 @@ async function startServer() {
     app.post('/api/asaas/checkout', async (req, res) => {
         try {
             const { shopId, customerParams, paymentParams } = req.body;
-            
+
             // 1. Criar Cliente
             const customer = await createAsaasCustomer(customerParams);
 
@@ -787,7 +787,7 @@ async function startServer() {
 
             if (shopId) {
                 let updates: any = { asaas_customer_id: customer.id };
-                
+
                 // Se for cartão de crédito e já aprovar na mesma hora, libera o acesso imediatamente
                 if (payment.status === 'CONFIRMED' || payment.status === 'RECEIVED') {
                     updates.plan = 'active';
@@ -815,9 +815,9 @@ async function startServer() {
             if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
                 // Pagamento aprovado via Webhook (Ex: Retorno do banco PIX)!
                 const asaasCustomerId = payment.customer;
-                
+
                 console.log(`[Asaas Webhook] Pagamento confirmado para o cliente Asaas: ${asaasCustomerId}. Desbloqueando plataforma...`);
-                
+
                 if (asaasCustomerId) {
                     await supabaseAdmin.from('shops').update({ plan: 'active' }).eq('asaas_customer_id', asaasCustomerId);
                 }
