@@ -500,7 +500,7 @@ async function startServer() {
 
             const genAI = new GoogleGenerativeAI(geminiKey);
             const model = genAI.getGenerativeModel({
-                model: "gemini-3-flash-preview",
+                model: "gemini-1.5-flash",
                 systemInstruction
             });
 
@@ -519,7 +519,7 @@ async function startServer() {
         const { trigger, shopName, tone } = req.body;
         try {
             const genAI = new GoogleGenerativeAI(geminiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
             const promptContent = `Crie um modelo de mensagem de WhatsApp para uma barbearia chamada "${shopName}". 
             O gatilho da mensagem é: "${trigger}". 
@@ -532,6 +532,43 @@ async function startServer() {
 
             res.json({ success: true, text: response.text() || '' });
         } catch (error: any) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    app.post('/api/ai/generate-image', async (req, res) => {
+        const { serviceName } = req.body;
+        try {
+            console.log(`[AI Image] Gerando imagem para: ${serviceName}`);
+            
+            // 1. Usamos o Gemini para criar um prompt fotográfico rico em inglês
+            const genAI = new GoogleGenerativeAI(geminiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            
+            const promptContext = `Create a professional photography prompt for an AI image generator. 
+            The subject is a barbershop service called "${serviceName}".
+            Style: professional, high-end barbershop, cinematic lighting, ultra-realistic, 8k, sharp focus.
+            Return ONLY the prompt in English, nothing else.`;
+            
+            const result = await model.generateContent(promptContext);
+            const generatedPrompt = result.response.text().trim();
+            
+            console.log(`[AI Image] Prompt gerado: ${generatedPrompt}`);
+
+            // 2. Buscamos a imagem de um provedor gratuito de alta qualidade (Pollinations)
+            const encodedPrompt = encodeURIComponent(generatedPrompt);
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&seed=${Math.floor(Math.random() * 999999)}`;
+
+            const imageResponse = await fetch(imageUrl);
+            if (!imageResponse.ok) throw new Error("Falha ao buscar imagem do gerador");
+            
+            const buffer = await imageResponse.arrayBuffer();
+            const base64 = Buffer.from(buffer).toString('base64');
+            const dataUrl = `data:image/png;base64,${base64}`;
+
+            res.json({ success: true, image: dataUrl });
+        } catch (error: any) {
+            console.error("[AI Image] Erro:", error);
             res.status(500).json({ success: false, error: error.message });
         }
     });
