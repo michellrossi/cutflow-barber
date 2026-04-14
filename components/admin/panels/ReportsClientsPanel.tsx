@@ -244,15 +244,21 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                         Nº de clientes atendidos por mês
                     </h3>
                     <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={monthlyData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                                <YAxis axisLine={false} tickLine={false} />
-                                <Tooltip />
-                                <Bar dataKey="atendidos" fill={settings.primaryColor} radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        {monthlyData.length === 0 ? (
+                            <div className="flex h-full items-center justify-center text-slate-400 border border-dashed border-slate-200 rounded-lg bg-slate-50">
+                                <p>Sem dados disponíveis</p>
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={monthlyData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                    <YAxis axisLine={false} tickLine={false} />
+                                    <Tooltip />
+                                    <Bar dataKey="atendidos" fill={settings.primaryColor} radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </div>
 
@@ -262,15 +268,21 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                         Gasto Médio dos Clientes por Mês
                     </h3>
                     <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={monthlyData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                                <YAxis axisLine={false} tickLine={false} />
-                                <Tooltip formatter={(value: number) => [formatCurrency(value), 'Gasto Médio']} />
-                                <Bar dataKey="gastoMedio" fill="#fb923c" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        {monthlyData.length === 0 ? (
+                            <div className="flex h-full items-center justify-center text-slate-400 border border-dashed border-slate-200 rounded-lg bg-slate-50">
+                                <p>Sem dados disponíveis</p>
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={monthlyData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                    <YAxis axisLine={false} tickLine={false} />
+                                    <Tooltip formatter={(value: number) => [formatCurrency(value), 'Gasto Médio']} />
+                                    <Bar dataKey="gastoMedio" fill="#fb923c" radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </div>
 
@@ -280,15 +292,21 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                         Clientes Novos (Diário)
                     </h3>
                     <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={combinedDailyData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                                <YAxis axisLine={false} tickLine={false} allowDecimals={false} />
-                                <Tooltip />
-                                <Area type="monotone" dataKey="novos" stroke={settings.primaryColor || '#8b5cf6'} fillOpacity={0.2} fill={settings.primaryColor || '#8b5cf6'} />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        {combinedDailyData.length === 0 ? (
+                            <div className="flex h-full items-center justify-center text-slate-400 border border-dashed border-slate-200 rounded-lg bg-slate-50">
+                                <p>Sem dados disponíveis</p>
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={combinedDailyData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                    <YAxis axisLine={false} tickLine={false} allowDecimals={false} />
+                                    <Tooltip />
+                                    <Area type="monotone" dataKey="novos" stroke={settings.primaryColor || '#8b5cf6'} fillOpacity={0.2} fill={settings.primaryColor || '#8b5cf6'} />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </div>
             </div>
@@ -301,9 +319,9 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                 </h3>
                 <p className="text-xs text-slate-400 mb-6">Percentual de agendamentos encerrados sem comparecimento — <span className="text-green-600 font-bold">Verde</span> &lt;8% · <span className="text-amber-500 font-bold">Amarelo</span> 8–14% · <span className="text-red-500 font-bold">Vermelho</span> ≥15%</p>
                 {noShowMonthlyData.length === 0 ? (
-                    <div className="h-64 flex flex-col items-center justify-center gap-2">
+                    <div className="h-64 flex flex-col items-center justify-center gap-2 text-slate-400 border border-dashed border-slate-200 rounded-lg bg-slate-50">
                         <UserX size={40} className="text-slate-200" />
-                        <p className="text-sm text-slate-400">Nenhum dado de no-show no período selecionado</p>
+                        <p className="text-sm">Sem dados disponíveis</p>
                     </div>
                 ) : (
                     <div className="h-64 w-full">
@@ -343,7 +361,9 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                         const topClients = [...clients].sort((a,b) => (b.totalSpent || 0) - (a.totalSpent || 0)).slice(0, 5);
                         const maxSpent = Math.max(...topClients.map(c => c.totalSpent || 0), 1); 
                         
-                        return topClients.map((client, index) => {
+                        return topClients.length === 0 ? (
+                            <div className="py-10 text-center text-slate-400 text-sm">Sem dados disponíveis</div>
+                        ) : topClients.map((client, index) => {
                             let badgeColor = 'bg-slate-200 text-slate-700'; 
                             if (index === 0) badgeColor = 'bg-yellow-400 text-yellow-900';
                             else if (index === 1) badgeColor = 'bg-slate-400 text-white';

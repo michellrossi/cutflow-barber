@@ -74,14 +74,96 @@ const DashboardRouter = () => {
     return <BarberDashboard onLogout={logout} />;
   }
 
-  // Caso de segurança: Logado mas sem papel definido
+  // Caso de segurança: Logado mas sem papel definido (Ex: Login Google sem barbearia)
+  const [setupShopName, setSetupShopName] = useState('');
+  const [setupSlug, setSetupSlug] = useState('');
+  const [setupPhone, setSetupPhone] = useState('');
+  const [setupLoading, setSetupLoading] = useState(false);
+  const [setupError, setSetupError] = useState('');
+
+  const handleSetupShop = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setSetupLoading(true);
+      setSetupError('');
+
+      try {
+          const { supabase } = await import('./supabaseClient');
+          const cleanShopName = setupShopName.trim();
+          const cleanSlug = setupSlug.trim().toLowerCase().replace(/[^\w-]/g, '');
+
+          const { data: shopData, error: shopError } = await supabase.from('shops').insert({
+              owner_id: session.user.id,
+              name: cleanShopName,
+              slug: cleanSlug,
+              plan: 'trial',
+              trial_started_at: new Date().toISOString(),
+              trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+          }).select().single();
+
+          if (shopError) throw shopError;
+
+          await supabase.from('settings').insert({
+              shop_id: shopData.id,
+              name: cleanShopName,
+              phone: setupPhone,
+              primary_color: '#f97316',
+              secondary_color: '#1e293b'
+          });
+
+          // Gatilhos e templates padrão
+          const { data: insertedTriggers } = await supabase.from('automation_triggers').insert([
+              { shop_id: shopData.id, name: 'Confirmação Imediata', value: 0, unit: 'minutes', period: 'immediate', active: true },
+              { shop_id: shopData.id, name: 'Lembrete de Agendamento', value: 1, unit: 'hours', period: 'before', active: true },
+              { shop_id: shopData.id, name: 'Pós-Venda e Avaliação', value: 2, unit: 'hours', period: 'after', active: true },
+              { shop_id: shopData.id, name: 'Reagendamento', value: 1, unit: 'hours', period: 'after', active: true }
+          ]).select();
+
+          await supabase.from('message_templates').insert([
+            { shop_id: shopData.id, title: 'Confirmação', trigger_id: insertedTriggers?.find((t:any) => t.name === 'Confirmação Imediata')?.id, content: 'Sua reserva está confirmada na [BARBEARIA].', active: true },
+            { shop_id: shopData.id, title: 'Lembrete', trigger_id: insertedTriggers?.find((t:any) => t.name === 'Lembrete de Agendamento')?.id, content: 'Lembrete de horário na [BARBEARIA].', active: true }
+          ]);
+
+          window.location.reload(); // Recarrega para aplicar a role
+      } catch (err: any) {
+          setSetupError(err.message || 'Erro ao criar barbearia');
+          setSetupLoading(false);
+      }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-4 text-center">
-      <h2 className="text-xl font-bold mb-2">Acesso não configurado</h2>
-      <p className="text-slate-400 mb-6">Sua conta não está vinculada a nenhuma barbearia como dono ou funcionário.</p>
-      <button onClick={logout} className="px-6 py-2 bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors">
-        Sair da conta
-      </button>
+    <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white p-4">
+      <div className="w-full max-w-md bg-slate-800 p-8 rounded-xl shadow-xl border border-slate-700">
+          <h2 className="text-2xl font-bold mb-2">Quase lá!</h2>
+          <p className="text-slate-400 mb-6">Sua conta foi criada. Agora, configure sua barbearia para acessarmos o painel.</p>
+          
+          <form onSubmit={handleSetupShop} className="space-y-4">
+              <div>
+                  <label className="block text-sm font-medium mb-1">Nome da Barbearia</label>
+                  <input type="text" required value={setupShopName} onChange={e => setSetupShopName(e.target.value)} className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white" />
+              </div>
+              <div>
+                  <label className="block text-sm font-medium mb-1">Link Personalizado (Slug)</label>
+                  <div className="flex">
+                      <span className="px-3 py-2 bg-slate-700 border border-r-0 border-slate-600 rounded-l-lg text-slate-300 text-sm flex items-center">insightbarber.com.br/</span>
+                      <input type="text" required value={setupSlug} onChange={e => setSetupSlug(e.target.value)} className="flex-1 px-3 py-2 bg-slate-900 border border-slate-600 rounded-r-lg text-white font-mono" />
+                  </div>
+              </div>
+              <div>
+                  <label className="block text-sm font-medium mb-1">Celular (WhatsApp)</label>
+                  <input type="tel" required value={setupPhone} onChange={e => setSetupPhone(e.target.value)} className="w-full px-3 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white" />
+              </div>
+              
+              {setupError && <p className="text-red-400 text-sm mt-2">{setupError}</p>}
+              
+              <button disabled={setupLoading} type="submit" className="w-full py-3 bg-orange-600 hover:bg-orange-700 rounded-lg font-bold transition-colors mt-6">
+                  {setupLoading ? 'Criando...' : 'Criar Barbearia'}
+              </button>
+          </form>
+
+          <button onClick={logout} className="mt-6 text-sm text-slate-500 hover:text-white transition-colors w-full text-center">
+            Sair e usar outra conta
+          </button>
+      </div>
     </div>
   );
 };

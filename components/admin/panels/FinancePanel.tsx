@@ -412,7 +412,7 @@ export const FinancePanel: React.FC = () => {
                         {stats.chartData.length === 0 ? (
                             <div className="flex-1 flex flex-col items-center justify-center text-[#6b7d99] h-64 border border-dashed border-slate-200 rounded-lg bg-slate-50">
                                 <TrendingUp size={32} className="mb-2 opacity-50"/>
-                                <p>Sem dados financeiros para o período.</p>
+                                <p>Sem dados disponíveis</p>
                             </div>
                         ) : (
                             <div className="flex-1 w-full min-h-0">
@@ -460,7 +460,7 @@ export const FinancePanel: React.FC = () => {
                         {stats.paymentMethodData.length === 0 ? (
                             <div className="flex-1 flex flex-col items-center justify-center text-[#6b7d99] h-full border border-dashed border-slate-200 rounded-lg bg-slate-50">
                                 <PieChart size={32} className="mb-2 opacity-50"/>
-                                <p>Sem dados financeiros.</p>
+                                <p>Sem dados disponíveis</p>
                             </div>
                         ) : (
                             <div className="flex-1 w-full min-h-0 relative">
@@ -519,7 +519,7 @@ export const FinancePanel: React.FC = () => {
                         </h3>
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
                             {stats.sortedPros.length === 0 ? (
-                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Nenhum dado disponível.</p>
+                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Sem dados disponíveis</p>
                             ) : (
                                 stats.sortedPros.map((pro, idx) => (
                                     <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0 group">
@@ -560,7 +560,7 @@ export const FinancePanel: React.FC = () => {
                         </h3>
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
                             {stats.sortedClients.length === 0 ? (
-                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Nenhum dado disponível.</p>
+                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Sem dados disponíveis</p>
                             ) : (
                                 stats.sortedClients.map((client, idx) => (
                                     <div key={idx} className="flex items-center gap-3 pb-3 border-b border-slate-100 last:border-0 last:pb-0 group">
@@ -596,7 +596,7 @@ export const FinancePanel: React.FC = () => {
                         </h3>
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
                             {stats.serviceData.length === 0 ? (
-                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Nenhum dado disponível.</p>
+                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Sem dados disponíveis</p>
                             ) : (
                                 stats.serviceData.map((item, index) => {
                                     const maxVal = Math.max(...stats.serviceData.map(d => d.value));
@@ -632,7 +632,7 @@ export const FinancePanel: React.FC = () => {
                         </h3>
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
                             {stats.serviceCountData.length === 0 ? (
-                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Nenhum dado disponível.</p>
+                                <p className="text-[#6b7d99] text-sm text-center py-10 font-medium italic">Sem dados disponíveis</p>
                             ) : (
                                 stats.serviceCountData.map((item, index) => {
                                     const maxCount = Math.max(...stats.serviceCountData.map(d => d.count));

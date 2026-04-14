@@ -210,21 +210,27 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
                         Evolução do Faturamento
                     </h3>
                     <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={stats.chartData}>
-                                <defs>
-                                    <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={settings.primaryColor || '#f97316'} stopOpacity={0.3}/>
-                                        <stop offset="95%" stopColor={settings.primaryColor || '#f97316'} stopOpacity={0}/>
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" />
-                                <XAxis dataKey="displayDate" />
-                                <YAxis />
-                                <Tooltip />
-                                <Area type="monotone" dataKey="value" stroke={settings.primaryColor || '#f97316'} fillOpacity={1} fill="url(#colorValue)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                        {stats.chartData.length === 0 ? (
+                            <div className="flex h-full items-center justify-center text-slate-400 border border-dashed border-slate-200 rounded-lg bg-slate-50">
+                                <p>Sem dados disponíveis</p>
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={stats.chartData}>
+                                    <defs>
+                                        <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor={settings.primaryColor || '#f97316'} stopOpacity={0.3}/>
+                                            <stop offset="95%" stopColor={settings.primaryColor || '#f97316'} stopOpacity={0}/>
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="displayDate" />
+                                    <YAxis />
+                                    <Tooltip />
+                                    <Area type="monotone" dataKey="value" stroke={settings.primaryColor || '#f97316'} fillOpacity={1} fill="url(#colorValue)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm md:col-span-1">
@@ -233,17 +239,23 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
                         Formas de Pagamento
                     </h3>
                     <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <RechartsPieChart>
-                                <Pie data={stats.paymentData} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" dataKey="value" label>
-                                    {stats.paymentData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend />
-                            </RechartsPieChart>
-                        </ResponsiveContainer>
+                        {stats.paymentData.length === 0 ? (
+                            <div className="flex h-full items-center justify-center text-slate-400 border border-dashed border-slate-200 rounded-lg bg-slate-50">
+                                <p>Sem dados disponíveis</p>
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RechartsPieChart>
+                                    <Pie data={stats.paymentData} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" dataKey="value" label>
+                                        {stats.paymentData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.color} />
+                                        ))}
+                                    </Pie>
+                                    <Tooltip />
+                                    <Legend />
+                                </RechartsPieChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </div>
             </div>
@@ -256,19 +268,25 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
                         Taxa de Ocupação (Diária)
                     </h3>
                     <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <RechartsBarChart data={stats.combinedDailyData}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                <XAxis dataKey="name" axisLine={false} tickLine={false} />
-                                <YAxis axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(val) => `${val}%`} />
-                                <Tooltip formatter={(value: number) => [`${value.toFixed(1)}%`, 'Ocupação']} />
-                                <Bar dataKey="occupancyRate" radius={[4, 4, 0, 0]}>
-                                    {stats.combinedDailyData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                                    ))}
-                                </Bar>
-                            </RechartsBarChart>
-                        </ResponsiveContainer>
+                        {stats.combinedDailyData.length === 0 ? (
+                            <div className="flex h-full items-center justify-center text-slate-400 border border-dashed border-slate-200 rounded-lg bg-slate-50">
+                                <p>Sem dados disponíveis</p>
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RechartsBarChart data={stats.combinedDailyData}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                    <XAxis dataKey="name" axisLine={false} tickLine={false} />
+                                    <YAxis axisLine={false} tickLine={false} domain={[0, 100]} tickFormatter={(val) => `${val}%`} />
+                                    <Tooltip formatter={(value: number) => [`${value.toFixed(1)}%`, 'Ocupação']} />
+                                    <Bar dataKey="occupancyRate" radius={[4, 4, 0, 0]}>
+                                        {stats.combinedDailyData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={entry.fill} />
+                                        ))}
+                                    </Bar>
+                                </RechartsBarChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                     <div className="mt-4 flex items-center justify-center gap-4 text-xs font-medium text-slate-500">
                         <div className="flex items-center gap-1"><div className="w-3 h-3 rounded-full bg-green-500"></div> &ge; 80%</div>

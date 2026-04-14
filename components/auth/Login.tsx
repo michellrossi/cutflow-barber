@@ -23,7 +23,7 @@ export const Login: React.FC<{ onComplete: () => void, onBack: () => void }> = (
         setIsLoading(true);
         setErrorMsg('');
         setSuccessMsg('');
-        
+
         try {
             if (isResetting) {
                 // FLUXO DE RECUPERAÇÃO
@@ -45,6 +45,22 @@ export const Login: React.FC<{ onComplete: () => void, onBack: () => void }> = (
         } catch (err) {
             setErrorMsg('Erro de conexão. Tente novamente.');
         } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGoogleLogin = async () => {
+        try {
+            setIsLoading(true);
+            const { supabase } = await import('../../supabaseClient');
+            await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo: window.location.origin + '/dashboard'
+                }
+            });
+        } catch (err: any) {
+            setErrorMsg(err.message || 'Erro no login com Google');
             setIsLoading(false);
         }
     };
@@ -118,6 +134,18 @@ export const Login: React.FC<{ onComplete: () => void, onBack: () => void }> = (
                             isResetting ? <>Enviar Email <ArrowRight size={20}/></> : <>Entrar <ArrowRight size={20}/></>
                         )}
                     </button>
+
+                    {!isResetting && (
+                         <button 
+                             type="button" 
+                             onClick={handleGoogleLogin}
+                             disabled={isLoading}
+                             className="w-full mt-3 flex justify-center items-center gap-2 py-3 px-4 border border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 focus:outline-none transition-colors"
+                         >
+                             <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+                             Entrar com Google
+                         </button>
+                    )}
 
                     {/* Botão para voltar ao login se estiver no modo Reset */}
                     {isResetting ? (

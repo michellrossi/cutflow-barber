@@ -14,7 +14,7 @@ interface ShopContextType extends ShopState {
   
   // Auth Actions
   login: (email: string, password: string) => Promise<{ error: any }>;
-  signup: (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team') => Promise<{ error: any }>;
+  signup: (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team', fullName: string, phone: string) => Promise<{ error: any }>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean, error?: string }>;
 
@@ -535,18 +535,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         let mappedTriggers = (triggersRes.data || []).map(mapAutomationTrigger);
 
-        // --- INIT DEFAULT TRIGGERS IF EMPTY ---
-        const { data: { session: checkSession } } = await supabase.auth.getSession();
-        if (mappedTriggers.length === 0 && checkSession?.user?.id === currentShopData?.ownerId) {
-             console.log("Iniciando gatilhos padrão para a loja:", shopId);
-             const { data: defaults } = await supabase.from('automation_triggers').insert([
-                { shop_id: shopId, name: 'Confirmação Imediata', value: 0, unit: 'minutes', period: 'immediate', active: true },
-                { shop_id: shopId, name: 'Lembrete de Agendamento', value: 1, unit: 'hours', period: 'before', active: true },
-                { shop_id: shopId, name: 'Pós-Venda e Avaliação', value: 2, unit: 'hours', period: 'after', active: true },
-                { shop_id: shopId, name: 'Reagendamento', value: 1, unit: 'hours', period: 'after', active: true }
-             ]).select();
-             if (defaults) mappedTriggers = defaults.map(mapAutomationTrigger);
-        }
+        // Gatilhos iniciais são criados explicitamente na função de signup.
 
         // --- LÓGICA DE ROLES ---
         if (currentSession?.user) {
@@ -707,11 +696,20 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: true };
   };
 
-  const signup = async (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team') => {
+  const signup = async (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team', fullName: string, phone: string) => {
       const cleanShopName = sanitize(shopName);
       const cleanSlug = sanitize(slug).toLowerCase().replace(/[^\w-]/g, '');
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
+      const { data: authData, error: authError } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+              data: {
+                  full_name: sanitize(fullName),
+                  phone: sanitize(phone)
+              }
+          }
+      });
       if (authError || !authData.user) return { error: authError };
 
       if (intent === 'join_team') {
@@ -745,6 +743,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await supabase.from('settings').insert({
           shop_id: shopData.id,
           name: cleanShopName,
+          phone: sanitize(phone),
           primary_color: '#f97316',
           secondary_color: '#1e293b'
       });
@@ -826,6 +825,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       await supabase.from('services').insert(servicesToInsert);
 
       setSession(authData.session);
+      await fetchData(shopData.id);
       return { error: null };
   };
 

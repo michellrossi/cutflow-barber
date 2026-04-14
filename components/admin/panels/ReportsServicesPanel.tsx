@@ -77,15 +77,21 @@ export const ReportsServicesPanel: React.FC<ReportsServicesPanelProps> = ({ date
                     Serviços Executados por Mês
                 </h3>
                 <div className="h-64">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={monthlyServices}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Tooltip />
-                            <Bar dataKey="total" fill="#f97316" />
-                        </BarChart>
-                    </ResponsiveContainer>
+                    {monthlyServices.length === 0 ? (
+                        <div className="flex h-full items-center justify-center text-slate-400 border border-dashed border-slate-200 rounded-lg bg-slate-50">
+                            <p>Sem dados disponíveis</p>
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={monthlyServices}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Tooltip />
+                                <Bar dataKey="total" fill="#f97316" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
                 </div>
             </div>
 
@@ -98,9 +104,12 @@ export const ReportsServicesPanel: React.FC<ReportsServicesPanelProps> = ({ date
                     <div className="flex flex-col divide-y divide-slate-100 max-h-96 overflow-y-auto no-scrollbar">
                         {(() => {
                             const sorted = [...serviceStats].sort((a, b) => b.realizados - a.realizados).slice(0, 5);
+                            if (sorted.length === 0 || sorted.every(s => s.realizados === 0)) {
+                                return <div className="py-10 text-center text-slate-400 text-sm">Sem dados disponíveis</div>;
+                            }
                             const maxVal = Math.max(...sorted.map(s => s.realizados), 1);
                             
-                            return sorted.map((s, index) => {
+                            return sorted.filter(s => s.realizados > 0).map((s, index) => {
                                 let badgeColor = 'bg-slate-200 text-slate-700'; // 4º+
                                 if (index === 0) badgeColor = 'bg-yellow-400 text-yellow-900'; // 1º
                                 else if (index === 1) badgeColor = 'bg-slate-400 text-white'; // 2º
@@ -141,9 +150,12 @@ export const ReportsServicesPanel: React.FC<ReportsServicesPanelProps> = ({ date
                     <div className="flex flex-col divide-y divide-slate-100 max-h-96 overflow-y-auto no-scrollbar">
                         {(() => {
                             const sorted = [...serviceStats].sort((a, b) => b.lucrativos - a.lucrativos).slice(0, 5);
+                            if (sorted.length === 0 || sorted.every(s => s.lucrativos === 0)) {
+                                return <div className="py-10 text-center text-slate-400 text-sm">Sem dados disponíveis</div>;
+                            }
                             const maxVal = Math.max(...sorted.map(s => s.lucrativos), 1);
                             
-                            return sorted.map((s, index) => {
+                            return sorted.filter(s => s.lucrativos > 0).map((s, index) => {
                                 let badgeColor = 'bg-slate-200 text-slate-700'; // 4º+
                                 if (index === 0) badgeColor = 'bg-yellow-400 text-yellow-900'; // 1º
                                 else if (index === 1) badgeColor = 'bg-slate-400 text-white'; // 2º

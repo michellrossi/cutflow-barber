@@ -519,33 +519,39 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                     </div>
                     
                     <div className="h-64 w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
-                                <XAxis 
-                                    dataKey="name" 
-                                    stroke="#94a3b8" 
-                                    fontSize={10} 
-                                    tickLine={false} 
-                                    axisLine={false}
-                                    interval="preserveStartEnd"
-                                />
-                                <YAxis 
-                                    stroke="#94a3b8" 
-                                    fontSize={10} 
-                                    tickLine={false} 
-                                    axisLine={false} 
-                                    allowDecimals={false}
-                                />
-                                <Tooltip content={<CustomTooltip />} cursor={{fill: '#334155', opacity: 0.2}} />
-                                <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
-                                {/* Linha de Referência para HOJE */}
-                                <ReferenceLine x={new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} stroke="rgba(249, 115, 22, 0.5)" strokeDasharray="3 3" label={{ position: 'top', value: 'Hoje', fill: '#f97316', fontSize: 10 }} />
-                                
-                                <Bar name="Finalizados" dataKey="completed" stackId="a" fill="#22c55e" radius={[0, 0, 4, 4]} />
-                                <Bar name="Agendados" dataKey="scheduled" stackId="a" fill={settings.primaryColor || "#f97316"} radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
+                        {chartData.length === 0 ? (
+                            <div className="flex h-full items-center justify-center text-slate-400 border border-dashed border-slate-700/50 rounded-xl bg-slate-900/50">
+                                <p>Sem dados disponíveis</p>
+                            </div>
+                        ) : (
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
+                                    <XAxis 
+                                        dataKey="name" 
+                                        stroke="#94a3b8" 
+                                        fontSize={10} 
+                                        tickLine={false} 
+                                        axisLine={false}
+                                        interval="preserveStartEnd"
+                                    />
+                                    <YAxis 
+                                        stroke="#94a3b8" 
+                                        fontSize={10} 
+                                        tickLine={false} 
+                                        axisLine={false} 
+                                        allowDecimals={false}
+                                    />
+                                    <Tooltip content={<CustomTooltip />} cursor={{fill: '#334155', opacity: 0.2}} />
+                                    <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
+                                    {/* Linha de Referência para HOJE */}
+                                    <ReferenceLine x={new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} stroke="rgba(249, 115, 22, 0.5)" strokeDasharray="3 3" label={{ position: 'top', value: 'Hoje', fill: '#f97316', fontSize: 10 }} />
+                                    
+                                    <Bar name="Finalizados" dataKey="completed" stackId="a" fill="#22c55e" radius={[0, 0, 4, 4]} />
+                                    <Bar name="Agendados" dataKey="scheduled" stackId="a" fill={settings.primaryColor || "#f97316"} radius={[4, 4, 0, 0]} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        )}
                     </div>
                 </div>
 
