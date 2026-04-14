@@ -543,11 +543,11 @@ async function startServer() {
 
             // 1. Usamos o Gemini para criar um prompt fotográfico rico em inglês
             const genAI = new GoogleGenerativeAI(geminiKey);
-            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
 
             const promptContext = `Create a professional photography prompt for an AI image generator. 
             The subject is a barbershop service called "${serviceName}".
-            Style: professional, high-end barbershop, cinematic lighting, ultra-realistic, 8k, sharp focus.
+            Style: professional, high-end barbershop, cinematic lighting, ultra-realistic, 2k, sharp focus.
             Return ONLY the prompt in English, nothing else.`;
 
             const result = await model.generateContent(promptContext);
