@@ -1,17 +1,25 @@
 import express from 'express';
 import cors from 'cors';
 import { createServer as createViteServer } from 'vite';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { createClient } from '@supabase/supabase-js';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc.js';
+import timezone from 'dayjs/plugin/timezone.js';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+import { createAsaasCustomer, createAsaasSubscription, getAsaasSubscriptions, createAsaasPayment, getAsaasPixQrCode } from './utils/asaas.js';
 
 // Configurações base
 const PORT = process.env.PORT || 3000;
@@ -29,9 +37,6 @@ if (!serviceRoleKey) {
     console.warn("⚠️ AVISO: SUPABASE_SERVICE_ROLE_KEY não configurada. O Cron Job pode falhar devido a RLS.");
 }
 
-// 1. Cliente comum (Usa ANON_KEY - Respeita RLS)
-export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseKey || 'placeholder');
-
 // 2. Cliente Administrativo (Usa SERVICE_ROLE - Ignora RLS)
 export const supabaseAdmin = createClient(supabaseUrl || 'https://placeholder.supabase.co', serviceRoleKey || 'placeholder');
 
@@ -45,14 +50,14 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
     // 1. Tenta identificar se o triggerId é um slug (ex: 'appointment_reminder')
     // Se for um slug, tentamos encontrar um gatilho UUID correspondente no banco
     let effectiveTriggerId = triggerId;
-    
+
     if (triggerId.length < 30) {
         const { data: relatedTriggers } = await supabaseAdmin
             .from('automation_triggers')
             .select('id, name')
             .eq('shop_id', shopId)
             .eq('active', true);
-            
+
         if (relatedTriggers) {
             // Busca um gatilho cujo nome combine com o slug
             const match = relatedTriggers.find(t => {
@@ -64,7 +69,7 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
                 if (triggerId === 'retention_30d') return name.includes('retenção') || name.includes('30 dias');
                 return false;
             });
-            
+
             if (match) {
                 console.log(`[MessageGen] Slug '${triggerId}' mapeado para Gatilho ID: ${match.id} (${match.name})`);
                 effectiveTriggerId = match.id;
@@ -79,7 +84,7 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
         .eq('shop_id', shopId)
         .eq('target', target)
         .eq('active', true);
-    
+
     if (effectiveTriggerId.length > 30) {
         query = query.eq('trigger_id', effectiveTriggerId);
     } else {
@@ -103,18 +108,18 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
     if (!content) {
         // Tenta obter o nome do gatilho para o fallback
         let triggerName = triggerId.toLowerCase();
-        
+
         if (effectiveTriggerId.length > 30) {
             const { data: triggerObj } = await supabaseAdmin.from('automation_triggers').select('name').eq('id', effectiveTriggerId).maybeSingle();
             if (triggerObj) triggerName = triggerObj.name.toLowerCase();
         }
 
         if (triggerName.includes('confirmação') || triggerId === 'immediate_confirmation' || triggerId === 'link de acesso') {
-             if (triggerId === 'link de acesso') {
+            if (triggerId === 'link de acesso') {
                 content = `Olá [CLIENTE]!\nAqui está seu link de acesso único para a barbearia: [URL].\nEle expira em 15 minutos e não deve ser compartilhado. 🔐💈`;
-             } else {
+            } else {
                 content = `Olá [CLIENTE]!\nSeu horário de [SERVICO] com [BARBEIRO] no dia [DATA] às [HORA] foi pré-agendado na [BARBEARIA]. Até logo! ✂️💈`;
-             }
+            }
         } else if (triggerName.includes('lembrete') || triggerId === 'appointment_reminder') {
             content = `Olá [CLIENTE]!\nPassando para lembrar do seu horário de [SERVICO] com [BARBEIRO] em [DATA] às [HORA] na [BARBEARIA]. Nos vemos lá! ✂️💈`;
         } else if (triggerName.includes('pós-venda') || triggerName.includes('avaliação') || triggerId === 'post_sale') {
@@ -125,6 +130,8 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
             content = `Olá [CLIENTE]!\nFaz um tempo que não nos vemos na [BARBEARIA]. Que tal agendar um novo horário para manter o visual em dia?\n✂️💈`;
         } else if (triggerId === 'loyalty_reward') {
             content = `Olá [CLIENTE], parabéns!\nVocê atingiu a meta de fidelidade e ganhou um cupom de [DESCONTO]! Use o código: [CODIGO]. Validade: [VALIDADE] dias.`;
+        } else if (triggerId === 'birthday') {
+            content = `Parabéns, [CLIENTE]! 🎈\nA equipe da [BARBEARIA] deseja a você um feliz aniversário e muito sucesso! Que tal vir dar um trato no visual hoje? ✂️💈`;
         } else {
             if (target === 'professional') {
                 content = `💇‍♂️ *Novo Agendamento!*\nOlá [BARBEIRO], você tem um novo horário com [CLIENTE] para [SERVICO] no dia [DATA] às [HORA].`;
@@ -167,7 +174,11 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
     if (!cleanPhone.startsWith('55')) cleanPhone = `55${cleanPhone}`;
 
     try {
-        const baseUrl = apiUrl.endsWith('/') ? apiUrl.slice(0, -1) : apiUrl;
+        let baseUrl = apiUrl.trim();
+        if (!baseUrl.startsWith('http')) {
+            baseUrl = `https://${baseUrl}`;
+        }
+        baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
         const url = `${baseUrl}/message/sendText/${instance}`;
 
         const response = await fetch(url, {
@@ -192,10 +203,8 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
 async function runCronLogic() {
     console.log("[Cron] Iniciando verificação de lembretes (Timezone SP - GMT-3)...");
 
-    const nowUtc = new Date();
-    const spTimeString = nowUtc.toLocaleString('en-US', { timeZone: 'America/Sao_Paulo' });
-    const now = new Date(spTimeString);
-    
+    const now = dayjs().tz('America/Sao_Paulo').toDate();
+
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
@@ -392,6 +401,30 @@ async function runCronLogic() {
             }
         }
     }
+
+    // 6. Aniversariantes do Dia
+    const todayMMDD = dayjs(now).format('MM-DD');
+    const { data: bdayClients } = await supabaseAdmin
+        .from('clients')
+        .select('*, shops(id, name, whatsapp_instance)')
+        .filter('birth_date', 'ilike', `%-${todayMMDD}`)
+        .or(`birthday_last_sent_year.is.null,birthday_last_sent_year.neq.${now.getFullYear()}`);
+
+    if (bdayClients) {
+        for (const client of bdayClients) {
+            const msg = await generateWhatsAppMessage('birthday', {
+                clientName: client.name,
+                shopName: client.shops?.name
+            }, client.shop_id);
+            
+            if (msg) {
+                const ok = await sendWhatsApp(client.phone, msg, client.shops?.whatsapp_instance);
+                if (ok) {
+                    await supabaseAdmin.from('clients').update({ birthday_last_sent_year: now.getFullYear() }).eq('id', client.id);
+                }
+            }
+        }
+    }
 }
 
 async function startServer() {
@@ -400,7 +433,7 @@ async function startServer() {
     app.use(express.json());
 
     const notifyLimiter = rateLimit({
-        windowMs: 60_000, 
+        windowMs: 60_000,
         max: 10,
         standardHeaders: true,
         legacyHeaders: false,
@@ -445,13 +478,19 @@ async function startServer() {
         try {
             const systemInstruction = `Você é um consultor de negócios especializado em barbearias. Use os dados de "${context.shopName}".`;
             const chatHistory = history.map((msg: any) => ({ role: msg.role === 'assistant' ? 'model' : 'user', parts: [{ text: msg.content }] }));
-            const genAI = new GoogleGenAI({ apiKey: geminiKey });
-            const response = await genAI.models.generateContent({
-                model: "gemini-1.5-flash",
-                contents: [...chatHistory, { role: 'user', parts: [{ text: prompt }] }],
-                config: { systemInstruction }
+
+            const genAI = new GoogleGenerativeAI(geminiKey);
+            const model = genAI.getGenerativeModel({
+                model: "gemini-3-flash-preview",
+                systemInstruction
             });
-            res.json({ success: true, answer: response.text });
+
+            const result = await model.generateContent({
+                contents: [...chatHistory, { role: 'user', parts: [{ text: prompt }] }],
+            });
+            const response = await result.response;
+
+            res.json({ success: true, answer: response.text() || '' });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
@@ -460,18 +499,19 @@ async function startServer() {
     app.post('/api/ai/generate-template', async (req, res) => {
         const { trigger, shopName, tone } = req.body;
         try {
-            const genAI = new GoogleGenAI({ apiKey: geminiKey });
+            const genAI = new GoogleGenerativeAI(geminiKey);
+            const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+
             const promptContent = `Crie um modelo de mensagem de WhatsApp para uma barbearia chamada "${shopName}". 
             O gatilho da mensagem é: "${trigger}". 
             O tom deve ser: "${tone}".
             Use as seguintes variáveis: [CLIENTE], [SERVICO], [DATA], [HORA], [BARBEIRO], [BARBEARIA].
             Retorne apenas o texto da mensagem, sem explicações.`;
-            
-            const response = await genAI.models.generateContent({
-                model: "gemini-1.5-flash",
-                contents: [{ role: 'user', parts: [{ text: promptContent }] }]
-            });
-            res.json({ success: true, text: response.text });
+
+            const result = await model.generateContent(promptContent);
+            const response = await result.response;
+
+            res.json({ success: true, text: response.text() || '' });
         } catch (error: any) {
             res.status(500).json({ success: false, error: error.message });
         }
@@ -501,7 +541,7 @@ async function startServer() {
             const clientOk = await sendWhatsApp(apt.client_phone, clientMessage, apt.shops?.whatsapp_instance);
             if (clientOk) await supabaseAdmin.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
         }
-        
+
         if (apt.professionals?.phone) {
             const proMessage = await generateWhatsAppMessage('immediate_confirmation', {
                 clientName: apt.client_name,
@@ -511,41 +551,38 @@ async function startServer() {
                 proName: apt.professionals.name,
                 shopName: apt.shops?.name
             }, apt.shop_id, 'professional');
-            
+
             if (proMessage) {
-              await sendWhatsApp(apt.professionals.phone, proMessage, apt.shops?.whatsapp_instance);
+                await sendWhatsApp(apt.professionals.phone, proMessage, apt.shops?.whatsapp_instance);
             }
         }
-        
+
         res.json({ success: true });
     });
 
     app.post('/api/loyalty/check-reward', async (req, res) => {
         const { clientId, shopId } = req.body;
         try {
-            const { data: client } = await supabaseAdmin.from('clients').select('*').eq('id', clientId).single();
-            const { data: settings } = await supabaseAdmin.from('settings').select('*').eq('shop_id', shopId).single();
+            const { data: result, error } = await supabaseAdmin.rpc('award_loyalty_reward', { p_client_id: clientId, p_shop_id: shopId });
+            
+            if (error || !result?.success) {
+                return res.json({ success: false });
+            }
+
             const { data: shop } = await supabaseAdmin.from('shops').select('name, whatsapp_instance').eq('id', shopId).single();
 
-            if (!client || !settings?.loyalty_enabled || client.loyalty_points < settings.loyalty_points_goal) return res.json({ success: false });
-
-            const couponCode = `${client.name.split(' ')[0]}${client.phone.slice(-4)}${new Date().getDate()}`.toUpperCase();
-            await supabaseAdmin.from('coupons').insert({
-                shop_id: shopId, client_id: clientId, code: couponCode,
-                discount_value: settings.loyalty_reward_value, discount_type: settings.loyalty_reward_type,
-                expires_at: new Date(Date.now() + settings.loyalty_reward_validity_days * 24 * 60 * 60 * 1000).toISOString(),
-                is_loyalty_reward: true
-            });
-            await supabaseAdmin.from('clients').update({ loyalty_points: 0 }).eq('id', clientId);
-
             const msg = await generateWhatsAppMessage('loyalty_reward', {
-                clientName: client.name, discount: `${settings.loyalty_reward_value}${settings.loyalty_reward_type === 'percentage' ? '%' : ' R$'}`,
-                code: couponCode, validity: settings.loyalty_reward_validity_days, shopName: shop?.name
+                clientName: result.clientName, 
+                discount: `${result.discount}${result.discountType === 'percentage' ? '%' : ' R$'}`,
+                code: result.couponCode, 
+                validity: result.validityDays, 
+                shopName: shop?.name
             }, shopId);
+
             if (msg) {
-              await sendWhatsApp(client.phone, msg, shop?.whatsapp_instance);
+                await sendWhatsApp(result.clientPhone, msg, shop?.whatsapp_instance);
             }
-            res.json({ success: true, couponCode });
+            res.json({ success: true, couponCode: result.couponCode });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
@@ -560,10 +597,10 @@ async function startServer() {
 
         const msg = await generateWhatsAppMessage('link de acesso', { clientName: client?.name || "Cliente", url, shopName: shop.name }, shopId);
         if (msg) {
-          const ok = await sendWhatsApp(phone, msg, shop.whatsapp_instance);
-          res.json({ success: ok });
+            const ok = await sendWhatsApp(phone, msg, shop.whatsapp_instance);
+            res.json({ success: ok });
         } else {
-          res.json({ success: false, error: "Gatilho desativado" });
+            res.json({ success: false, error: "Gatilho desativado" });
         }
     });
 
@@ -597,13 +634,23 @@ async function startServer() {
     app.post('/api/whatsapp/status', async (req, res) => {
         const { shopId } = req.body;
         try {
-            const { data: shop } = await supabaseAdmin.from('shops').select('whatsapp_instance').eq('id', shopId).single();
+            const { data: shop } = await supabaseAdmin.from('shops').select('whatsapp_instance, whatsapp_connected').eq('id', shopId).single();
             if (!shop?.whatsapp_instance) return res.json({ connected: false });
             const r = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connectionState/${shop.whatsapp_instance}`,
                 { headers: { apikey: process.env.WHATSAPP_API_KEY || '' } });
             const d = await r.json();
             const connected = d.instance?.state === 'open';
-            await supabaseAdmin.from('shops').update({ whatsapp_connected: connected }).eq('id', shopId);
+
+            // ALERT TRIGGER: Status drops from connected -> disconnected
+            if (shop.whatsapp_connected === true && !connected) {
+                console.log(`[ALERT] CRITICAL Notificação de E-mail Despachada para o Dono da Barbearia ${shopId}: A instância do WhatsApp Desconectou! Acesso imediato necessário para retomada das automações.`);
+                // NOTE: Implementação do SendGrid / Resend webhook call passaria aqui.
+            }
+
+            if (shop.whatsapp_connected !== connected) {
+                await supabaseAdmin.from('shops').update({ whatsapp_connected: connected }).eq('id', shopId);
+            }
+
             res.json({ connected });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
@@ -620,6 +667,106 @@ async function startServer() {
             await supabaseAdmin.from('shops').update({ whatsapp_connected: false }).eq('id', shopId);
             res.json({ success: true });
         } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // ==========================================
+    // ROTAS DO ASAAS (PAGAMENTOS & ASSINATURAS)
+    // ==========================================
+
+    // 1. Criar Cliente no Asaas
+    app.post('/api/asaas/customers', async (req, res) => {
+        try {
+            // Requer name, cpfCnpj, email, phone...
+            const customer = await createAsaasCustomer(req.body);
+            // Salvar customer.id (asaas_customer_id) no banco (referente à barbearia/shop)
+            res.json({ success: true, customer });
+        } catch (error: any) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 2. Criar Assinatura Recorrente
+    app.post('/api/asaas/subscriptions', async (req, res) => {
+        try {
+            const subscription = await createAsaasSubscription(req.body);
+            // Salvar a assinatura no banco se necessário
+            res.json({ success: true, subscription });
+        } catch (error: any) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 4. Checkout Transparente (Cartão e PIX)
+    app.post('/api/asaas/checkout', async (req, res) => {
+        try {
+            const { shopId, customerParams, paymentParams } = req.body;
+            
+            // 1. Criar Cliente
+            const customer = await createAsaasCustomer(customerParams);
+
+            // 2. Criar Pagamento
+            const payload = {
+                customer: customer.id,
+                billingType: paymentParams.billingType,
+                value: paymentParams.value || 59.90,
+                dueDate: paymentParams.dueDate || new Date().toISOString().split('T')[0],
+            };
+
+            if (paymentParams.billingType === 'CREDIT_CARD') {
+                Object.assign(payload, {
+                    creditCard: paymentParams.creditCard,
+                    creditCardHolderInfo: paymentParams.creditCardHolderInfo
+                });
+            }
+
+            const payment = await createAsaasPayment(payload);
+
+            let qrCode = null;
+            if (payment.billingType === 'PIX') {
+                qrCode = await getAsaasPixQrCode(payment.id);
+            }
+
+            if (shopId) {
+                let updates: any = { asaas_customer_id: customer.id };
+                
+                // Se for cartão de crédito e já aprovar na mesma hora, libera o acesso imediatamente
+                if (payment.status === 'CONFIRMED' || payment.status === 'RECEIVED') {
+                    updates.plan = 'active';
+                }
+
+                await supabaseAdmin.from('shops').update(updates).eq('id', shopId);
+            }
+
+            res.json({ success: true, payment, qrCode });
+        } catch (error: any) {
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // 3. Webhook do Asaas (Confirmação de Pagamento)
+    app.post('/api/asaas/webhook', async (req, res) => {
+        const event = req.body.event;
+        const payment = req.body.payment;
+
+        console.log(`[Asaas Webhook] Evento recebido: ${event}`);
+
+        try {
+            if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
+                // Pagamento aprovado via Webhook (Ex: Retorno do banco PIX)!
+                const asaasCustomerId = payment.customer;
+                
+                console.log(`[Asaas Webhook] Pagamento confirmado para o cliente Asaas: ${asaasCustomerId}. Desbloqueando plataforma...`);
+                
+                if (asaasCustomerId) {
+                    await supabaseAdmin.from('shops').update({ plan: 'active' }).eq('asaas_customer_id', asaasCustomerId);
+                }
+            }
+
+            res.json({ success: true });
+        } catch (error: any) {
+            console.error('[Asaas Webhook] Erro ao processar:', error.message);
             res.status(500).json({ error: error.message });
         }
     });

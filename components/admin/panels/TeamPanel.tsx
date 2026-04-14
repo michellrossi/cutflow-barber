@@ -271,7 +271,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                         {professionals.map(pro => {
                             const isMaster = pro.role.toLowerCase().includes('master');
                             return (
-                                <div key={pro.id} className="bg-white rounded-md border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all w-full max-w-[210px] shadow-lg">
+                                <div key={pro.id} onClick={() => handleEdit(pro)} className="bg-white rounded-md border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all w-full max-w-[210px] shadow-lg cursor-pointer">
                                     {/* Top Half: Photo */}
                                     <div className="relative h-64 w-full overflow-hidden">
                                         <img 
@@ -307,7 +307,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                         {/* Actions */}
                                         <div className="mt-auto flex gap-1.5 justify-center">
                                             <button 
-                                                onClick={() => handleEdit(pro)} 
+                                                onClick={(e) => { e.stopPropagation(); handleEdit(pro); }} 
                                                 className="p-2 bg-slate-100 rounded-md text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors"
                                                 title="Editar"
                                             >
@@ -335,7 +335,7 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                             >
                                                 <CalendarX size={14}/>
                                             </button>
-                                            <button onClick={() => setDeleteId(pro.id)} className="p-2 bg-red-500/10 text-red-500 rounded-md hover:bg-red-500/20 transition-colors" title="Remover">
+                                            <button onClick={(e) => { e.stopPropagation(); setDeleteId(pro.id); }} className="p-2 bg-red-500/10 text-red-500 rounded-md hover:bg-red-500/20 transition-colors" title="Remover">
                                                 <Trash2 size={14}/>
                                             </button>
                                         </div>

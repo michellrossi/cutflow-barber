@@ -203,8 +203,8 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
       </div>
     </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm md:col-span-3">
                     <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                         <TrendingUp size={20} className="text-orange-500" />
                         Evolução do Faturamento
@@ -227,7 +227,7 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
                         </ResponsiveContainer>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm md:col-span-1">
                     <h3 className="text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
                         <PieChartIcon size={20} className="text-orange-500" />
                         Formas de Pagamento

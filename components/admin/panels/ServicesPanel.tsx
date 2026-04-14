@@ -439,7 +439,7 @@ export const ServicesPanel: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
                 {filteredServices.map(service => (
-                    <div key={service.id} className="bg-white rounded-lg border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all shadow-xl">
+                    <div key={service.id} onClick={() => handleEdit(service)} className="bg-white rounded-lg border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all shadow-xl cursor-pointer">
                         {/* Imagem do Serviço */}
                         <div className="h-48 w-full relative overflow-hidden">
                             {service.imageUrl ? (
@@ -473,13 +473,13 @@ export const ServicesPanel: React.FC = () => {
 
                                 <div className="flex gap-3">
                                     <button 
-                                        onClick={() => handleEdit(service)} 
+                                        onClick={(e) => { e.stopPropagation(); handleEdit(service); }} 
                                         className="flex-1 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all font-bold text-sm flex items-center justify-center gap-2"
                                     >
                                         <Edit2 size={14} /> Editar
                                     </button>
                                     <button 
-                                        onClick={() => setDeleteId(service.id)} 
+                                        onClick={(e) => { e.stopPropagation(); setDeleteId(service.id); }} 
                                         className="px-4 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
                                     >
                                         <Trash2 size={18}/>

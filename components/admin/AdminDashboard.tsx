@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,7 +9,7 @@ import { CouponsPanel } from './panels/CouponsPanel';
 import { AppointmentsPanel } from './panels/AppointmentsPanel';
 import { FinancePanel } from './panels/FinancePanel';
 import { ClientsPanel } from './panels/ClientsPanel';
-import { SettingsPanel, SettingsTab } from './panels/SettingsPanel';
+import { SettingsPanel } from './panels/SettingsPanel';
 import { LoyaltyPanel } from './panels/LoyaltyPanel';
 import { ReportsPanel } from './panels/ReportsPanel';
 import { InsightPanel } from './panels/InsightPanel';
@@ -29,8 +28,8 @@ type TeamSubTab = 'list' | 'schedules' | 'blocks';
 export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () => void }> = ({ onLogout, onViewClient }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [clientFilter, setClientFilter] = useState<string>('all');
+  const [remindersSubTab, setRemindersSubTab] = useState<string>('clients');
   const [teamSubTab, setTeamSubTab] = useState<TeamSubTab>('list');
-  const [settingsSubTab, setSettingsSubTab] = useState<SettingsTab>('profile');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarPinned, setIsSidebarPinned] = useState(true);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
@@ -42,9 +41,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
 
     const savedTeamSub = localStorage.getItem('adminTeamSubTab');
     if (savedTeamSub) setTeamSubTab(savedTeamSub as TeamSubTab);
-
-    const savedSettingsSub = localStorage.getItem('adminSettingsSubTab');
-    if (savedSettingsSub) setSettingsSubTab(savedSettingsSub as SettingsTab);
 
     const savedPinned = localStorage.getItem('adminSidebarPinned');
     if (savedPinned !== null) setIsSidebarPinned(savedPinned === 'true');
@@ -66,6 +62,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       if (filter && tab === 'clients') {
           setClientFilter(filter);
       }
+      if (filter && tab === 'reminders') {
+          setRemindersSubTab(filter);
+      }
       if (tab !== 'settings') setIsSettingsOpen(false);
   };
 
@@ -76,10 +75,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   useEffect(() => {
       localStorage.setItem('adminTeamSubTab', teamSubTab);
   }, [teamSubTab]);
-
-  useEffect(() => {
-      localStorage.setItem('adminSettingsSubTab', settingsSubTab);
-  }, [settingsSubTab]);
 
   // --- 1. PAYWALL CHECK ---
   if (trialStatus === 'expired') {
@@ -97,11 +92,11 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'clients': return <ClientsPanel initialFilter={clientFilter as any} />;
       case 'loyalty': return <LoyaltyPanel />;
       case 'reports': return <ReportsPanel />;
-      case 'settings': return <SettingsPanel initialTab={settingsSubTab} onTabChange={setSettingsSubTab} />;
+      case 'settings': return <SettingsPanel />;
       case 'insight': return <InsightPanel />;
-      case 'reminders': return <RemindersPanel />;
+      case 'reminders': return <RemindersPanel initialTab={remindersSubTab} />;
       case 'subscriptions': return <SubscriptionsPanel />;
-      case 'plan': return <PlanPanel />;
+      case 'plan': return <PlanPanel onUpgrade={() => setIsPaymentModalOpen(true)} />;
       case 'profile': return <ProfilePanel />;
       default: return <DashboardPanel />;
     }
@@ -146,17 +141,17 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           {isSidebarExpanded && (
             <button 
               onClick={() => setIsSidebarPinned(!isSidebarPinned)}
-              className={`ml-auto p-1.5 rounded-lg transition-colors ${isSidebarPinned ? 'text-orange-500 bg-orange-50' : 'text-slate-400 hover:bg-slate-50'}`}
+              className={`ml-auto p-1.5 rounded-lg transition-colors ${isSidebarPinned ? 'text-orange-50' : 'text-slate-400 hover:bg-slate-50'}`}
               title={isSidebarPinned ? "Desafixar Menu" : "Fixar Menu"}
             >
-              <Pin size={16} className={isSidebarPinned ? 'fill-current rotate-45' : ''} />
+              <Pin size={16} className={isSidebarPinned ? 'fill-current rotate-45 text-orange-500' : ''} />
             </button>
           )}
         </div>
         
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto no-scrollbar">
+        <nav className="flex-1 px-2 py-2 space-y-0.5 no-scrollbar">
   <SidebarItem 
-    icon={<LayoutGrid size={20} />} 
+    icon={<LayoutGrid size={18} />} 
     label="Dashboard" 
     active={activeTab === 'dashboard'} 
     onClick={() => handleTabChange('dashboard')} 
@@ -164,50 +159,50 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   />
   
   <SidebarItem 
-    icon={<Users size={20} />} 
+    icon={<Users size={18} />} 
     label="Equipe" 
     active={activeTab === 'team'} 
     onClick={() => handleTabChange('team')} 
     expanded={isSidebarExpanded}
   />
 
-  <SidebarItem icon={<Scissors size={20} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<Scissors size={18} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<CalendarCheck size={20} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<CalendarCheck size={18} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<UserCircle size={20} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<UserCircle size={18} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<CreditCard size={20} />} label="Assinaturas" active={activeTab === 'subscriptions'} onClick={() => handleTabChange('subscriptions')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<CreditCard size={18} />} label="Assinaturas" active={activeTab === 'subscriptions'} onClick={() => handleTabChange('subscriptions')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<Tag size={20} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => handleTabChange('coupons')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<Tag size={18} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => handleTabChange('coupons')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<Award size={20} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => handleTabChange('loyalty')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<Award size={18} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => handleTabChange('loyalty')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<BarChart3 size={20} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => handleTabChange('reports')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<BarChart3 size={18} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => handleTabChange('reports')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<MessageSquare size={20} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<MessageSquare size={18} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<Sparkles size={20} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<Sparkles size={18} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<DollarSign size={20} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => handleTabChange('finance')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<DollarSign size={18} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => handleTabChange('finance')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<ShieldCheck size={20} />} label="Meu Plano" active={activeTab === 'plan'} onClick={() => handleTabChange('plan')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<ShieldCheck size={18} />} label="Meu Plano" active={activeTab === 'plan'} onClick={() => handleTabChange('plan')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<User size={20} />} label="Perfil" active={activeTab === 'profile'} onClick={() => handleTabChange('profile')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<User size={18} />} label="Perfil" active={activeTab === 'profile'} onClick={() => handleTabChange('profile')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<Settings size={20} />} label="Configurações" active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<Settings size={18} />} label="Configurações" active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} expanded={isSidebarExpanded} />
   
-  <div className="pt-4 mt-2">
-      <div className="h-px bg-slate-100 mb-4 mx-2"></div>
+  <div className="pt-2 mt-1">
+      <div className="h-px bg-slate-100 mb-2 mx-2"></div>
       <button 
           onClick={onViewClient}
-          className={`flex items-center px-4 py-3 w-full rounded-lg text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}
+          className={`flex items-center px-4 py-2 w-full rounded-lg text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}
       >
-          <Smartphone size={20} className="group-hover:text-orange-500 transition-colors shrink-0" />
+          <Smartphone size={18} className="group-hover:text-orange-500 transition-colors shrink-0" />
           {isSidebarExpanded && (
             <>
-              <span className="flex-1 text-left">Agenda Digital</span>
-              <ExternalLink size={14} className="opacity-50" />
+              <span className="flex-1 text-left text-sm">Agenda Digital</span>
+              <ExternalLink size={12} className="opacity-50" />
             </>
           )}
       </button>
@@ -235,7 +230,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                     </span>
                 </div>
                 <button 
-                    onClick={() => setActiveTab('plan')}
+                    onClick={() => handleTabChange('plan')}
                     className="bg-white text-slate-900 px-4 py-1 rounded-md text-xs font-bold hover:bg-slate-100 transition-colors uppercase tracking-wide"
                 >
                     Assinar Agora

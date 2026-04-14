@@ -289,55 +289,7 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
                                     </div>
                                 )}
 
-                                {/* Card Serviços Executados (Ranking Estilo cutflow4) */}
-                                <div className={`bg-white p-6 rounded-xl border border-slate-200 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] ${isAll ? 'md:col-span-2 lg:col-span-2' : 'md:col-span-2 lg:col-span-2'}`}>
-                                    <h3 className="text-lg font-bold text-[#1E293B] mb-4 flex items-center gap-2">
-                                        <Scissors size={20} className="text-[#1E293B]" />
-                                        Ranking de Serviços
-                                    </h3>
-                                    <div className="flex flex-col divide-y divide-slate-100">
-                                        {(() => {
-                                            const sortedServices = Object.entries(serviceBreakdown)
-                                                .map(([name, count]) => {
-                                                    const srv = services.find(s => s.name === name);
-                                                    return { name, count, price: srv?.price || 0 };
-                                                })
-                                                .sort((a, b) => b.count - a.count)
-                                                .slice(0, 5);
-                                            
-                                            const maxCount = Math.max(...sortedServices.map(s => s.count), 1);
-
-                                            return sortedServices.map((srv, index) => {
-                                                let badgeColor = 'bg-slate-200 text-slate-700';
-                                                if (index === 0) badgeColor = 'bg-yellow-400 text-yellow-900';
-                                                else if (index === 1) badgeColor = 'bg-slate-400 text-white';
-                                                else if (index === 2) badgeColor = 'bg-[#cd6133] text-white';
-
-                                                return (
-                                                    <div key={srv.name} className="py-4 flex items-center gap-4">
-                                                        <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center font-bold text-sm ${badgeColor}`}>
-                                                            {index + 1}º
-                                                        </div>
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex justify-between items-start mb-1">
-                                                                <span className="font-medium text-[#1E293B] truncate">{srv.name}</span>
-                                                                <span className="font-bold text-[#F16A1B] whitespace-nowrap ml-2">
-                                                                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(srv.count * srv.price)}
-                                                                </span>
-                                                            </div>
-                                                            <div className="w-full bg-[#F1F5F9] h-1.5 rounded-full overflow-hidden">
-                                                                <div className="bg-[#F16A1B] h-full rounded-full" style={{ width: `${(srv.count / maxCount) * 100}%` }}></div>
-                                                            </div>
-                                                            <div className="text-xs text-slate-500 mt-1 text-right">
-                                                                {srv.count} execuções
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            });
-                                        })()}
-                                    </div>
-                                </div>
+                                {/* Ranking removido */}
 
                                 {/* Tabela Detalhada (REMOVIDA) */}
                             </>

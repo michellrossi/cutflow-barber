@@ -18,11 +18,21 @@ export interface Client {
   id: string;
   shopId: string;
   name: string;
+  lastName?: string; // [NOVO]
   phone: string;
   email?: string;
   avatarUrl?: string;
   notes?: string;
   birthDate?: string; // ISO Date YYYY-MM-DD
+  cpf?: string; // [NOVO]
+  gender?: string; // [NOVO]
+  cep?: string; // [NOVO]
+  street?: string; // [NOVO]
+  number?: string; // [NOVO]
+  complement?: string; // [NOVO]
+  neighborhood?: string; // [NOVO]
+  city?: string; // [NOVO]
+  state?: string; // [NOVO]
   totalSpent?: number;
   loyaltyPoints?: number;
   loyaltyCardCount?: number;

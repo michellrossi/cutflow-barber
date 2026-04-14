@@ -159,14 +159,18 @@ BEGIN
   IF v_daily_count >= 3 THEN
     RAISE EXCEPTION 'Limite diário atingido para este número.';
   END IF;
-  INSERT INTO public.appointments (
-    shop_id, client_name, client_phone, service_ids,
-    professional_id, date, time, total_value, coupon_code, status
-  ) VALUES (
-    p_shop_id, p_client_name, p_client_phone, p_service_ids,
-    p_professional_id, p_date, p_time, p_total_value, p_coupon_code, 'scheduled'
-  ) RETURNING id INTO v_appointment_id;
-  RETURN json_build_object('id', v_appointment_id, 'status', 'success');
+  BEGIN
+    INSERT INTO public.appointments (
+      shop_id, client_name, client_phone, service_ids,
+      professional_id, date, time, total_value, coupon_code, status
+    ) VALUES (
+      p_shop_id, p_client_name, p_client_phone, p_service_ids,
+      p_professional_id, p_date, p_time, p_total_value, p_coupon_code, 'scheduled'
+    ) RETURNING id INTO v_appointment_id;
+    RETURN json_build_object('id', v_appointment_id, 'status', 'success');
+  EXCEPTION WHEN unique_violation THEN
+    RETURN json_build_object('status', 'conflict', 'message', 'Horário já reservado');
+  END;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -248,7 +252,10 @@ CREATE POLICY "Criar Agendamento Paywall" ON public.appointments
 DROP POLICY IF EXISTS "Publico_Le_Agendamentos" ON public.appointments;
 DROP POLICY IF EXISTS "Enable read access for all users" ON public.appointments;
 CREATE POLICY "Publico_Le_Agendamentos" ON public.appointments
-  FOR SELECT USING (true);
+  FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.shops WHERE id = appointments.shop_id AND owner_id = auth.uid()) OR
+    EXISTS (SELECT 1 FROM public.professionals WHERE user_id = auth.uid() AND shop_id = appointments.shop_id)
+  );
 
 -- Permite que supabaseAdmin (service_role) atualize flags de notificação.
 -- Com service_role, esta policy é ignorada. Mantida para clareza de intenção.
@@ -265,6 +272,55 @@ DROP POLICY IF EXISTS "Leitura segura de tokens" ON public.client_auth_tokens;
 DROP POLICY IF EXISTS "Server_Only_Tokens" ON public.client_auth_tokens; -- 
 CREATE POLICY "Server_Only_Tokens" ON public.client_auth_tokens
   FOR ALL USING (false) WITH CHECK (false);
+
+-- RPCS para tokens de cliente (ignoram RLS com SECURITY DEFINER)
+CREATE OR REPLACE FUNCTION public.create_client_token(p_client_id UUID, p_token TEXT, p_expires_at TIMESTAMPTZ)
+RETURNS VOID AS $$
+BEGIN
+  INSERT INTO public.client_auth_tokens (client_id, token, expires_at)
+  VALUES (p_client_id, p_token, p_expires_at);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.validate_client_token(p_token TEXT)
+RETURNS JSON AS $$
+DECLARE
+  v_token_id UUID;
+  v_client_id UUID;
+  v_client_data JSON;
+BEGIN
+  -- Busca o token e garante que nao expirou
+  SELECT id, client_id INTO v_token_id, v_client_id 
+  FROM public.client_auth_tokens 
+  WHERE token = p_token AND expires_at > NOW();
+
+  IF v_token_id IS NULL THEN
+    RAISE EXCEPTION 'Token inválido ou expirado';
+  END IF;
+
+  -- Deleta para garantir uso unico
+  DELETE FROM public.client_auth_tokens WHERE id = v_token_id;
+
+  -- Retorna os dados mapeados
+  SELECT json_build_object(
+    'id', c.id,
+    'shop_id', c.shop_id,
+    'name', c.name,
+    'phone', c.phone,
+    'avatar_url', c.avatar_url,
+    'total_spent', c.total_spent,
+    'loyalty_points', c.loyalty_points,
+    'loyalty_card_count', c.loyalty_card_count,
+    'created_at', c.created_at,
+    'shops', json_build_object('slug', s.slug)
+  ) INTO v_client_data
+  FROM public.clients c
+  JOIN public.shops s ON s.id = c.shop_id
+  WHERE c.id = v_client_id;
+
+  RETURN v_client_data;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ---- MESSAGE_TEMPLATES ----
 DROP POLICY IF EXISTS "Dono_Gere_Templates" ON public.message_templates;
@@ -307,3 +363,51 @@ NOTIFY pgrst, 'reload schema';
 --   AND post_sale_sent = false
 --   AND date < CURRENT_DATE - INTERVAL '1 day';
 
+-- SQL Function to prevent Race Condition during Loyalty Reward Generation
+CREATE OR REPLACE FUNCTION public.award_loyalty_reward(p_client_id UUID, p_shop_id UUID)
+RETURNS JSON AS $$
+DECLARE
+  v_client RECORD;
+  v_settings RECORD;
+  v_coupon_code TEXT;
+  v_expires_at TIMESTAMPTZ;
+BEGIN
+  -- Bloqueia a linha do cliente para leitura e escrita simultânea de concorrências (FOR UPDATE)
+  SELECT * INTO v_client FROM public.clients WHERE id = p_client_id AND shop_id = p_shop_id FOR UPDATE;
+  IF NOT FOUND THEN
+    RETURN json_build_object('success', false, 'message', 'Cliente não encontrado');
+  END IF;
+
+  SELECT * INTO v_settings FROM public.settings WHERE shop_id = p_shop_id;
+  IF NOT FOUND OR COALESCE(v_settings.loyalty_enabled, true) = false THEN
+    RETURN json_build_object('success', false, 'message', 'Fidelidade desativada');
+  END IF;
+
+  IF v_client.loyalty_points < v_settings.loyalty_points_goal THEN
+    RETURN json_build_object('success', false, 'message', 'Meta não atingida');
+  END IF;
+
+  -- Gera o código e insere atômicamente
+  v_coupon_code := UPPER(SPLIT_PART(v_client.name, ' ', 1)) || RIGHT(v_client.phone, 4) || EXTRACT(DAY FROM CURRENT_DATE)::TEXT;
+  v_expires_at := NOW() + (COALESCE(v_settings.loyalty_reward_validity_days, 90) || ' days')::INTERVAL;
+
+  INSERT INTO public.coupons (
+    shop_id, client_id, code, discount_value, discount_type, expires_at, is_loyalty_reward
+  ) VALUES (
+    p_shop_id, p_client_id, v_coupon_code, COALESCE(v_settings.loyalty_reward_value, 0), COALESCE(v_settings.loyalty_reward_type, 'percentage'), v_expires_at, true
+  );
+
+  -- Reseta os pontos na mesma transação
+  UPDATE public.clients SET loyalty_points = 0 WHERE id = p_client_id;
+
+  RETURN json_build_object(
+    'success', true, 
+    'couponCode', v_coupon_code, 
+    'clientName', v_client.name, 
+    'clientPhone', v_client.phone, 
+    'discount', v_settings.loyalty_reward_value, 
+    'discountType', v_settings.loyalty_reward_type, 
+    'validityDays', v_settings.loyalty_reward_validity_days
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

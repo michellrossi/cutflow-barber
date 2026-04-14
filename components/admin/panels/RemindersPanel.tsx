@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { useToast } from '../../ui/ToastContext';
 
-export const RemindersPanel: React.FC = () => {
+export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab = 'clients' }) => {
     const {
         messageTemplates, addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
         messageCategories, addMessageCategory, removeMessageCategory,
@@ -16,7 +16,14 @@ export const RemindersPanel: React.FC = () => {
     } = useShop();
     const { showToast } = useToast();
 
-    const [activeTab, setActiveTab] = useState<'clients' | 'team' | 'triggers' | 'whatsapp' | 'notifications'>('clients');
+    const [activeTab, setActiveTab] = useState<any>(initialTab);
+
+    useEffect(() => {
+        if (initialTab) {
+            setActiveTab(initialTab);
+        }
+    }, [initialTab]);
+
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTemplate, setEditingTemplate] = useState<Partial<MessageTemplate> | null>(null);
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -30,6 +37,7 @@ export const RemindersPanel: React.FC = () => {
     const [qrCode, setQrCode] = useState<string | null>(null);
     const [wsLoading, setWsLoading] = useState(false);
     const [wsStatus, setWsStatus] = useState<'connected' | 'disconnected' | 'loading'>('loading');
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
     const checkStatus = async () => {
         const res = await getWhatsAppStatus();
@@ -480,7 +488,8 @@ export const RemindersPanel: React.FC = () => {
                             layout
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col"
+                            onClick={() => { setEditingTemplate(template); setIsModalOpen(true); }}
+                            className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col cursor-pointer"
                         >
                             <div className="flex justify-between items-start mb-4">
                                 <div className="p-3 bg-orange-50 text-orange-600 rounded-md">
@@ -488,7 +497,7 @@ export const RemindersPanel: React.FC = () => {
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <button
-                                        onClick={() => handleTest(template.id)}
+                                        onClick={(e) => { e.stopPropagation(); handleTest(template.id); }}
                                         disabled={isTesting}
                                         className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
                                         title="Enviar Teste"
@@ -496,16 +505,13 @@ export const RemindersPanel: React.FC = () => {
                                         <Copy size={18} />
                                     </button>
                                     <button
-                                        onClick={() => {
-                                            setEditingTemplate(template);
-                                            setIsModalOpen(true);
-                                        }}
+                                        onClick={(e) => { e.stopPropagation(); setEditingTemplate(template); setIsModalOpen(true); }}
                                         className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-md transition-colors"
                                     >
                                         <Eye size={18} />
                                     </button>
                                     <button
-                                        onClick={() => removeMessageTemplate(template.id)}
+                                        onClick={(e) => { e.stopPropagation(); removeMessageTemplate(template.id); }}
                                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
                                     >
                                         <Trash2 size={18} />
@@ -530,7 +536,7 @@ export const RemindersPanel: React.FC = () => {
                                     {template.active ? 'Ativo' : 'Inativo'}
                                 </span>
                                 <button
-                                    onClick={() => updateMessageTemplate(template.id, { active: !template.active })}
+                                    onClick={(e) => { e.stopPropagation(); updateMessageTemplate(template.id, { active: !template.active }); }}
                                     className="text-xs font-medium text-orange-600 hover:underline"
                                 >
                                     {template.active ? 'Desativar' : 'Ativar'}
@@ -636,16 +642,38 @@ export const RemindersPanel: React.FC = () => {
                                                 <button
                                                     key={v.value}
                                                     onClick={() => {
-                                                        const content = editingTemplate?.content || '';
-                                                        setEditingTemplate(prev => ({ ...prev, content: content + ' ' + v.value }));
+                                                        const textarea = textareaRef.current;
+                                                        if (textarea) {
+                                                            textarea.focus();
+                                                            // Tenta usar execCommand para preservar o histórico de desfazer (Ctrl+Z)
+                                                            const inserted = document.execCommand('insertText', false, v.value);
+                                                            
+                                                            // Fallback caso execCommand não funcione (embora funcione na maioria dos browsers modernos para insertText)
+                                                            if (!inserted) {
+                                                                const start = textarea.selectionStart;
+                                                                const end = textarea.selectionEnd;
+                                                                const content = editingTemplate?.content || '';
+                                                                const newContent = content.substring(0, start) + v.value + content.substring(end);
+                                                                setEditingTemplate(prev => ({ ...prev, content: newContent }));
+                                                                
+                                                                // Re-posiciona o cursor após o state update (com delay para o React renderizar)
+                                                                setTimeout(() => {
+                                                                    textarea.selectionStart = textarea.selectionEnd = start + v.value.length;
+                                                                }, 0);
+                                                            }
+                                                        } else {
+                                                            const content = editingTemplate?.content || '';
+                                                            setEditingTemplate(prev => ({ ...prev, content: content + ' ' + v.value }));
+                                                        }
                                                     }}
                                                     className="px-2 py-1 bg-slate-100 hover:bg-orange-100 hover:text-orange-700 text-slate-600 rounded-md text-xs font-bold transition-colors border border-slate-200"
                                                 >
-                                                    {v.value}
+                                                    {v.label}
                                                 </button>
                                             ))}
                                         </div>
                                         <textarea
+                                            ref={textareaRef}
                                             value={editingTemplate?.content || ''}
                                             onChange={(e) => setEditingTemplate(prev => ({ ...prev, content: e.target.value }))}
                                             rows={6}

@@ -41,7 +41,7 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
     }, [services, activeCategory]);
 
     return (
-        <div className="max-w-2xl mx-auto py-8 px-4 pb-32">
+        <div className="max-w-5xl mx-auto py-8 px-4 pb-32">
             {/* Voltar */}
             <div className="mb-6">
                 <button
@@ -67,12 +67,11 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
                         <button
                             key={cat}
                             onClick={() => setActiveCategory(cat)}
-                            className="shrink-0 px-4 py-2 rounded-full text-sm font-bold border transition-all"
-                            style={{
-                                backgroundColor: isActive ? accent : 'transparent',
-                                borderColor: isActive ? accent : border,
-                                color: isActive ? '#fff' : textColor,
-                            }}
+                            className={`shrink-0 px-4 py-2 rounded-md text-sm font-bold border transition-all bg-white ${
+                                isActive 
+                                ? 'border-2 border-orange-500 text-orange-500 shadow-sm' 
+                                : 'border-slate-200 text-slate-500 hover:border-slate-300'
+                            }`}
                         >
                             {cat}
                         </button>
@@ -81,7 +80,7 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
             </div>
 
             {/* Grid de Serviços: 4 colunas */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 {displayedServices.map(service => {
                     const isSelected = selectedServiceIds.includes(service.id);
                     return (
@@ -114,14 +113,6 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
                                     <Clock size={12} />
                                     {service.duration} min
                                 </div>
-                                {/* Overlay selecionado */}
-                                {isSelected && (
-                                    <div className="absolute inset-0 flex items-center justify-center" style={{ backgroundColor: `${accent}1a` }}>
-                                        <div className="text-white rounded-full p-2 shadow-lg" style={{ backgroundColor: accent }}>
-                                            <Check size={24} strokeWidth={3} />
-                                        </div>
-                                    </div>
-                                )}
                             </div>
 
                             {/* Conteúdo */}
@@ -133,15 +124,6 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
                                     <p className="text-xl font-bold" style={{ color: accent }}>
                                         {formatCurrency(service.price)}
                                     </p>
-                                    <div
-                                        className="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
-                                        style={{
-                                            backgroundColor: isSelected ? accent : 'transparent',
-                                            borderColor: isSelected ? accent : border,
-                                        }}
-                                    >
-                                        {isSelected && <Check size={14} style={{ color: settings.buttonTextColor || '#ffffff' }} strokeWidth={3} />}
-                                    </div>
                                 </div>
                             </div>
                         </div>
