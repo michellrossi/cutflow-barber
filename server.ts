@@ -26,12 +26,11 @@ const PORT = process.env.PORT || 3000;
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const geminiKey = process.env.GEMINI_API_KEY || '';
 
-const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 // Validação de Segurança (antes de criar o client para evitar crash)
-if (!supabaseUrl || !supabaseKey) {
-    console.error("❌ ERRO CRÍTICO: Variáveis de ambiente faltando!");
+if (!supabaseUrl) {
+    console.error("❌ ERRO CRÍTICO: supabaseUrl faltando!");
 }
 if (!serviceRoleKey) {
     console.warn("⚠️ AVISO: SUPABASE_SERVICE_ROLE_KEY não configurada. O Cron Job pode falhar devido a RLS.");
@@ -67,6 +66,8 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
                 if (triggerId === 'post_sale') return name.includes('pós-venda') || name.includes('avaliação');
                 if (triggerId === 'rescheduling_request') return name.includes('reagendamento');
                 if (triggerId === 'retention_30d') return name.includes('retenção') || name.includes('30 dias');
+                if (triggerId === 'birthday') return name.includes('aniversário') || name.includes('birthday');
+                if (triggerId === 'loyalty_reward') return name.includes('fidelidade') || name.includes('recompensa');
                 return false;
             });
 
@@ -163,7 +164,7 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
 async function sendWhatsApp(phone: string, message: string, instanceName?: string) {
     const apiUrl = process.env.WHATSAPP_API_URL;
     const apiKey = process.env.WHATSAPP_API_KEY;
-    const instance = instanceName || process.env.WHATSAPP_INSTANCE || 'cutflow';
+    const instance = instanceName || process.env.WHATSAPP_INSTANCE || 'insightbarber';
 
     if (!apiUrl || !apiKey) {
         console.warn("[WhatsApp] API não configurada (WHATSAPP_API_URL ou WHATSAPP_API_KEY ausente)");
@@ -218,7 +219,7 @@ async function runCronLogic() {
     // 1. Lembretes de 24 Horas
     const { data: apts24h } = await supabaseAdmin
         .from('appointments')
-        .select('*, professionals(name), shops(id, name, whatsapp_instance)')
+        .select('*, professionals(name), shops(id, name, whatsapp_instance, whatsapp_connected)')
         .in('status', ['confirmed', 'scheduled'])
         .eq('reminder_24h_sent', false)
         .lte('send_attempts_24h', maxRetries - 1)
@@ -226,6 +227,10 @@ async function runCronLogic() {
 
     if (apts24h) {
         for (const apt of apts24h) {
+            if (!apt.shops?.whatsapp_connected) {
+                console.warn(`[Cron] Loja ${apt.shop_id} offline. Pulando lembrete 24h.`);
+                continue;
+            }
             const aptDateTime = new Date(`${apt.date}T${apt.time}`);
             const diffHours = (aptDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
             if (diffHours <= 24 && diffHours > 1) {
@@ -258,7 +263,7 @@ async function runCronLogic() {
     // 2. Lembretes de 1 Hora
     const { data: apts1h } = await supabaseAdmin
         .from('appointments')
-        .select('*, professionals(name), shops(id, name, whatsapp_instance)')
+        .select('*, professionals(name), shops(id, name, whatsapp_instance, whatsapp_connected)')
         .in('status', ['confirmed', 'scheduled'])
         .eq('reminder_1h_sent', false)
         .lte('send_attempts_1h', maxRetries - 1)
@@ -266,6 +271,10 @@ async function runCronLogic() {
 
     if (apts1h) {
         for (const apt of apts1h) {
+            if (!apt.shops?.whatsapp_connected) {
+                console.warn(`[Cron] Loja ${apt.shop_id} offline. Pulando lembrete 1h.`);
+                continue;
+            }
             const aptDateTime = new Date(`${apt.date}T${apt.time}`);
             const diffMinutes = (aptDateTime.getTime() - now.getTime()) / (1000 * 60);
             if (diffMinutes <= 65 && diffMinutes > 0) {
@@ -301,7 +310,7 @@ async function runCronLogic() {
 
     const { data: aptsReschedule } = await supabaseAdmin
         .from('appointments')
-        .select('*, professionals(name), shops(id, name, whatsapp_instance)')
+        .select('*, professionals(name), shops(id, name, whatsapp_instance, whatsapp_connected)')
         .in('status', ['cancelled', 'noshow'])
         .eq('rescheduling_sent', false)
         .lte('send_attempts_reschedule', maxRetries - 1)
@@ -309,6 +318,10 @@ async function runCronLogic() {
 
     if (aptsReschedule) {
         for (const apt of aptsReschedule) {
+            if (!apt.shops?.whatsapp_connected) {
+                console.warn(`[Cron] Loja ${apt.shop_id} offline. Pulando reagendamento.`);
+                continue;
+            }
             const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
             const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
             const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
@@ -337,7 +350,7 @@ async function runCronLogic() {
     // 4. Pós-venda
     const { data: aptsPostSale } = await supabaseAdmin
         .from('appointments')
-        .select('*, professionals(name), shops(id, name, whatsapp_instance)')
+        .select('*, professionals(name), shops(id, name, whatsapp_instance, whatsapp_connected)')
         .eq('status', 'completed')
         .eq('post_sale_sent', false)
         .lte('send_attempts_postsale', maxRetries - 1)
@@ -345,6 +358,10 @@ async function runCronLogic() {
 
     if (aptsPostSale) {
         for (const apt of aptsPostSale) {
+            if (!apt.shops?.whatsapp_connected) {
+                console.warn(`[Cron] Loja ${apt.shop_id} offline. Pulando pós-venda.`);
+                continue;
+            }
             const aptDateTime = new Date(`${apt.date}T${apt.time}`);
             const diffMinutes = (now.getTime() - aptDateTime.getTime()) / (1000 * 60);
             if (diffMinutes >= 120 && diffMinutes < 1440) {
@@ -377,7 +394,7 @@ async function runCronLogic() {
     // 5. Retenção 30 Dias
     const { data: apts30d } = await supabaseAdmin
         .from('appointments')
-        .select('*, shops(id, name, whatsapp_instance)')
+        .select('*, shops(id, name, whatsapp_instance, whatsapp_connected)')
         .eq('status', 'completed')
         .eq('reminder_30d_sent', false)
         .lte('send_attempts_30d', maxRetries - 1)
@@ -386,6 +403,7 @@ async function runCronLogic() {
 
     if (apts30d) {
         for (const apt of apts30d) {
+            if (!apt.shops?.whatsapp_connected) continue;
             const msg = await generateWhatsAppMessage('retention_30d', {
                 clientName: apt.client_name,
                 shopName: apt.shops?.name
@@ -406,12 +424,13 @@ async function runCronLogic() {
     const todayMMDD = dayjs(now).format('MM-DD');
     const { data: bdayClients } = await supabaseAdmin
         .from('clients')
-        .select('*, shops(id, name, whatsapp_instance)')
-        .filter('birth_date', 'ilike', `%-${todayMMDD}`)
+        .select('*, shops(id, name, whatsapp_instance, whatsapp_connected)')
+        .filter('birth_date', 'ilike', `%-${todayMMDD}%`)
         .or(`birthday_last_sent_year.is.null,birthday_last_sent_year.neq.${now.getFullYear()}`);
 
     if (bdayClients) {
         for (const client of bdayClients) {
+            if (!client.shops?.whatsapp_connected) continue;
             const msg = await generateWhatsAppMessage('birthday', {
                 clientName: client.name,
                 shopName: client.shops?.name
@@ -605,6 +624,7 @@ async function startServer() {
     });
 
     app.get('/api/notify/cron', async (req, res) => {
+        if (req.headers['x-cron-secret'] !== process.env.CRON_SECRET) return res.status(401).end();
         try {
             await runCronLogic();
             res.json({ status: "Cron executado com sucesso" });
@@ -747,6 +767,8 @@ async function startServer() {
 
     // 3. Webhook do Asaas (Confirmação de Pagamento)
     app.post('/api/asaas/webhook', async (req, res) => {
+        if (req.headers['asaas-access-token'] !== process.env.ASAAS_WEBHOOK_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
+
         const event = req.body.event;
         const payment = req.body.payment;
 

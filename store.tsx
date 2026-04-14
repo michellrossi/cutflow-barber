@@ -134,7 +134,7 @@ const INITIAL_STATE: ShopState = {
   clientSession: null,
   trialStatus: 'active',
   daysRemaining: 14,
-  theme: 'dark',
+  theme: 'light',
   automationTriggers: []
 };
 
@@ -379,12 +379,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const savedClient = sessionStorage.getItem('currentClient');
     const savedSession = sessionStorage.getItem('clientSession');
-    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light';
-
-    if (savedTheme) {
-        setState(prev => ({ ...prev, theme: savedTheme }));
-        document.documentElement.classList.toggle('light', savedTheme === 'light');
-    }
+    const savedTheme = 'light'; // Forçando modo claro
+    setState(prev => ({ ...prev, theme: 'light' }));
+    document.documentElement.classList.add('light'); // Forçando classe light no HTML
 
     if (savedClient && savedSession) {
       try {
@@ -1776,7 +1773,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               client = newClient;
           }
 
-          const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+          const token = crypto.randomUUID();
           const expiresAt = new Date(Date.now() + 15 * 60 * 1000); 
 
           console.log("[Auth] Gerando token para cliente:", { clientId: client.id, token, expiresAt });

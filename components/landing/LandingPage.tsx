@@ -123,13 +123,13 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
           <div className="flex items-center gap-4">
             <button 
               onClick={onLogin}
-              className="px-4 py-2 text-sm font-medium text-[#F8FAFC] hover:text-white border border-transparent hover:border-white/20 rounded-lg transition-all"
+              className="px-4 py-2 text-sm font-medium text-[#F8FAFC] hover:text-slate-900 border border-transparent hover:border-white/20 rounded-lg transition-all"
             >
               Entrar
             </button>
             <button 
               onClick={onStart}
-              className="px-6 py-2 bg-[#F97316] hover:bg-[#EA580C] text-white text-sm font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(249,115,22,0.3)] hover:shadow-[0_0_30px_rgba(249,115,22,0.5)]"
+              className="px-6 py-2 bg-[#F97316] hover:bg-[#EA580C] text-slate-900 text-sm font-bold rounded-lg transition-all shadow-[0_0_20px_rgba(249,115,22,0.3)] hover:shadow-[0_0_30px_rgba(249,115,22,0.5)]"
             >
               Teste Grátis — 14 dias
             </button>
@@ -158,7 +158,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
               Sistema de Alta Performance
             </motion.div>
 
-            <h1 className="text-5xl md:text-7xl font-extrabold leading-[1.1] tracking-tight text-white">
+            <h1 className="text-5xl md:text-7xl font-extrabold leading-[1.1] tracking-tight text-slate-900">
               <motion.span 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -194,12 +194,12 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
             >
               <button 
                 onClick={onStart}
-                className="w-full sm:w-auto px-8 py-4 bg-[#F97316] hover:bg-[#EA580C] text-white font-bold text-lg rounded-xl transition-all hover:scale-105 shadow-xl shadow-[#F97316]/20 flex items-center justify-center gap-2 group"
+                className="w-full sm:w-auto px-8 py-4 bg-[#F97316] hover:bg-[#EA580C] text-slate-900 font-bold text-lg rounded-xl transition-all hover:scale-105 shadow-xl shadow-[#F97316]/20 flex items-center justify-center gap-2 group"
               >
                 Começar grátis por 14 dias
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </button>
-              <button className="w-full sm:w-auto px-8 py-4 bg-transparent border border-[#334155] hover:bg-white/5 text-white font-bold text-lg rounded-xl transition-all flex items-center justify-center gap-2">
+              <button className="w-full sm:w-auto px-8 py-4 bg-transparent border border-[#334155] hover:bg-white/5 text-slate-900 font-bold text-lg rounded-xl transition-all flex items-center justify-center gap-2">
                 <Play size={20} fill="currentColor" />
                 Ver demonstração
               </button>
@@ -275,13 +275,13 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                className="absolute -top-12 -left-8 z-20 bg-white p-4 rounded-xl shadow-2xl flex items-center gap-3 border border-slate-200 min-w-[280px]"
             >
-                <div className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center text-white">
+                <div className="w-10 h-10 rounded-full bg-[#25D366] flex items-center justify-center text-slate-900">
                     <MessageSquare size={20} fill="currentColor" />
                 </div>
                 <div>
                     <div className="flex items-center justify-between gap-4">
                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">WhatsApp Delivery</p>
-                        <span className="text-[9px] text-slate-400">agora</span>
+                        <span className="text-[9px] text-slate-600">agora</span>
                     </div>
                     <p className="text-xs text-slate-800 font-medium">
                         Novo agendamento: <span className="font-bold">João Silva</span> 
@@ -321,7 +321,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
             { label: 'Taxa de satisfação', value: 98, suffix: '%' },
           ].map((stat, i) => (
             <div key={i} className="text-center group">
-               <div className="text-4xl md:text-5xl font-black text-white mb-2 flex items-center justify-center gap-1">
+               <div className="text-4xl md:text-5xl font-black text-slate-900 mb-2 flex items-center justify-center gap-1">
                    <CountUp end={stat.value} prefix={stat.prefix} suffix={stat.suffix} />
                </div>
                <p className="text-[#94A3B8] text-sm uppercase font-bold tracking-widest">{stat.label}</p>
@@ -334,7 +334,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
       <section id="features" className="py-24 px-6 relative overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 space-y-4">
-             <h2 className="text-3xl md:text-5xl font-extrabold text-white">Tudo que sua barbearia precisa, em um só lugar</h2>
+             <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">Tudo que sua barbearia precisa, em um só lugar</h2>
              <p className="text-[#94A3B8] text-lg max-w-2xl mx-auto">
                 Do agendamento ao pós-venda. Do financeiro à fidelização. Insight Barber é o sistema que trabalha enquanto você corta.
              </p>
@@ -364,7 +364,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
                 className="card-premium p-8 group cursor-default"
               >
                 <div className="text-4xl mb-6 group-hover:scale-110 transition-transform origin-left">{f.icon}</div>
-                <h3 className="text-xl font-bold text-white mb-3 group-hover:text-[#F97316] transition-colors">{f.title}</h3>
+                <h3 className="text-xl font-bold text-slate-900 mb-3 group-hover:text-[#F97316] transition-colors">{f.title}</h3>
                 <p className="text-[#94A3B8] text-sm leading-relaxed">{f.desc}</p>
               </motion.div>
             ))}
@@ -376,7 +376,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
       <section className="py-24 px-6 relative bg-gradient-to-b from-[#0B0F19] to-[#040608] overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-5xl font-extrabold text-white">Seu WhatsApp trabalha por você — 24 horas por dia</h2>
+            <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">Seu WhatsApp trabalha por você — 24 horas por dia</h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
@@ -384,9 +384,9 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
             <div className="relative">
                 <div className="bg-[#121B22] rounded-3xl p-6 border border-[#233138] shadow-2xl max-w-[450px] mx-auto overflow-hidden">
                     <div className="flex items-center gap-3 mb-8 border-b border-[#233138] pb-4">
-                        <div className="w-10 h-10 rounded-full bg-slate-700"></div>
+                        <div className="w-10 h-10 rounded-full bg-slate-300"></div>
                         <div>
-                            <p className="text-sm font-bold text-white uppercase tracking-tight">João Silva</p>
+                            <p className="text-sm font-bold text-slate-900 uppercase tracking-tight">João Silva</p>
                             <p className="text-[10px] text-green-500">Online</p>
                         </div>
                     </div>
@@ -471,7 +471,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
       <section id="how-it-works" className="py-24 px-6 relative">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-             <h2 className="text-3xl md:text-5xl font-extrabold text-white">Comece hoje, receba agendamentos ainda esta semana</h2>
+             <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">Comece hoje, receba agendamentos ainda esta semana</h2>
           </div>
 
           <div className="relative">
@@ -486,12 +486,12 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
                 ].map((item, i) => (
                     <div key={i} className="text-center group">
                         <div className="w-20 h-20 bg-[#1E293B] rounded-2xl flex items-center justify-center shadow-xl border border-[#334155] mx-auto mb-8 relative group-hover:border-[#F97316] transition-all group-hover:-translate-y-2">
-                            <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[#F97316] text-white font-black text-sm flex items-center justify-center border-4 border-[#0B0F19]">
+                            <div className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-[#F97316] text-slate-900 font-black text-sm flex items-center justify-center border-4 border-[#0B0F19]">
                                 {item.step}
                             </div>
                             {item.icon}
                         </div>
-                        <h3 className="text-xl font-bold text-white mb-4">{item.title}</h3>
+                        <h3 className="text-xl font-bold text-slate-900 mb-4">{item.title}</h3>
                         <p className="text-[#94A3B8] leading-relaxed">{item.desc}</p>
                     </div>
                 ))}
@@ -504,12 +504,12 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
       <section id="pricing" className="py-24 px-6 bg-[#0B0F19] relative">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16 space-y-4">
-             <h2 className="text-3xl md:text-5xl font-extrabold text-white">Investimento que se paga no primeiro mês</h2>
+             <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">Investimento que se paga no primeiro mês</h2>
              <p className="text-[#94A3B8] text-lg">Sem taxa de adesão. Cancele quando quiser.</p>
              
              {/* Toggle */}
              <div className="flex items-center justify-center gap-4 pt-8">
-                <span className={`text-sm font-bold ${billingCycle === 'monthly' ? 'text-white' : 'text-[#94A3B8]'}`}>Mensal</span>
+                <span className={`text-sm font-bold ${billingCycle === 'monthly' ? 'text-slate-900' : 'text-[#94A3B8]'}`}>Mensal</span>
                 <button 
                   onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'yearly' : 'monthly')}
                   className="w-14 h-7 bg-[#1E293B] rounded-full p-1 relative transition-colors border border-[#334155]"
@@ -519,7 +519,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
                       className="w-5 h-5 bg-[#F97316] rounded-full"
                     />
                 </button>
-                <span className={`text-sm font-bold flex items-center gap-2 ${billingCycle === 'yearly' ? 'text-white' : 'text-[#94A3B8]'}`}>
+                <span className={`text-sm font-bold flex items-center gap-2 ${billingCycle === 'yearly' ? 'text-slate-900' : 'text-[#94A3B8]'}`}>
                     Anual <span className="bg-green-500/10 text-green-500 text-[10px] px-2 py-0.5 rounded-full border border-green-500/20">2 meses grátis</span>
                 </span>
              </div>
@@ -550,7 +550,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
 
             {/* PROFISSIONAL */}
             <div className="card-premium p-10 relative overflow-hidden border-[#F97316] transform lg:scale-110 shadow-2xl shadow-[#F97316]/10 z-20">
-                <div className="absolute top-4 right-4 bg-[#F97316] text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">MAIS POPULAR</div>
+                <div className="absolute top-4 right-4 bg-[#F97316] text-slate-900 text-[10px] font-black px-3 py-1 rounded-full uppercase">MAIS POPULAR</div>
                 <div className="text-sm font-bold text-[#F97316] uppercase tracking-widest mb-4">PROFISSIONAL</div>
                 <div className="mb-6">
                     <span className="text-5xl font-black">{billingCycle === 'monthly' ? 'R$ 99,90' : 'R$ 82,90'}</span>
@@ -566,7 +566,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
                     <PricingItem text="IA: Chatbot de insights" />
                     <PricingItem text="Clube de assinatura" inactive />
                 </ul>
-                <button onClick={onStart} className="w-full py-4 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-white font-black transition-all shadow-xl shadow-[#F97316]/30">
+                <button onClick={onStart} className="w-full py-4 rounded-xl bg-[#F97316] hover:bg-[#EA580C] text-slate-900 font-black transition-all shadow-xl shadow-[#F97316]/30">
                     Garantir este plano
                 </button>
             </div>
@@ -604,7 +604,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
       <section id="testimonials" className="py-24 px-6 relative bg-gradient-to-b from-[#0B0F19] to-[#111827]">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-             <h2 className="text-3xl md:text-5xl font-extrabold text-white">Barbearias que já transformaram o negócio</h2>
+             <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">Barbearias que já transformaram o negócio</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -623,7 +623,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
                             {d.name.charAt(0)}
                         </div>
                         <div>
-                            <p className="font-bold text-white">{d.name}</p>
+                            <p className="font-bold text-slate-900">{d.name}</p>
                             <p className="text-[11px] text-[#94A3B8] uppercase font-bold tracking-wider">{d.shop}</p>
                         </div>
                     </div>
@@ -644,7 +644,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              className="text-5xl md:text-7xl font-extrabold text-white leading-tight"
+              className="text-5xl md:text-7xl font-extrabold text-slate-900 leading-tight"
             >
                 Sua barbearia merece um sistema que trabalha por você
             </motion.h2>
@@ -665,7 +665,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
               transition={{ delay: 0.4 }}
-              className="px-10 py-6 bg-[#F97316] hover:bg-[#EA580C] text-white font-black text-2xl rounded-2xl transition-all shadow-2xl shadow-[#F97316]/40 hover:scale-105 active:scale-95 group"
+              className="px-10 py-6 bg-[#F97316] hover:bg-[#EA580C] text-slate-900 font-black text-2xl rounded-2xl transition-all shadow-2xl shadow-[#F97316]/40 hover:scale-105 active:scale-95 group"
             >
                 Criar minha conta grátis
                 <ArrowRight size={28} className="inline-block ml-3 group-hover:translate-x-2 transition-transform" />
@@ -699,7 +699,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
                     <div key={i} className="text-center md:text-left space-y-4">
                         <p className="text-[#F97316] text-[10px] uppercase font-black tracking-widest">{g.label}</p>
                         <div className="flex flex-col gap-2">
-                            {g.links.map((l, j) => <a key={j} href="#" className="text-sm font-medium text-[#94A3B8] hover:text-white transition-colors">{l}</a>)}
+                            {g.links.map((l, j) => <a key={j} href="#" className="text-sm font-medium text-[#94A3B8] hover:text-slate-900 transition-colors">{l}</a>)}
                         </div>
                     </div>
                 ))}
@@ -720,7 +720,7 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
 const PricingItem: React.FC<{ text: string, inactive?: boolean, bold?: boolean }> = ({ text, inactive, bold }) => (
     <li className={`flex items-start gap-3 text-sm ${inactive ? 'opacity-30 line-through' : 'opacity-100'}`}>
         <Check size={18} className={`${inactive ? 'text-[#94A3B8]' : 'text-[#F97316]'} shrink-0`} />
-        <span className={bold ? 'font-bold text-white' : 'font-medium'}>{text}</span>
+        <span className={bold ? 'font-bold text-slate-900' : 'font-medium'}>{text}</span>
     </li>
 );
 

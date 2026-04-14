@@ -185,7 +185,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                                 text="Compartilhe seu link público" 
                                 icon={<Share2 size={18}/>} 
                                 onClick={() => { 
-                                    const url = `https://${settings?.slug || 'agendar'}.cutflow.com.br`;
+                                    const url = `https://${settings?.slug || 'agendar'}.insightbarber.com.br`;
                                     navigator.clipboard.writeText(url); 
                                     alert('Link copiado! Coloque-o em sua Bio do Instagram.'); 
                                 }} 

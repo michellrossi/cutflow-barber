@@ -126,7 +126,7 @@ export const FinancePanel: React.FC = () => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.setAttribute('download', `relatorio_cutflow_${startDate}_${endDate}.csv`);
+        link.setAttribute('download', `relatorio_insightbarber_${startDate}_${endDate}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
