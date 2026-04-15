@@ -201,6 +201,224 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
     }
 }
 
+/**
+ * LOGICA DO CHATBOT AI
+ */
+async function handleChatbotAI(shopId: string, remoteJid: string, clientName: string, message: string, instance: string) {
+    console.log(`[Chatbot] Processando para ${clientName} (${remoteJid}) na loja ${shopId}`);
+
+    // 1. Busca ou cria sessão do chat
+    let { data: session } = await supabaseAdmin
+        .from('whatsapp_chat_sessions')
+        .select('*')
+        .eq('shop_id', shopId)
+        .eq('remote_jid', remoteJid)
+        .maybeSingle();
+
+    if (!session) {
+        const { data: newSession } = await supabaseAdmin
+            .from('whatsapp_chat_sessions')
+            .insert({ shop_id: shopId, remote_jid: remoteJid, context: {}, messages: [] })
+            .select('*')
+            .single();
+        session = newSession;
+    }
+
+    // 2. Busca dados da loja para o contexto
+    const { data: shop } = await supabaseAdmin.from('shops').select('name').eq('id', shopId).single();
+    const { data: settings } = await supabaseAdmin.from('settings').select('*').eq('shop_id', shopId).single();
+
+    // 3. Prepara Gemini
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+    
+    // Ferramentas do Agendamento
+    const tools = [
+        {
+            functionDeclarations: [
+                {
+                    name: "list_services",
+                    description: "Retorna a lista de serviços oferecidos pela barbearia com preços e durações.",
+                },
+                {
+                    name: "list_professionals",
+                    description: "Retorna a lista de barbeiros/profissionais disponíveis.",
+                },
+                {
+                    name: "check_availability",
+                    description: "Verifica horários livres para um barbeiro em uma data específica.",
+                    parameters: {
+                        type: "OBJECT",
+                        properties: {
+                            professional_id: { type: "STRING", description: "O ID do profissional." },
+                            date: { type: "STRING", description: "A data no formato YYYY-MM-DD." }
+                        },
+                        required: ["professional_id", "date"]
+                    }
+                },
+                {
+                    name: "book_appointment",
+                    description: "Efetiva o agendamento no sistema.",
+                    parameters: {
+                        type: "OBJECT",
+                        properties: {
+                            service_ids: { type: "ARRAY", items: { type: "STRING" }, description: "Lista de IDs dos serviços selecionados." },
+                            professional_id: { type: "STRING", description: "O ID do barbeiro selecionado." },
+                            date: { type: "STRING", description: "Data escolhida (YYYY-MM-DD)." },
+                            time: { type: "STRING", description: "Hora escolhida (HH:mm)." }
+                        },
+                        required: ["service_ids", "professional_id", "date", "time"]
+                    }
+                }
+            ]
+        }
+    ];
+
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash", // Use 2.0 per tool support if available, or flash-exp
+        tools,
+    });
+
+    const chat = model.startChat({
+        history: (session.messages || []).map((m: any) => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+        })),
+        systemInstruction: `Você é a IA assistente da barbearia "${shop?.name}". Seu objetivo é ajudar o cliente a agendar um serviço pelo WhatsApp.
+        Seja educado, breve e eficiente.
+        Fluxo Sugerido:
+        1. Se for a primeira vez, dê as boas-vindas e mostre os serviços.
+        2. Peça para o cliente escolher o barbeiro (se houver mais de um).
+        3. Peça a data.
+        4. Verifique a disponibilidade e mostre os horários livres.
+        5. Confirme os detalhes finais e agende.
+        
+        Sempre use as ferramentas disponíveis para obter informações reais do banco de dados. Nunca invente horários ou preços.
+        Linguagem: Português do Brasil de forma amigável.
+        Hoje é: ${dayjs().tz('America/Sao_Paulo').format('dddd, DD [de] MMMM [de] YYYY')}.
+        O número do cliente é ${remoteJid.split('@')[0]}.`,
+    });
+
+    try {
+        let result = await chat.sendMessage(message);
+        let response = result.response;
+        
+        // Loop para lidar com chamadas de funções
+        const call = response.functionCalls();
+        if (call && call.length > 0) {
+            const toolResults: any[] = [];
+            
+            for (const fn of call) {
+                console.log(`[Chatbot] Executando ferramenta: ${fn.name} | Args:`, fn.args);
+                
+                let data: any;
+                if (fn.name === "list_services") {
+                    const { data: res } = await supabaseAdmin.from('services').select('id, name, price, duration').eq('shop_id', shopId);
+                    data = res;
+                } else if (fn.name === "list_professionals") {
+                    const { data: res } = await supabaseAdmin.from('professionals').select('id, name, role').eq('shop_id', shopId);
+                    data = res;
+                } else if (fn.name === "check_availability") {
+                    const args: any = fn.args;
+                    data = await getAvailableSlotsForAI(shopId, args.professional_id, args.date);
+                } else if (fn.name === "book_appointment") {
+                    const args: any = fn.args;
+                    const phone = remoteJid.split('@')[0];
+                    
+                    // Verifica se o cliente já existe
+                    let { data: client } = await supabaseAdmin.from('clients').select('id').eq('shop_id', shopId).eq('phone', phone).maybeSingle();
+                    if (!client) {
+                        const { data: newClient } = await supabaseAdmin.from('clients').insert({ shop_id: shopId, name: clientName, phone: phone }).select('id').single();
+                        client = newClient;
+                    }
+
+                    const { data: apt, error } = await supabaseAdmin.from('appointments').insert({
+                        shop_id: shopId,
+                        client_id: client?.id,
+                        client_name: clientName,
+                        client_phone: phone,
+                        service_ids: args.service_ids,
+                        professional_id: args.professional_id,
+                        date: args.date,
+                        time: args.time,
+                        status: 'scheduled'
+                    }).select('id').single();
+
+                    if (error) {
+                        data = { success: false, error: "Conflito de horário ou erro no servidor." };
+                    } else {
+                        data = { success: true, appointmentId: apt.id };
+                        // Trigger de confirmação (o mesmo usado pelo webapp)
+                        await fetch(`http://localhost:${process.env.PORT || 3000}/api/notify/confirmation`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ appointmentId: apt.id })
+                        }).catch(e => console.error("Erro ao disparar notificação:", e));
+                    }
+                }
+                
+                toolResults.push({
+                    functionResponse: {
+                        name: fn.name,
+                        response: { content: data }
+                    }
+                });
+            }
+
+            // Envia os resultados das funções de volta para o Gemini
+            const finalResult = await chat.sendMessage(toolResults);
+            response = finalResult.response;
+        }
+
+        const reply = response.text();
+        
+        // 4. Salva histórico
+        const updatedMessages = [...(session.messages || []), { role: 'user', content: message }, { role: 'assistant', content: reply }];
+        await supabaseAdmin.from('whatsapp_chat_sessions')
+            .update({ messages: updatedMessages, last_message_at: new Date().toISOString() })
+            .eq('id', session.id);
+
+        // 5. Envia resposta via WhatsApp
+        await sendWhatsApp(remoteJid.split('@')[0], reply, instance);
+
+    } catch (error: any) {
+        console.error("[Gemini Chatbot Error]", error);
+        await sendWhatsApp(remoteJid.split('@')[0], "Desculpe, tive um problema técnico para processar seu pedido agora. Pode tentar novamente em alguns instantes?", instance);
+    }
+}
+
+async function getAvailableSlotsForAI(shopId: string, proId: string, date: string) {
+    // 1. Horário da Loja
+    const { data: settings } = await supabaseAdmin.from('settings').select('business_hours').eq('shop_id', shopId).single();
+    const dayOfWeek = dayjs(date).format('dddd').toLowerCase() as keyof typeof INITIAL_STATE.settings.businessHours;
+    const dayNames: any = { 'monday': 'segunda-feira', 'tuesday': 'terça-feira', 'wednesday': 'quarta-feira', 'thursday': 'quinta-feira', 'friday': 'sexta-feira', 'saturday': 'sábado', 'sunday': 'domingo' };
+    
+    // Mapeia o dia do inglês para a chave do DB se necessário (nosso settings usa chaves em inglês)
+    const hours = settings?.business_hours?.[dayOfWeek];
+    if (!hours || !hours.active) return { error: "A barbearia não abre nesta data." };
+
+    // 2. Agendamentos e Bloqueios
+    const { data: appointments } = await supabaseAdmin.from('appointments').select('time').eq('professional_id', proId).eq('date', date).not('status', 'eq', 'cancelled');
+    const { data: blocks } = await supabaseAdmin.from('blocked_slots').select('start_time, end_time').eq('professional_id', proId).eq('date', date);
+
+    // Gerar horários (slot de 30 em 30 min)
+    const slots = [];
+    let current = dayjs(`${date}T${hours.start}`);
+    const end = dayjs(`${date}T${hours.end}`);
+
+    while (current.isBefore(end)) {
+        const timeStr = current.format('HH:mm');
+        const isOccupied = appointments?.some(a => a.time.substring(0, 5) === timeStr);
+        const isBlocked = blocks?.some(b => timeStr >= b.start_time.substring(0, 5) && timeStr < b.end_time.substring(0, 5));
+        
+        if (!isOccupied && !isBlocked) {
+            slots.push(timeStr);
+        }
+        current = current.add(30, 'minute');
+    }
+
+    return { available_slots: slots };
+}
+
 async function runCronLogic() {
     console.log("[Cron] Iniciando verificação de lembretes (Timezone SP - GMT-3)...");
 
@@ -834,7 +1052,6 @@ async function startServer() {
         }
     });
 
-    // 3. Webhook do Asaas (Confirmação de Pagamento)
     app.post('/api/asaas/webhook', async (req, res) => {
         if (req.headers['asaas-access-token'] !== process.env.ASAAS_WEBHOOK_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
 
@@ -845,20 +1062,52 @@ async function startServer() {
 
         try {
             if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
-                // Pagamento aprovado via Webhook (Ex: Retorno do banco PIX)!
                 const asaasCustomerId = payment.customer;
-
-                console.log(`[Asaas Webhook] Pagamento confirmado para o cliente Asaas: ${asaasCustomerId}. Desbloqueando plataforma...`);
-
                 if (asaasCustomerId) {
                     await supabaseAdmin.from('shops').update({ plan: 'active' }).eq('asaas_customer_id', asaasCustomerId);
                 }
             }
-
             res.json({ success: true });
         } catch (error: any) {
             console.error('[Asaas Webhook] Erro ao processar:', error.message);
             res.status(500).json({ error: error.message });
+        }
+    });
+
+    // ==========================================
+    // WHATSAPP CHATBOT AI (EVOLUTION API WEBHOOK)
+    // ==========================================
+    app.post('/api/whatsapp/webhook', async (req, res) => {
+        const body = req.body;
+        
+        // Verifica se é uma mensagem recebida
+        if (body.event !== 'MESSAGES_UPSERT') return res.status(200).send('OK');
+
+        const messageData = body.data;
+        if (!messageData || messageData.key.fromMe) return res.status(200).send('OK');
+
+        const remoteJid = messageData.key.remoteJid;
+        if (remoteJid.includes('@g.us')) return res.status(200).send('OK'); // Ignora grupos
+
+        const pushName = messageData.pushName || 'Cliente';
+        const messageText = messageData.message?.conversation || messageData.message?.extendedTextMessage?.text;
+
+        if (!messageText) return res.status(200).send('OK');
+
+        const instanceName = body.instance;
+        const shopId = instanceName.startsWith('shop-') ? instanceName.replace('shop-', '') : null;
+
+        if (!shopId) {
+             console.warn(`[Chatbot] Webhook recebido de instância desconhecida: ${instanceName}`);
+             return res.status(200).send('OK');
+        }
+
+        try {
+            await handleChatbotAI(shopId, remoteJid, pushName, messageText, instanceName);
+            res.status(200).send('OK');
+        } catch (error: any) {
+            console.error(`[Chatbot Error] Shop: ${shopId} | User: ${remoteJid} | Error:`, error.message);
+            res.status(500).send('Internal Error');
         }
     });
 
