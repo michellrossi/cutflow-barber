@@ -4,6 +4,7 @@ import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader
 import { useToast } from '../../ui/ToastContext';
 import { WeeklyCalendar } from './WeeklyCalendar';
 import { formatMessage, getWhatsAppLink } from '../../../utils/messageFormatter';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const AppointmentsPanel: React.FC = () => {
     const {
@@ -56,6 +57,12 @@ export const AppointmentsPanel: React.FC = () => {
         paymentMethod: 'pix',
         usedSubscriptionId: ''
     });
+
+    // Modal de Conclusão (Venda de Produtos)
+    const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
+    const [completionTarget, setCompletionTarget] = useState<any>(null);
+    const [selectedProductsForCompletion, setSelectedProductsForCompletion] = useState<{ productId: string, quantity: number, unitPrice: number }[]>([]);
+    const { products, addAppointmentProducts } = useShop();
 
     // --- Lógica de Filtros de Data ---
     const setPreset = (type: 'today' | 'tomorrow' | 'week' | 'month' | 'all') => {
@@ -436,7 +443,15 @@ export const AppointmentsPanel: React.FC = () => {
                 )}
 
                 {viewMode === 'calendar' ? (
-                            <WeeklyCalendar onNewAppointment={() => setIsModalOpen(true)} modeToggle={ModeToggle} />
+                            <WeeklyCalendar 
+                                onNewAppointment={() => setIsModalOpen(true)} 
+                                onCompleteAppointment={(apt) => {
+                                    setCompletionTarget(apt);
+                                    setSelectedProductsForCompletion([]);
+                                    setIsCompletionModalOpen(true);
+                                }}
+                                modeToggle={ModeToggle} 
+                            />
                         ) : (
                             <>
 
@@ -591,9 +606,13 @@ export const AppointmentsPanel: React.FC = () => {
                                                         <select
                                                             value={apt.status}
                                                             onChange={(e) => {
-                                                                updateAppointmentStatus(apt.id, e.target.value);
-                                                                if (e.target.value === 'completed' && !apt.paymentMethod) {
-                                                                    updateAppointmentPaymentMethod(apt.id, 'pix'); // Default to PIX when completing
+                                                                const newStatus = e.target.value;
+                                                                if (newStatus === 'completed') {
+                                                                    setCompletionTarget(apt);
+                                                                    setSelectedProductsForCompletion([]);
+                                                                    setIsCompletionModalOpen(true);
+                                                                } else {
+                                                                    updateAppointmentStatus(apt.id, newStatus);
                                                                 }
                                                             }}
                                                             className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100 transition-colors"
@@ -746,6 +765,160 @@ export const AppointmentsPanel: React.FC = () => {
                     </>
                 );
             })()}
+
+            {/* Modal de Conclusão de Atendimento (Venda de Produtos) */}
+            <AnimatePresence>
+                {isCompletionModalOpen && completionTarget && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsCompletionModalOpen(false)}
+                            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden"
+                        >
+                            <div className="p-6 border-b border-slate-100 bg-emerald-50">
+                                <h3 className="text-xl font-bold text-emerald-900">Finalizar Atendimento</h3>
+                                <p className="text-emerald-700 text-sm">Venda produtos adicionais e escolha a forma de pagamento.</p>
+                            </div>
+
+                            <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+                                {/* Lista de Produtos Disponíveis */}
+                                <div>
+                                    <label className="text-xs font-bold text-slate-500 uppercase mb-3 block text-center">Produtos Adicionais (Opcional)</label>
+                                    <div className="grid grid-cols-1 gap-2">
+                                        {products.length === 0 && (
+                                            <p className="text-center text-slate-400 text-sm italic">Nenhum produto cadastrado no estoque.</p>
+                                        )}
+                                        {products.map(p => {
+                                            const selected = selectedProductsForCompletion.find(sp => sp.productId === p.id);
+                                            return (
+                                                <div key={p.id} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${selected ? 'bg-orange-50 border-orange-200' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
+                                                    <div>
+                                                        <p className="font-bold text-slate-900 text-sm">{p.name}</p>
+                                                        <p className="text-[10px] font-bold text-slate-400 uppercase">{p.category} • R$ {p.salePrice}</p>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        {selected ? (
+                                                            <div className="flex items-center gap-2">
+                                                                <button 
+                                                                    onClick={() => {
+                                                                        if (selected.quantity > 1) {
+                                                                            setSelectedProductsForCompletion(prev => prev.map(sp => sp.productId === p.id ? { ...sp, quantity: sp.quantity - 1 } : sp));
+                                                                        } else {
+                                                                            setSelectedProductsForCompletion(prev => prev.filter(sp => sp.productId !== p.id));
+                                                                        }
+                                                                    }}
+                                                                    className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-200"
+                                                                >
+                                                                    -
+                                                                </button>
+                                                                <span className="font-bold text-slate-900 w-4 text-center">{selected.quantity}</span>
+                                                                <button 
+                                                                    onClick={() => setSelectedProductsForCompletion(prev => prev.map(sp => sp.productId === p.id ? { ...sp, quantity: sp.quantity + 1 } : sp))}
+                                                                    className="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-200"
+                                                                >
+                                                                    +
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <button 
+                                                                onClick={() => setSelectedProductsForCompletion(prev => [...prev, { productId: p.id, quantity: 1, unitPrice: p.salePrice }])}
+                                                                className="px-4 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200"
+                                                            >
+                                                                Adicionar
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div className="h-px bg-slate-100" />
+
+                                {/* Resumo de Valores */}
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-sm text-slate-500">
+                                        <span>Serviços</span>
+                                        <span className="font-bold text-slate-900">R$ {completionTarget.totalValue.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm text-slate-500">
+                                        <span>Produtos</span>
+                                        <span className="font-bold text-emerald-600">
+                                            + R$ {selectedProductsForCompletion.reduce((acc, sp) => acc + (sp.quantity * sp.unitPrice), 0).toFixed(2)}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between text-xl font-black text-slate-900 pt-2 border-t border-slate-100">
+                                        <span>Total Final</span>
+                                        <span style={{ color: settings.primaryColor }}>
+                                            R$ { (completionTarget.totalValue + selectedProductsForCompletion.reduce((acc, sp) => acc + (sp.quantity * sp.unitPrice), 0)).toFixed(2) }
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Forma de Pagamento */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase">Forma de Pagamento</label>
+                                    <select 
+                                        id="completion-payment-method"
+                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-orange-500 outline-none font-bold text-slate-900"
+                                        defaultValue="pix"
+                                    >
+                                        <option value="pix">PIX</option>
+                                        <option value="credit">Cartão de Crédito</option>
+                                        <option value="cash">Dinheiro</option>
+                                        {getClientActiveSubscription(completionTarget.clientPhone, completionTarget.clientName) && (
+                                            <option value="subscription">Assinatura</option>
+                                        )}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="p-6 bg-slate-50 flex gap-4">
+                                <button 
+                                    onClick={() => setIsCompletionModalOpen(false)}
+                                    className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                                <button 
+                                    onClick={async () => {
+                                        const method = (document.getElementById('completion-payment-method') as HTMLSelectElement).value;
+                                        let subId = undefined;
+                                        if (method === 'subscription') {
+                                            const sub = getClientActiveSubscription(completionTarget.clientPhone, completionTarget.clientName);
+                                            subId = sub?.id;
+                                        }
+
+                                        // 1. Adicionar produtos se houver (deve vir ANTES do status 'completed' para o Trigger funcionar)
+                                        if (selectedProductsForCompletion.length > 0) {
+                                            await addAppointmentProducts(completionTarget.id, selectedProductsForCompletion);
+                                        }
+
+                                        // 2. Atualizar agendamento
+                                        await updateAppointmentStatus(completionTarget.id, 'completed');
+                                        await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
+
+                                        showToast('Atendimento finalizado com sucesso!');
+                                        setIsCompletionModalOpen(false);
+                                    }}
+                                    className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+                                >
+                                    Finalizar e Salvar
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 };

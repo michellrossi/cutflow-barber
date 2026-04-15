@@ -1,9 +1,11 @@
-const getApiUrl = () => process.env.ASAAS_API_URL || 'https://sandbox.asaas.com/api/v3';
+const getApiUrl = () => process.env.ASAAS_ENV === 'sandbox' ? 'https://sandbox.asaas.com/api/v3' : (process.env.ASAAS_API_URL || 'https://www.asaas.com/api/v3');
+
+console.log(`[Asaas] Usando ambiente: ${process.env.ASAAS_ENV === 'sandbox' ? 'SANDBOX' : 'PRODUÇÃO'}`);
 
 const getHeaders = () => ({
     'Content-Type': 'application/json',
     'access_token': process.env.ASAAS_API_KEY || '',
-    'User-Agent': 'CutFlow/1.0'
+    'User-Agent': 'InsightBarber/1.0'
 });
 
 // 1 - Criar o Cliente no Asaas

@@ -26,7 +26,7 @@ interface Plan {
 }
 
 export const PlanPanel: React.FC<{ onUpgrade?: () => void }> = ({ onUpgrade }) => {
-  const { shop } = useShop();
+  const { shop, trialStatus } = useShop();
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(0);
 
@@ -193,7 +193,7 @@ export const PlanPanel: React.FC<{ onUpgrade?: () => void }> = ({ onUpgrade }) =
           <p className="text-slate-500">Gerencie sua assinatura e descubra novos recursos</p>
         </div>
         <div className="flex items-center gap-4">
-          {daysRemaining > 0 && (
+          {daysRemaining > 0 && shop?.plan === 'trial' && (
             <div className="bg-white border border-slate-100 p-4 rounded-lg shadow-sm flex items-center gap-4 min-w-[280px]">
               <div className="flex-1">
                 <div className="flex justify-between items-center mb-1">
@@ -215,7 +215,7 @@ export const PlanPanel: React.FC<{ onUpgrade?: () => void }> = ({ onUpgrade }) =
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Plano Atual</p>
-              <p className="text-sm font-bold text-slate-900">Profissional (Trial)</p>
+              <p className="text-sm font-bold text-slate-900">Profissional {shop?.plan === 'trial' ? '(Trial)' : ''}</p>
             </div>
           </div>
         </div>

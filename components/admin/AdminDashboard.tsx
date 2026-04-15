@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info, ShieldCheck, Pin, BarChart3, User } from 'lucide-react';
+import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info, ShieldCheck, Pin, BarChart3, User, Package, Target, Plus } from 'lucide-react';
 import { DashboardPanel } from './panels/DashboardPanel';
 import { TeamPanel } from './panels/TeamPanel';
 import { ServicesPanel } from './panels/ServicesPanel';
@@ -15,13 +15,15 @@ import { ReportsPanel } from './panels/ReportsPanel';
 import { InsightPanel } from './panels/InsightPanel';
 import { RemindersPanel } from './panels/RemindersPanel';
 import { SubscriptionsPanel } from './panels/SubscriptionsPanel';
+import { InventoryPanel } from './panels/InventoryPanel';
+import { GoalsPanel } from './panels/GoalsPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
 import { PaymentModal } from '../billing/PaymentModal';
 
 import { PlanPanel } from './panels/PlanPanel';
 import { ProfilePanel } from './panels/ProfilePanel';
 
-type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan' | 'reports' | 'profile';
+type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan' | 'reports' | 'profile' | 'inventory' | 'goals';
 
 type TeamSubTab = 'list' | 'schedules' | 'blocks';
 
@@ -48,8 +50,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     if (savedTab === 'settings') setIsSettingsOpen(true);
   }, []);
 
-  const { settings, trialStatus, daysRemaining, theme, toggleTheme } = useShop();
+  const { settings, trialStatus, daysRemaining, theme, toggleTheme, shop, myShops, switchShop, addAdditionalUnit, userRole } = useShop();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isAddUnitOpen, setIsAddUnitOpen] = useState(false);
 
   const isSidebarExpanded = isSidebarPinned || isSidebarHovered;
 
@@ -88,7 +91,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'services': return <ServicesPanel />;
       case 'coupons': return <CouponsPanel />;
       case 'appointments': return <AppointmentsPanel />;
-      case 'finance': return <FinancePanel />;
       case 'clients': return <ClientsPanel initialFilter={clientFilter as any} />;
       case 'loyalty': return <LoyaltyPanel />;
       case 'reports': return <ReportsPanel />;
@@ -98,7 +100,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'subscriptions': return <SubscriptionsPanel />;
       case 'plan': return <PlanPanel onUpgrade={() => setIsPaymentModalOpen(true)} />;
       case 'profile': return <ProfilePanel />;
-      default: return <DashboardPanel />;
+      case 'inventory': return <InventoryPanel />;
+      case 'goals': return <GoalsPanel />;
+      default: return <DashboardPanel onNavigate={handleTabChange} />;
     }
   };
 
@@ -109,7 +113,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'services': return 'Gerenciar Serviços';
           case 'coupons': return 'Gerenciar Cupons';
           case 'appointments': return 'Agenda';
-          case 'finance': return 'Financeiro';
           case 'clients': return 'Gestão de Clientes';
           case 'loyalty': return 'Programa de Fidelidade';
           case 'reports': return 'Relatórios';
@@ -119,6 +122,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'subscriptions': return 'Assinaturas';
           case 'plan': return 'Meu Plano';
           case 'profile': return 'Perfil';
+          case 'inventory': return 'Gestão de Estoque';
+          case 'goals': return 'Gestão de Metas';
       }
   }
 
@@ -126,6 +131,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     <div className="flex h-screen bg-white text-slate-900 overflow-hidden flex-col md:flex-row w-full">
       
       <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
+      <AddUnitModal isOpen={isAddUnitOpen} onClose={() => setIsAddUnitOpen(false)} />
 
       {/* Sidebar */}
       <aside 
@@ -138,6 +144,32 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
              <img src="https://iili.io/BRpSlzQ.md.png" alt="Insight Barber Logo" className="w-full h-full object-contain" />
           </div>
           
+          {isSidebarExpanded && (
+            <div className="flex-1 overflow-hidden">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Unidade Ativa</p>
+                <div className="flex items-center gap-1">
+                    <select 
+                        value={shop?.id}
+                        onChange={(e) => switchShop(e.target.value)}
+                        className="flex-1 bg-transparent text-slate-900 text-sm font-bold focus:outline-none cursor-pointer truncate appearance-none"
+                    >
+                        {myShops.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                    </select>
+                    {userRole === 'owner' && (
+                        <button 
+                            onClick={() => setIsAddUnitOpen(true)}
+                            className="p-1 text-slate-400 hover:text-orange-600 transition-colors"
+                            title="Nova unidade"
+                        >
+                            <Plus size={16} />
+                        </button>
+                    )}
+                </div>
+            </div>
+          )}
+
           {isSidebarExpanded && (
             <button 
               onClick={() => setIsSidebarPinned(!isSidebarPinned)}
@@ -180,11 +212,13 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   
   <SidebarItem icon={<BarChart3 size={18} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => handleTabChange('reports')} expanded={isSidebarExpanded} />
   
+  <SidebarItem icon={<Package size={18} />} label="Estoque" active={activeTab === 'inventory'} onClick={() => handleTabChange('inventory')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<Target size={18} />} label="Metas" active={activeTab === 'goals'} onClick={() => handleTabChange('goals')} expanded={isSidebarExpanded} />
+  
   <SidebarItem icon={<MessageSquare size={18} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<Sparkles size={18} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} expanded={isSidebarExpanded} />
-  
-  <SidebarItem icon={<DollarSign size={18} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => handleTabChange('finance')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<ShieldCheck size={18} />} label="Meu Plano" active={activeTab === 'plan'} onClick={() => handleTabChange('plan')} expanded={isSidebarExpanded} />
   
@@ -230,7 +264,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                     </span>
                 </div>
                 <button 
-                    onClick={() => handleTabChange('plan')}
+                    onClick={() => setIsPaymentModalOpen(true)}
                     className="bg-white text-slate-900 px-4 py-1 rounded-md text-xs font-bold hover:bg-slate-100 transition-colors uppercase tracking-wide"
                 >
                     Assinar Agora
@@ -271,9 +305,10 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     <MobileNavItem icon={<Tag size={16} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => setActiveTab('coupons')} />
     <MobileNavItem icon={<Award size={16} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => setActiveTab('loyalty')} />
     <MobileNavItem icon={<BarChart3 size={16} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
+    <MobileNavItem icon={<Package size={16} />} label="Estoque" active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} />
+    <MobileNavItem icon={<Target size={16} />} label="Metas" active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} />
     <MobileNavItem icon={<MessageSquare size={16} />} label="Automação" active={activeTab === 'reminders'} onClick={() => setActiveTab('reminders')} />
     <MobileNavItem icon={<Sparkles size={16} />} label="IA" active={activeTab === 'insight'} onClick={() => setActiveTab('insight')} />
-    <MobileNavItem icon={<DollarSign size={16} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />
     <MobileNavItem icon={<ShieldCheck size={16} />} label="Plano" active={activeTab === 'plan'} onClick={() => setActiveTab('plan')} />
     <MobileNavItem icon={<User size={16} />} label="Perfil" active={activeTab === 'profile'} onClick={() => setActiveTab('profile')} />
     <MobileNavItem icon={<Settings size={16} />} label="Config" active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} />
@@ -284,9 +319,72 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
         <div className="flex-1 overflow-auto p-4 md:p-8">
           {renderContent()}
         </div>
+
+        {/* Modal de Pagamento */}
+        <PaymentModal 
+            isOpen={isPaymentModalOpen} 
+            onClose={() => setIsPaymentModalOpen(false)} 
+        />
       </main>
     </div>
   );
+};
+
+const AddUnitModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+    const { addAdditionalUnit, settings } = useShop();
+    const [name, setName] = useState('');
+    const [slug, setSlug] = useState('');
+    const [phone, setPhone] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        const res = await addAdditionalUnit(name, slug, phone);
+        setLoading(false);
+        if (res.success) {
+            onClose();
+            setName('');
+            setSlug('');
+            setPhone('');
+        } else {
+            alert(res.error || "Erro ao adicionar unidade.");
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white p-8 rounded-2xl border border-slate-200 w-full max-w-md shadow-2xl"
+            >
+                <h3 className="text-xl font-bold text-slate-900 mb-6 font-display">Adicionar Nova Unidade</h3>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Nome da Barbearia</label>
+                        <input required value={name} onChange={e => { setName(e.target.value); if(!slug) setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')) }} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-orange-500 font-bold" placeholder="Ex: Barber Shop Filial 2" />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">URL (Slug)</label>
+                        <input required value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, ''))} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-orange-500 font-bold" placeholder="ex: barber-filial-2" />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Telefone/WhatsApp</label>
+                        <input required value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-orange-500 font-bold" placeholder="(00) 00000-0000" />
+                    </div>
+                    <div className="flex gap-4 pt-4">
+                        <button type="button" onClick={onClose} className="flex-1 py-3 text-slate-500 font-bold hover:text-slate-900 transition-colors">Cancelar</button>
+                        <button type="submit" disabled={loading} className="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold shadow-lg hover:bg-orange-700 transition-all">
+                            {loading ? "Criando..." : "Criar Unidade"}
+                        </button>
+                    </div>
+                </form>
+            </motion.div>
+        </div>
+    );
 };
 
 const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void, expanded?: boolean }> = ({ icon, label, active, onClick, expanded = true }) => {

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger } from './types';
+import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger, Product, AppointmentProduct, Goal } from './types';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import DOMPurify from 'dompurify';
@@ -14,12 +14,14 @@ interface ShopContextType extends ShopState {
   
   // Auth Actions
   login: (email: string, password: string) => Promise<{ error: any }>;
-  signup: (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team') => Promise<{ error: any }>;
+  signup: (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team', fullName: string, phone: string) => Promise<{ error: any }>;
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ success: boolean, error?: string }>;
 
   // Data Loading
   loadShopBySlug: (slug: string) => Promise<boolean>; 
+  switchShop: (shopId: string) => Promise<void>;
+  addAdditionalUnit: (shopName: string, slug: string, phone: string) => MutationResult;
   refresh: () => void;
 
   // Actions - Now returning MutationResult
@@ -68,6 +70,17 @@ interface ShopContextType extends ShopState {
   removeClientSubscription: (id: string) => MutationResult;
 
   updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
+  
+  // Product Actions
+  addProduct: (product: Omit<Product, 'id' | 'shopId' | 'createdAt'>) => MutationResult;
+  updateProduct: (id: string, product: Partial<Product>) => MutationResult;
+  removeProduct: (id: string) => MutationResult;
+  addAppointmentProducts: (appointmentId: string, products: { productId: string, quantity: number, unitPrice: number }[]) => MutationResult;
+  
+  // Goal Actions
+  upsertGoal: (goal: Partial<Goal> & { name: string; category: string; targetValue: number; period: string; startDate: string; endDate: string }) => MutationResult;
+  removeGoal: (id: string) => MutationResult;
+  calculateGoalProgress: (goal: Goal) => { percentage: number; remaining: number; status: 'critical' | 'warning' | 'good' };
   
   // WhatsApp Actions
   getWhatsAppQRCode: () => Promise<{ qrcode?: string; error?: string }>;
@@ -134,8 +147,11 @@ const INITIAL_STATE: ShopState = {
   clientSession: null,
   trialStatus: 'active',
   daysRemaining: 14,
-  theme: 'dark',
-  automationTriggers: []
+  theme: 'light',
+  automationTriggers: [],
+  products: [],
+  goals: [],
+  myShops: []
 };
 
 const sanitize = (text: string): string => {
@@ -340,13 +356,39 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const mapClientSubscription = (data: any): ClientSubscription => ({
       id: data.id,
-      shopId: data.shop_id,
+      shop_id: data.shop_id,
       clientId: data.client_id,
       planId: data.plan_id,
       status: data.status,
       startDate: data.start_date,
       nextBillingDate: data.next_billing_date,
       servicesUsedThisMonth: data.services_used_this_month || 0,
+      createdAt: data.created_at
+  });
+
+  const mapProduct = (data: any): Product => ({
+      id: data.id,
+      shopId: data.shop_id,
+      name: data.name,
+      category: data.category,
+      costPrice: data.cost_price,
+      salePrice: data.sale_price,
+      currentStock: data.current_stock,
+      minStock: data.min_stock,
+      createdAt: data.created_at
+  });
+
+  const mapGoal = (data: any): Goal => ({
+      id: data.id,
+      shopId: data.shop_id,
+      professionalId: data.professional_id,
+      name: data.name,
+      category: data.category,
+      targetValue: Number(data.target_value),
+      currentValue: Number(data.current_value),
+      period: data.period,
+      startDate: data.start_date,
+      endDate: data.end_date,
       createdAt: data.created_at
   });
 
@@ -379,12 +421,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     const savedClient = sessionStorage.getItem('currentClient');
     const savedSession = sessionStorage.getItem('clientSession');
-    const savedTheme = localStorage.getItem('theme') as 'dark' | 'light';
-
-    if (savedTheme) {
-        setState(prev => ({ ...prev, theme: savedTheme }));
-        document.documentElement.classList.toggle('light', savedTheme === 'light');
-    }
+    const savedTheme = 'light'; // Forçando modo claro
+    setState(prev => ({ ...prev, theme: 'light' }));
+    document.documentElement.classList.add('light'); // Forçando classe light no HTML
 
     if (savedClient && savedSession) {
       try {
@@ -466,12 +505,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const userId = currentSession?.user?.id;
             const userEmail = currentSession?.user?.email;
 
-            // 1. Tenta encontrar a loja onde o usuário é DONO
+            // 1. Tenta encontrar as lojas onde o usuário é DONO
             if (userId) {
-                const { data: shopData } = await supabase.from('shops').select('*').eq('owner_id', userId).single();
-                if (shopData) {
-                    shopId = shopData.id;
-                    currentShopData = mapShop(shopData);
+                const { data: shopsData } = await supabase.from('shops').select('*').eq('owner_id', userId);
+                if (shopsData && shopsData.length > 0) {
+                    const mappedShops = shopsData.map(mapShop);
+                    // Pega a primeira como inicial se nenhuma estiver ativa
+                    const activeShop = mappedShops.find(s => s.id === state.shop?.id) || mappedShops[0];
+                    shopId = activeShop.id;
+                    currentShopData = activeShop;
+                    setState(prev => ({ ...prev, myShops: mappedShops }));
                 }
             } 
             
@@ -499,7 +542,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Executa queries de configurações e dados estáticos em paralelo
-        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes] = await Promise.all([
+        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes, goalsRes] = await Promise.all([
             supabase.from('settings').select('*').eq('shop_id', shopId).single(),
             supabase.from('services').select('*').eq('shop_id', shopId),
             supabase.from('professionals').select('*').eq('shop_id', shopId),
@@ -510,7 +553,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             supabase.from('message_categories').select('*').eq('shop_id', shopId),
             supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
             supabase.from('client_subscriptions').select('*').eq('shop_id', shopId),
-            supabase.from('automation_triggers').select('*').eq('shop_id', shopId)
+            supabase.from('automation_triggers').select('*').eq('shop_id', shopId),
+            supabase.from('products').select('*').eq('shop_id', shopId),
+            supabase.from('goals').select('*').eq('shop_id', shopId)
         ]);
 
         // OTIMIZAÇÃO: Carregar apenas agendamentos recentes e futuros
@@ -538,18 +583,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         
         let mappedTriggers = (triggersRes.data || []).map(mapAutomationTrigger);
 
-        // --- INIT DEFAULT TRIGGERS IF EMPTY ---
-        const { data: { session: checkSession } } = await supabase.auth.getSession();
-        if (mappedTriggers.length === 0 && checkSession?.user?.id === currentShopData?.ownerId) {
-             console.log("Iniciando gatilhos padrão para a loja:", shopId);
-             const { data: defaults } = await supabase.from('automation_triggers').insert([
-                { shop_id: shopId, name: 'Confirmação Imediata', value: 0, unit: 'minutes', period: 'immediate', active: true },
-                { shop_id: shopId, name: 'Lembrete de Agendamento', value: 1, unit: 'hours', period: 'before', active: true },
-                { shop_id: shopId, name: 'Pós-Venda e Avaliação', value: 2, unit: 'hours', period: 'after', active: true },
-                { shop_id: shopId, name: 'Reagendamento', value: 1, unit: 'hours', period: 'after', active: true }
-             ]).select();
-             if (defaults) mappedTriggers = defaults.map(mapAutomationTrigger);
-        }
+        // Gatilhos iniciais são criados explicitamente na função de signup.
 
         // --- LÓGICA DE ROLES ---
         if (currentSession?.user) {
@@ -595,6 +629,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             messageCategories: mappedCategories,
             blockedSlots: (blocksRes.data || []).map(mapBlockedSlot),
             automationTriggers: mappedTriggers,
+            products: (productsRes.data || []).map(mapProduct),
+            goals: (goalsRes.data || []).map(mapGoal),
             trialStatus: trialInfo.status,
             daysRemaining: trialInfo.days
         }));
@@ -710,49 +746,29 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: true };
   };
 
-  const signup = async (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team') => {
+  const initNewShop = async (userId: string, shopName: string, slug: string, phone: string) => {
       const cleanShopName = sanitize(shopName);
       const cleanSlug = sanitize(slug).toLowerCase().replace(/[^\w-]/g, '');
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
-      if (authError || !authData.user) return { error: authError };
-
-      if (intent === 'join_team') {
-          // Check if email is in professionals table
-          const { data: proData } = await supabase.from('professionals').select('id, shop_id').eq('email', email).single();
-          
-          if (proData) {
-              // Link the Auth User ID to the Professional Profile
-              await supabase.from('professionals').update({ user_id: authData.user.id }).eq('id', proData.id);
-              setSession(authData.session);
-              return { error: null };
-          } else {
-              // Rollback (Not easy in client-side, but effectively the user is created but has no access)
-              return { error: { message: 'Este email não consta na lista de profissionais de nenhuma barbearia.' } };
-          }
-      }
-
-      // [UPDATE] Create Shop with Trial Fields
       const { data: shopData, error: shopError } = await supabase.from('shops').insert({
-          owner_id: authData.user.id,
+          owner_id: userId,
           name: cleanShopName,
           slug: cleanSlug,
           plan: 'trial',
           trial_started_at: new Date().toISOString(),
-          // 14 days from now
           trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
       }).select().single();
 
-      if (shopError || !shopData) return { error: shopError };
+      if (shopError || !shopData) throw shopError;
 
       await supabase.from('settings').insert({
           shop_id: shopData.id,
           name: cleanShopName,
+          phone: sanitize(phone),
           primary_color: '#f97316',
           secondary_color: '#1e293b'
       });
 
-      // Default message categories
       const defaultCategories = [
         { shop_id: shopData.id, name: 'Confirmação Imediata' },
         { shop_id: shopData.id, name: 'Lembrete 24h' },
@@ -762,7 +778,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ];
       await supabase.from('message_categories').insert(defaultCategories);
 
-      // Default Triggers
       const defaultTriggers = [
           { shop_id: shopData.id, name: 'Confirmação Imediata', value: 0, unit: 'minutes', period: 'immediate', active: true },
           { shop_id: shopData.id, name: 'Lembrete de Agendamento', value: 1, unit: 'hours', period: 'before', active: true },
@@ -771,7 +786,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ];
       const { data: insertedTriggers } = await supabase.from('automation_triggers').insert(defaultTriggers).select();
 
-      // Default message templates
       const defaultTemplates = [
         {
             shop_id: shopData.id,
@@ -812,24 +826,55 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ];
       await supabase.from('message_templates').insert(defaultTemplates);
 
-      // Default services
       const defaultServices = [
-        { name: 'Corte Masculino', price: 30, duration: 30, category: 'Cortes' },
-        { name: 'Barba', price: 20, duration: 20, category: 'Barba' },
-        { name: 'Corte + Barba', price: 45, duration: 50, category: 'Combos' }
+        { shop_id: shopData.id, name: 'Corte Masculino', price: 30, duration: 30, category: 'Cortes', description: 'Corte tradicional' },
+        { shop_id: shopData.id, name: 'Barba', price: 20, duration: 20, category: 'Barba', description: 'Trato na barba' },
+        { shop_id: shopData.id, name: 'Corte + Barba', price: 45, duration: 50, category: 'Combos', description: 'Combo promocional' }
       ];
-      const servicesToInsert = defaultServices.map(s => ({
-          shop_id: shopData.id,
-          name: s.name,
-          description: s.name,
-          price: s.price,
-          duration: s.duration,
-          category: s.category
-      }));
-      await supabase.from('services').insert(servicesToInsert);
+      await supabase.from('services').insert(defaultServices);
+      
+      return shopData;
+  };
 
-      setSession(authData.session);
-      return { error: null };
+  const signup = async (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team', fullName: string, phone: string) => {
+      const cleanShopName = sanitize(shopName);
+      const cleanSlug = sanitize(slug).toLowerCase().replace(/[^\w-]/g, '');
+
+      const { data: authData, error: authError } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+              data: {
+                  full_name: sanitize(fullName),
+                  phone: sanitize(phone)
+              }
+          }
+      });
+      if (authError || !authData.user) return { error: authError };
+
+      if (intent === 'join_team') {
+          // Check if email is in professionals table
+          const { data: proData } = await supabase.from('professionals').select('id, shop_id').eq('email', email).single();
+          
+          if (proData) {
+              // Link the Auth User ID to the Professional Profile
+              await supabase.from('professionals').update({ user_id: authData.user.id }).eq('id', proData.id);
+              setSession(authData.session);
+              return { error: null };
+          } else {
+              // Rollback (Not easy in client-side, but effectively the user is created but has no access)
+              return { error: { message: 'Este email não consta na lista de profissionais de nenhuma barbearia.' } };
+          }
+      }
+
+      try {
+          const shopData = await initNewShop(authData.user.id, shopName, slug, phone);
+          setSession(authData.session);
+          await fetchData(shopData.id);
+          return { error: null };
+      } catch (e: any) {
+          return { error: e };
+      }
   };
 
   const logout = async () => {
@@ -1776,7 +1821,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               client = newClient;
           }
 
-          const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+          const token = crypto.randomUUID();
           const expiresAt = new Date(Date.now() + 15 * 60 * 1000); 
 
           console.log("[Auth] Gerando token para cliente:", { clientId: client.id, token, expiresAt });
@@ -1863,9 +1908,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       const data = await response.json();
       if (data.error) throw new Error(data.error);
-      return { connected: data.connected };
+      return { connected: Boolean(data.connected) };
     } catch (e: any) {
-      return { error: e.message };
+      return { connected: false, error: e.message };
     }
   };
 
@@ -1885,10 +1930,175 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const addProduct = async (product: Omit<Product, 'id' | 'shopId' | 'createdAt'>): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { data, error } = await supabase.from('products').insert({
+            shop_id: shopId,
+            name: product.name,
+            category: product.category,
+            cost_price: product.costPrice,
+            sale_price: product.salePrice,
+            current_stock: product.currentStock,
+            min_stock: product.minStock
+        }).select().single();
+
+        if (error) throw error;
+        
+        const newProduct = mapProduct(data);
+        setState(prev => ({ ...prev, products: [...prev.products, newProduct] }));
+        return { success: true, data: newProduct };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const updateProduct = async (id: string, product: Partial<Product>): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const payload: any = {};
+        if (product.name) payload.name = product.name;
+        if (product.category) payload.category = product.category;
+        if (product.costPrice !== undefined) payload.cost_price = product.costPrice;
+        if (product.salePrice !== undefined) payload.sale_price = product.salePrice;
+        if (product.currentStock !== undefined) payload.current_stock = product.currentStock;
+        if (product.minStock !== undefined) payload.min_stock = product.minStock;
+
+        const { data, error } = await supabase.from('products').update(payload).eq('id', id).eq('shop_id', shopId).select().single();
+        if (error) throw error;
+
+        const updated = mapProduct(data);
+        setState(prev => ({
+            ...prev,
+            products: prev.products.map(p => p.id === id ? updated : p)
+        }));
+        return { success: true, data: updated };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const removeProduct = async (id: string): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { error } = await supabase.from('products').delete().eq('id', id).eq('shop_id', shopId);
+        if (error) throw error;
+
+        setState(prev => ({
+            ...prev,
+            products: prev.products.filter(p => p.id !== id)
+        }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const addAppointmentProducts = async (appointmentId: string, products: { productId: string, quantity: number, unitPrice: number }[]): MutationResult => {
+    try {
+        const { error } = await supabase.from('appointment_products').insert(
+            products.map(p => ({
+                appointment_id: appointmentId,
+                product_id: p.productId,
+                quantity: p.quantity,
+                unit_price: p.unitPrice
+            }))
+        );
+        if (error) throw error;
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const upsertGoal = async (goal: Partial<Goal> & { name: string; category: string; targetValue: number; period: string; startDate: string; endDate: string }): MutationResult => {
+      try {
+          const shopId = ensureShopId();
+          const payload = {
+              shop_id: shopId,
+              professional_id: goal.professionalId || null,
+              name: goal.name,
+              category: goal.category,
+              target_value: goal.targetValue,
+              period: goal.period,
+              start_date: goal.startDate,
+              end_date: goal.endDate
+          };
+
+          let result;
+          if (goal.id) {
+              result = await supabase.from('goals').update(payload).eq('id', goal.id).eq('shop_id', shopId).select().single();
+          } else {
+              result = await supabase.from('goals').insert(payload).select().single();
+          }
+
+          if (result.error) throw result.error;
+
+          const updatedGoal = mapGoal(result.data);
+          setState(prev => ({
+              ...prev,
+              goals: goal.id 
+                ? prev.goals.map(g => g.id === goal.id ? updatedGoal : g)
+                : [...prev.goals, updatedGoal]
+          }));
+          return { success: true, data: updatedGoal };
+      } catch (e: any) {
+          return { success: false, error: e.message };
+      }
+  };
+
+  const removeGoal = async (id: string): MutationResult => {
+      try {
+          const shopId = ensureShopId();
+          const { error } = await supabase.from('goals').delete().eq('id', id).eq('shop_id', shopId);
+          if (error) throw error;
+
+          setState(prev => ({
+              ...prev,
+              goals: prev.goals.filter(g => g.id !== id)
+          }));
+          return { success: true };
+      } catch (e: any) {
+          return { success: false, error: e.message };
+      }
+  };
+
+  const calculateGoalProgress = (goal: Goal) => {
+      const percentage = goal.targetValue > 0 ? (goal.currentValue / goal.targetValue) * 100 : 0;
+      const remaining = Math.max(goal.targetValue - goal.currentValue, 0);
+      
+      let status: 'critical' | 'warning' | 'good' = 'critical';
+      if (percentage >= 70) status = 'good';
+      else if (percentage >= 30) status = 'warning';
+
+      return { percentage: Math.min(percentage, 100), remaining, status };
+  };
+
    const logoutClient = () => {
       sessionStorage.removeItem('currentClient');
       sessionStorage.removeItem('clientSession');
       setState(prev => ({ ...prev, currentClient: null, clientSession: null }));
+  };
+
+  const switchShop = async (shopId: string) => {
+      setLoading(true);
+      const selectedShop = state.myShops.find(s => s.id === shopId);
+      if (selectedShop) {
+          setState(prev => ({ ...prev, shop: selectedShop }));
+          await fetchData(shopId);
+      }
+      setLoading(false);
+  };
+
+  const addAdditionalUnit = async (shopName: string, slug: string, phone: string): MutationResult => {
+      try {
+          if (!session?.user) throw new Error("Usuário não autenticado.");
+          const shopData = await initNewShop(session.user.id, shopName, slug, phone);
+          await fetchData(shopData.id);
+          return { success: true, data: shopData };
+      } catch (e: any) {
+          return { success: false, error: e.message };
+      }
   };
 
   const toggleTheme = () => {
@@ -1908,6 +2118,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       userRole,
       login, signup, logout,
       loadShopBySlug,
+      switchShop,
+      addAdditionalUnit,
       resetPassword,
       addService, updateService, removeService,
       addProfessional, updateProfessional, removeProfessional,
@@ -1926,6 +2138,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addClientSubscription, updateClientSubscription, removeClientSubscription,
       addBlockedSlot, removeBlockedSlot,
       updateSettings,
+      addProduct, updateProduct, removeProduct, addAppointmentProducts,
+      upsertGoal, removeGoal, calculateGoalProgress,
       getWhatsAppQRCode,
       getWhatsAppStatus,
       disconnectWhatsApp,

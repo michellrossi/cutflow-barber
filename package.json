@@ -13,8 +13,10 @@
   "dependencies": {
     "@google/generative-ai": "^0.22.0",
     "@supabase/supabase-js": "2",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/express": "^5.0.6",
     "@types/node-cron": "^3.0.11",
+    "canvas-confetti": "^1.9.4",
     "cors": "^2.8.6",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.20",
@@ -38,7 +40,10 @@
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
+    "@types/dompurify": "^3.0.5",
     "@types/node": "^22.14.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "~5.8.2"
   }

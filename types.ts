@@ -210,6 +210,40 @@ export interface MessageCategory {
   name: string;
 }
 
+export interface Product {
+  id: string;
+  shopId: string;
+  name: string;
+  category: string;
+  costPrice: number;
+  salePrice: number;
+  currentStock: number;
+  minStock: number;
+  createdAt: string;
+}
+
+export interface AppointmentProduct {
+  id: string;
+  appointmentId: string;
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface Goal {
+  id: string;
+  shopId: string;
+  professionalId?: string;
+  name: string;
+  category: 'faturamento' | 'atendimentos' | 'venda_produtos';
+  targetValue: number;
+  currentValue: number;
+  period: 'diário' | 'semanal' | 'mensal';
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+}
+
 export interface ShopState {
   shop: Shop | null;
   services: Service[];
@@ -221,6 +255,9 @@ export interface ShopState {
   clientSubscriptions: ClientSubscription[]; // [NOVO] Assinaturas de Clientes
   messageTemplates: MessageTemplate[]; // [NOVO] Modelos de Mensagem
   messageCategories: MessageCategory[]; // [NOVO] Categorias de Mensagem
+  products: Product[]; // [NOVO] Gestão de Estoque
+  goals: Goal[]; // [NOVO] Gestão de Metas
+  myShops: Shop[]; // [NOVO] Multi-unidades para o dono
   blockedSlots: BlockedSlot[];
   settings: ShopSettings;
   // [NOVO] Estado do Cliente Logado

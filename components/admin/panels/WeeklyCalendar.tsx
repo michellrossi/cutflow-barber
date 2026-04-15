@@ -5,10 +5,11 @@ import { Appointment } from '../../../types';
 
 interface WeeklyCalendarProps {
     onNewAppointment: () => void;
+    onCompleteAppointment?: (apt: Appointment) => void;
     modeToggle?: React.ReactNode;
 }
 
-export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment, modeToggle }) => {
+export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment, onCompleteAppointment, modeToggle }) => {
     const { appointments, professionals, services, settings, updateAppointmentStatus, updateAppointmentPaymentMethod, theme } = useShop();
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedProId, setSelectedProId] = useState<string | 'all'>('all');
@@ -198,8 +199,13 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                         value={selectedAppointment.status}
                                         onChange={(e) => {
                                             const newStatus = e.target.value as any;
-                                            updateAppointmentStatus(selectedAppointment.id, newStatus);
-                                            setSelectedAppointment({ ...selectedAppointment, status: newStatus });
+                                            if (newStatus === 'completed' && onCompleteAppointment) {
+                                                onCompleteAppointment(selectedAppointment);
+                                                setSelectedAppointment(null); // Fecha o modal de detalhes
+                                            } else {
+                                                updateAppointmentStatus(selectedAppointment.id, newStatus);
+                                                setSelectedAppointment({ ...selectedAppointment, status: newStatus });
+                                            }
                                         }}
                                         className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm text-slate-900 focus:outline-none focus:border-orange-500"
                                     >

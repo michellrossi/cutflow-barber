@@ -19,8 +19,11 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
     }
   }, [searchParams]);
 
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [shopName, setShopName] = useState('');
   const [slug, setSlug] = useState('');
 
@@ -33,7 +36,12 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
     setLoading(true);
 
     try {
-      const result = await signup(email, password, shopName, slug, intent);
+      if (password !== confirmPassword) {
+        setError('As senhas não coincidem.');
+        return;
+      }
+
+      const result = await signup(email, password, shopName, slug, intent, fullName, phone);
 
       if (result.error) {
         setError(result.error.message);
@@ -43,6 +51,22 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
     } catch (err: any) {
       setError(err.message || 'Erro ao criar conta.');
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    try {
+      setLoading(true);
+      const { supabase } = await import('../../supabaseClient');
+      await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/dashboard'
+        }
+      });
+    } catch (err: any) {
+      setError(err.message || 'Erro no login com Google');
       setLoading(false);
     }
   };
@@ -98,6 +122,20 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
             )}
 
             <div>
+              <label className="block text-sm font-medium text-slate-900">Nome Completo</label>
+              <div className="mt-1">
+                <input type="text" required value={fullName} onChange={e => setFullName(e.target.value)} className="appearance-none block w-full px-3 py-3 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="João da Silva" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-900">Celular (WhatsApp)</label>
+              <div className="mt-1">
+                <input type="tel" required value={phone} onChange={e => setPhone(e.target.value)} className="appearance-none block w-full px-3 py-3 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="(11) 99999-9999" />
+              </div>
+            </div>
+
+            <div>
               <label className="block text-sm font-medium text-slate-900">Email</label>
               <div className="mt-1">
                 <input type="email" required value={email} onChange={e => setEmail(e.target.value)} className="appearance-none block w-full px-3 py-3 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="seu@email.com" />
@@ -110,6 +148,15 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
               </label>
               <div className="mt-1">
                 <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="appearance-none block w-full px-3 py-3 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="Mínimo 6 caracteres" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-900">
+                Confirmar Senha
+              </label>
+              <div className="mt-1">
+                <input type="password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="appearance-none block w-full px-3 py-3 border border-slate-600 rounded-lg bg-slate-900 text-white placeholder-slate-500 focus:outline-none focus:ring-orange-500 focus:border-orange-500 sm:text-sm" placeholder="Digite sua senha novamente" />
               </div>
             </div>
 
@@ -161,6 +208,18 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
                   Já tem conta e senha?
                 </span>
               </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-4">
+              <button 
+                type="button" 
+                onClick={handleGoogleSignup}
+                disabled={loading}
+                className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-slate-600 rounded-lg shadow-sm text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 focus:outline-none transition-colors"
+              >
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
+                Continuar com Google
+              </button>
             </div>
 
             <div className="mt-6 text-center">
