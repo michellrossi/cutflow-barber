@@ -32,12 +32,12 @@ export const GoalsPanel: React.FC = () => {
   // Filtros
   const activeGoals = useMemo(() => {
     const now = new Date().toISOString().split('T')[0];
-    return goals.filter(g => g.endDate >= now).sort((a,b) => a.endDate.localeCompare(b.endDate));
+    return (goals || []).filter(g => g.endDate >= now).sort((a,b) => a.endDate.localeCompare(b.endDate));
   }, [goals]);
 
   const pastGoals = useMemo(() => {
     const now = new Date().toISOString().split('T')[0];
-    return goals.filter(g => g.endDate < now).sort((a,b) => b.endDate.localeCompare(a.endDate));
+    return (goals || []).filter(g => g.endDate < now).sort((a,b) => b.endDate.localeCompare(a.endDate));
   }, [goals]);
 
   const displayedGoals = activeTab === 'ativos' ? activeGoals : pastGoals;

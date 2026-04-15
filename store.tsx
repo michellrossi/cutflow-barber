@@ -147,7 +147,8 @@ const INITIAL_STATE: ShopState = {
   daysRemaining: 14,
   theme: 'light',
   automationTriggers: [],
-  products: []
+  products: [],
+  goals: []
 };
 
 const sanitize = (text: string): string => {
