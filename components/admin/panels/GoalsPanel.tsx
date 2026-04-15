@@ -19,6 +19,20 @@ const localDate = (d: Date): string =>
 
 const todayStr = () => localDate(new Date());
 
+// Formata YYYY-MM-DD → DD/MM/AAAA
+const fmtDate = (d: string): string => {
+  if (!d) return '';
+  const [y, m, day] = d.split('-');
+  return `${day}/${m}/${y}`;
+};
+
+// Valor monetário compacto (para caber nas bolinhas)
+const fmtShort = (v: number): string => {
+  if (v >= 10000) return `R$${(v / 1000).toFixed(0)}k`;
+  if (v >= 1000)  return `R$${(v / 1000).toFixed(1).replace('.0', '')}k`;
+  return `R$${v.toFixed(0)}`;
+};
+
 const getStatusColors = (pct: number) => {
   if (pct >= 100) return { bar: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' };
   if (pct >= 80)  return { bar: 'bg-emerald-400', text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-slate-200' };
@@ -276,7 +290,7 @@ const GoalProgressCard: React.FC<{
             <div>
               <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wide">{goal.name}</h3>
               <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">
-                {pro ? pro.name : 'Global'} • {goal.startDate} → {goal.endDate}
+                {pro ? pro.name : 'Global'} • {fmtDate(goal.startDate)} → {fmtDate(goal.endDate)}
               </p>
             </div>
           </div>
@@ -371,7 +385,7 @@ const DailyGoalCalendar: React.FC<{
             <h3 className="font-bold text-slate-900 uppercase tracking-wide">{goal.name}</h3>
             <p className="text-[10px] font-bold text-slate-400 uppercase mt-0.5">
               Meta diária: {isCount ? `${goal.targetValue} atend.` : fmt(goal.targetValue)}
-              &nbsp;•&nbsp;{goal.startDate} → {goal.endDate}
+              &nbsp;•&nbsp;{fmtDate(goal.startDate)} → {fmtDate(goal.endDate)}
             </p>
           </div>
         </div>
@@ -387,20 +401,20 @@ const DailyGoalCalendar: React.FC<{
         </div>
       </div>
 
-      {/* Day names header */}
-      <div className="grid grid-cols-7 gap-1.5 mb-1.5">
-        {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(d => (
-          <div key={d} className="text-center text-[9px] font-black text-slate-400 uppercase">{d}</div>
+      {/* Day labels */}
+      <div className="grid grid-cols-7 gap-0.5 mb-1">
+        {['D','S','T','Q','Q','S','S'].map((d, i) => (
+          <div key={i} className="text-center text-[8px] font-black text-slate-400">{d}</div>
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="space-y-1.5" style={{ maxHeight: '22rem', overflowY: 'auto' }}>
+      {/* Calendar grid — compacto */}
+      <div className="space-y-0.5" style={{ maxHeight: '18rem', overflowY: 'auto' }}>
         {weeks.map((week, wi) => (
-          <div key={wi} className="grid grid-cols-7 gap-1.5">
+          <div key={wi} className="grid grid-cols-7 gap-0.5">
             {week.map(({ date, isInRange }) => {
               const dayNum  = parseInt(date.split('-')[2]);
-              if (!isInRange) return <div key={date} className="aspect-square" />;
+              if (!isInRange) return <div key={date} style={{ minHeight: '4rem' }} />;
 
               const val      = dayValues[date] || 0;
               const pct      = goal.targetValue > 0 ? (val / goal.targetValue) * 100 : 0;
@@ -409,29 +423,25 @@ const DailyGoalCalendar: React.FC<{
               const bubble   = getBubbleClass(pct, isFuture);
 
               return (
-                <div key={date} className="relative group flex flex-col items-center">
-                  {/* Bubble */}
-                  <div className={`w-full aspect-square rounded-full border-2 flex flex-col items-center justify-center transition-all ${bubble} ${
-                    isToday ? 'ring-2 ring-orange-500 ring-offset-1 scale-110 z-10' : ''
-                  } ${isFuture ? 'opacity-40' : 'cursor-default'}`}>
-                    <span className="text-[10px] font-black leading-none">{dayNum}</span>
-                    {!isFuture && (
-                      <span className="text-[8px] font-bold leading-none mt-0.5 opacity-90">{pct.toFixed(0)}%</span>
-                    )}
-                  </div>
-
-                  {/* Tooltip */}
-                  {!isFuture && (
-                    <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 bg-slate-900 text-white text-[10px] rounded-xl px-3 py-2 shadow-2xl flex flex-col items-center gap-0.5 whitespace-nowrap">
-                      <span className="font-black text-[11px]">
+                <div key={date}
+                  className={`rounded-2xl border-2 flex flex-col items-center justify-center py-1.5 text-center transition-all ${bubble} ${
+                    isToday ? 'ring-2 ring-orange-500 ring-offset-1' : ''
+                  } ${isFuture ? 'opacity-35' : 'cursor-default'}`}
+                  style={{ minHeight: '4rem' }}>
+                  <span className="text-[9px] font-black leading-none">{dayNum}</span>
+                  {!isFuture ? (
+                    <>
+                      <span className="text-[7px] font-bold leading-tight text-center w-full px-0.5 mt-0.5">
                         {isCount
-                          ? `${val} / ${goal.targetValue} atend.`
-                          : `${fmt(val)} / ${fmt(goal.targetValue)}`}
+                          ? `${Math.round(val)}/${goal.targetValue}`
+                          : `${fmtShort(val)}/${fmtShort(goal.targetValue)}`}
                       </span>
-                      <span className="text-slate-300">{pct.toFixed(1)}% atingido</span>
-                      {/* Arrow */}
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900" />
-                    </div>
+                      <span className="text-[8px] font-black leading-none mt-0.5">
+                        ({pct.toFixed(0)}%)
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-[8px] opacity-25">–</span>
                   )}
                 </div>
               );

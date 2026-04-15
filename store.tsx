@@ -700,16 +700,28 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 filter: `shop_id=eq.${state.shop.id}`
             },
             (payload) => {
+                // Ignora eventos sem 'new' (ex: DELETE)
+                if (!payload.new || !payload.new.id) {
+                    if (payload.eventType === 'DELETE') {
+                        setState(prev => ({
+                            ...prev,
+                            goals: prev.goals.filter(g => g.id !== payload.old?.id)
+                        }));
+                    }
+                    return;
+                }
                 const updatedGoal = mapGoal(payload.new);
                 setState(prev => {
-                    if (payload.eventType === 'INSERT') {
-                        return { ...prev, goals: [...prev.goals, updatedGoal] };
-                    }
-                    if (payload.eventType === 'UPDATE') {
+                    // INSERT ou UPDATE: upsert para evitar duplicação
+                    // (upsertGoal() já adiciona ao state antes do Realtime chegar)
+                    const alreadyExists = prev.goals.some(g => g.id === updatedGoal.id);
+                    if (alreadyExists) {
+                        // Sempre atualiza com o dado mais recente (ex: current_value do trigger)
                         return { ...prev, goals: prev.goals.map(g => g.id === updatedGoal.id ? updatedGoal : g) };
                     }
-                    if (payload.eventType === 'DELETE') {
-                        return { ...prev, goals: prev.goals.filter(g => g.id !== payload.old.id) };
+                    // Só adiciona se não existe (ex: inserção feita por outro dispositivo)
+                    if (payload.eventType === 'INSERT') {
+                        return { ...prev, goals: [...prev.goals, updatedGoal] };
                     }
                     return prev;
                 });
