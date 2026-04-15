@@ -100,31 +100,30 @@ export const GoalsPanel: React.FC = () => {
         />
       </div>
 
-      {/* 2. Sub-menu Estilo 'Interruptor' (Tabs) */}
-      <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
-        <button
-          onClick={() => setActiveTab('ativos')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
-            activeTab === 'ativos' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Target size={18} /> Metas Ativas
-        </button>
-        <button
-          onClick={() => setActiveTab('historico')}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
-            activeTab === 'historico' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <BarChart3 size={18} /> Histórico
-        </button>
-      </div>
+      {/* 2. Sub-menu e Ações na mesma linha */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
+        <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit overflow-x-auto no-scrollbar max-w-full">
+          <button
+            onClick={() => setActiveTab('ativos')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === 'ativos' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Target size={18} /> Metas Ativas
+          </button>
+          <button
+            onClick={() => setActiveTab('historico')}
+            className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap ${
+              activeTab === 'historico' ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <BarChart3 size={18} /> Histórico
+          </button>
+        </div>
 
-      {/* Ações */}
-      <div className="flex justify-end mb-6">
         <button 
           onClick={() => { setEditingGoal(null); setIsModalOpen(true); }}
-          className="flex items-center justify-center gap-2 px-6 py-2 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-700 transition-all shadow-lg shadow-orange-600/20"
+          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-orange-600 text-white font-bold rounded-xl hover:bg-orange-700 transition-all shadow-lg shadow-orange-600/20 whitespace-nowrap"
         >
           <Plus size={20} /> Criar Nova Meta
         </button>

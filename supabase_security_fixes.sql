@@ -60,8 +60,18 @@ GRANT SELECT ON public.products_public TO anon, authenticated;
 -- FIX 5: Índice de expressão para busca de aniversariantes
 -- Evita full table scan com ilike a cada execução do cron
 -- ============================================================
+
+-- TO_CHAR é STABLE no Postgres (não IMMUTABLE), portanto não pode ser usada
+-- diretamente em índices de expressão. Criamos uma função wrapper IMMUTABLE
+-- que o Postgres aceita para fins de indexação.
+CREATE OR REPLACE FUNCTION public.birth_date_mmdd(d DATE)
+RETURNS TEXT AS $$
+  SELECT TO_CHAR(d, 'MM-DD');
+$$ LANGUAGE sql IMMUTABLE STRICT;
+
+-- Índice usando a função IMMUTABLE wrapper
 CREATE INDEX IF NOT EXISTS idx_clients_birth_mmdd
-  ON public.clients (TO_CHAR(birth_date, 'MM-DD'));
+  ON public.clients (public.birth_date_mmdd(birth_date));
 
 -- Função RPC para buscar aniversariantes do dia usando o índice
 CREATE OR REPLACE FUNCTION public.get_birthday_clients_today()
@@ -76,7 +86,8 @@ RETURNS TABLE (
 DECLARE
   v_today_mmdd TEXT;
 BEGIN
-  v_today_mmdd := TO_CHAR(NOW(), 'MM-DD');
+  -- Usa TO_CHAR aqui (dentro da função) — só o índice precisa da wrapper IMMUTABLE
+  v_today_mmdd := TO_CHAR(NOW() AT TIME ZONE 'America/Sao_Paulo', 'MM-DD');
 
   RETURN QUERY
     SELECT
@@ -87,7 +98,8 @@ BEGIN
       c.birth_date,
       c.birthday_last_sent_year
     FROM public.clients c
-    WHERE TO_CHAR(c.birth_date, 'MM-DD') = v_today_mmdd
+    -- Usa a mesma função do índice para que o planner aproveite o idx_clients_birth_mmdd
+    WHERE public.birth_date_mmdd(c.birth_date) = v_today_mmdd
       AND (
         c.birthday_last_sent_year IS NULL
         OR c.birthday_last_sent_year != EXTRACT(YEAR FROM NOW())::INTEGER

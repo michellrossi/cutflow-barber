@@ -371,10 +371,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       shopId: data.shop_id,
       name: data.name,
       category: data.category,
-      costPrice: data.cost_price,
-      salePrice: data.sale_price,
-      currentStock: data.current_stock,
-      minStock: data.min_stock,
+      costPrice: Number(data.cost_price || 0),
+      salePrice: Number(data.sale_price || 0),
+      currentStock: Number(data.current_stock || 0),
+      minStock: Number(data.min_stock || 0),
       createdAt: data.created_at
   });
 
@@ -384,8 +384,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       professionalId: data.professional_id,
       name: data.name,
       category: data.category,
-      targetValue: Number(data.target_value),
-      currentValue: Number(data.current_value),
+      targetValue: Number(data.target_value || 0),
+      currentValue: Number(data.current_value || 0),
       period: data.period,
       startDate: data.start_date,
       endDate: data.end_date,
@@ -689,7 +689,63 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         )
         .subscribe();
 
-      // 3. Listen for Client Changes
+      // 3. Listen for Goal Changes
+      const goalsChannel = supabase.channel('goals_sync')
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'goals',
+                filter: `shop_id=eq.${state.shop.id}`
+            },
+            (payload) => {
+                const updatedGoal = mapGoal(payload.new);
+                setState(prev => {
+                    if (payload.eventType === 'INSERT') {
+                        return { ...prev, goals: [...prev.goals, updatedGoal] };
+                    }
+                    if (payload.eventType === 'UPDATE') {
+                        return { ...prev, goals: prev.goals.map(g => g.id === updatedGoal.id ? updatedGoal : g) };
+                    }
+                    if (payload.eventType === 'DELETE') {
+                        return { ...prev, goals: prev.goals.filter(g => g.id !== payload.old.id) };
+                    }
+                    return prev;
+                });
+            }
+        )
+        .subscribe();
+
+      // 4. Listen for Product/Inventory Changes
+      const productsChannel = supabase.channel('products_sync')
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'products',
+                filter: `shop_id=eq.${state.shop.id}`
+            },
+            (payload) => {
+                const updatedProduct = mapProduct(payload.new);
+                setState(prev => {
+                    if (payload.eventType === 'INSERT') {
+                        return { ...prev, products: [...prev.products, updatedProduct] };
+                    }
+                    if (payload.eventType === 'UPDATE') {
+                        return { ...prev, products: prev.products.map(p => p.id === updatedProduct.id ? updatedProduct : p) };
+                    }
+                    if (payload.eventType === 'DELETE') {
+                        return { ...prev, products: prev.products.filter(p => p.id !== payload.old.id) };
+                    }
+                    return prev;
+                });
+            }
+        )
+        .subscribe();
+
+      // 5. Listen for Client Changes
       const clientsChannel = supabase.channel('clients_sync')
         .on(
             'postgres_changes',
@@ -708,6 +764,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return () => {
           supabase.removeChannel(shopChannel);
           supabase.removeChannel(appointmentsChannel);
+          supabase.removeChannel(goalsChannel);
+          supabase.removeChannel(productsChannel);
           supabase.removeChannel(clientsChannel);
       }
   }, [state.shop?.id]);
