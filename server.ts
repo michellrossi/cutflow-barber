@@ -39,6 +39,46 @@ if (!serviceRoleKey) {
 // 2. Cliente Administrativo (Usa SERVICE_ROLE - Ignora RLS)
 export const supabaseAdmin = createClient(supabaseUrl || 'https://placeholder.supabase.co', serviceRoleKey || 'placeholder');
 
+// =====================================================================
+// FIX 1: Rate Limiting em memória por remoteJid (proteção anti-flood)
+// Rejeita mensagens do mesmo número com intervalo menor que 3 segundos
+// =====================================================================
+const chatRateLimitMap = new Map<string, number>(); // { jid: lastTimestampMs }
+const CHAT_RATE_LIMIT_MS = 3000; // 3 segundos entre mensagens
+
+function isRateLimited(remoteJid: string): boolean {
+    const now = Date.now();
+    const last = chatRateLimitMap.get(remoteJid);
+    if (last && (now - last) < CHAT_RATE_LIMIT_MS) {
+        return true;
+    }
+    chatRateLimitMap.set(remoteJid, now);
+    // Limpeza do Map a cada 10.000 entradas para evitar vazamento de memória
+    if (chatRateLimitMap.size > 10_000) {
+        const cutoff = now - 60_000; // remove entradas com mais de 1 minuto
+        for (const [jid, ts] of chatRateLimitMap.entries()) {
+            if (ts < cutoff) chatRateLimitMap.delete(jid);
+        }
+    }
+    return false;
+}
+
+// Frases que indicam que o cliente quer falar com um humano
+const HANDOFF_PHRASES = [
+    'falar com humano', 'falar com atendente', 'falar com responsável', 'falar com o responsável',
+    'quero um atendente', 'preciso de um atendente', 'atendimento humano', 'quero falar com alguém',
+    'me coloca com alguém', 'chama o dono', 'fala com o dono', 'falar com o dono',
+    'falar com pessoa', 'atendente por favor', 'responsável', 'gerente'
+];
+
+function detectsHandoff(message: string): boolean {
+    const lower = message.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return HANDOFF_PHRASES.some(phrase => {
+        const normalizedPhrase = phrase.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        return lower.includes(normalizedPhrase);
+    });
+}
+
 /**
  * GERA MENSAGEM (TEMPLATE)
  * Busca do banco de dados usando supabaseAdmin para evitar bloqueios de RLS
@@ -203,9 +243,54 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
 
 /**
  * LOGICA DO CHATBOT AI
+ * FIX 2: Expiração de sessão (2h) + reset de contexto
+ * FIX 4: Handoff humano + retry com backoff no Gemini
+ * FIX 8: Usa RPC book_appointment em vez de INSERT direto
  */
 async function handleChatbotAI(shopId: string, remoteJid: string, clientName: string, message: string, instance: string) {
     console.log(`[Chatbot] Processando para ${clientName} (${remoteJid}) na loja ${shopId}`);
+
+    // -------------------------------------------------------
+    // FIX 4: Detecção de handoff — verifica ANTES de qualquer IA
+    // -------------------------------------------------------
+    if (detectsHandoff(message)) {
+        console.log(`[Chatbot] Handoff detectado para ${remoteJid}. Pausando bot.`);
+
+        // Pausa o bot para esta sessão
+        await supabaseAdmin
+            .from('whatsapp_chat_sessions')
+            .upsert(
+                { shop_id: shopId, remote_jid: remoteJid, bot_paused: true, last_message_at: new Date().toISOString() },
+                { onConflict: 'shop_id,remote_jid' }
+            );
+
+        // Notifica o cliente que o sistema vai acionar o dono
+        await sendWhatsApp(remoteJid.split('@')[0],
+            '✅ Entendido! Vou chamar um de nossos atendentes. Aguarde um momento, por favor.',
+            instance
+        );
+
+        // Notifica o dono da loja via WhatsApp
+        try {
+            const { data: shop } = await supabaseAdmin
+                .from('shops')
+                .select('name, whatsapp_instance')
+                .eq('id', shopId)
+                .single();
+            const { data: ownerSettings } = await supabaseAdmin
+                .from('settings')
+                .select('phone')
+                .eq('shop_id', shopId)
+                .single();
+            if (ownerSettings?.phone) {
+                const ownerMsg = `🔔 *Atendimento Humano Solicitado*\n\nCliente: *${clientName}*\nNúmero: *${remoteJid.split('@')[0]}*\nÚltima mensagem: "${message}"\n\nAcesse o WhatsApp para retomar o atendimento.`;
+                await sendWhatsApp(ownerSettings.phone, ownerMsg, shop?.whatsapp_instance || instance);
+            }
+        } catch (e) {
+            console.error('[Chatbot] Erro ao notificar dono sobre handoff:', e);
+        }
+        return;
+    }
 
     // 1. Busca ou cria sessão do chat
     let { data: session } = await supabaseAdmin
@@ -218,15 +303,39 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
     if (!session) {
         const { data: newSession } = await supabaseAdmin
             .from('whatsapp_chat_sessions')
-            .insert({ shop_id: shopId, remote_jid: remoteJid, context: {}, messages: [] })
+            .insert({ shop_id: shopId, remote_jid: remoteJid, context: {}, messages: [], message_count: 0 })
             .select('*')
             .single();
         session = newSession;
     }
 
+    // -------------------------------------------------------
+    // Verifica se o bot está pausado para handoff
+    // -------------------------------------------------------
+    if (session?.bot_paused) {
+        console.log(`[Chatbot] Bot pausado para ${remoteJid}. Ignorando mensagem.`);
+        return;
+    }
+
+    // -------------------------------------------------------
+    // FIX 2: Verificação de expiração de sessão (2 horas)
+    // -------------------------------------------------------
+    const SESSION_EXPIRY_HOURS = 2;
+    if (session?.last_message_at) {
+        const lastMsg = dayjs(session.last_message_at);
+        const hoursSinceLastMsg = dayjs().diff(lastMsg, 'hour', true);
+        if (hoursSinceLastMsg >= SESSION_EXPIRY_HOURS) {
+            console.log(`[Chatbot] Sessão expirada para ${remoteJid} (${hoursSinceLastMsg.toFixed(1)}h). Resetando contexto.`);
+            await supabaseAdmin
+                .from('whatsapp_chat_sessions')
+                .update({ messages: [], context: {}, message_count: 0, last_message_at: new Date().toISOString() })
+                .eq('id', session.id);
+            session = { ...session, messages: [], context: {}, message_count: 0 };
+        }
+    }
+
     // 2. Busca dados da loja para o contexto
     const { data: shop } = await supabaseAdmin.from('shops').select('name').eq('id', shopId).single();
-    const { data: settings } = await supabaseAdmin.from('settings').select('*').eq('shop_id', shopId).single();
 
     // 3. Prepara Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -264,7 +373,8 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
                             service_ids: { type: "ARRAY", items: { type: "STRING" }, description: "Lista de IDs dos serviços selecionados." },
                             professional_id: { type: "STRING", description: "O ID do barbeiro selecionado." },
                             date: { type: "STRING", description: "Data escolhida (YYYY-MM-DD)." },
-                            time: { type: "STRING", description: "Hora escolhida (HH:mm)." }
+                            time: { type: "STRING", description: "Hora escolhida (HH:mm)." },
+                            total_value: { type: "NUMBER", description: "Valor total calculado dos serviços." }
                         },
                         required: ["service_ids", "professional_id", "date", "time"]
                     }
@@ -274,7 +384,7 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
     ];
 
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash", // Use 2.0 per tool support if available, or flash-exp
+        model: "gemini-2.0-flash",
         tools,
     });
 
@@ -298,92 +408,144 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
         O número do cliente é ${remoteJid.split('@')[0]}.`,
     });
 
-    try {
-        let result = await chat.sendMessage(message);
-        let response = result.response;
-        
-        // Loop para lidar com chamadas de funções
-        const call = response.functionCalls();
-        if (call && call.length > 0) {
-            const toolResults: any[] = [];
+    // -------------------------------------------------------
+    // FIX 4: Retry com backoff exponencial no Gemini
+    // -------------------------------------------------------
+    const MAX_RETRIES = 3;
+    const RETRY_DELAYS_MS = [1000, 3000, 7000]; // backoff: 1s, 3s, 7s
+
+    let reply = '';
+    let lastError: any = null;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        try {
+            let result = await chat.sendMessage(message);
+            let response = result.response;
             
-            for (const fn of call) {
-                console.log(`[Chatbot] Executando ferramenta: ${fn.name} | Args:`, fn.args);
+            // Loop para lidar com chamadas de funções
+            const call = response.functionCalls();
+            if (call && call.length > 0) {
+                const toolResults: any[] = [];
                 
-                let data: any;
-                if (fn.name === "list_services") {
-                    const { data: res } = await supabaseAdmin.from('services').select('id, name, price, duration').eq('shop_id', shopId);
-                    data = res;
-                } else if (fn.name === "list_professionals") {
-                    const { data: res } = await supabaseAdmin.from('professionals').select('id, name, role').eq('shop_id', shopId);
-                    data = res;
-                } else if (fn.name === "check_availability") {
-                    const args: any = fn.args;
-                    data = await getAvailableSlotsForAI(shopId, args.professional_id, args.date);
-                } else if (fn.name === "book_appointment") {
-                    const args: any = fn.args;
-                    const phone = remoteJid.split('@')[0];
+                for (const fn of call) {
+                    console.log(`[Chatbot] Executando ferramenta: ${fn.name} | Args:`, fn.args);
                     
-                    // Verifica se o cliente já existe
-                    let { data: client } = await supabaseAdmin.from('clients').select('id').eq('shop_id', shopId).eq('phone', phone).maybeSingle();
-                    if (!client) {
-                        const { data: newClient } = await supabaseAdmin.from('clients').insert({ shop_id: shopId, name: clientName, phone: phone }).select('id').single();
-                        client = newClient;
-                    }
+                    let data: any;
+                    if (fn.name === "list_services") {
+                        const { data: res } = await supabaseAdmin.from('services').select('id, name, price, duration').eq('shop_id', shopId);
+                        data = res;
+                    } else if (fn.name === "list_professionals") {
+                        const { data: res } = await supabaseAdmin.from('professionals').select('id, name, role').eq('shop_id', shopId);
+                        data = res;
+                    } else if (fn.name === "check_availability") {
+                        const args: any = fn.args;
+                        data = await getAvailableSlotsForAI(shopId, args.professional_id, args.date);
+                    } else if (fn.name === "book_appointment") {
+                        // -----------------------------------------------
+                        // FIX 8: Usa RPC book_appointment em vez de INSERT
+                        // Herda: limite de 3 agendamentos/dia + anti-conflito
+                        // -----------------------------------------------
+                        const args: any = fn.args;
+                        const phone = remoteJid.split('@')[0];
+                        
+                        // Garante que o cliente existe no banco
+                        let { data: client } = await supabaseAdmin
+                            .from('clients').select('id').eq('shop_id', shopId).eq('phone', phone).maybeSingle();
+                        if (!client) {
+                            const { data: newClient } = await supabaseAdmin
+                                .from('clients')
+                                .insert({ shop_id: shopId, name: clientName, phone })
+                                .select('id').single();
+                            client = newClient;
+                        }
 
-                    const { data: apt, error } = await supabaseAdmin.from('appointments').insert({
-                        shop_id: shopId,
-                        client_id: client?.id,
-                        client_name: clientName,
-                        client_phone: phone,
-                        service_ids: args.service_ids,
-                        professional_id: args.professional_id,
-                        date: args.date,
-                        time: args.time,
-                        status: 'scheduled'
-                    }).select('id').single();
+                        // Calcula total_value somando os serviços
+                        let totalValue = args.total_value || 0;
+                        if (!totalValue && args.service_ids?.length) {
+                            const { data: svcData } = await supabaseAdmin
+                                .from('services').select('price').in('id', args.service_ids);
+                            totalValue = svcData?.reduce((sum: number, s: any) => sum + (s.price || 0), 0) || 0;
+                        }
 
-                    if (error) {
-                        data = { success: false, error: "Conflito de horário ou erro no servidor." };
-                    } else {
-                        data = { success: true, appointmentId: apt.id };
-                        // Trigger de confirmação (o mesmo usado pelo webapp)
-                        await fetch(`http://localhost:${process.env.PORT || 3000}/api/notify/confirmation`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ appointmentId: apt.id })
-                        }).catch(e => console.error("Erro ao disparar notificação:", e));
+                        // Chama a RPC transacional (trata conflito e limite diário)
+                        const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc('book_appointment', {
+                            p_shop_id: shopId,
+                            p_client_name: clientName,
+                            p_client_phone: phone,
+                            p_service_ids: args.service_ids,
+                            p_professional_id: args.professional_id,
+                            p_date: args.date,
+                            p_time: args.time,
+                            p_total_value: totalValue
+                        });
+
+                        if (rpcError || !rpcResult) {
+                            console.error('[Chatbot] Erro na RPC book_appointment:', rpcError);
+                            data = { success: false, error: 'Erro ao criar agendamento.' };
+                        } else if (rpcResult.status === 'conflict') {
+                            data = { success: false, error: 'Horário já reservado. Por favor, escolha outro horário.' };
+                        } else if (rpcResult.status === 'success') {
+                            data = { success: true, appointmentId: rpcResult.id };
+                            // Dispara confirmação assíncrona
+                            fetch(`http://localhost:${process.env.PORT || 3000}/api/notify/confirmation`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ appointmentId: rpcResult.id })
+                            }).catch(e => console.error('[Chatbot] Erro ao disparar notificação:', e));
+                        } else {
+                            data = { success: false, error: rpcResult.message || 'Erro desconhecido.' };
+                        }
                     }
+                    
+                    toolResults.push({
+                        functionResponse: {
+                            name: fn.name,
+                            response: { content: data }
+                        }
+                    });
                 }
-                
-                toolResults.push({
-                    functionResponse: {
-                        name: fn.name,
-                        response: { content: data }
-                    }
-                });
+
+                // Envia os resultados das funções de volta para o Gemini
+                const finalResult = await chat.sendMessage(toolResults);
+                response = finalResult.response;
             }
 
-            // Envia os resultados das funções de volta para o Gemini
-            const finalResult = await chat.sendMessage(toolResults);
-            response = finalResult.response;
+            reply = response.text();
+            lastError = null;
+            break; // Sucesso — sai do loop de retry
+
+        } catch (error: any) {
+            lastError = error;
+            const isLastAttempt = attempt === MAX_RETRIES - 1;
+            console.warn(`[Gemini Chatbot] Tentativa ${attempt + 1}/${MAX_RETRIES} falhou:`, error.message);
+            if (!isLastAttempt) {
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+            }
         }
-
-        const reply = response.text();
-        
-        // 4. Salva histórico
-        const updatedMessages = [...(session.messages || []), { role: 'user', content: message }, { role: 'assistant', content: reply }];
-        await supabaseAdmin.from('whatsapp_chat_sessions')
-            .update({ messages: updatedMessages, last_message_at: new Date().toISOString() })
-            .eq('id', session.id);
-
-        // 5. Envia resposta via WhatsApp
-        await sendWhatsApp(remoteJid.split('@')[0], reply, instance);
-
-    } catch (error: any) {
-        console.error("[Gemini Chatbot Error]", error);
-        await sendWhatsApp(remoteJid.split('@')[0], "Desculpe, tive um problema técnico para processar seu pedido agora. Pode tentar novamente em alguns instantes?", instance);
     }
+
+    if (lastError || !reply) {
+        console.error('[Gemini Chatbot] Todas as tentativas falharam:', lastError);
+        await sendWhatsApp(
+            remoteJid.split('@')[0],
+            '⚠️ Tive uma dificuldade técnica momentânea. Tente novamente em alguns instantes ou escreva "atendente" para falar com nossa equipe.',
+            instance
+        );
+        return;
+    }
+
+    // 4. Salva histórico e incrementa contador de mensagens
+    const updatedMessages = [...(session.messages || []), { role: 'user', content: message }, { role: 'assistant', content: reply }];
+    await supabaseAdmin.from('whatsapp_chat_sessions')
+        .update({
+            messages: updatedMessages,
+            last_message_at: new Date().toISOString(),
+            message_count: (session.message_count || 0) + 1
+        })
+        .eq('id', session.id);
+
+    // 5. Envia resposta via WhatsApp
+    await sendWhatsApp(remoteJid.split('@')[0], reply, instance);
 }
 
 async function getAvailableSlotsForAI(shopId: string, proId: string, date: string) {
@@ -670,29 +832,54 @@ async function runCronLogic() {
     }
 
     // 6. Aniversariantes do Dia
-    const todayMMDD = now.format('MM-DD');
-    const { data: bdayClients } = await supabaseAdmin
-        .from('clients')
-        .select('*, shops(id, name, whatsapp_instance, whatsapp_connected)')
-        .filter('birth_date', 'ilike', `%-${todayMMDD}%`)
-        .or(`birthday_last_sent_year.is.null,birthday_last_sent_year.neq.${now.year()}`);
+    // FIX 5: Usa RPC com índice de expressão em vez de ilike sem índice
+    const { data: bdayClients, error: bdayError } = await supabaseAdmin
+        .rpc('get_birthday_clients_today');
 
-    if (bdayClients) {
+    if (bdayError) {
+        console.error('[Cron] Erro ao buscar aniversariantes via RPC:', bdayError.message);
+    }
+
+    if (bdayClients && bdayClients.length > 0) {
+        // Busca dados das lojas para os aniversariantes (join manual)
+        const shopIds = [...new Set(bdayClients.map((c: any) => c.shop_id))];
+        const { data: shopList } = await supabaseAdmin
+            .from('shops')
+            .select('id, name, whatsapp_instance, whatsapp_connected')
+            .in('id', shopIds);
+        const shopMap = new Map((shopList || []).map((s: any) => [s.id, s]));
+
         for (const client of bdayClients) {
-            if (!client.shops?.whatsapp_connected) continue;
-            if (!(await isInstanceConnected(client.shop_id, client.shops.whatsapp_instance))) continue;
+            const shop = shopMap.get(client.shop_id);
+            if (!shop?.whatsapp_connected) continue;
+            if (!(await isInstanceConnected(client.shop_id, shop.whatsapp_instance))) continue;
             
             const msg = await generateWhatsAppMessage('birthday', {
                 clientName: client.name,
-                shopName: client.shops?.name
+                shopName: shop.name
             }, client.shop_id);
 
             if (msg) {
-                const ok = await sendWhatsApp(client.phone, msg, client.shops?.whatsapp_instance);
+                const ok = await sendWhatsApp(client.phone, msg, shop.whatsapp_instance);
                 if (ok) {
                     await supabaseAdmin.from('clients').update({ birthday_last_sent_year: now.year() }).eq('id', client.id);
                 }
             }
+        }
+    }
+
+    // FIX 2 (Cron Semanal): Limpa sessões de chatbot inativas há mais de 7 dias
+    // Executa apenas às segundas-feiras (dia 1 da semana no dayjs)
+    if (now.day() === 1) {
+        const sevenDaysAgo = now.subtract(7, 'day').toISOString();
+        const { error: cleanupError, count } = await supabaseAdmin
+            .from('whatsapp_chat_sessions')
+            .delete({ count: 'exact' })
+            .lt('last_message_at', sevenDaysAgo);
+        if (cleanupError) {
+            console.error('[Cron] Erro ao limpar sessões expiradas:', cleanupError.message);
+        } else {
+            console.log(`[Cron] Sessões de chatbot expiradas removidas: ${count ?? 0}`);
         }
     }
 }
@@ -1102,13 +1289,20 @@ async function startServer() {
              return res.status(200).send('OK');
         }
 
-        try {
-            await handleChatbotAI(shopId, remoteJid, pushName, messageText, instanceName);
-            res.status(200).send('OK');
-        } catch (error: any) {
-            console.error(`[Chatbot Error] Shop: ${shopId} | User: ${remoteJid} | Error:`, error.message);
-            res.status(500).send('Internal Error');
+        // FIX 1: Rate limiting em memória — rejeita flood de mensagens
+        if (isRateLimited(remoteJid)) {
+            console.warn(`[Chatbot] Rate limit atingido para ${remoteJid}. Mensagem descartada.`);
+            return res.status(200).send('OK'); // 200 para não causar retry no webhook
         }
+
+        // Responde imediatamente ao webhook para evitar timeout da Evolution API
+        res.status(200).send('OK');
+
+        // Processa de forma assíncrona (não bloqueia resposta HTTP)
+        handleChatbotAI(shopId, remoteJid, pushName, messageText, instanceName)
+            .catch((error: any) => {
+                console.error(`[Chatbot Error] Shop: ${shopId} | User: ${remoteJid} | Error:`, error.message);
+            });
     });
 
     if (process.env.NODE_ENV === 'production') {
