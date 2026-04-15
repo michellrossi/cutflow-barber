@@ -50,8 +50,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     if (savedTab === 'settings') setIsSettingsOpen(true);
   }, []);
 
-  const { settings, trialStatus, daysRemaining, theme, toggleTheme, shop, myShops, switchShop } = useShop();
+  const { settings, trialStatus, daysRemaining, theme, toggleTheme, shop, myShops, switchShop, addAdditionalUnit, userRole } = useShop();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isAddUnitOpen, setIsAddUnitOpen] = useState(false);
 
   const isSidebarExpanded = isSidebarPinned || isSidebarHovered;
 
@@ -130,6 +131,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     <div className="flex h-screen bg-white text-slate-900 overflow-hidden flex-col md:flex-row w-full">
       
       <PaymentModal isOpen={isPaymentModalOpen} onClose={() => setIsPaymentModalOpen(false)} />
+      <AddUnitModal isOpen={isAddUnitOpen} onClose={() => setIsAddUnitOpen(false)} />
 
       {/* Sidebar */}
       <aside 
@@ -145,16 +147,25 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           {isSidebarExpanded && (
             <div className="flex-1 overflow-hidden">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Unidade Ativa</p>
-                <div className="relative group">
+                <div className="flex items-center gap-1">
                     <select 
                         value={shop?.id}
                         onChange={(e) => switchShop(e.target.value)}
-                        className="w-full bg-transparent text-slate-900 text-sm font-bold focus:outline-none cursor-pointer truncate appearance-none"
+                        className="flex-1 bg-transparent text-slate-900 text-sm font-bold focus:outline-none cursor-pointer truncate appearance-none"
                     >
                         {myShops.map(s => (
                             <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                     </select>
+                    {userRole === 'owner' && (
+                        <button 
+                            onClick={() => setIsAddUnitOpen(true)}
+                            className="p-1 text-slate-400 hover:text-orange-600 transition-colors"
+                            title="Nova unidade"
+                        >
+                            <Plus size={16} />
+                        </button>
+                    )}
                 </div>
             </div>
           )}
@@ -317,6 +328,63 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       </main>
     </div>
   );
+};
+
+const AddUnitModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+    const { addAdditionalUnit, settings } = useShop();
+    const [name, setName] = useState('');
+    const [slug, setSlug] = useState('');
+    const [phone, setPhone] = useState('');
+    const [loading, setLoading] = useState(false);
+
+    if (!isOpen) return null;
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        const res = await addAdditionalUnit(name, slug, phone);
+        setLoading(false);
+        if (res.success) {
+            onClose();
+            setName('');
+            setSlug('');
+            setPhone('');
+        } else {
+            alert(res.error || "Erro ao adicionar unidade.");
+        }
+    };
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in">
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="bg-white p-8 rounded-2xl border border-slate-200 w-full max-w-md shadow-2xl"
+            >
+                <h3 className="text-xl font-bold text-slate-900 mb-6 font-display">Adicionar Nova Unidade</h3>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Nome da Barbearia</label>
+                        <input required value={name} onChange={e => { setName(e.target.value); if(!slug) setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, '')) }} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-orange-500 font-bold" placeholder="Ex: Barber Shop Filial 2" />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">URL (Slug)</label>
+                        <input required value={slug} onChange={e => setSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]/g, ''))} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-orange-500 font-bold" placeholder="ex: barber-filial-2" />
+                    </div>
+                    <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Telefone/WhatsApp</label>
+                        <input required value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 focus:outline-none focus:border-orange-500 font-bold" placeholder="(00) 00000-0000" />
+                    </div>
+                    <div className="flex gap-4 pt-4">
+                        <button type="button" onClick={onClose} className="flex-1 py-3 text-slate-500 font-bold hover:text-slate-900 transition-colors">Cancelar</button>
+                        <button type="submit" disabled={loading} className="flex-1 py-3 bg-orange-600 text-white rounded-xl font-bold shadow-lg hover:bg-orange-700 transition-all">
+                            {loading ? "Criando..." : "Criar Unidade"}
+                        </button>
+                    </div>
+                </form>
+            </motion.div>
+        </div>
+    );
 };
 
 const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void, expanded?: boolean }> = ({ icon, label, active, onClick, expanded = true }) => {

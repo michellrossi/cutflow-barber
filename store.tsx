@@ -21,6 +21,7 @@ interface ShopContextType extends ShopState {
   // Data Loading
   loadShopBySlug: (slug: string) => Promise<boolean>; 
   switchShop: (shopId: string) => Promise<void>;
+  addAdditionalUnit: (shopName: string, slug: string, phone: string) => MutationResult;
   refresh: () => void;
 
   // Actions - Now returning MutationResult
@@ -745,49 +746,20 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { success: true };
   };
 
-  const signup = async (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team', fullName: string, phone: string) => {
+  const initNewShop = async (userId: string, shopName: string, slug: string, phone: string) => {
       const cleanShopName = sanitize(shopName);
       const cleanSlug = sanitize(slug).toLowerCase().replace(/[^\w-]/g, '');
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({ 
-          email, 
-          password,
-          options: {
-              data: {
-                  full_name: sanitize(fullName),
-                  phone: sanitize(phone)
-              }
-          }
-      });
-      if (authError || !authData.user) return { error: authError };
-
-      if (intent === 'join_team') {
-          // Check if email is in professionals table
-          const { data: proData } = await supabase.from('professionals').select('id, shop_id').eq('email', email).single();
-          
-          if (proData) {
-              // Link the Auth User ID to the Professional Profile
-              await supabase.from('professionals').update({ user_id: authData.user.id }).eq('id', proData.id);
-              setSession(authData.session);
-              return { error: null };
-          } else {
-              // Rollback (Not easy in client-side, but effectively the user is created but has no access)
-              return { error: { message: 'Este email não consta na lista de profissionais de nenhuma barbearia.' } };
-          }
-      }
-
-      // [UPDATE] Create Shop with Trial Fields
       const { data: shopData, error: shopError } = await supabase.from('shops').insert({
-          owner_id: authData.user.id,
+          owner_id: userId,
           name: cleanShopName,
           slug: cleanSlug,
           plan: 'trial',
           trial_started_at: new Date().toISOString(),
-          // 14 days from now
           trial_ends_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
       }).select().single();
 
-      if (shopError || !shopData) return { error: shopError };
+      if (shopError || !shopData) throw shopError;
 
       await supabase.from('settings').insert({
           shop_id: shopData.id,
@@ -797,7 +769,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           secondary_color: '#1e293b'
       });
 
-      // Default message categories
       const defaultCategories = [
         { shop_id: shopData.id, name: 'Confirmação Imediata' },
         { shop_id: shopData.id, name: 'Lembrete 24h' },
@@ -807,7 +778,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ];
       await supabase.from('message_categories').insert(defaultCategories);
 
-      // Default Triggers
       const defaultTriggers = [
           { shop_id: shopData.id, name: 'Confirmação Imediata', value: 0, unit: 'minutes', period: 'immediate', active: true },
           { shop_id: shopData.id, name: 'Lembrete de Agendamento', value: 1, unit: 'hours', period: 'before', active: true },
@@ -816,7 +786,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ];
       const { data: insertedTriggers } = await supabase.from('automation_triggers').insert(defaultTriggers).select();
 
-      // Default message templates
       const defaultTemplates = [
         {
             shop_id: shopData.id,
@@ -857,25 +826,55 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ];
       await supabase.from('message_templates').insert(defaultTemplates);
 
-      // Default services
       const defaultServices = [
-        { name: 'Corte Masculino', price: 30, duration: 30, category: 'Cortes' },
-        { name: 'Barba', price: 20, duration: 20, category: 'Barba' },
-        { name: 'Corte + Barba', price: 45, duration: 50, category: 'Combos' }
+        { shop_id: shopData.id, name: 'Corte Masculino', price: 30, duration: 30, category: 'Cortes', description: 'Corte tradicional' },
+        { shop_id: shopData.id, name: 'Barba', price: 20, duration: 20, category: 'Barba', description: 'Trato na barba' },
+        { shop_id: shopData.id, name: 'Corte + Barba', price: 45, duration: 50, category: 'Combos', description: 'Combo promocional' }
       ];
-      const servicesToInsert = defaultServices.map(s => ({
-          shop_id: shopData.id,
-          name: s.name,
-          description: s.name,
-          price: s.price,
-          duration: s.duration,
-          category: s.category
-      }));
-      await supabase.from('services').insert(servicesToInsert);
+      await supabase.from('services').insert(defaultServices);
+      
+      return shopData;
+  };
 
-      setSession(authData.session);
-      await fetchData(shopData.id);
-      return { error: null };
+  const signup = async (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team', fullName: string, phone: string) => {
+      const cleanShopName = sanitize(shopName);
+      const cleanSlug = sanitize(slug).toLowerCase().replace(/[^\w-]/g, '');
+
+      const { data: authData, error: authError } = await supabase.auth.signUp({ 
+          email, 
+          password,
+          options: {
+              data: {
+                  full_name: sanitize(fullName),
+                  phone: sanitize(phone)
+              }
+          }
+      });
+      if (authError || !authData.user) return { error: authError };
+
+      if (intent === 'join_team') {
+          // Check if email is in professionals table
+          const { data: proData } = await supabase.from('professionals').select('id, shop_id').eq('email', email).single();
+          
+          if (proData) {
+              // Link the Auth User ID to the Professional Profile
+              await supabase.from('professionals').update({ user_id: authData.user.id }).eq('id', proData.id);
+              setSession(authData.session);
+              return { error: null };
+          } else {
+              // Rollback (Not easy in client-side, but effectively the user is created but has no access)
+              return { error: { message: 'Este email não consta na lista de profissionais de nenhuma barbearia.' } };
+          }
+      }
+
+      try {
+          const shopData = await initNewShop(authData.user.id, shopName, slug, phone);
+          setSession(authData.session);
+          await fetchData(shopData.id);
+          return { error: null };
+      } catch (e: any) {
+          return { error: e };
+      }
   };
 
   const logout = async () => {
@@ -2091,6 +2090,17 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(false);
   };
 
+  const addAdditionalUnit = async (shopName: string, slug: string, phone: string): MutationResult => {
+      try {
+          if (!session?.user) throw new Error("Usuário não autenticado.");
+          const shopData = await initNewShop(session.user.id, shopName, slug, phone);
+          await fetchData(shopData.id);
+          return { success: true, data: shopData };
+      } catch (e: any) {
+          return { success: false, error: e.message };
+      }
+  };
+
   const toggleTheme = () => {
       setState(prev => {
           const newTheme = prev.theme === 'dark' ? 'light' : 'dark';
@@ -2109,6 +2119,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       login, signup, logout,
       loadShopBySlug,
       switchShop,
+      addAdditionalUnit,
       resetPassword,
       addService, updateService, removeService,
       addProfessional, updateProfessional, removeProfessional,
