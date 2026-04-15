@@ -230,6 +230,20 @@ export interface AppointmentProduct {
   unitPrice: number;
 }
 
+export interface Goal {
+  id: string;
+  shopId: string;
+  professionalId?: string;
+  name: string;
+  category: 'faturamento' | 'atendimentos' | 'venda_produtos';
+  targetValue: number;
+  currentValue: number;
+  period: 'diário' | 'semanal' | 'mensal';
+  startDate: string;
+  endDate: string;
+  createdAt: string;
+}
+
 export interface ShopState {
   shop: Shop | null;
   services: Service[];
@@ -242,6 +256,7 @@ export interface ShopState {
   messageTemplates: MessageTemplate[]; // [NOVO] Modelos de Mensagem
   messageCategories: MessageCategory[]; // [NOVO] Categorias de Mensagem
   products: Product[]; // [NOVO] Gestão de Estoque
+  goals: Goal[]; // [NOVO] Gestão de Metas
   blockedSlots: BlockedSlot[];
   settings: ShopSettings;
   // [NOVO] Estado do Cliente Logado

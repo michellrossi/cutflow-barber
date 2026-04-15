@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger, Product, AppointmentProduct } from './types';
+import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger, Product, AppointmentProduct, Goal } from './types';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import DOMPurify from 'dompurify';
@@ -74,6 +74,11 @@ interface ShopContextType extends ShopState {
   updateProduct: (id: string, product: Partial<Product>) => MutationResult;
   removeProduct: (id: string) => MutationResult;
   addAppointmentProducts: (appointmentId: string, products: { productId: string, quantity: number, unitPrice: number }[]) => MutationResult;
+  
+  // Goal Actions
+  upsertGoal: (goal: Partial<Goal> & { name: string; category: string; targetValue: number; period: string; startDate: string; endDate: string }) => MutationResult;
+  removeGoal: (id: string) => MutationResult;
+  calculateGoalProgress: (goal: Goal) => { percentage: number; remaining: number; status: 'critical' | 'warning' | 'good' };
   
   // WhatsApp Actions
   getWhatsAppQRCode: () => Promise<{ qrcode?: string; error?: string }>;
@@ -366,6 +371,20 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       salePrice: data.sale_price,
       currentStock: data.current_stock,
       minStock: data.min_stock,
+      createdAt: data.created_at
+  });
+
+  const mapGoal = (data: any): Goal => ({
+      id: data.id,
+      shopId: data.shop_id,
+      professionalId: data.professional_id,
+      name: data.name,
+      category: data.category,
+      targetValue: data.target_value,
+      currentValue: data.current_value,
+      period: data.period,
+      startDate: data.start_date,
+      endDate: data.end_date,
       createdAt: data.created_at
   });
 
@@ -1984,6 +2003,69 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const upsertGoal = async (goal: Partial<Goal> & { name: string; category: string; targetValue: number; period: string; startDate: string; endDate: string }): MutationResult => {
+      try {
+          const shopId = ensureShopId();
+          const payload = {
+              shop_id: shopId,
+              professional_id: goal.professionalId || null,
+              name: goal.name,
+              category: goal.category,
+              target_value: goal.targetValue,
+              period: goal.period,
+              start_date: goal.startDate,
+              end_date: goal.endDate
+          };
+
+          let result;
+          if (goal.id) {
+              result = await supabase.from('goals').update(payload).eq('id', goal.id).eq('shop_id', shopId).select().single();
+          } else {
+              result = await supabase.from('goals').insert(payload).select().single();
+          }
+
+          if (result.error) throw result.error;
+
+          const updatedGoal = mapGoal(result.data);
+          setState(prev => ({
+              ...prev,
+              goals: goal.id 
+                ? prev.goals.map(g => g.id === goal.id ? updatedGoal : g)
+                : [...prev.goals, updatedGoal]
+          }));
+          return { success: true, data: updatedGoal };
+      } catch (e: any) {
+          return { success: false, error: e.message };
+      }
+  };
+
+  const removeGoal = async (id: string): MutationResult => {
+      try {
+          const shopId = ensureShopId();
+          const { error } = await supabase.from('goals').delete().eq('id', id).eq('shop_id', shopId);
+          if (error) throw error;
+
+          setState(prev => ({
+              ...prev,
+              goals: prev.goals.filter(g => g.id !== id)
+          }));
+          return { success: true };
+      } catch (e: any) {
+          return { success: false, error: e.message };
+      }
+  };
+
+  const calculateGoalProgress = (goal: Goal) => {
+      const percentage = goal.targetValue > 0 ? (goal.currentValue / goal.targetValue) * 100 : 0;
+      const remaining = Math.max(goal.targetValue - goal.currentValue, 0);
+      
+      let status: 'critical' | 'warning' | 'good' = 'critical';
+      if (percentage >= 70) status = 'good';
+      else if (percentage >= 30) status = 'warning';
+
+      return { percentage: Math.min(percentage, 100), remaining, status };
+  };
+
    const logoutClient = () => {
       sessionStorage.removeItem('currentClient');
       sessionStorage.removeItem('clientSession');
@@ -2026,6 +2108,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addBlockedSlot, removeBlockedSlot,
       updateSettings,
       addProduct, updateProduct, removeProduct, addAppointmentProducts,
+      upsertGoal, removeGoal, calculateGoalProgress,
       getWhatsAppQRCode,
       getWhatsAppStatus,
       disconnectWhatsApp,
