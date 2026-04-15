@@ -383,8 +383,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       professionalId: data.professional_id,
       name: data.name,
       category: data.category,
-      targetValue: data.target_value,
-      currentValue: data.current_value,
+      targetValue: Number(data.target_value),
+      currentValue: Number(data.current_value),
       period: data.period,
       startDate: data.start_date,
       endDate: data.end_date,
@@ -898,20 +898,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(false);
       return false;
   };
-
-  const mapGoal = (data: any): Goal => ({
-      id: data.id,
-      shopId: data.shop_id,
-      professionalId: data.professional_id,
-      name: data.name,
-      category: data.category,
-      targetValue: Number(data.target_value),
-      currentValue: Number(data.current_value),
-      period: data.period,
-      startDate: data.start_date,
-      endDate: data.end_date,
-      createdAt: data.created_at
-  });
 
   const ensureShopId = () => {
       if (!state.shop?.id) {

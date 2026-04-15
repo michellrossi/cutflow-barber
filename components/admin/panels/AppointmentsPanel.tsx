@@ -4,6 +4,7 @@ import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader
 import { useToast } from '../../ui/ToastContext';
 import { WeeklyCalendar } from './WeeklyCalendar';
 import { formatMessage, getWhatsAppLink } from '../../../utils/messageFormatter';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const AppointmentsPanel: React.FC = () => {
     const {
