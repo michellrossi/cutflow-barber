@@ -2083,19 +2083,32 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               end_date: goal.endDate
           };
 
-          let result;
+          let updatedGoal: Goal;
+
           if (goal.id) {
-              result = await supabase.from('goals').update(payload).eq('id', goal.id).eq('shop_id', shopId).select().single();
+              // UPDATE: re-fetch normalmente
+              const { data, error } = await supabase
+                  .from('goals').update(payload)
+                  .eq('id', goal.id).eq('shop_id', shopId)
+                  .select().single();
+              if (error) throw error;
+              updatedGoal = mapGoal(data);
           } else {
-              result = await supabase.from('goals').insert(payload).select().single();
+              // INSERT: após inserção, faz re-fetch para obter current_value
+              // calculado pelo trigger trg_sync_goal_initial (roda na mesma tx)
+              const { data: inserted, error: insertError } = await supabase
+                  .from('goals').insert(payload).select('id').single();
+              if (insertError) throw insertError;
+
+              const { data: fresh, error: fetchError } = await supabase
+                  .from('goals').select('*').eq('id', inserted.id).single();
+              if (fetchError) throw fetchError;
+              updatedGoal = mapGoal(fresh);
           }
 
-          if (result.error) throw result.error;
-
-          const updatedGoal = mapGoal(result.data);
           setState(prev => ({
               ...prev,
-              goals: goal.id 
+              goals: goal.id
                 ? prev.goals.map(g => g.id === goal.id ? updatedGoal : g)
                 : [...prev.goals, updatedGoal]
           }));
@@ -2104,6 +2117,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return { success: false, error: e.message };
       }
   };
+
 
   const removeGoal = async (id: string): MutationResult => {
       try {

@@ -95,3 +95,13 @@ DROP TRIGGER IF EXISTS trg_sync_goal_initial ON public.goals;
 CREATE TRIGGER trg_sync_goal_initial
 AFTER INSERT ON public.goals
 FOR EACH ROW EXECUTE FUNCTION public.sync_goal_initial_value();
+
+-- ==========================================
+-- FIX: Adicionar 'anual' ao período válido
+-- ==========================================
+ALTER TABLE public.goals DROP CONSTRAINT IF EXISTS goals_period_check;
+ALTER TABLE public.goals ADD CONSTRAINT goals_period_check
+  CHECK (period IN ('diário', 'semanal', 'mensal', 'anual'));
+
+-- Recarrega o cache do PostgREST
+NOTIFY pgrst, 'reload schema';
