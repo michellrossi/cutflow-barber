@@ -204,17 +204,36 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
 async function runCronLogic() {
     console.log("[Cron] Iniciando verificação de lembretes (Timezone SP - GMT-3)...");
 
-    const now = dayjs().tz('America/Sao_Paulo').toDate();
+    const now = dayjs().tz('America/Sao_Paulo');
 
-    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const tomorrowStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
-    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    const thirtyDaysAgoStr = `${thirtyDaysAgo.getFullYear()}-${String(thirtyDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(thirtyDaysAgo.getDate()).padStart(2, '0')}`;
-    const thirtyThreeDaysAgo = new Date(now.getTime() - 33 * 24 * 60 * 60 * 1000);
-    const thirtyThreeDaysAgoStr = `${thirtyThreeDaysAgo.getFullYear()}-${String(thirtyThreeDaysAgo.getMonth() + 1).padStart(2, '0')}-${String(thirtyThreeDaysAgo.getDate()).padStart(2, '0')}`;
+    const todayStr = now.format('YYYY-MM-DD');
+    const tomorrowStr = now.add(1, 'day').format('YYYY-MM-DD');
+    const thirtyDaysAgoStr = now.subtract(30, 'day').format('YYYY-MM-DD');
+    const thirtyThreeDaysAgoStr = now.subtract(33, 'day').format('YYYY-MM-DD');
 
     const maxRetries = 3;
+
+    // Cache de status de instâncias
+    const instanceStatusCache = new Map<string, boolean>();
+    
+    // Função auxiliar para verificar status real da API
+    const isInstanceConnected = async (shopId: string, instanceName: string): Promise<boolean> => {
+        if (!instanceName) return false;
+        if (instanceStatusCache.has(instanceName)) return instanceStatusCache.get(instanceName)!;
+        
+        try {
+            const r = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connectionState/${instanceName}`, { headers: { apikey: process.env.WHATSAPP_API_KEY || '' }});
+            const d = await r.json();
+            const connected = d.instance?.state === 'open';
+            instanceStatusCache.set(instanceName, connected);
+            if (!connected) console.warn(`[Cron] Instância ${instanceName} da loja ${shopId} está offline na API. Pulando.`);
+            return connected;
+        } catch (e) {
+            console.error(`[Cron] Erro ao checar status da API para ${instanceName}:`, e);
+            instanceStatusCache.set(instanceName, false);
+            return false;
+        }
+    };
 
     // 1. Lembretes de 24 Horas
     const { data: apts24h } = await supabaseAdmin
@@ -228,11 +247,14 @@ async function runCronLogic() {
     if (apts24h) {
         for (const apt of apts24h) {
             if (!apt.shops?.whatsapp_connected) {
-                console.warn(`[Cron] Loja ${apt.shop_id} offline. Pulando lembrete 24h.`);
+                console.warn(`[Cron] Loja ${apt.shop_id} offline (DB). Pulando lembrete 24h.`);
                 continue;
             }
-            const aptDateTime = new Date(`${apt.date}T${apt.time}`);
-            const diffHours = (aptDateTime.getTime() - now.getTime()) / (1000 * 60 * 60);
+            if (!(await isInstanceConnected(apt.shop_id, apt.shops.whatsapp_instance))) continue;
+
+            const aptDateTime = dayjs.tz(`${apt.date}T${apt.time}`, 'America/Sao_Paulo');
+            const diffHours = aptDateTime.diff(now, 'hour', true);
+            
             if (diffHours <= 24 && diffHours > 1) {
                 const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
                 const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
@@ -272,11 +294,14 @@ async function runCronLogic() {
     if (apts1h) {
         for (const apt of apts1h) {
             if (!apt.shops?.whatsapp_connected) {
-                console.warn(`[Cron] Loja ${apt.shop_id} offline. Pulando lembrete 1h.`);
+                console.warn(`[Cron] Loja ${apt.shop_id} offline (DB). Pulando lembrete 1h.`);
                 continue;
             }
-            const aptDateTime = new Date(`${apt.date}T${apt.time}`);
-            const diffMinutes = (aptDateTime.getTime() - now.getTime()) / (1000 * 60);
+            if (!(await isInstanceConnected(apt.shop_id, apt.shops.whatsapp_instance))) continue;
+
+            const aptDateTime = dayjs.tz(`${apt.date}T${apt.time}`, 'America/Sao_Paulo');
+            const diffMinutes = aptDateTime.diff(now, 'minute', true);
+
             if (diffMinutes <= 65 && diffMinutes > 0) {
                 const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
                 const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
@@ -305,8 +330,7 @@ async function runCronLogic() {
     }
 
     // 3. Reagendamento
-    const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
-    const twoDaysAgoStr = twoDaysAgo.toISOString().split('T')[0];
+    const twoDaysAgoStr = now.subtract(2, 'day').format('YYYY-MM-DD');
 
     const { data: aptsReschedule } = await supabaseAdmin
         .from('appointments')
@@ -319,9 +343,11 @@ async function runCronLogic() {
     if (aptsReschedule) {
         for (const apt of aptsReschedule) {
             if (!apt.shops?.whatsapp_connected) {
-                console.warn(`[Cron] Loja ${apt.shop_id} offline. Pulando reagendamento.`);
+                console.warn(`[Cron] Loja ${apt.shop_id} offline (DB). Pulando reagendamento.`);
                 continue;
             }
+            if (!(await isInstanceConnected(apt.shop_id, apt.shops.whatsapp_instance))) continue;
+
             const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
             const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
             const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
@@ -359,11 +385,14 @@ async function runCronLogic() {
     if (aptsPostSale) {
         for (const apt of aptsPostSale) {
             if (!apt.shops?.whatsapp_connected) {
-                console.warn(`[Cron] Loja ${apt.shop_id} offline. Pulando pós-venda.`);
+                console.warn(`[Cron] Loja ${apt.shop_id} offline (DB). Pulando pós-venda.`);
                 continue;
             }
-            const aptDateTime = new Date(`${apt.date}T${apt.time}`);
-            const diffMinutes = (now.getTime() - aptDateTime.getTime()) / (1000 * 60);
+            if (!(await isInstanceConnected(apt.shop_id, apt.shops.whatsapp_instance))) continue;
+
+            const aptDateTime = dayjs.tz(`${apt.date}T${apt.time}`, 'America/Sao_Paulo');
+            const diffMinutes = now.diff(aptDateTime, 'minute', true);
+            
             if (diffMinutes >= 120 && diffMinutes < 1440) {
                 const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
                 const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
@@ -404,6 +433,8 @@ async function runCronLogic() {
     if (apts30d) {
         for (const apt of apts30d) {
             if (!apt.shops?.whatsapp_connected) continue;
+            if (!(await isInstanceConnected(apt.shop_id, apt.shops.whatsapp_instance))) continue;
+            
             const msg = await generateWhatsAppMessage('retention_30d', {
                 clientName: apt.client_name,
                 shopName: apt.shops?.name
@@ -421,16 +452,18 @@ async function runCronLogic() {
     }
 
     // 6. Aniversariantes do Dia
-    const todayMMDD = dayjs(now).format('MM-DD');
+    const todayMMDD = now.format('MM-DD');
     const { data: bdayClients } = await supabaseAdmin
         .from('clients')
         .select('*, shops(id, name, whatsapp_instance, whatsapp_connected)')
         .filter('birth_date', 'ilike', `%-${todayMMDD}%`)
-        .or(`birthday_last_sent_year.is.null,birthday_last_sent_year.neq.${now.getFullYear()}`);
+        .or(`birthday_last_sent_year.is.null,birthday_last_sent_year.neq.${now.year()}`);
 
     if (bdayClients) {
         for (const client of bdayClients) {
             if (!client.shops?.whatsapp_connected) continue;
+            if (!(await isInstanceConnected(client.shop_id, client.shops.whatsapp_instance))) continue;
+            
             const msg = await generateWhatsAppMessage('birthday', {
                 clientName: client.name,
                 shopName: client.shops?.name
@@ -439,7 +472,7 @@ async function runCronLogic() {
             if (msg) {
                 const ok = await sendWhatsApp(client.phone, msg, client.shops?.whatsapp_instance);
                 if (ok) {
-                    await supabaseAdmin.from('clients').update({ birthday_last_sent_year: now.getFullYear() }).eq('id', client.id);
+                    await supabaseAdmin.from('clients').update({ birthday_last_sent_year: now.year() }).eq('id', client.id);
                 }
             }
         }

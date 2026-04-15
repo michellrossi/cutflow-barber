@@ -1860,9 +1860,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
       const data = await response.json();
       if (data.error) throw new Error(data.error);
-      return { connected: data.connected };
+      return { connected: Boolean(data.connected) };
     } catch (e: any) {
-      return { error: e.message };
+      return { connected: false, error: e.message };
     }
   };
 
