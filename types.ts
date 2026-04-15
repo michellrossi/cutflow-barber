@@ -257,6 +257,7 @@ export interface ShopState {
   messageCategories: MessageCategory[]; // [NOVO] Categorias de Mensagem
   products: Product[]; // [NOVO] Gestão de Estoque
   goals: Goal[]; // [NOVO] Gestão de Metas
+  myShops: Shop[]; // [NOVO] Multi-unidades para o dono
   blockedSlots: BlockedSlot[];
   settings: ShopSettings;
   // [NOVO] Estado do Cliente Logado

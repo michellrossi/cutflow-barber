@@ -20,6 +20,7 @@ interface ShopContextType extends ShopState {
 
   // Data Loading
   loadShopBySlug: (slug: string) => Promise<boolean>; 
+  switchShop: (shopId: string) => Promise<void>;
   refresh: () => void;
 
   // Actions - Now returning MutationResult
@@ -148,7 +149,8 @@ const INITIAL_STATE: ShopState = {
   theme: 'light',
   automationTriggers: [],
   products: [],
-  goals: []
+  goals: [],
+  myShops: []
 };
 
 const sanitize = (text: string): string => {
@@ -502,12 +504,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const userId = currentSession?.user?.id;
             const userEmail = currentSession?.user?.email;
 
-            // 1. Tenta encontrar a loja onde o usuário é DONO
+            // 1. Tenta encontrar as lojas onde o usuário é DONO
             if (userId) {
-                const { data: shopData } = await supabase.from('shops').select('*').eq('owner_id', userId).single();
-                if (shopData) {
-                    shopId = shopData.id;
-                    currentShopData = mapShop(shopData);
+                const { data: shopsData } = await supabase.from('shops').select('*').eq('owner_id', userId);
+                if (shopsData && shopsData.length > 0) {
+                    const mappedShops = shopsData.map(mapShop);
+                    // Pega a primeira como inicial se nenhuma estiver ativa
+                    const activeShop = mappedShops.find(s => s.id === state.shop?.id) || mappedShops[0];
+                    shopId = activeShop.id;
+                    currentShopData = activeShop;
+                    setState(prev => ({ ...prev, myShops: mappedShops }));
                 }
             } 
             
@@ -535,7 +541,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Executa queries de configurações e dados estáticos em paralelo
-        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes] = await Promise.all([
+        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes, goalsRes] = await Promise.all([
             supabase.from('settings').select('*').eq('shop_id', shopId).single(),
             supabase.from('services').select('*').eq('shop_id', shopId),
             supabase.from('professionals').select('*').eq('shop_id', shopId),
@@ -547,7 +553,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
             supabase.from('client_subscriptions').select('*').eq('shop_id', shopId),
             supabase.from('automation_triggers').select('*').eq('shop_id', shopId),
-            supabase.from('products').select('*').eq('shop_id', shopId)
+            supabase.from('products').select('*').eq('shop_id', shopId),
+            supabase.from('goals').select('*').eq('shop_id', shopId)
         ]);
 
         // OTIMIZAÇÃO: Carregar apenas agendamentos recentes e futuros
@@ -622,6 +629,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             blockedSlots: (blocksRes.data || []).map(mapBlockedSlot),
             automationTriggers: mappedTriggers,
             products: (productsRes.data || []).map(mapProduct),
+            goals: (goalsRes.data || []).map(mapGoal),
             trialStatus: trialInfo.status,
             daysRemaining: trialInfo.days
         }));
@@ -890,6 +898,20 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setLoading(false);
       return false;
   };
+
+  const mapGoal = (data: any): Goal => ({
+      id: data.id,
+      shopId: data.shop_id,
+      professionalId: data.professional_id,
+      name: data.name,
+      category: data.category,
+      targetValue: Number(data.target_value),
+      currentValue: Number(data.current_value),
+      period: data.period,
+      startDate: data.start_date,
+      endDate: data.end_date,
+      createdAt: data.created_at
+  });
 
   const ensureShopId = () => {
       if (!state.shop?.id) {
@@ -2073,6 +2095,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setState(prev => ({ ...prev, currentClient: null, clientSession: null }));
   };
 
+  const switchShop = async (shopId: string) => {
+      setLoading(true);
+      const selectedShop = state.myShops.find(s => s.id === shopId);
+      if (selectedShop) {
+          setState(prev => ({ ...prev, shop: selectedShop }));
+          await fetchData(shopId);
+      }
+      setLoading(false);
+  };
+
   const toggleTheme = () => {
       setState(prev => {
           const newTheme = prev.theme === 'dark' ? 'light' : 'dark';
@@ -2090,6 +2122,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       userRole,
       login, signup, logout,
       loadShopBySlug,
+      switchShop,
       resetPassword,
       addService, updateService, removeService,
       addProfessional, updateProfessional, removeProfessional,
