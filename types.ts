@@ -210,6 +210,26 @@ export interface MessageCategory {
   name: string;
 }
 
+export interface Product {
+  id: string;
+  shopId: string;
+  name: string;
+  category: string;
+  costPrice: number;
+  salePrice: number;
+  currentStock: number;
+  minStock: number;
+  createdAt: string;
+}
+
+export interface AppointmentProduct {
+  id: string;
+  appointmentId: string;
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+}
+
 export interface ShopState {
   shop: Shop | null;
   services: Service[];
@@ -221,6 +241,7 @@ export interface ShopState {
   clientSubscriptions: ClientSubscription[]; // [NOVO] Assinaturas de Clientes
   messageTemplates: MessageTemplate[]; // [NOVO] Modelos de Mensagem
   messageCategories: MessageCategory[]; // [NOVO] Categorias de Mensagem
+  products: Product[]; // [NOVO] Gestão de Estoque
   blockedSlots: BlockedSlot[];
   settings: ShopSettings;
   // [NOVO] Estado do Cliente Logado

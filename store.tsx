@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
-import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger } from './types';
+import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger, Product, AppointmentProduct } from './types';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import DOMPurify from 'dompurify';
@@ -69,6 +69,12 @@ interface ShopContextType extends ShopState {
 
   updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
   
+  // Product Actions
+  addProduct: (product: Omit<Product, 'id' | 'shopId' | 'createdAt'>) => MutationResult;
+  updateProduct: (id: string, product: Partial<Product>) => MutationResult;
+  removeProduct: (id: string) => MutationResult;
+  addAppointmentProducts: (appointmentId: string, products: { productId: string, quantity: number, unitPrice: number }[]) => MutationResult;
+  
   // WhatsApp Actions
   getWhatsAppQRCode: () => Promise<{ qrcode?: string; error?: string }>;
   getWhatsAppStatus: () => Promise<{ connected: boolean; error?: string }>;
@@ -135,7 +141,8 @@ const INITIAL_STATE: ShopState = {
   trialStatus: 'active',
   daysRemaining: 14,
   theme: 'light',
-  automationTriggers: []
+  automationTriggers: [],
+  products: []
 };
 
 const sanitize = (text: string): string => {
@@ -340,13 +347,25 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const mapClientSubscription = (data: any): ClientSubscription => ({
       id: data.id,
-      shopId: data.shop_id,
+      shop_id: data.shop_id,
       clientId: data.client_id,
       planId: data.plan_id,
       status: data.status,
       startDate: data.start_date,
       nextBillingDate: data.next_billing_date,
       servicesUsedThisMonth: data.services_used_this_month || 0,
+      createdAt: data.created_at
+  });
+
+  const mapProduct = (data: any): Product => ({
+      id: data.id,
+      shopId: data.shop_id,
+      name: data.name,
+      category: data.category,
+      costPrice: data.cost_price,
+      salePrice: data.sale_price,
+      currentStock: data.current_stock,
+      minStock: data.min_stock,
       createdAt: data.created_at
   });
 
@@ -496,7 +515,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Executa queries de configurações e dados estáticos em paralelo
-        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes] = await Promise.all([
+        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes] = await Promise.all([
             supabase.from('settings').select('*').eq('shop_id', shopId).single(),
             supabase.from('services').select('*').eq('shop_id', shopId),
             supabase.from('professionals').select('*').eq('shop_id', shopId),
@@ -507,7 +526,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             supabase.from('message_categories').select('*').eq('shop_id', shopId),
             supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
             supabase.from('client_subscriptions').select('*').eq('shop_id', shopId),
-            supabase.from('automation_triggers').select('*').eq('shop_id', shopId)
+            supabase.from('automation_triggers').select('*').eq('shop_id', shopId),
+            supabase.from('products').select('*').eq('shop_id', shopId)
         ]);
 
         // OTIMIZAÇÃO: Carregar apenas agendamentos recentes e futuros
@@ -581,6 +601,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             messageCategories: mappedCategories,
             blockedSlots: (blocksRes.data || []).map(mapBlockedSlot),
             automationTriggers: mappedTriggers,
+            products: (productsRes.data || []).map(mapProduct),
             trialStatus: trialInfo.status,
             daysRemaining: trialInfo.days
         }));
@@ -1882,6 +1903,87 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const addProduct = async (product: Omit<Product, 'id' | 'shopId' | 'createdAt'>): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { data, error } = await supabase.from('products').insert({
+            shop_id: shopId,
+            name: product.name,
+            category: product.category,
+            cost_price: product.costPrice,
+            sale_price: product.salePrice,
+            current_stock: product.currentStock,
+            min_stock: product.minStock
+        }).select().single();
+
+        if (error) throw error;
+        
+        const newProduct = mapProduct(data);
+        setState(prev => ({ ...prev, products: [...prev.products, newProduct] }));
+        return { success: true, data: newProduct };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const updateProduct = async (id: string, product: Partial<Product>): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const payload: any = {};
+        if (product.name) payload.name = product.name;
+        if (product.category) payload.category = product.category;
+        if (product.costPrice !== undefined) payload.cost_price = product.costPrice;
+        if (product.salePrice !== undefined) payload.sale_price = product.salePrice;
+        if (product.currentStock !== undefined) payload.current_stock = product.currentStock;
+        if (product.minStock !== undefined) payload.min_stock = product.minStock;
+
+        const { data, error } = await supabase.from('products').update(payload).eq('id', id).eq('shop_id', shopId).select().single();
+        if (error) throw error;
+
+        const updated = mapProduct(data);
+        setState(prev => ({
+            ...prev,
+            products: prev.products.map(p => p.id === id ? updated : p)
+        }));
+        return { success: true, data: updated };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const removeProduct = async (id: string): MutationResult => {
+    try {
+        const shopId = ensureShopId();
+        const { error } = await supabase.from('products').delete().eq('id', id).eq('shop_id', shopId);
+        if (error) throw error;
+
+        setState(prev => ({
+            ...prev,
+            products: prev.products.filter(p => p.id !== id)
+        }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const addAppointmentProducts = async (appointmentId: string, products: { productId: string, quantity: number, unitPrice: number }[]): MutationResult => {
+    try {
+        const { error } = await supabase.from('appointment_products').insert(
+            products.map(p => ({
+                appointment_id: appointmentId,
+                product_id: p.productId,
+                quantity: p.quantity,
+                unit_price: p.unitPrice
+            }))
+        );
+        if (error) throw error;
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
    const logoutClient = () => {
       sessionStorage.removeItem('currentClient');
       sessionStorage.removeItem('clientSession');
@@ -1923,6 +2025,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       addClientSubscription, updateClientSubscription, removeClientSubscription,
       addBlockedSlot, removeBlockedSlot,
       updateSettings,
+      addProduct, updateProduct, removeProduct, addAppointmentProducts,
       getWhatsAppQRCode,
       getWhatsAppStatus,
       disconnectWhatsApp,

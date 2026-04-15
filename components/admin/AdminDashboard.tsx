@@ -15,13 +15,14 @@ import { ReportsPanel } from './panels/ReportsPanel';
 import { InsightPanel } from './panels/InsightPanel';
 import { RemindersPanel } from './panels/RemindersPanel';
 import { SubscriptionsPanel } from './panels/SubscriptionsPanel';
+import { InventoryPanel } from './panels/InventoryPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
 import { PaymentModal } from '../billing/PaymentModal';
 
 import { PlanPanel } from './panels/PlanPanel';
 import { ProfilePanel } from './panels/ProfilePanel';
 
-type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan' | 'reports' | 'profile';
+type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'finance' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan' | 'reports' | 'profile' | 'inventory';
 
 type TeamSubTab = 'list' | 'schedules' | 'blocks';
 
@@ -98,7 +99,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'subscriptions': return <SubscriptionsPanel />;
       case 'plan': return <PlanPanel onUpgrade={() => setIsPaymentModalOpen(true)} />;
       case 'profile': return <ProfilePanel />;
-      default: return <DashboardPanel />;
+      case 'inventory': return <InventoryPanel />;
+      default: return <DashboardPanel onNavigate={handleTabChange} />;
     }
   };
 
@@ -119,6 +121,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'subscriptions': return 'Assinaturas';
           case 'plan': return 'Meu Plano';
           case 'profile': return 'Perfil';
+          case 'inventory': return 'Gestão de Estoque';
       }
   }
 
@@ -179,6 +182,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   <SidebarItem icon={<Award size={18} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => handleTabChange('loyalty')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<BarChart3 size={18} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => handleTabChange('reports')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<Package size={18} />} label="Estoque" active={activeTab === 'inventory'} onClick={() => handleTabChange('inventory')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<MessageSquare size={18} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} />
   
@@ -271,6 +276,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     <MobileNavItem icon={<Tag size={16} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => setActiveTab('coupons')} />
     <MobileNavItem icon={<Award size={16} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => setActiveTab('loyalty')} />
     <MobileNavItem icon={<BarChart3 size={16} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
+    <MobileNavItem icon={<Package size={16} />} label="Estoque" active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} />
     <MobileNavItem icon={<MessageSquare size={16} />} label="Automação" active={activeTab === 'reminders'} onClick={() => setActiveTab('reminders')} />
     <MobileNavItem icon={<Sparkles size={16} />} label="IA" active={activeTab === 'insight'} onClick={() => setActiveTab('insight')} />
     <MobileNavItem icon={<DollarSign size={16} />} label="Financeiro" active={activeTab === 'finance'} onClick={() => setActiveTab('finance')} />
