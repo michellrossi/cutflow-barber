@@ -674,7 +674,8 @@ async function runCronLogic() {
             const aptDateTime = dayjs.tz(`${apt.date}T${apt.time}`, 'America/Sao_Paulo');
             const diffHours = aptDateTime.diff(now, 'hour', true);
             
-            if (diffHours <= 24 && diffHours > 1) {
+            // Janela de precisão de 24h (entre 23h e 25h de antecedência)
+            if (diffHours <= 25 && diffHours >= 23) {
                 const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
                 const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
                 const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
@@ -721,7 +722,8 @@ async function runCronLogic() {
             const aptDateTime = dayjs.tz(`${apt.date}T${apt.time}`, 'America/Sao_Paulo');
             const diffMinutes = aptDateTime.diff(now, 'minute', true);
 
-            if (diffMinutes <= 65 && diffMinutes > 0) {
+            // Janela de precisão de 1h (entre 50 e 70 minutos de antecedência)
+            if (diffMinutes <= 70 && diffMinutes >= 50) {
                 const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
                 const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
                 const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
