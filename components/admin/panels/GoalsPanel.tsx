@@ -366,7 +366,7 @@ const DailyGoalCalendar: React.FC<{
   const beatDays = passedDays.filter(d => (dayValues[d.date] || 0) >= goal.targetValue);
 
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+    <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm max-w-2xl">
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div className="flex items-center gap-3">
@@ -431,12 +431,12 @@ const DailyGoalCalendar: React.FC<{
                     {/* Base: Valor/Meta e Percentual */}
                     {!isFuture ? (
                       <div className="flex flex-col items-center leading-none">
-                        <span className="text-[8px] font-bold opacity-90 truncate px-1 mb-1">
+                        <span className="text-[10px] font-bold opacity-90 truncate px-1 mb-1">
                           {isCount 
                             ? `${Math.round(val)}/${goal.targetValue}` 
                             : `${fmtShort(val)}/${fmtShort(goal.targetValue)}`}
                         </span>
-                        <span className="text-[10px] font-black">
+                        <span className="text-[11px] font-black">
                           {pct.toFixed(0)}%
                         </span>
                       </div>
