@@ -205,7 +205,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     expanded={isSidebarExpanded}
   />
 
-  <SidebarItem icon={<UserCircle size={18} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients'} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<UserCircle size={18} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<CreditCard size={18} />} label="Assinaturas" active={activeTab === 'subscriptions'} onClick={() => handleTabChange('subscriptions')} expanded={isSidebarExpanded} />
   
