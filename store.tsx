@@ -1848,7 +1848,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setState(prev => ({ 
             ...prev, 
             settings: newSettings,
-            shop: (updated.name || updated.slug) ? { ...prev.shop!, name: updated.name || prev.shop!.name, slug: updated.slug || prev.shop!.slug } : prev.shop
+            shop: (updated.name || updated.slug) ? { ...prev.shop!, name: updated.name || prev.shop!.name, slug: updated.slug || prev.shop!.slug } : prev.shop,
+            myShops: (updated.name || updated.slug) ? prev.myShops.map(s => s.id === shopId ? { ...s, name: updated.name || s.name, slug: updated.slug || s.slug } : s) : prev.myShops
         }));
         
         return { success: true };
