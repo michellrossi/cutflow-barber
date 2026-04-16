@@ -10,6 +10,7 @@ import * as dotenv from 'dotenv';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
+import cron from 'node-cron';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -34,6 +35,13 @@ if (!supabaseUrl) {
 }
 if (!serviceRoleKey) {
     console.warn("⚠️ AVISO: SUPABASE_SERVICE_ROLE_KEY não configurada. O Cron Job pode falhar devido a RLS.");
+}
+
+// SEGURANÇA: Em produção, EVOLUTION_WEBHOOK_SECRET é OBRIGATÓRIO
+if (process.env.NODE_ENV === 'production' && !process.env.EVOLUTION_WEBHOOK_SECRET) {
+    console.error('❌ ERRO CRÍTICO: EVOLUTION_WEBHOOK_SECRET não definido em produção!');
+    console.error('   Configure esta variável no Railway/Vercel para proteger o webhook do chatbot.');
+    process.exit(1); // Impede o servidor de subir sem segurança
 }
 
 // 2. Cliente Administrativo (Usa SERVICE_ROLE - Ignora RLS)
@@ -350,25 +358,19 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
         }
     }
 
-    // FIX 3: Rate limit persistente no banco (segunda linha de defesa)
-    // Rejeita se message_count > 20 na mesma sessão sem reset horário
-    const MSG_LIMIT_PER_SESSION = 20;
-    if ((session?.message_count || 0) >= MSG_LIMIT_PER_SESSION) {
-        const lastMsg = session?.last_message_at ? dayjs(session.last_message_at) : null;
-        const hoursSinceFirst = lastMsg ? dayjs().diff(lastMsg, 'hour', true) : 0;
-        if (hoursSinceFirst < 1) {
-            console.warn(`[Chatbot] Rate limit DB atingido para ${remoteJid} (${session.message_count} msgs). Descartando.`);
+    // FIX 2: Rate limit persistente no banco (segunda linha de defesa)
+    // Rejeita se message_count > 20 na última hora
+    const MSG_LIMIT_PER_HOUR = 20;
+    if ((session?.message_count || 0) >= MSG_LIMIT_PER_HOUR) {
+        const lastMsgAt = session?.last_message_at ? dayjs(session.last_message_at) : null;
+        if (lastMsgAt && dayjs().diff(lastMsgAt, 'hour') < 1) {
+            console.warn(`[Chatbot] Rate limit persistente atingido para ${remoteJid}. Descartando.`);
             await sendWhatsApp(remoteJid.split('@')[0],
-                '⏳ Muitas mensagens em pouco tempo. Por favor aguarde alguns minutos antes de continuar.',
+                '⏳ Você atingiu o limite de mensagens por hora. Por favor, aguarde um momento para continuar seu agendamento.',
                 instance
             );
             return;
         }
-        // Reset do contador após 1 hora
-        await supabaseAdmin.from('whatsapp_chat_sessions')
-            .update({ message_count: 0 })
-            .eq('id', session.id);
-        session = { ...session, message_count: 0 };
     }
 
     // 2. Busca dados da loja para o contexto
@@ -496,12 +498,15 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
                             client = newClient;
                         }
 
-                        // Calcula total_value somando os serviços
-                        let totalValue = args.total_value || 0;
-                        if (!totalValue && args.service_ids?.length) {
+                        // Calcula total_value real somando os preços da tabela de serviços
+                        let totalValue = 0;
+                        if (args.service_ids?.length) {
                             const { data: svcData } = await supabaseAdmin
-                                .from('services').select('price').in('id', args.service_ids);
-                            totalValue = svcData?.reduce((sum: number, s: any) => sum + (s.price || 0), 0) || 0;
+                                .from('services')
+                                .select('price')
+                                .in('id', args.service_ids);
+                            
+                            totalValue = svcData?.reduce((sum: number, s: any) => sum + (Number(s.price) || 0), 0) || 0;
                         }
 
                         // Chama a RPC transacional (trata conflito e limite diário)
@@ -1420,6 +1425,29 @@ async function startServer() {
 
     app.listen(Number(PORT), '0.0.0.0', () => {
         console.log(`Servidor ativo na porta ${PORT}`);
+
+        // ================================================================
+        // CRONS INTERNOS (node-cron)
+        // ================================================================
+        
+        // 1. Lembretes e Notificações (a cada 10 min)
+        cron.schedule('*/10 * * * *', async () => {
+            console.log('[node-cron] Disparando runCronLogic...');
+            try { await runCronLogic(); } catch (err: any) { console.error('[node-cron] Erro:', err.message); }
+        });
+
+        // 2. Limpeza de Rate Limit (a cada hora)
+        // Reseta o contador de mensagens para todas as sessões inativas há 1h
+        cron.schedule('0 * * * *', async () => {
+            console.log('[node-cron] Resetando contadores de mensagens...');
+            const oneHourAgo = dayjs().subtract(1, 'hour').toISOString();
+            await supabaseAdmin
+                .from('whatsapp_chat_sessions')
+                .update({ message_count: 0 })
+                .lt('last_message_at', oneHourAgo);
+        });
+
+        console.log('[node-cron] Agendamentos internos ativos.');
     });
 }
 

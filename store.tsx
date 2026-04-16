@@ -151,7 +151,8 @@ const INITIAL_STATE: ShopState = {
   automationTriggers: [],
   products: [],
   goals: [],
-  myShops: []
+  myShops: [],
+  botPausedCount: 0
 };
 
 const sanitize = (text: string): string => {
@@ -558,13 +559,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             supabase.from('client_subscriptions').select('*').eq('shop_id', shopId),
             supabase.from('automation_triggers').select('*').eq('shop_id', shopId),
             supabase.from('products').select('*').eq('shop_id', shopId),
-            supabase.from('goals').select('*').eq('shop_id', shopId)
+            supabase.from('goals').select('*').eq('shop_id', shopId),
+            supabase.from('whatsapp_chat_sessions').select('id', { count: 'exact', head: true }).eq('shop_id', shopId).eq('bot_paused', true)
         ]);
 
         // Agendamentos: janela de 90 dias para cobrir dashboard + relatórios + metas
-        const pastDate = new Date();
-        pastDate.setDate(pastDate.getDate() - APPT_WINDOW_DAYS);
-        const dateLimitStr = pastDate.toISOString().split('T')[0];
+        const date90d = new Date();
+        date90d.setDate(date90d.getDate() - 90);
+        const dateLimitStr = date90d.toISOString().split('T')[0];
 
         let appointmentsData: Appointment[] = [];
         
@@ -572,8 +574,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             .from('appointments')
             .select('*')
             .eq('shop_id', shopId)
-            .gte('date', dateLimitStr) // Apenas >= 30 dias atrás
-            .order('date', { ascending: false }) // Ordem decrescente de data
+            .gte('date', dateLimitStr)
+            .order('date', { ascending: false })
             .order('time', { ascending: false });
 
         if (appts) appointmentsData = appts.map(mapAppointment);
@@ -636,7 +638,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             products: (productsRes.data || []).map(mapProduct),
             goals: (goalsRes.data || []).map(mapGoal),
             trialStatus: trialInfo.status,
-            daysRemaining: trialInfo.days
+            daysRemaining: trialInfo.days,
+            botPausedCount: sessionsRes.count || 0
         }));
 
     } catch (error) {

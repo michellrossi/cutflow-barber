@@ -271,4 +271,5 @@ export interface ShopState {
   daysRemaining: number;
   theme: 'dark' | 'light';
   automationTriggers: AutomationTrigger[];
+  botPausedCount: number;
 }

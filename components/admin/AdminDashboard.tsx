@@ -223,7 +223,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   
   <SidebarItem icon={<Target size={18} />} label="Metas" active={activeTab === 'goals'} onClick={() => handleTabChange('goals')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<MessageSquare size={18} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<MessageSquare size={18} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} badge={state.botPausedCount} />
   
   <SidebarItem icon={<Sparkles size={18} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} expanded={isSidebarExpanded} />
   
@@ -405,14 +405,19 @@ const AddUnitModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
     );
 };
 
-const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void, expanded?: boolean }> = ({ icon, label, active, onClick, expanded = true }) => {
+const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void, expanded?: boolean, badge?: number }> = ({ icon, label, active, onClick, expanded = true, badge }) => {
     return (
         <button 
             onClick={onClick}
-            className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-xs ${expanded ? 'gap-3' : 'justify-center'} ${active ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
+            className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-xs relative ${expanded ? 'gap-3' : 'justify-center'} ${active ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
         >
             <span className={`shrink-0 ${active ? 'text-orange-500' : 'text-slate-700'}`}>{icon}</span>
             {expanded && <span>{label}</span>}
+            {badge && badge > 0 && (
+                <span className={`flex items-center justify-center bg-red-500 text-white text-[9px] font-black rounded-full min-w-[16px] h-[16px] px-1 shadow-sm ${expanded ? 'ml-auto' : 'absolute top-1 right-2 animate-pulse'}`}>
+                    {badge}
+                </span>
+            )}
         </button>
     );
 }
