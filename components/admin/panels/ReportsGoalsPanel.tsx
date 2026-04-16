@@ -39,8 +39,8 @@ const KPI: React.FC<{
       <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center`}>{icon}</div>
       <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wide leading-tight">{label}</span>
     </div>
-    <div className={`text-xl font-black mb-0.5 ${accent}`}>{value}</div>
-    {sub && <div className="text-[11px] text-slate-400 font-medium">{sub}</div>}
+    <div className={`text-3xl font-black mb-0.5 leading-none ${accent}`}>{value}</div>
+    {sub && <div className="text-[11px] text-slate-400 font-medium mt-1">{sub}</div>}
   </div>
 );
 

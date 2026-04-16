@@ -439,9 +439,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   // --- Helper to reload ONLY appointments (Lighter than fetchData) ---
+  // Janela de 90 dias: cobre Dashboard (30d), Relatórios (90d) e Metas
+  const APPT_WINDOW_DAYS = 90;
+
   const reloadAppointments = async (shopId: string) => {
       const pastDate = new Date();
-      pastDate.setDate(pastDate.getDate() - 30);
+      pastDate.setDate(pastDate.getDate() - APPT_WINDOW_DAYS);
       const dateLimitStr = pastDate.toISOString().split('T')[0];
       
       const { data: appts } = await supabase
@@ -542,13 +545,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Executa queries de configurações e dados estáticos em paralelo
-        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes, goalsRes] = await Promise.all([
+        // LAZY LOAD: clients NÃO está aqui — é carregado sob demanda pela aba Clientes
+        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes, goalsRes] = await Promise.all([
             supabase.from('settings').select('*').eq('shop_id', shopId).single(),
             supabase.from('services').select('*').eq('shop_id', shopId),
             supabase.from('professionals').select('*').eq('shop_id', shopId),
             supabase.from('coupons').select('*').eq('shop_id', shopId),
             supabase.from('blocked_slots').select('*').eq('shop_id', shopId),
-            supabase.from('clients').select('*').eq('shop_id', shopId),
             supabase.from('message_templates').select('*').eq('shop_id', shopId),
             supabase.from('message_categories').select('*').eq('shop_id', shopId),
             supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
@@ -558,9 +561,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             supabase.from('goals').select('*').eq('shop_id', shopId)
         ]);
 
-        // OTIMIZAÇÃO: Carregar apenas agendamentos recentes e futuros
+        // Agendamentos: janela de 90 dias para cobrir dashboard + relatórios + metas
         const pastDate = new Date();
-        pastDate.setDate(pastDate.getDate() - 30); // 30 dias atrás
+        pastDate.setDate(pastDate.getDate() - APPT_WINDOW_DAYS);
         const dateLimitStr = pastDate.toISOString().split('T')[0];
 
         let appointmentsData: Appointment[] = [];
@@ -576,7 +579,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (appts) appointmentsData = appts.map(mapAppointment);
 
         const mappedProfessionals = (prosRes.data || []).map((p: any, i: number) => mapProfessional(p, i));
-        const mappedClients = (clientsRes.data || []).map(mapClient);
+        // Clientes: array vazio no boot — carregados lazy na aba Clientes
+        const mappedClients: ReturnType<typeof mapClient>[] = [];
         const mappedPlans = (plansRes.data || []).map(mapSubscriptionPlan);
         const mappedSubs = (subsRes.data || []).map(mapClientSubscription);
         const mappedCategories = (categoriesRes.data || []).map(mapMessageCategory);
@@ -2232,6 +2236,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       validateClientToken,
       logoutClient,
       toggleTheme,
+      reloadClients,
       refresh: () => fetchData(state.shop?.id)
     }}>
       {children}

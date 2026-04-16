@@ -50,7 +50,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     if (savedTab === 'settings') setIsSettingsOpen(true);
   }, []);
 
-  const { settings, trialStatus, daysRemaining, theme, toggleTheme, shop, myShops, switchShop, addAdditionalUnit, userRole } = useShop();
+  const { settings, trialStatus, daysRemaining, theme, toggleTheme, shop, myShops, switchShop, addAdditionalUnit, userRole, clients, reloadClients } = useShop();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isAddUnitOpen, setIsAddUnitOpen] = useState(false);
 
@@ -59,6 +59,13 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   useEffect(() => {
       localStorage.setItem('adminSidebarPinned', String(isSidebarPinned));
   }, [isSidebarPinned]);
+
+  // Lazy load de clientes: só carrega quando o usuário abre a aba pela 1ª vez
+  useEffect(() => {
+      if (activeTab === 'clients' && shop?.id && clients.length === 0) {
+          reloadClients(shop.id);
+      }
+  }, [activeTab, shop?.id]);
 
   const handleTabChange = (tab: AdminTab, filter?: string) => {
       setActiveTab(tab);

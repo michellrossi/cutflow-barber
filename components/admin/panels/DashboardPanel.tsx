@@ -8,6 +8,9 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
     const [today, setToday] = useState<string>('');
     const [isMounted, setIsMounted] = useState(false);
     const [whatsappStatus, setWhatsappStatus] = useState<{ connected: boolean } | null>(null);
+    const [onboardingDismissed, setOnboardingDismissed] = useState(() => {
+        try { return localStorage.getItem('cutflow_onboarding_done') === 'true'; } catch { return false; }
+    });
 
     useEffect(() => {
         let isMountedComponent = true;
@@ -22,7 +25,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
         };
 
         fetchWaStatus();
-        const intv = setInterval(fetchWaStatus, 60000); // Poll a cada minuto em tempo real real
+        const intv = setInterval(fetchWaStatus, 60000);
         return () => {
             isMountedComponent = false;
             clearInterval(intv);
@@ -143,8 +146,22 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                 )}
             </div>
 
-            {/* Guia de Onboarding (Anti-Churn Checklist) */}
-            {(services.length === 0 || professionals.length === 0 || appointments.length === 0 || !whatsappStatus?.connected) && (
+
+            {/* Guia de Onboarding — só aparece enquanto houver pendências E nunca foi concluído */}
+            {(() => {
+                const allDone = services.length > 0 && professionals.length > 0
+                    && whatsappStatus?.connected === true && appointments.length > 0;
+                
+                // Auto-dismiss: persiste e retira da tela quando tudo estiver completo
+                if (allDone && !onboardingDismissed) {
+                    try { localStorage.setItem('cutflow_onboarding_done', 'true'); } catch {}
+                    setOnboardingDismissed(true);
+                }
+
+                if (onboardingDismissed) return null;
+                if (services.length > 0 && professionals.length > 0 && appointments.length > 0 && whatsappStatus?.connected) return null;
+
+                return (
                 <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white p-8 rounded-2xl border border-slate-800/50 shadow-2xl relative overflow-hidden group">
                     <div className="absolute -top-10 -right-10 p-8 opacity-[0.03] transform rotate-12 scale-150 transition-transform group-hover:scale-[1.6] duration-700">
                         <Scissors size={220} />
@@ -159,6 +176,15 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                                     Bem-vindo! Usuários que concluem esses passos básicos nos primeiros dias aumentam em até 40% a redução de faltas nas suas barbearias. Siga a ordem e prepare a sua estufa digital para rodar.
                                 </p>
                             </div>
+                            <button
+                                onClick={() => {
+                                    try { localStorage.setItem('cutflow_onboarding_done', 'true'); } catch {}
+                                    setOnboardingDismissed(true);
+                                }}
+                                className="shrink-0 px-4 py-2 bg-white/10 hover:bg-white/20 text-white/70 hover:text-white text-xs font-bold rounded-lg transition-all border border-white/10"
+                            >
+                                Fechar guia ✕
+                            </button>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -199,7 +225,9 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                         </div>
                     </div>
                 </div>
-            )}
+                );
+            })()}
+
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard

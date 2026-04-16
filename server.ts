@@ -46,6 +46,10 @@ export const supabaseAdmin = createClient(supabaseUrl || 'https://placeholder.su
 const chatRateLimitMap = new Map<string, number>(); // { jid: lastTimestampMs }
 const CHAT_RATE_LIMIT_MS = 3000; // 3 segundos entre mensagens
 
+// FIX 4: Cache de status de instâncias no escopo do módulo (fora do cron)
+// TTL de 5 minutos — evita N chamadas HTTP por execução do cron
+const instanceStatusCacheModule = new Map<string, { connected: boolean; expiresAt: number }>();
+
 function isRateLimited(remoteJid: string): boolean {
     const now = Date.now();
     const last = chatRateLimitMap.get(remoteJid);
@@ -311,10 +315,22 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
 
     // -------------------------------------------------------
     // Verifica se o bot está pausado para handoff
+    // FIX 5: Reativa automaticamente após 24h de inatividade
     // -------------------------------------------------------
     if (session?.bot_paused) {
-        console.log(`[Chatbot] Bot pausado para ${remoteJid}. Ignorando mensagem.`);
-        return;
+        const lastMsg = session.last_message_at ? dayjs(session.last_message_at) : null;
+        const hoursInactive = lastMsg ? dayjs().diff(lastMsg, 'hour', true) : 999;
+        if (hoursInactive >= 24) {
+            console.log(`[Chatbot] Bot reativado automaticamente para ${remoteJid} (${hoursInactive.toFixed(1)}h inativo)`);
+            await supabaseAdmin
+                .from('whatsapp_chat_sessions')
+                .update({ bot_paused: false, last_message_at: new Date().toISOString() })
+                .eq('id', session.id);
+            session = { ...session, bot_paused: false };
+        } else {
+            console.log(`[Chatbot] Bot pausado para ${remoteJid}. Ignorando mensagem.`);
+            return;
+        }
     }
 
     // -------------------------------------------------------
@@ -332,6 +348,27 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
                 .eq('id', session.id);
             session = { ...session, messages: [], context: {}, message_count: 0 };
         }
+    }
+
+    // FIX 3: Rate limit persistente no banco (segunda linha de defesa)
+    // Rejeita se message_count > 20 na mesma sessão sem reset horário
+    const MSG_LIMIT_PER_SESSION = 20;
+    if ((session?.message_count || 0) >= MSG_LIMIT_PER_SESSION) {
+        const lastMsg = session?.last_message_at ? dayjs(session.last_message_at) : null;
+        const hoursSinceFirst = lastMsg ? dayjs().diff(lastMsg, 'hour', true) : 0;
+        if (hoursSinceFirst < 1) {
+            console.warn(`[Chatbot] Rate limit DB atingido para ${remoteJid} (${session.message_count} msgs). Descartando.`);
+            await sendWhatsApp(remoteJid.split('@')[0],
+                '⏳ Muitas mensagens em pouco tempo. Por favor aguarde alguns minutos antes de continuar.',
+                instance
+            );
+            return;
+        }
+        // Reset do contador após 1 hora
+        await supabaseAdmin.from('whatsapp_chat_sessions')
+            .update({ message_count: 0 })
+            .eq('id', session.id);
+        session = { ...session, message_count: 0 };
     }
 
     // 2. Busca dados da loja para o contexto
@@ -389,7 +426,7 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
     });
 
     const chat = model.startChat({
-        history: (session.messages || []).map((m: any) => ({
+        history: (session.messages || []).slice(-10).map((m: any) => ({
             role: m.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: m.content }]
         })),
@@ -593,27 +630,29 @@ async function runCronLogic() {
 
     const maxRetries = 3;
 
-    // Cache de status de instâncias
-    const instanceStatusCache = new Map<string, boolean>();
+    // FIX 4: Cache de instâncias migrado para o escopo do módulo (instanceStatusCacheModule)
+    // com TTL de 5 minutos — sem reset a cada execução do cron
     
     // Função auxiliar para verificar status real da API
     const isInstanceConnected = async (shopId: string, instanceName: string): Promise<boolean> => {
         if (!instanceName) return false;
-        if (instanceStatusCache.has(instanceName)) return instanceStatusCache.get(instanceName)!;
+        const cached = instanceStatusCacheModule.get(instanceName);
+        if (cached && cached.expiresAt > Date.now()) return cached.connected;
         
         try {
             const r = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connectionState/${instanceName}`, { headers: { apikey: process.env.WHATSAPP_API_KEY || '' }});
             const d = await r.json();
             const connected = d.instance?.state === 'open';
-            instanceStatusCache.set(instanceName, connected);
+            instanceStatusCacheModule.set(instanceName, { connected, expiresAt: Date.now() + 5 * 60 * 1000 });
             if (!connected) console.warn(`[Cron] Instância ${instanceName} da loja ${shopId} está offline na API. Pulando.`);
             return connected;
         } catch (e) {
             console.error(`[Cron] Erro ao checar status da API para ${instanceName}:`, e);
-            instanceStatusCache.set(instanceName, false);
+            instanceStatusCacheModule.set(instanceName, { connected: false, expiresAt: Date.now() + 60 * 1000 }); // TTL reduzido para falha
             return false;
         }
     };
+
 
     // 1. Lembretes de 24 Horas
     const { data: apts24h } = await supabaseAdmin
@@ -1266,8 +1305,17 @@ async function startServer() {
     // ==========================================
     app.post('/api/whatsapp/webhook', async (req, res) => {
         const body = req.body;
-        
-        // Verifica se é uma mensagem recebida
+
+        // FIX 2: Validação de assinatura do webhook
+        // Configure EVOLUTION_WEBHOOK_SECRET no .env e no painel da Evolution API
+        const webhookSecret = process.env.EVOLUTION_WEBHOOK_SECRET;
+        if (webhookSecret) {
+            const receivedSecret = req.headers['authorization'] || req.headers['apikey'];
+            if (receivedSecret !== webhookSecret) {
+                console.warn(`[Chatbot Webhook] Requisição rejeitada: assinatura inválida. Recebido: "${receivedSecret}"`);
+                return res.status(401).end();
+            }
+        }
         if (body.event !== 'MESSAGES_UPSERT') return res.status(200).send('OK');
 
         const messageData = body.data;
