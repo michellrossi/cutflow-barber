@@ -8,6 +8,7 @@ import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { useToast } from '../../ui/ToastContext';
 
 export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab = 'clients' }) => {
+    const {
         automationTriggers, addAutomationTrigger, updateAutomationTrigger, removeAutomationTrigger,
         settings, professionals, services, shop, botPausedCount,
         getWhatsAppQRCode, getWhatsAppStatus, disconnectWhatsApp
