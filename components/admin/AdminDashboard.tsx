@@ -164,15 +164,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                             <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                     </select>
-                    {userRole === 'owner' && (
-                        <button 
-                            onClick={() => setIsAddUnitOpen(true)}
-                            className="p-1 text-slate-400 hover:text-orange-600 transition-colors"
-                            title="Nova unidade"
-                        >
-                            <Plus size={16} />
-                        </button>
-                    )}
                 </div>
             </div>
           )}
@@ -204,7 +195,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     onClick={() => handleTabChange('team')} 
     expanded={isSidebarExpanded}
   />
-
+  
+  <SidebarItem icon={<Scissors size={18} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} expanded={isSidebarExpanded} />
+  
   <SidebarItem icon={<UserCircle size={18} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<CreditCard size={18} />} label="Assinaturas" active={activeTab === 'subscriptions'} onClick={() => handleTabChange('subscriptions')} expanded={isSidebarExpanded} />
@@ -228,24 +221,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   <SidebarItem icon={<User size={18} />} label="Perfil" active={activeTab === 'profile'} onClick={() => handleTabChange('profile')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<Settings size={18} />} label="Configurações" active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} expanded={isSidebarExpanded} />
-
-  <SidebarItem icon={<Scissors size={18} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} expanded={isSidebarExpanded} />
-  
-  <div className="pt-2 mt-1">
-      <div className="h-px bg-slate-100 mb-2 mx-2"></div>
-      <button 
-          onClick={onViewClient}
-          className={`flex items-center px-4 py-2 w-full rounded-lg text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}
-      >
-          <Smartphone size={18} className="group-hover:text-orange-500 transition-colors shrink-0" />
-          {isSidebarExpanded && (
-            <>
-              <span className="flex-1 text-left text-xs">Agenda Digital</span>
-              <ExternalLink size={12} className="opacity-50" />
-            </>
-          )}
-      </button>
-  </div>
 </nav>
 
         <div className="p-4 border-t border-slate-100">

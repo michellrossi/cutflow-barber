@@ -9,6 +9,8 @@ import { useToast } from '../../ui/ToastContext';
 
 export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab = 'clients' }) => {
     const {
+        messageTemplates, addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
+        messageCategories, addMessageCategory, removeMessageCategory,
         automationTriggers, addAutomationTrigger, updateAutomationTrigger, removeAutomationTrigger,
         settings, professionals, services, shop, botPausedCount,
         getWhatsAppQRCode, getWhatsAppStatus, disconnectWhatsApp
