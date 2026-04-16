@@ -29,30 +29,30 @@ const fmtDate = (d: string): string => {
 // Valor monetário compacto (para caber nas bolinhas)
 const fmtShort = (v: number): string => {
   if (v >= 10000) return `R$${(v / 1000).toFixed(0)}k`;
-  if (v >= 1000)  return `R$${(v / 1000).toFixed(1).replace('.0', '')}k`;
+  if (v >= 1000) return `R$${(v / 1000).toFixed(1).replace('.0', '')}k`;
   return `R$${v.toFixed(0)}`;
 };
 
 const getStatusColors = (pct: number) => {
   if (pct >= 100) return { bar: 'bg-emerald-500', text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-200' };
-  if (pct >= 80)  return { bar: 'bg-emerald-400', text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-slate-200' };
-  if (pct >= 50)  return { bar: 'bg-amber-400',   text: 'text-amber-600',   bg: 'bg-amber-50',   border: 'border-slate-200' };
-  return              { bar: 'bg-red-400',     text: 'text-red-600',     bg: 'bg-red-50',     border: 'border-slate-200' };
+  if (pct >= 80) return { bar: 'bg-emerald-400', text: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-slate-200' };
+  if (pct >= 50) return { bar: 'bg-amber-400', text: 'text-amber-600', bg: 'bg-amber-50', border: 'border-slate-200' };
+  return { bar: 'bg-red-400', text: 'text-red-600', bg: 'bg-red-50', border: 'border-slate-200' };
 };
 
 const getBubbleClass = (pct: number, isFuture: boolean) => {
-  if (isFuture)  return 'bg-slate-100 border-slate-200 text-slate-400';
+  if (isFuture) return 'bg-slate-100 border-slate-200 text-slate-400';
   if (pct >= 100) return 'bg-emerald-500 border-emerald-400 text-white';
-  if (pct >= 80)  return 'bg-emerald-300 border-emerald-200 text-white';
-  if (pct >= 50)  return 'bg-amber-400   border-amber-300   text-white';
-  return               'bg-red-400   border-red-300   text-white';
+  if (pct >= 80) return 'bg-emerald-300 border-emerald-200 text-white';
+  if (pct >= 50) return 'bg-amber-400   border-amber-300   text-white';
+  return 'bg-red-400   border-red-300   text-white';
 };
 
 // Builds a Sun-aligned calendar grid for the given date range
 const buildCalendarGrid = (startDate: string, endDate: string) => {
   // Use T12:00:00 (noon local) to avoid DST shifts changing the date
   const start = new Date(startDate + 'T12:00:00');
-  const end   = new Date(endDate   + 'T12:00:00');
+  const end = new Date(endDate + 'T12:00:00');
 
   // Pad to previous Sunday
   const calStart = new Date(start);
@@ -77,18 +77,18 @@ const buildCalendarGrid = (startDate: string, endDate: string) => {
 };
 
 const CAT_ICON = (cat: string, cls = '') => {
-  if (cat === 'faturamento')  return <DollarSign size={16} className={cls} />;
-  if (cat === 'atendimentos') return <Briefcase  size={16} className={cls} />;
+  if (cat === 'faturamento') return <DollarSign size={16} className={cls} />;
+  if (cat === 'atendimentos') return <Briefcase size={16} className={cls} />;
   return <Package size={16} className={cls} />;
 };
 
 // ===================== MAIN =====================
 export const GoalsPanel: React.FC = () => {
   const { goals, professionals, appointments, upsertGoal, removeGoal } = useShop();
-  const [activeTab, setActiveTab]   = useState<PeriodTab>('mensal');
+  const [activeTab, setActiveTab] = useState<PeriodTab>('mensal');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
-  const [deleteId, setDeleteId]       = useState<string | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const completedApts = useMemo(() =>
     appointments.filter(a => a.status === 'completed'), [appointments]);
@@ -101,19 +101,19 @@ export const GoalsPanel: React.FC = () => {
 
   const stats = useMemo(() => {
     const total = tabGoals.length;
-    const done  = tabGoals.filter(g => g.currentValue >= g.targetValue).length;
+    const done = tabGoals.filter(g => g.currentValue >= g.targetValue).length;
     return { total, done, pct: total > 0 ? Math.round((done / total) * 100) : 0 };
   }, [tabGoals]);
 
   const openEdit = (g: Goal) => { setEditingGoal(g); setIsModalOpen(true); };
-  const openNew  = ()        => { setEditingGoal(null); setIsModalOpen(true); };
-  const closeModal = ()      => { setIsModalOpen(false); setEditingGoal(null); };
+  const openNew = () => { setEditingGoal(null); setIsModalOpen(true); };
+  const closeModal = () => { setIsModalOpen(false); setEditingGoal(null); };
 
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const fd           = new FormData(e.currentTarget);
-    const period       = fd.get('period')       as PeriodTab;
-    const category     = fd.get('category')     as string;
+    const fd = new FormData(e.currentTarget);
+    const period = fd.get('period') as PeriodTab;
+    const category = fd.get('category') as string;
     const professionalId = (fd.get('professionalId') as string) || undefined;
 
     // Prevent duplicates
@@ -135,7 +135,7 @@ export const GoalsPanel: React.FC = () => {
       targetValue: Number(fd.get('targetValue')),
       period: period as any,
       startDate: fd.get('startDate') as string,
-      endDate:   fd.get('endDate')   as string,
+      endDate: fd.get('endDate') as string,
       professionalId
     });
 
@@ -164,9 +164,8 @@ export const GoalsPanel: React.FC = () => {
         <div className="flex p-1 bg-slate-100 rounded-xl overflow-x-auto no-scrollbar gap-1">
           {TABS.map(t => (
             <button key={t} onClick={() => setActiveTab(t)}
-              className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
-                activeTab === t ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-              }`}>
+              className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${activeTab === t ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}>
               {TAB_LABELS[t]}
             </button>
           ))}
@@ -246,13 +245,13 @@ const InsightCard: React.FC<{ icon: React.ReactNode; label: string; value: strin
 const GoalProgressCard: React.FC<{
   goal: Goal; professionals: any[]; onEdit: () => void; onDelete: () => void;
 }> = ({ goal, professionals, onEdit, onDelete }) => {
-  const rawPct   = goal.targetValue > 0 ? (goal.currentValue / goal.targetValue) * 100 : 0;
+  const rawPct = goal.targetValue > 0 ? (goal.currentValue / goal.targetValue) * 100 : 0;
   const clampPct = Math.min(rawPct, 100);
-  const colors   = getStatusColors(rawPct);
-  const isCount  = goal.category === 'atendimentos';
+  const colors = getStatusColors(rawPct);
+  const isCount = goal.category === 'atendimentos';
   const remaining = Math.max(goal.targetValue - goal.currentValue, 0);
-  const pro      = professionals.find(p => p.id === goal.professionalId);
-  const isBeat   = rawPct >= 100;
+  const pro = professionals.find(p => p.id === goal.professionalId);
+  const isBeat = rawPct >= 100;
   const confettied = useRef(false);
 
   useEffect(() => {
@@ -263,7 +262,7 @@ const GoalProgressCard: React.FC<{
   }, [isBeat]);
 
   const motiveText = () => {
-    if (isBeat)        return '🏆 Meta atingida!';
+    if (isBeat) return '🏆 Meta atingida!';
     if (clampPct >= 80) return '🔥 Quase lá!';
     if (clampPct >= 50) return '⚡ No caminho';
     return '⚠️ Atenção necessária';
@@ -289,7 +288,7 @@ const GoalProgressCard: React.FC<{
             </div>
           </div>
           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button onClick={onEdit}   className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"><Edit2  size={14} /></button>
+            <button onClick={onEdit} className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"><Edit2 size={14} /></button>
             <button onClick={onDelete} className="p-2 text-slate-400 hover:text-red-500   hover:bg-red-50   rounded-lg transition-all"><Trash2 size={14} /></button>
           </div>
         </div>
@@ -320,11 +319,10 @@ const GoalProgressCard: React.FC<{
         <div>
           <div className="flex justify-between items-center mb-2">
             <span className={`text-2xl font-black ${colors.text}`}>{rawPct.toFixed(1)}%</span>
-            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${
-              isBeat ? 'bg-emerald-100 text-emerald-700' :
-              clampPct >= 80 ? 'bg-emerald-50 text-emerald-600' :
-              clampPct >= 50 ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
-            }`}>
+            <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${isBeat ? 'bg-emerald-100 text-emerald-700' :
+                clampPct >= 80 ? 'bg-emerald-50 text-emerald-600' :
+                  clampPct >= 50 ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
+              }`}>
               {isBeat && <Star size={10} className="inline mr-0.5 fill-current" />}
               {motiveText()}
             </span>
@@ -347,9 +345,9 @@ const GoalProgressCard: React.FC<{
 const DailyGoalCalendar: React.FC<{
   goal: Goal; appointments: any[]; onEdit: () => void; onDelete: () => void;
 }> = ({ goal, appointments, onEdit, onDelete }) => {
-  const isCount  = goal.category === 'atendimentos';
-  const today    = todayStr();
-  const weeks    = useMemo(() => buildCalendarGrid(goal.startDate, goal.endDate), [goal.startDate, goal.endDate]);
+  const isCount = goal.category === 'atendimentos';
+  const today = todayStr();
+  const weeks = useMemo(() => buildCalendarGrid(goal.startDate, goal.endDate), [goal.startDate, goal.endDate]);
 
   const dayValues = useMemo(() => {
     const map: Record<string, number> = {};
@@ -365,7 +363,7 @@ const DailyGoalCalendar: React.FC<{
   }, [weeks, appointments, goal, isCount]);
 
   const passedDays = weeks.flat().filter(d => d.isInRange && d.date <= today);
-  const beatDays   = passedDays.filter(d => (dayValues[d.date] || 0) >= goal.targetValue);
+  const beatDays = passedDays.filter(d => (dayValues[d.date] || 0) >= goal.targetValue);
 
   return (
     <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
@@ -390,15 +388,15 @@ const DailyGoalCalendar: React.FC<{
               {beatDays.length}<span className="text-slate-400 font-bold text-sm">/{passedDays.length}</span>
             </p>
           </div>
-          <button onClick={onEdit}   className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"><Edit2  size={14} /></button>
+          <button onClick={onEdit} className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"><Edit2 size={14} /></button>
           <button onClick={onDelete} className="p-2 text-slate-400 hover:text-red-500   hover:bg-red-50   rounded-lg transition-all"><Trash2 size={14} /></button>
         </div>
       </div>
 
       {/* Day labels */}
-      <div className="grid grid-cols-7 gap-1 mb-1.5">
-        {['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map((d, i) => (
-          <div key={i} className="text-center text-[11px] font-black text-slate-500 uppercase tracking-wider">{d}</div>
+      <div className="grid grid-cols-7 gap-1 max-w-xs mx-auto">
+        {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d, i) => (
+          <div key={i} className="text-center text-[16px] font-black text-slate-600 uppercase tracking-wider">{d}</div>
         ))}
       </div>
 
@@ -407,34 +405,33 @@ const DailyGoalCalendar: React.FC<{
         {weeks.map((week, wi) => (
           <div key={wi} className="grid grid-cols-7 gap-1">
             {week.map(({ date, isInRange }) => {
-              const dayNum  = parseInt(date.split('-')[2]);
+              const dayNum = parseInt(date.split('-')[2]);
               if (!isInRange) return <div key={date} className="aspect-square" />;
 
-              const val      = dayValues[date] || 0;
-              const pct      = goal.targetValue > 0 ? (val / goal.targetValue) * 100 : 0;
+              const val = dayValues[date] || 0;
+              const pct = goal.targetValue > 0 ? (val / goal.targetValue) * 100 : 0;
               const isFuture = date > today;
-              const isToday  = date === today;
-              const bubble   = getBubbleClass(pct, isFuture);
+              const isToday = date === today;
+              const bubble = getBubbleClass(pct, isFuture);
 
               return (
                 <div key={date}
-                  className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center text-center transition-all ${bubble} ${
-                    isToday ? 'ring-2 ring-orange-500 ring-offset-1' : ''
-                  } ${isFuture ? 'opacity-35' : 'cursor-default'}`}>
-                  <span className="text-[11px] font-black leading-none">{dayNum}</span>
+                  className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center text-center transition-all ${bubble} ${isToday ? 'ring-2 ring-orange-500 ring-offset-1' : ''
+                    } ${isFuture ? 'opacity-35' : 'cursor-default'}`}>
+                  <span className="text-[14px] font-black leading-none">{dayNum}</span>
                   {!isFuture ? (
                     <>
-                      <span className="text-[9px] font-bold leading-tight text-center w-full px-0.5 mt-0.5">
+                      <span className="text-[12px] font-bold leading-tight text-center w-full px-0.5 mt-0.5">
                         {isCount
                           ? `${Math.round(val)}/${goal.targetValue}`
                           : `${fmtShort(val)}/${fmtShort(goal.targetValue)}`}
                       </span>
-                      <span className="text-[9px] font-black leading-none mt-0.5">
+                      <span className="text-[12px] font-black leading-none mt-0.5">
                         ({pct.toFixed(0)}%)
                       </span>
                     </>
                   ) : (
-                    <span className="text-[9px] opacity-25">–</span>
+                    <span className="text-[12px] opacity-25">–</span>
                   )}
                 </div>
               );
@@ -448,9 +445,9 @@ const DailyGoalCalendar: React.FC<{
         {[
           { cls: 'bg-emerald-500', label: 'Meta batida (≥100%)' },
           { cls: 'bg-emerald-300', label: '≥ 80%' },
-          { cls: 'bg-amber-400',   label: '≥ 50%' },
-          { cls: 'bg-red-400',     label: '< 50%' },
-          { cls: 'bg-slate-200',   label: 'Futuro' },
+          { cls: 'bg-amber-400', label: '≥ 50%' },
+          { cls: 'bg-red-400', label: '< 50%' },
+          { cls: 'bg-slate-200', label: 'Futuro' },
         ].map(({ cls, label }) => (
           <div key={label} className="flex items-center gap-1.5">
             <div className={`w-3 h-3 rounded-full ${cls}`} />
@@ -542,7 +539,7 @@ const GoalModal: React.FC<{
                 {!isCount && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">R$</span>}
                 <input name="targetValue" type="number" step={isCount ? '1' : '0.01'} min="1"
                   defaultValue={editingGoal?.targetValue} required
-                  className={`w-full py-2.5 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm font-bold ${!isCount ? 'pl-10 pr-4' : 'px-4'}`}
+                  className={`w-12 h-12 rounded-xl border-2 flex flex-col items-center justify-center text-center transition-all ${bubble}`}
                   placeholder={isCount ? 'Ex: 50' : 'Ex: 5000'} />
               </div>
             </div>
