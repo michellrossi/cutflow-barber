@@ -942,6 +942,100 @@ async function runCronLogic() {
             console.log(`[Cron] Sessões de chatbot expiradas removidas: ${count ?? 0}`);
         }
     }
+
+    // 7. Relatório Semanal Proativo (Domingos às 21h)
+    // Coleta dados dos últimos 7 dias vs 7 dias anteriores e envia insights para o dono
+    if (now.day() === 0 && now.hour() === 21 && now.minute() < 11) {
+        console.log("[Cron] Iniciando geração de Relatórios Semanais Proativos...");
+        
+        const sevenDaysAgo = now.subtract(7, 'day').format('YYYY-MM-DD');
+        const fourteenDaysAgo = now.subtract(14, 'day').format('YYYY-MM-DD');
+
+        // 1. Busca apps dos últimos 14 dias
+        const { data: allApts } = await supabaseAdmin
+            .from('appointments')
+            .select(`
+                id, shop_id, total_value, date, status, service_ids,
+                shops (id, name, whatsapp_instance, whatsapp_connected)
+            `)
+            .gte('date', fourteenDaysAgo)
+            .lte('date', todayStr);
+
+        if (allApts && allApts.length > 0) {
+            // Agrupar por Shop
+            const shopsData = new Map<string, any>();
+            allApts.forEach(apt => {
+                if (!shopsData.has(apt.shop_id)) {
+                    shopsData.set(apt.shop_id, { 
+                        name: apt.shops?.name, 
+                        instance: apt.shops?.whatsapp_instance,
+                        connected: apt.shops?.whatsapp_connected,
+                        currentWeek: [], 
+                        prevWeek: [] 
+                    });
+                }
+                const shop = shopsData.get(apt.shop_id);
+                if (apt.date >= sevenDaysAgo) shop.currentWeek.push(apt);
+                else shop.prevWeek.push(apt);
+            });
+
+            // Processar cada loja
+            for (const [sId, data] of shopsData.entries()) {
+                if (!data.connected) continue;
+
+                // Busca o telefone do dono
+                const { data: sets } = await supabaseAdmin.from('settings').select('phone').eq('shop_id', sId).single();
+                if (!sets?.phone) continue;
+
+                // Calcula métricas Simples
+                const curRev = data.currentWeek.filter((a: any) => a.status === 'completed').reduce((sum: number, a: any) => sum + (a.total_value || 0), 0);
+                const preRev = data.prevWeek.filter((a: any) => a.status === 'completed').reduce((sum: number, a: any) => sum + (a.total_value || 0), 0);
+                const curCount = data.currentWeek.length;
+                const preCount = data.prevWeek.length;
+                
+                // Top serviço (frequência)
+                const svcCounts: Record<string, number> = {};
+                data.currentWeek.forEach((a: any) => a.service_ids?.forEach((id: string) => svcCounts[id] = (svcCounts[id] || 0) + 1));
+                
+                // Busca nomes dos serviços para o prompt
+                const topSvcIds = Object.entries(svcCounts).sort((a,b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
+                const { data: svcsNames } = topSvcIds.length ? await supabaseAdmin.from('services').select('name').in('id', topSvcIds) : { data: [] };
+                const topSvcStr = svcsNames?.map(s => s.name).join(', ') || 'N/A';
+
+                // Prompt para o Gemini
+                const statsContext = `
+                    Barbearia: ${data.name}
+                    Faturamento desta semana: R$${curRev.toFixed(2)}
+                    Faturamento semana passada: R$${preRev.toFixed(2)}
+                    Agendamentos desta semana: ${curCount} 
+                    Agendamentos semana passada: ${preCount}
+                    Serviços mais procurados: ${topSvcStr}
+                `;
+
+                try {
+                    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+                    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+                    
+                    const prompt = `Você é um Consultor de Negócios especializado em barbearias de alto padrão. 
+                    Analise os dados abaixo e escreva um parágrafo curto, direto e motivador (máximo 400 caracteres) para o dono da barbearia.
+                    Destaque o crescimento ou sugira onde focar se houve queda. Use emojis discretos. 
+                    Mencione os serviços populares como oportunidade. 
+                    
+                    Dados: ${statsContext}`;
+
+                    const result = await model.generateContent(prompt);
+                    const insight = result.response.text();
+
+                    const fullMsg = `📊 *Resumo Semanal - CutFlow Insights*\n\n${insight}\n\n_Para ver detalhes, acesse seu painel administrativo._`;
+                    
+                    await sendWhatsApp(sets.phone, fullMsg, data.instance);
+                    console.log(`[Cron] Insight semanal enviado para ${data.name}`);
+                } catch (gemErr: any) {
+                    console.error(`[Cron] Erro ao gerar insight Gemini para ${data.name}:`, gemErr.message);
+                }
+            }
+        }
+    }
 }
 
 async function startServer() {
