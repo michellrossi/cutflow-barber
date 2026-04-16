@@ -393,19 +393,19 @@ const DailyGoalCalendar: React.FC<{
         </div>
       </div>
 
-      {/* Cabeçalho dos Dias - Largura expandida para ~50% da tela */}
-      <div className="flex justify-center mb-2">
+      {/* Cabeçalho dos Dias - Alinhado à esquerda */}
+      <div className="flex justify-start mb-2">
         <div className="grid grid-cols-7 gap-2 w-full max-w-2xl">
           {['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'].map(d => (
-            <div key={d} className="text-center text-[11px] font-black text-slate-400 uppercase tracking-widest">
+            <div key={d} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-tighter">
               {d}
             </div>
           ))}
         </div>
       </div>
 
-      {/* Grid do Calendário - Centralizado e Ocupando 2/4 da largura */}
-      <div className="flex justify-center">
+      {/* Grid do Calendário - Alinhado à esquerda ocupando 2/4 */}
+      <div className="flex justify-start">
         <div className="grid grid-cols-7 gap-2 w-full max-w-2xl">
           {weeks.map((week, wi) => (
             <React.Fragment key={wi}>
@@ -421,22 +421,27 @@ const DailyGoalCalendar: React.FC<{
 
                 return (
                   <div key={date}
-                    className={`aspect-square rounded-2xl border flex flex-col items-center justify-start pt-2 pb-1 transition-all ${bubble} ${
+                    className={`aspect-square rounded-2xl border flex flex-col items-center justify-between py-2 transition-all ${bubble} ${
                       isToday ? 'ring-2 ring-orange-500 ring-offset-1 z-10' : ''
                     } ${isFuture ? 'opacity-30' : 'cursor-default'}`}>
                     
-                    {/* Dia do mês maior e no topo */}
-                    <span className="text-base font-black leading-none mb-1.5">{dayNum}</span>
+                    {/* Topo: Número do Dia */}
+                    <span className="text-base font-black leading-none">{dayNum}</span>
                     
-                    {!isFuture && (
+                    {/* Base: Valor/Meta e Percentual */}
+                    {!isFuture ? (
                       <div className="flex flex-col items-center leading-none">
-                        <span className="text-[9px] font-bold opacity-90 truncate px-1 mb-1">
-                          {isCount ? Math.round(val) : fmtShort(val)}
+                        <span className="text-[8px] font-bold opacity-90 truncate px-1 mb-1">
+                          {isCount 
+                            ? `${Math.round(val)}/${goal.targetValue}` 
+                            : `${fmtShort(val)}/${fmtShort(goal.targetValue)}`}
                         </span>
                         <span className="text-[10px] font-black">
                           {pct.toFixed(0)}%
                         </span>
                       </div>
+                    ) : (
+                      <span className="text-[10px] opacity-20">–</span>
                     )}
                   </div>
                 );
