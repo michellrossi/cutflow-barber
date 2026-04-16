@@ -1161,7 +1161,13 @@ async function startServer() {
             await fetch(`${process.env.WHATSAPP_API_URL}/instance/create`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'apikey': process.env.WHATSAPP_API_KEY || '' },
-                body: JSON.stringify({ instanceName, integration: "WHATSAPP-BAILEYS" })
+                body: JSON.stringify({ 
+                    instanceName, 
+                    integration: "WHATSAPP-BAILEYS",
+                    webhook: `${process.env.SERVER_URL || 'https://sua-url-do-servidor.com'}/api/whatsapp/webhook`,
+                    webhook_by_events: true,
+                    events: ["MESSAGES_UPSERT"]
+                })
             });
             await supabaseAdmin.from('shops').update({ whatsapp_instance: instanceName }).eq('id', shopId);
             const response = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connect/${instanceName}`, { headers: { 'apikey': process.env.WHATSAPP_API_KEY || '' } });
