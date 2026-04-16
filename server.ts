@@ -429,19 +429,23 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
     ];
 
     // 1. Guarda a instrução em uma variável
-    const systemInstruction = `Você é a IA assistente da barbearia "${shop?.name}". Seu objetivo é ajudar o cliente a agendar um serviço pelo WhatsApp.
-        Seja educado, breve e eficiente.
-        Fluxo Sugerido:
-        1. Se for a primeira vez, dê as boas-vindas e mostre os serviços.
-        2. Peça para o cliente escolher o barbeiro (se houver mais de um).
-        3. Peça a data.
-        4. Verifique a disponibilidade e mostre os horários livres.
-        5. Confirme os detalhes finais e agende.
-        
-        Sempre use as ferramentas disponíveis para obter informações reais do banco de dados. Nunca invente horários ou preços.
-        Linguagem: Português do Brasil de forma amigável.
-        Hoje é: ${dayjs().tz('America/Sao_Paulo').format('dddd, DD [de] MMMM [de] YYYY')}.
-        O número do cliente é ${remoteJid.split('@')[0]}.`;
+    const systemInstruction = `Você é o assistente virtual da barbearia "${shop?.name}". Seu único objetivo é realizar o agendamento de serviços de forma amigável e eficiente.
+
+DIRETRIZES DE COMPORTAMENTO:
+1. MEMÓRIA: Lembre-se de tudo que o cliente já disse (serviço, barbeiro, etc). Não pergunte novamente o que já foi informado.
+2. AGENDAMENTO PROATIVO: Se o cliente disser "quero cortar o cabelo amanhã", você deve:
+   a) Listar os serviços (se ele não escolheu um específico).
+   b) Listar os barbeiros.
+   c) Verificar a disponibilidade da data IMEDIATAMENTE usando check_availability.
+3. DATAS: Você sabe que hoje é ${dayjs().tz('America/Sao_Paulo').format('dddd, DD/MM/YYYY')}. Para datas relativas (amanhã, segunda, etc), calcule o YYYY-MM-DD correto antes de chamar as ferramentas.
+4. DISPONIBILIDADE: Se o check_availability retornar horários, mostre-os. Se não retornar nada ou der erro, explique que a barbearia está fechada ou o profissional está sem vagas naquela data específica, e sugira a data de funcionamento mais próxima. Nunca invente que a barbearia está fechada sem antes consultar as ferramentas.
+5. EFETIVAÇÃO: Após o cliente escolher o horário, você DEVE usar a ferramenta book_appointment para salvar no sistema. Só confirme o agendamento após receber o sucesso do sistema.
+6. ESTILO: Use emojis de barbearia 💈✂️. Seja curto e direto. Não seja repetitivo.
+
+FLUXO OBRIGATÓRIO:
+Identificar Serviço -> Identificar Barbeiro -> Verificar Horários -> Confirmar com o Cliente -> Efetivar Agendamento.
+
+O número do WhatsApp do cliente é: ${remoteJid.split('@')[0]}.`;
 
     // 2. Passa a instrução para a criação do modelo (AQUI É O LUGAR CERTO)
     const model = genAI.getGenerativeModel({
@@ -452,7 +456,7 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
 
     // 3. O chat inicia apenas com o histórico
     const chat = model.startChat({
-        history: (session.messages || []).slice(-10).map((m: any) => ({
+        history: (session.messages || []).slice(-20).map((m: any) => ({
             role: m.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: m.content }]
         })),
@@ -560,10 +564,12 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
 
                 // Envia os resultados das funções de volta para o Gemini
                 const finalResult = await chat.sendMessage(toolResults);
-                response = finalResult.response;
+                const finalResponse = finalResult.response;
+                reply = finalResponse.text();
+            } else {
+                reply = response.text();
             }
 
-            reply = response.text();
             lastError = null;
             break; // Sucesso — sai do loop de retry
 
