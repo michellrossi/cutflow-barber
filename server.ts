@@ -1276,17 +1276,44 @@ async function startServer() {
         const remoteJid = messageData.key.remoteJid;
         if (remoteJid.includes('@g.us')) return res.status(200).send('OK'); // Ignora grupos
 
-        const pushName = messageData.pushName || 'Cliente';
-        const messageText = messageData.message?.conversation || messageData.message?.extendedTextMessage?.text;
+        const pushName     = messageData.pushName || 'Cliente';
+        const messageText  = messageData.message?.conversation || messageData.message?.extendedTextMessage?.text;
 
         if (!messageText) return res.status(200).send('OK');
 
         const instanceName = body.instance;
-        const shopId = instanceName.startsWith('shop-') ? instanceName.replace('shop-', '') : null;
+        console.log(`[Chatbot Webhook] Evento recebido. Instância: "${instanceName}" | JID: ${remoteJid}`);
+
+        // -------------------------------------------------------
+        // FIX CRÍTICO: Busca o shopId pelo whatsapp_instance no banco.
+        // Antes tentava derivar o shopId pelo prefixo "shop-<uuid>",
+        // o que falha quando a instância tem nome livre (ex: "minhabarbearia").
+        // -------------------------------------------------------
+        let shopId: string | null = null;
+
+        // 1. Tenta pelo nome da instância salvo em shops.whatsapp_instance
+        if (instanceName) {
+            const { data: shopByInstance } = await supabaseAdmin
+                .from('shops')
+                .select('id')
+                .eq('whatsapp_instance', instanceName)
+                .maybeSingle();
+
+            if (shopByInstance?.id) {
+                shopId = shopByInstance.id;
+                console.log(`[Chatbot] shopId "${shopId}" encontrado via whatsapp_instance = "${instanceName}"`);
+            }
+        }
+
+        // 2. Fallback: convenção legada "shop-<uuid>"
+        if (!shopId && instanceName?.startsWith('shop-')) {
+            shopId = instanceName.replace('shop-', '');
+            console.log(`[Chatbot] shopId "${shopId}" derivado pela convenção shop-<id> (fallback)`);
+        }
 
         if (!shopId) {
-             console.warn(`[Chatbot] Webhook recebido de instância desconhecida: ${instanceName}`);
-             return res.status(200).send('OK');
+            console.warn(`[Chatbot] Webhook de instância desconhecida: "${instanceName}". Nenhuma loja encontrada. Configure whatsapp_instance nas Settings da loja.`);
+            return res.status(200).send('OK');
         }
 
         // FIX 1: Rate limiting em memória — rejeita flood de mensagens

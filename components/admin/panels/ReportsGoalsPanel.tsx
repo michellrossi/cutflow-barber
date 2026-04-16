@@ -194,25 +194,46 @@ export const ReportsGoalsPanel: React.FC<Props> = ({ dateRange }) => {
   const weekComparison = useMemo(() => {
     const now = new Date();
     const dayOfWeek = now.getDay();
-    // início da semana atual (domingo)
     const weekStart = new Date(now); weekStart.setDate(now.getDate() - dayOfWeek);
-    // semana anterior
     const prevWeekStart = new Date(weekStart); prevWeekStart.setDate(weekStart.getDate() - 7);
     const prevWeekEnd   = new Date(weekStart); prevWeekEnd.setDate(weekStart.getDate() - 1);
 
-    const startStr1 = localDate(weekStart);
-    const startStr2 = localDate(prevWeekStart);
-    const endStr2   = localDate(prevWeekEnd);
-    const todayStr  = today;
-
-    const curr = completedAppts.filter(a => a.date >= startStr1 && a.date <= todayStr)
+    const curr = completedAppts.filter(a => a.date >= localDate(weekStart) && a.date <= today)
       .reduce((s, a) => s + a.totalValue, 0);
-    const prev = completedAppts.filter(a => a.date >= startStr2 && a.date <= endStr2)
+    const prev = completedAppts.filter(a => a.date >= localDate(prevWeekStart) && a.date <= localDate(prevWeekEnd))
       .reduce((s, a) => s + a.totalValue, 0);
 
     return [
       { name: 'Sem. Anterior', value: prev },
       { name: 'Sem. Atual',    value: curr },
+    ];
+  }, [completedAppts, today]);
+
+  // ── Comparativo mês atual vs anterior ────────────────────────────────────────
+  const monthComparison = useMemo(() => {
+    const now = new Date();
+    // Mês atual: do dia 1 até hoje
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    // Mês anterior: do dia 1 ao último dia
+    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMonthEnd   = new Date(now.getFullYear(), now.getMonth(), 0); // dia 0 = último dia do mês anterior
+
+    // Mesmo número de dias decorridos no mês anterior (para comparação justa)
+    const dayOfMonth = now.getDate();
+    const prevMonthSameDay = new Date(prevMonthStart);
+    prevMonthSameDay.setDate(Math.min(dayOfMonth, prevMonthEnd.getDate()));
+
+    const curr = completedAppts.filter(a => a.date >= localDate(monthStart) && a.date <= today)
+      .reduce((s, a) => s + a.totalValue, 0);
+    const prev = completedAppts.filter(a => a.date >= localDate(prevMonthStart) && a.date <= localDate(prevMonthSameDay))
+      .reduce((s, a) => s + a.totalValue, 0);
+
+    const currMonthLabel = now.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+    const prevMonthLabel = prevMonthStart.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
+
+    return [
+      { name: `${prevMonthLabel.charAt(0).toUpperCase() + prevMonthLabel.slice(1)}. Anterior`, value: prev },
+      { name: `${currMonthLabel.charAt(0).toUpperCase() + currMonthLabel.slice(1)}. Atual`,    value: curr },
     ];
   }, [completedAppts, today]);
 
@@ -315,24 +336,54 @@ export const ReportsGoalsPanel: React.FC<Props> = ({ dateRange }) => {
           )}
         </div>
 
-        {/* Comparativo de Períodos */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
-          <h4 className="font-bold text-[#1E293B] mb-4 flex items-center gap-2">
-            <BarChart3 size={18} className="text-orange-500" /> Comparativo — Semana Atual vs. Anterior
-          </h4>
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weekComparison} margin={{ left: -10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis dataKey="name" tick={{ fontSize: 12, fontWeight: 700 }} />
-                <YAxis tick={{ fontSize: 10 }} tickFormatter={v => fmt(v)} width={80} />
-                <Tooltip formatter={(v: any) => fmt(Number(v))} />
-                <Bar dataKey="value" radius={[6,6,0,0]}>
-                  <Cell fill="#94a3b8" />
-                  <Cell fill="#ea580c" />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+        {/* Comparativo de Períodos — 2 gráficos lado a lado */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Semana */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <h4 className="font-bold text-[#1E293B] mb-4 flex items-center gap-2">
+              <BarChart3 size={18} className="text-orange-500" /> Comparativo — Semana Atual vs. Anterior
+            </h4>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={weekComparison} margin={{ left: -10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700 }} />
+                  <YAxis tick={{ fontSize: 10 }} tickFormatter={v => fmt(v)} width={80} />
+                  <Tooltip formatter={(v: any) => fmt(Number(v))} />
+                  <Bar dataKey="value" radius={[6,6,0,0]}>
+                    <Cell fill="#94a3b8" />
+                    <Cell fill="#ea580c" />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Mês */}
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+            <h4 className="font-bold text-[#1E293B] mb-4 flex items-center gap-2">
+              <BarChart3 size={18} className="text-blue-500" /> Comparativo — Mês Atual vs. Anterior
+            </h4>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthComparison} margin={{ left: -10 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" tick={{ fontSize: 11, fontWeight: 700 }} />
+                  <YAxis tick={{ fontSize: 10 }} tickFormatter={v => fmt(v)} width={80} />
+                  <Tooltip
+                    formatter={(v: any) => fmt(Number(v))}
+                    labelFormatter={(l) => `${l} (mesmo nº de dias)`}
+                  />
+                  <Bar dataKey="value" radius={[6,6,0,0]}>
+                    <Cell fill="#94a3b8" />
+                    <Cell fill="#3b82f6" />
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-2 font-medium text-center">
+              Comparação proporcional ao mesmo nº de dias decorridos no mês anterior
+            </p>
           </div>
         </div>
       </section>
