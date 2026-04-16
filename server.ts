@@ -384,7 +384,7 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
 
     // 3. Prepara Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-    
+
     // Ferramentas do Agendamento
     const tools = [
         {
@@ -466,15 +466,15 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
         try {
             let result = await chat.sendMessage(message);
             let response = result.response;
-            
+
             // Loop para lidar com chamadas de funções
             const call = response.functionCalls();
             if (call && call.length > 0) {
                 const toolResults: any[] = [];
-                
+
                 for (const fn of call) {
                     console.log(`[Chatbot] Executando ferramenta: ${fn.name} | Args:`, fn.args);
-                    
+
                     let data: any;
                     if (fn.name === "list_services") {
                         const { data: res } = await supabaseAdmin.from('services').select('id, name, price, duration').eq('shop_id', shopId);
@@ -492,7 +492,7 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
                         // -----------------------------------------------
                         const args: any = fn.args;
                         const phone = remoteJid.split('@')[0];
-                        
+
                         // Garante que o cliente existe no banco
                         let { data: client } = await supabaseAdmin
                             .from('clients').select('id').eq('shop_id', shopId).eq('phone', phone).maybeSingle();
@@ -511,7 +511,7 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
                                 .from('services')
                                 .select('price')
                                 .in('id', args.service_ids);
-                            
+
                             totalValue = svcData?.reduce((sum: number, s: any) => sum + (Number(s.price) || 0), 0) || 0;
                         }
 
@@ -544,7 +544,7 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
                             data = { success: false, error: rpcResult.message || 'Erro desconhecido.' };
                         }
                     }
-                    
+
                     toolResults.push({
                         functionResponse: {
                             name: fn.name,
@@ -601,7 +601,7 @@ async function getAvailableSlotsForAI(shopId: string, proId: string, date: strin
     const { data: settings } = await supabaseAdmin.from('settings').select('business_hours').eq('shop_id', shopId).single();
     const dayOfWeek = dayjs(date).format('dddd').toLowerCase() as keyof typeof INITIAL_STATE.settings.businessHours;
     const dayNames: any = { 'monday': 'segunda-feira', 'tuesday': 'terça-feira', 'wednesday': 'quarta-feira', 'thursday': 'quinta-feira', 'friday': 'sexta-feira', 'saturday': 'sábado', 'sunday': 'domingo' };
-    
+
     // Mapeia o dia do inglês para a chave do DB se necessário (nosso settings usa chaves em inglês)
     const hours = settings?.business_hours?.[dayOfWeek];
     if (!hours || !hours.active) return { error: "A barbearia não abre nesta data." };
@@ -619,7 +619,7 @@ async function getAvailableSlotsForAI(shopId: string, proId: string, date: strin
         const timeStr = current.format('HH:mm');
         const isOccupied = appointments?.some(a => a.time.substring(0, 5) === timeStr);
         const isBlocked = blocks?.some(b => timeStr >= b.start_time.substring(0, 5) && timeStr < b.end_time.substring(0, 5));
-        
+
         if (!isOccupied && !isBlocked) {
             slots.push(timeStr);
         }
@@ -643,15 +643,15 @@ async function runCronLogic() {
 
     // FIX 4: Cache de instâncias migrado para o escopo do módulo (instanceStatusCacheModule)
     // com TTL de 5 minutos — sem reset a cada execução do cron
-    
+
     // Função auxiliar para verificar status real da API
     const isInstanceConnected = async (shopId: string, instanceName: string): Promise<boolean> => {
         if (!instanceName) return false;
         const cached = instanceStatusCacheModule.get(instanceName);
         if (cached && cached.expiresAt > Date.now()) return cached.connected;
-        
+
         try {
-            const r = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connectionState/${instanceName}`, { headers: { apikey: process.env.WHATSAPP_API_KEY || '' }});
+            const r = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connectionState/${instanceName}`, { headers: { apikey: process.env.WHATSAPP_API_KEY || '' } });
             const d = await r.json();
             const connected = d.instance?.state === 'open';
             instanceStatusCacheModule.set(instanceName, { connected, expiresAt: Date.now() + 5 * 60 * 1000 });
@@ -684,7 +684,7 @@ async function runCronLogic() {
 
             const aptDateTime = dayjs.tz(`${apt.date}T${apt.time}`, 'America/Sao_Paulo');
             const diffHours = aptDateTime.diff(now, 'hour', true);
-            
+
             // Janela de precisão de 24h (entre 23h e 25h de antecedência)
             if (diffHours <= 25 && diffHours >= 23) {
                 const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
@@ -824,7 +824,7 @@ async function runCronLogic() {
 
             const aptDateTime = dayjs.tz(`${apt.date}T${apt.time}`, 'America/Sao_Paulo');
             const diffMinutes = now.diff(aptDateTime, 'minute', true);
-            
+
             if (diffMinutes >= 120 && diffMinutes < 1440) {
                 const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
                 const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
@@ -866,7 +866,7 @@ async function runCronLogic() {
         for (const apt of apts30d) {
             if (!apt.shops?.whatsapp_connected) continue;
             if (!(await isInstanceConnected(apt.shop_id, apt.shops.whatsapp_instance))) continue;
-            
+
             const msg = await generateWhatsAppMessage('retention_30d', {
                 clientName: apt.client_name,
                 shopName: apt.shops?.name
@@ -891,40 +891,40 @@ async function runCronLogic() {
         console.log(`[Cron] Aniversários aguardando janela das 9h (hora atual SP: ${currentHourSP}h). Pulando.`);
     } else {
 
-    const { data: bdayClients, error: bdayError } = await supabaseAdmin
-        .rpc('get_birthday_clients_today');
+        const { data: bdayClients, error: bdayError } = await supabaseAdmin
+            .rpc('get_birthday_clients_today');
 
-    if (bdayError) {
-        console.error('[Cron] Erro ao buscar aniversariantes via RPC:', bdayError.message);
-    }
+        if (bdayError) {
+            console.error('[Cron] Erro ao buscar aniversariantes via RPC:', bdayError.message);
+        }
 
-    if (bdayClients && bdayClients.length > 0) {
-        // Busca dados das lojas para os aniversariantes (join manual)
-        const shopIds = [...new Set(bdayClients.map((c: any) => c.shop_id))];
-        const { data: shopList } = await supabaseAdmin
-            .from('shops')
-            .select('id, name, whatsapp_instance, whatsapp_connected')
-            .in('id', shopIds);
-        const shopMap = new Map((shopList || []).map((s: any) => [s.id, s]));
+        if (bdayClients && bdayClients.length > 0) {
+            // Busca dados das lojas para os aniversariantes (join manual)
+            const shopIds = [...new Set(bdayClients.map((c: any) => c.shop_id))];
+            const { data: shopList } = await supabaseAdmin
+                .from('shops')
+                .select('id, name, whatsapp_instance, whatsapp_connected')
+                .in('id', shopIds);
+            const shopMap = new Map((shopList || []).map((s: any) => [s.id, s]));
 
-        for (const client of bdayClients) {
-            const shop = shopMap.get(client.shop_id);
-            if (!shop?.whatsapp_connected) continue;
-            if (!(await isInstanceConnected(client.shop_id, shop.whatsapp_instance))) continue;
-            
-            const msg = await generateWhatsAppMessage('birthday', {
-                clientName: client.name,
-                shopName: shop.name
-            }, client.shop_id);
+            for (const client of bdayClients) {
+                const shop = shopMap.get(client.shop_id);
+                if (!shop?.whatsapp_connected) continue;
+                if (!(await isInstanceConnected(client.shop_id, shop.whatsapp_instance))) continue;
 
-            if (msg) {
-                const ok = await sendWhatsApp(client.phone, msg, shop.whatsapp_instance);
-                if (ok) {
-                    await supabaseAdmin.from('clients').update({ birthday_last_sent_year: now.year() }).eq('id', client.id);
+                const msg = await generateWhatsAppMessage('birthday', {
+                    clientName: client.name,
+                    shopName: shop.name
+                }, client.shop_id);
+
+                if (msg) {
+                    const ok = await sendWhatsApp(client.phone, msg, shop.whatsapp_instance);
+                    if (ok) {
+                        await supabaseAdmin.from('clients').update({ birthday_last_sent_year: now.year() }).eq('id', client.id);
+                    }
                 }
             }
         }
-    }
 
     } // fim do bloco de guarda de horário (aniversários)
 
@@ -947,7 +947,7 @@ async function runCronLogic() {
     // Coleta dados dos últimos 7 dias vs 7 dias anteriores e envia insights para o dono
     if (now.day() === 0 && now.hour() === 21 && now.minute() < 11) {
         console.log("[Cron] Iniciando geração de Relatórios Semanais Proativos...");
-        
+
         const sevenDaysAgo = now.subtract(7, 'day').format('YYYY-MM-DD');
         const fourteenDaysAgo = now.subtract(14, 'day').format('YYYY-MM-DD');
 
@@ -966,12 +966,12 @@ async function runCronLogic() {
             const shopsData = new Map<string, any>();
             allApts.forEach(apt => {
                 if (!shopsData.has(apt.shop_id)) {
-                    shopsData.set(apt.shop_id, { 
-                        name: apt.shops?.name, 
+                    shopsData.set(apt.shop_id, {
+                        name: apt.shops?.name,
                         instance: apt.shops?.whatsapp_instance,
                         connected: apt.shops?.whatsapp_connected,
-                        currentWeek: [], 
-                        prevWeek: [] 
+                        currentWeek: [],
+                        prevWeek: []
                     });
                 }
                 const shop = shopsData.get(apt.shop_id);
@@ -992,13 +992,13 @@ async function runCronLogic() {
                 const preRev = data.prevWeek.filter((a: any) => a.status === 'completed').reduce((sum: number, a: any) => sum + (a.total_value || 0), 0);
                 const curCount = data.currentWeek.length;
                 const preCount = data.prevWeek.length;
-                
+
                 // Top serviço (frequência)
                 const svcCounts: Record<string, number> = {};
                 data.currentWeek.forEach((a: any) => a.service_ids?.forEach((id: string) => svcCounts[id] = (svcCounts[id] || 0) + 1));
-                
+
                 // Busca nomes dos serviços para o prompt
-                const topSvcIds = Object.entries(svcCounts).sort((a,b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
+                const topSvcIds = Object.entries(svcCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
                 const { data: svcsNames } = topSvcIds.length ? await supabaseAdmin.from('services').select('name').in('id', topSvcIds) : { data: [] };
                 const topSvcStr = svcsNames?.map(s => s.name).join(', ') || 'N/A';
 
@@ -1015,7 +1015,7 @@ async function runCronLogic() {
                 try {
                     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
                     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
-                    
+
                     const prompt = `Você é um Consultor de Negócios especializado em barbearias de alto padrão. 
                     Analise os dados abaixo e escreva um parágrafo curto, direto e motivador (máximo 400 caracteres) para o dono da barbearia.
                     Destaque o crescimento ou sugira onde focar se houve queda. Use emojis discretos. 
@@ -1027,7 +1027,7 @@ async function runCronLogic() {
                     const insight = result.response.text();
 
                     const fullMsg = `📊 *Resumo Semanal - CutFlow Insights*\n\n${insight}\n\n_Para ver detalhes, acesse seu painel administrativo._`;
-                    
+
                     await sendWhatsApp(sets.phone, fullMsg, data.instance);
                     console.log(`[Cron] Insight semanal enviado para ${data.name}`);
                 } catch (gemErr: any) {
@@ -1278,8 +1278,8 @@ async function startServer() {
             await fetch(`${process.env.WHATSAPP_API_URL}/instance/create`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'apikey': process.env.WHATSAPP_API_KEY || '' },
-                body: JSON.stringify({ 
-                    instanceName, 
+                body: JSON.stringify({
+                    instanceName,
                     integration: "WHATSAPP-BAILEYS",
                     webhook: `${process.env.SERVER_URL || 'https://sua-url-do-servidor.com'}/api/whatsapp/webhook`,
                     webhook_by_events: true,
@@ -1308,7 +1308,7 @@ async function startServer() {
             if (!shop?.whatsapp_instance) return res.json({ connected: false });
             const r = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connectionState/${shop.whatsapp_instance}`,
                 { headers: { apikey: process.env.WHATSAPP_API_KEY || '' } });
-            
+
             if (!r.ok) {
                 const txt = await r.text();
                 console.error(`[WhatsApp API] Erro no connectionState: ${r.status} - ${txt}`);
@@ -1461,7 +1461,7 @@ async function startServer() {
                 return res.status(401).end();
             }
         }
-        if (body.event !== 'MESSAGES_UPSERT') return res.status(200).send('OK');
+        if (body.event?.toUpperCase() !== 'MESSAGES_UPSERT') return res.status(200).send('OK');
 
         const messageData = body.data;
         if (!messageData || messageData.key.fromMe) return res.status(200).send('OK');
@@ -1469,8 +1469,8 @@ async function startServer() {
         const remoteJid = messageData.key.remoteJid;
         if (remoteJid.includes('@g.us')) return res.status(200).send('OK'); // Ignora grupos
 
-        const pushName     = messageData.pushName || 'Cliente';
-        const messageText  = messageData.message?.conversation || messageData.message?.extendedTextMessage?.text;
+        const pushName = messageData.pushName || 'Cliente';
+        const messageText = messageData.message?.conversation || messageData.message?.extendedTextMessage?.text;
 
         if (!messageText) return res.status(200).send('OK');
 
@@ -1543,7 +1543,7 @@ async function startServer() {
         // ================================================================
         // CRONS INTERNOS (node-cron)
         // ================================================================
-        
+
         // 1. Lembretes e Notificações (a cada 10 min)
         cron.schedule('*/10 * * * *', async () => {
             console.log('[node-cron] Disparando runCronLogic...');
