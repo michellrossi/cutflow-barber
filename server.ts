@@ -1106,22 +1106,32 @@ async function startServer() {
             const { data: result, error } = await supabaseAdmin.rpc('award_loyalty_reward', { p_client_id: clientId, p_shop_id: shopId });
 
             if (error || !result?.success) {
-                return res.json({ success: false });
+                console.error(`[Loyalty] Erro RPC para cliente ${clientId}:`, error || result?.message);
+                return res.json({ success: false, error: error?.message || result?.message });
             }
 
-            const { data: shop } = await supabaseAdmin.from('shops').select('name, whatsapp_instance').eq('id', shopId).single();
+            // Busca dados da loja de forma robusta
+            const { data: shop } = await supabaseAdmin
+                .from('shops')
+                .select('name, whatsapp_instance, whatsapp_connected')
+                .eq('id', shopId)
+                .single();
 
             const msg = await generateWhatsAppMessage('loyalty_reward', {
                 clientName: result.clientName,
                 discount: `${result.discount}${result.discountType === 'percentage' ? '%' : ' R$'}`,
                 code: result.couponCode,
                 validity: result.validityDays,
-                shopName: shop?.name
+                shopName: shop?.name || "Nossa Barbearia"
             }, shopId);
 
-            if (msg) {
-                await sendWhatsApp(result.clientPhone, msg, shop?.whatsapp_instance);
+            if (msg && shop?.whatsapp_connected) {
+                console.log(`[Loyalty] Enviando prêmio para ${result.clientPhone} via instância ${shop.whatsapp_instance}`);
+                await sendWhatsApp(result.clientPhone, msg, shop.whatsapp_instance);
+            } else {
+                console.warn(`[Loyalty] Mensagem não enviada: Template vazio ou WhatsApp desconectado.`);
             }
+
             res.json({ success: true, couponCode: result.couponCode });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
