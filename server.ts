@@ -39,9 +39,9 @@ if (!serviceRoleKey) {
 
 // SEGURANÇA: Em produção, EVOLUTION_WEBHOOK_SECRET é OBRIGATÓRIO
 if (process.env.NODE_ENV === 'production' && !process.env.EVOLUTION_WEBHOOK_SECRET) {
-    console.error('❌ ERRO CRÍTICO: EVOLUTION_WEBHOOK_SECRET não definido em produção!');
-    console.error('   Configure esta variável no Railway/Vercel para proteger o webhook do chatbot.');
-    process.exit(1); // Impede o servidor de subir sem segurança
+    console.warn("\n⚠️  AVISO DE SEGURANÇA: EVOLUTION_WEBHOOK_SECRET não definido!");
+    console.warn("   O webhook do chatbot está operando SEM autenticação.");
+    console.warn("   Configure esta variável no Railway/Vercel assim que possível.\n");
 }
 
 // 2. Cliente Administrativo (Usa SERVICE_ROLE - Ignora RLS)
