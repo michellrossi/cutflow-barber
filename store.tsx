@@ -1841,6 +1841,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.address !== undefined) payload.address = sanitize(updated.address);
         if (updated.phone !== undefined) payload.phone = sanitize(updated.phone);
 
+        // FIDELIDADE
+        if (updated.loyaltyEnabled !== undefined) payload.loyalty_enabled = updated.loyaltyEnabled;
+        if (updated.loyaltyMode !== undefined) payload.loyalty_mode = updated.loyaltyMode;
+        if (updated.loyaltyCardGoal !== undefined) payload.loyalty_card_goal = updated.loyaltyCardGoal;
+        if (updated.loyaltyPointsRatio !== undefined) payload.loyalty_points_ratio = updated.loyaltyPointsRatio;
+        if (updated.loyaltyPointsGoal !== undefined) payload.loyalty_points_goal = updated.loyaltyPointsGoal;
+        if (updated.loyaltyRewardValue !== undefined) payload.loyalty_reward_value = updated.loyaltyRewardValue;
+        if (updated.loyaltyRewardType !== undefined) payload.loyalty_reward_type = updated.loyaltyRewardType;
+        if (updated.loyaltyRewardValidityDays !== undefined) payload.loyalty_reward_validity_days = updated.loyaltyRewardValidityDays;
+
         const { data, error } = await supabase.from('settings').update(payload).eq('shop_id', shopId).select().single();
         if (error) throw error;
         
