@@ -1194,9 +1194,15 @@ async function startServer() {
             });
             await supabaseAdmin.from('shops').update({ whatsapp_instance: instanceName }).eq('id', shopId);
             const response = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connect/${instanceName}`, { headers: { 'apikey': process.env.WHATSAPP_API_KEY || '' } });
+            if (!response.ok) {
+                const errorData = await response.text();
+                console.error(`[WhatsApp API] Erro ao conectar instância: ${response.status} - ${errorData}`);
+                throw new Error(`Falha na Evolution API: ${response.status}`);
+            }
             const data = await response.json();
             res.json({ qrcode: data.base64, connected: data.instance?.state === 'open' });
         } catch (error: any) {
+            console.error(`[WhatsApp API] Erro crítico no endpoint qrcode:`, error.message);
             res.status(500).json({ error: error.message });
         }
     });
@@ -1208,6 +1214,13 @@ async function startServer() {
             if (!shop?.whatsapp_instance) return res.json({ connected: false });
             const r = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connectionState/${shop.whatsapp_instance}`,
                 { headers: { apikey: process.env.WHATSAPP_API_KEY || '' } });
+            
+            if (!r.ok) {
+                const txt = await r.text();
+                console.error(`[WhatsApp API] Erro no connectionState: ${r.status} - ${txt}`);
+                throw new Error(`Status indisponível na API (${r.status})`);
+            }
+
             const d = await r.json();
             const connected = d.instance?.state === 'open';
 
@@ -1223,6 +1236,7 @@ async function startServer() {
 
             res.json({ connected });
         } catch (error: any) {
+            console.error(`[WhatsApp API] Erro crítico no endpoint status:`, error.message);
             res.status(500).json({ error: error.message });
         }
     });
