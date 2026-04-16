@@ -50,7 +50,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     if (savedTab === 'settings') setIsSettingsOpen(true);
   }, []);
 
-  const { settings, trialStatus, daysRemaining, theme, toggleTheme, shop, myShops, switchShop, addAdditionalUnit, userRole, clients, reloadClients } = useShop();
+  const { settings, trialStatus, daysRemaining, theme, toggleTheme, shop, myShops, switchShop, addAdditionalUnit, userRole, clients, reloadClients, botPausedCount } = useShop();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isAddUnitOpen, setIsAddUnitOpen] = useState(false);
 
@@ -223,7 +223,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   
   <SidebarItem icon={<Target size={18} />} label="Metas" active={activeTab === 'goals'} onClick={() => handleTabChange('goals')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<MessageSquare size={18} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} badge={state.botPausedCount} />
+  <SidebarItem icon={<MessageSquare size={18} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} badge={botPausedCount} />
   
   <SidebarItem icon={<Sparkles size={18} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} expanded={isSidebarExpanded} />
   
