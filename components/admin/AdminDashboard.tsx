@@ -205,11 +205,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     expanded={isSidebarExpanded}
   />
 
-  <SidebarItem icon={<Scissors size={18} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} expanded={isSidebarExpanded} />
-  
-  <SidebarItem icon={<CalendarCheck size={18} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} expanded={isSidebarExpanded} />
-  
-  <SidebarItem icon={<UserCircle size={18} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<UserCircle size={18} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients'} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<CreditCard size={18} />} label="Assinaturas" active={activeTab === 'subscriptions'} onClick={() => handleTabChange('subscriptions')} expanded={isSidebarExpanded} />
   
@@ -223,7 +219,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   
   <SidebarItem icon={<Target size={18} />} label="Metas" active={activeTab === 'goals'} onClick={() => handleTabChange('goals')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<MessageSquare size={18} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} badge={botPausedCount} />
+  <SidebarItem icon={<MessageSquare size={18} />} label="Automação" active={activeTab === 'reminders'} onClick={() => handleTabChange('reminders')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<Sparkles size={18} />} label="Insights (IA)" active={activeTab === 'insight'} onClick={() => handleTabChange('insight')} expanded={isSidebarExpanded} />
   
@@ -233,16 +229,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   
   <SidebarItem icon={<Settings size={18} />} label="Configurações" active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} expanded={isSidebarExpanded} />
 
-  {userRole === 'owner' && (
-    <button
-      onClick={() => setIsAddUnitOpen(true)}
-      className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-xs gap-3 text-slate-700 hover:bg-orange-50 hover:text-orange-600 ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}
-      title="Nova Barbearia / Unidade"
-    >
-      <span className="shrink-0 text-slate-400"><Store size={18} /></span>
-      {isSidebarExpanded && <span className="font-bold">+ Nova Unidade</span>}
-    </button>
-  )}
+  <SidebarItem icon={<Scissors size={18} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} expanded={isSidebarExpanded} />
   
   <div className="pt-2 mt-1">
       <div className="h-px bg-slate-100 mb-2 mx-2"></div>
@@ -292,15 +279,36 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
 
         <header className="h-16 bg-white border-b border-slate-200 flex items-center px-4 md:px-8 justify-between shrink-0">
              <h2 className="text-xl md:text-2xl font-bold text-slate-900">{getTabLabel(activeTab)}</h2>
-             <div className="flex items-center gap-4">
+             <div className="flex items-center gap-2 md:gap-4">
+                {/* Desktop Buttons */}
+                <div className="hidden md:flex items-center gap-3 mr-2">
+                    <button 
+                        onClick={onViewClient}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-all"
+                        title="Abrir Agenda do Cliente"
+                    >
+                        <Smartphone size={16}/> Agenda Digital
+                    </button>
+                    
+                    {userRole === 'owner' && (
+                        <button 
+                            onClick={() => setIsAddUnitOpen(true)}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 text-xs font-bold transition-all border border-orange-100"
+                        >
+                            <Plus size={16}/> Unidade
+                        </button>
+                    )}
+                </div>
+
                 <button 
                     onClick={onViewClient}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 text-sm font-medium transition-colors md:hidden"
                 >
                     <ExternalLink size={16}/> Ver Agenda
                 </button>
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold uppercase">
+                
+                <div className="flex items-center gap-2 pl-2 border-l border-slate-100">
+                    <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold uppercase shadow-sm">
                         {settings.name?.charAt(0) || 'A'}
                     </div>
                     <span className="text-sm text-slate-800 hidden md:inline font-bold">

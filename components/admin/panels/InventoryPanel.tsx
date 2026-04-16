@@ -411,7 +411,9 @@ export const InventoryPanel: React.FC = () => {
                   </div>
                )}
 
-              <h3 className="font-bold text-slate-900 text-sm leading-tight mb-0.5 group-hover:text-orange-600 transition-colors uppercase pr-4">{product.name}</h3>
+              <div className="min-h-[40px] mb-1">
+                <h3 className="font-bold text-slate-900 text-sm leading-tight group-hover:text-orange-600 transition-colors uppercase pr-4 line-clamp-2">{product.name}</h3>
+              </div>
               <p className="text-[9px] text-slate-400 font-bold uppercase mb-3">{product.category}</p>
 
               <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-slate-50">

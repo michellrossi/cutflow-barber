@@ -750,6 +750,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 const updatedProduct = mapProduct(payload.new);
                 setState(prev => {
                     if (payload.eventType === 'INSERT') {
+                        const exists = prev.products.some(p => p.id === updatedProduct.id);
+                        if (exists) return prev;
                         return { ...prev, products: [...prev.products, updatedProduct] };
                     }
                     if (payload.eventType === 'UPDATE') {

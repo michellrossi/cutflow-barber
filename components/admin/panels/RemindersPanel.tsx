@@ -8,11 +8,8 @@ import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { useToast } from '../../ui/ToastContext';
 
 export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab = 'clients' }) => {
-    const {
-        messageTemplates, addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
-        messageCategories, addMessageCategory, removeMessageCategory,
         automationTriggers, addAutomationTrigger, updateAutomationTrigger, removeAutomationTrigger,
-        settings, professionals, services, shop,
+        settings, professionals, services, shop, botPausedCount,
         getWhatsAppQRCode, getWhatsAppStatus, disconnectWhatsApp
     } = useShop();
     const { showToast } = useToast();
@@ -315,13 +312,18 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
                 </button>
                 <button
                     onClick={() => setActiveTab('chatbot')}
-                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${activeTab === 'chatbot'
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all relative ${activeTab === 'chatbot'
                             ? 'bg-white text-orange-600 shadow-sm'
                             : 'text-slate-500 hover:text-slate-700'
                         }`}
                 >
                     <MessageSquare size={18} />
                     Atendimento IA
+                    {botPausedCount > 0 && (
+                        <span className="flex items-center justify-center bg-red-500 text-white text-[10px] font-black rounded-full w-5 h-5 shadow-sm animate-pulse">
+                            {botPausedCount}
+                        </span>
+                    )}
                 </button>
             </div>
 
