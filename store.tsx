@@ -547,7 +547,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // Executa queries de configurações e dados estáticos em paralelo
         // LAZY LOAD: clients NÃO está aqui — é carregado sob demanda pela aba Clientes
-        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes, goalsRes] = await Promise.all([
+        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes, goalsRes, sessionsRes] = await Promise.all([
             supabase.from('settings').select('*').eq('shop_id', shopId).single(),
             supabase.from('services').select('*').eq('shop_id', shopId),
             supabase.from('professionals').select('*').eq('shop_id', shopId),
