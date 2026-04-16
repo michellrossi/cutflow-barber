@@ -635,9 +635,11 @@ CREATE POLICY "Dono_Gere_Gatilhos" ON public.automation_triggers FOR ALL USING (
 DROP POLICY IF EXISTS "Server_Only_Tokens" ON public.client_auth_tokens;
 CREATE POLICY "Server_Only_Tokens" ON public.client_auth_tokens FOR ALL USING (false) WITH CHECK (false);
 
--- Chat Sessions (Exclusivo para Service Role da IA)
+-- Chat Sessions (IA e Donos)
 DROP POLICY IF EXISTS "Allow server-side access to chat sessions" ON public.whatsapp_chat_sessions;
 CREATE POLICY "Allow server-side access to chat sessions" ON public.whatsapp_chat_sessions FOR ALL TO service_role USING (true) WITH CHECK (true);
+DROP POLICY IF EXISTS "Dono_Gere_Sessoes" ON public.whatsapp_chat_sessions;
+CREATE POLICY "Dono_Gere_Sessoes" ON public.whatsapp_chat_sessions FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = whatsapp_chat_sessions.shop_id AND owner_id = auth.uid()));
 
 -- Metas
 DROP POLICY IF EXISTS "Dono_Gere_Metas" ON public.goals;
