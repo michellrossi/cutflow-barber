@@ -445,7 +445,7 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
 
     // 2. Passa a instrução para a criação do modelo (AQUI É O LUGAR CERTO)
     const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.5-flash-lite",
         tools,
         systemInstruction,
     });
@@ -1019,7 +1019,7 @@ async function runCronLogic() {
 
                 try {
                     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-                    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+                    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
                     const prompt = `Você é um Consultor de Negócios especializado em barbearias de alto padrão. 
                     Analise os dados abaixo e escreva um parágrafo curto, direto e motivador (máximo 400 caracteres) para o dono da barbearia.
