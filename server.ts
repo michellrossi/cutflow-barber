@@ -1461,7 +1461,7 @@ async function startServer() {
                 return res.status(401).end();
             }
         }
-        if (body.event?.toUpperCase() !== 'MESSAGES_UPSERT') return res.status(200).send('OK');
+        if (body.event !== 'messages.upsert' && body.event !== 'MESSAGES_UPSERT') return res.status(200).send('OK');
 
         const messageData = body.data;
         if (!messageData || messageData.key.fromMe) return res.status(200).send('OK');
