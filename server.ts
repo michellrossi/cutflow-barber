@@ -113,7 +113,9 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
             // Busca um gatilho cujo nome combine com o slug
             const match = relatedTriggers.find(t => {
                 const name = t.name.toLowerCase();
-                if (triggerId === 'appointment_reminder') return name.includes('lembrete');
+                if (triggerId === 'appointment_reminder_24h') return name.includes('lembrete') && (name.includes('24h') || name.includes('24 h') || name.includes('dia'));
+                if (triggerId === 'appointment_reminder_1h') return name.includes('lembrete') && (name.includes('1h') || name.includes('1 h') || name.includes('hora'));
+                if (triggerId === 'appointment_reminder' || triggerId === 'lembrete') return name.includes('lembrete');
                 if (triggerId === 'immediate_confirmation') return name.includes('confirmação');
                 if (triggerId === 'post_sale') return name.includes('pós-venda') || name.includes('avaliação');
                 if (triggerId === 'rescheduling_request') return name.includes('reagendamento');
@@ -173,8 +175,12 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
             } else {
                 content = `Olá [CLIENTE]!\nSeu horário de [SERVICO] com [BARBEIRO] no dia [DATA] às [HORA] foi pré-agendado na [BARBEARIA]. Até logo! ✂️💈`;
             }
-        } else if (triggerName.includes('lembrete') || triggerId === 'appointment_reminder') {
-            content = `Olá [CLIENTE]!\nPassando para lembrar do seu horário de [SERVICO] com [BARBEIRO] em [DATA] às [HORA] na [BARBEARIA]. Nos vemos lá! ✂️💈`;
+        } else if (triggerName.includes('lembrete') || triggerId.startsWith('appointment_reminder')) {
+            if (triggerId.includes('1h')) {
+                content = `Olá [CLIENTE]!\nFalta apenas 1 HORA para seu horário de [SERVICO] com [BARBEIRO] na [BARBEARIA]. Nos vemos às [HORA]! ✂️💈`;
+            } else {
+                content = `Olá [CLIENTE]!\nPassando para lembrar do seu horário de [SERVICO] com [BARBEIRO] em [DATA] às [HORA] na [BARBEARIA]. Nos vemos lá! ✂️💈`;
+            }
         } else if (triggerName.includes('pós-venda') || triggerName.includes('avaliação') || triggerId === 'post_sale') {
             content = `Olá [CLIENTE]!\nO que achou do seu atendimento hoje com [BARBEIRO]? Sua opinião é muito importante para nós da [BARBEARIA].`;
         } else if (triggerName.includes('reagendamento') || triggerId === 'rescheduling_request') {
@@ -686,7 +692,7 @@ async function runCronLogic() {
                 const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
                 const formattedTime = apt.time.substring(0, 5);
 
-                const msg = await generateWhatsAppMessage('appointment_reminder', {
+                const msg = await generateWhatsAppMessage('appointment_reminder_24h', {
                     clientName: apt.client_name,
                     services: servicesNames,
                     date: formattedDate,
@@ -734,7 +740,7 @@ async function runCronLogic() {
                 const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
                 const formattedTime = apt.time.substring(0, 5);
 
-                const msg = await generateWhatsAppMessage('appointment_reminder', {
+                const msg = await generateWhatsAppMessage('appointment_reminder_1h', {
                     clientName: apt.client_name,
                     services: servicesNames,
                     date: formattedDate,

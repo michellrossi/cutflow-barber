@@ -28,7 +28,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '../../ui/ToastContext';
 
 export const InventoryPanel: React.FC = () => {
-  const { products, addProduct, updateProduct, removeProduct, settings } = useShop();
+  const { products, addProduct, updateProduct, removeProduct, settings, formatCurrencyBRL } = useShop();
   const { showToast } = useToast();
   
   // UI State
@@ -177,8 +177,8 @@ export const InventoryPanel: React.FC = () => {
     const productData = {
       name: formData.name,
       category: formData.category,
-      costPrice: Number(formData.costPrice),
-      salePrice: Number(formData.salePrice),
+      costPrice: Math.round(Number(formData.costPrice) * 100) / 100,
+      salePrice: Math.round(Number(formData.salePrice) * 100) / 100,
       currentStock: Number(formData.currentStock),
       minStock: Number(formData.minStock)
     };
@@ -419,7 +419,7 @@ export const InventoryPanel: React.FC = () => {
               <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-slate-50">
                 <div>
                   <p className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Venda</p>
-                  <p className="text-base font-black text-slate-900">R$ {product.salePrice.toFixed(2)}</p>
+                  <p className="text-base font-black text-slate-900">{formatCurrencyBRL(product.salePrice)}</p>
                 </div>
                 <div className="text-right">
                   <p className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Estoque</p>
@@ -431,7 +431,7 @@ export const InventoryPanel: React.FC = () => {
                 <div className="flex justify-between items-center text-[9px] font-bold px-2 py-1 bg-emerald-50 text-emerald-600 rounded">
                   <span>Margem</span>
                   <span>
-                    +{((product.salePrice - product.costPrice) / product.salePrice * 100).toFixed(0)}%
+                    +{product.salePrice > 0 ? ((product.salePrice - product.costPrice) / product.salePrice * 100).toFixed(0) : 0}%
                   </span>
                 </div>
 

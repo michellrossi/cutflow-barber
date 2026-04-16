@@ -4,7 +4,7 @@ import { Users, Scissors, Calendar, Clock, Phone, User, DollarSign, TrendingUp, 
 import { motion } from 'framer-motion';
 
 export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) => void }> = ({ onNavigate }) => {
-    const { appointments, clients, professionals, services, settings, getWhatsAppStatus } = useShop();
+    const { appointments, clients, professionals, services, settings, getWhatsAppStatus, formatCurrencyBRL } = useShop();
     const [today, setToday] = useState<string>('');
     const [isMounted, setIsMounted] = useState(false);
     const [whatsappStatus, setWhatsappStatus] = useState<{ connected: boolean } | null>(null);
@@ -269,7 +269,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                     icon={<DollarSign size={18} />}
                     colorClass="text-emerald-600 bg-emerald-50"
                     label="Receita Hoje"
-                    value={`R$ ${revenueStats.today.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    value={formatCurrencyBRL(revenueStats.today)}
                     subtitle="Faturamento do dia"
                     onClick={() => onNavigate('finance')}
                 />
@@ -277,7 +277,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                     icon={<TrendingUp size={18} />}
                     colorClass="text-emerald-600 bg-emerald-50"
                     label="Receita da Semana"
-                    value={`R$ ${revenueStats.week.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    value={formatCurrencyBRL(revenueStats.week)}
                     subtitle="Últimos 7 dias"
                     onClick={() => onNavigate('finance')}
                 />
@@ -285,7 +285,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                     icon={<DollarSign size={18} />}
                     colorClass="text-emerald-600 bg-emerald-50"
                     label="Receita do Mês"
-                    value={`R$ ${revenueStats.month.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    value={formatCurrencyBRL(revenueStats.month)}
                     subtitle="Ciclo mensal atual"
                     onClick={() => onNavigate('finance')}
                 />
@@ -293,7 +293,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                     icon={<TrendingUp size={18} />}
                     colorClass="text-emerald-600 bg-emerald-50"
                     label="Receita do Ano"
-                    value={`R$ ${revenueStats.year.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    value={formatCurrencyBRL(revenueStats.year)}
                     subtitle="Acumulado anual"
                     onClick={() => onNavigate('finance')}
                 />

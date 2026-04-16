@@ -95,6 +95,8 @@ interface ShopContextType extends ShopState {
   // New Report Method
   fetchFinancialReport: (startDate: string, endDate: string) => Promise<Appointment[]>;
   toggleTheme: () => void;
+  formatCurrencyBRL: (value: number) => string;
+  reloadClients: (shopId: string) => Promise<void>;
 }
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -161,6 +163,13 @@ const sanitize = (text: string): string => {
     ALLOWED_TAGS: [],
     ALLOWED_ATTR: []
   });
+};
+
+export const formatCurrencyBRL = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+    }).format(value || 0).replace(/\s/g, '');
 };
 
 export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -2253,6 +2262,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       logoutClient,
       toggleTheme,
       reloadClients,
+      formatCurrencyBRL,
       refresh: () => fetchData(state.shop?.id)
     }}>
       {children}
