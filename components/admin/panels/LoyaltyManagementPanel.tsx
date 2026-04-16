@@ -9,7 +9,19 @@ const WhatsappIcon = ({ size = 20, className = '' }) => (
 );
 
 export const LoyaltyManagementPanel: React.FC = () => {
-    const { clients, settings } = useShop();
+    const { shop, clients, settings, reloadClients } = useShop();
+    const [loading, setLoading] = React.useState(false);
+
+    React.useEffect(() => {
+        const load = async () => {
+            if (shop?.id && clients.length === 0) {
+                setLoading(true);
+                await reloadClients(shop.id);
+                setLoading(false);
+            }
+        };
+        load();
+    }, [shop?.id, clients.length, reloadClients]);
 
     const getProgress = (client: any) => {
         if (settings.loyaltyMode === 'card') {
@@ -36,40 +48,53 @@ export const LoyaltyManagementPanel: React.FC = () => {
 
     return (
         <div className="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
-            <h3 className="text-lg font-bold text-slate-900 mb-6">Gestão de Clientes</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-6 font-montserrat">Gestão de Clientes</h3>
             <div className="space-y-4">
-                {clients.map(client => (
-                    <div key={client.id} className="p-4 border border-slate-200 rounded-lg flex items-center gap-4">
-                        <div className="flex-1">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <span className="font-bold text-slate-900">{client.name}</span>
-                                    {isGoalReached(client) && <Trophy className="text-yellow-500" size={18} />}
-                                </div>
-                                <span className="text-xs text-slate-500">
-                                    {settings.loyaltyMode === 'card' 
-                                        ? `${client.loyaltyCardCount || 0} / ${settings.loyaltyCardGoal || 0} visitas` 
-                                        : `${client.loyaltyPoints || 0} / ${settings.loyaltyPointsGoal || 0} pontos`}
-                                </span>
-                            </div>
-                            <div className="w-full bg-slate-200 rounded-full h-2.5">
-                                <div 
-                                    className={`h-2.5 rounded-full ${isGoalReached(client) ? 'bg-green-500' : 'bg-orange-500'}`} 
-                                    style={{ width: `${getProgress(client)}%` }}
-                                ></div>
-                            </div>
-                            <div className="mt-2 text-xs text-slate-400">
-                                Última visita: {client.createdAt ? new Date(client.createdAt).toLocaleDateString('pt-BR') : 'Sem histórico'}
-                            </div>
-                        </div>
-                        <button 
-                            onClick={() => openWhatsApp(client.phone)}
-                            className="p-2 text-slate-400 hover:text-green-500 transition-colors"
-                        >
-                            <WhatsappIcon size={20} />
-                        </button>
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-3">
+                        <div className="w-8 h-8 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin" />
+                        <p className="text-xs font-bold uppercase tracking-widest">Carregando Clientes...</p>
                     </div>
-                ))}
+                ) : clients.length === 0 ? (
+                    <div className="text-center py-12 text-slate-400">
+                        <p className="text-sm font-medium">Nenhum cliente encontrado para esta unidade.</p>
+                    </div>
+                ) : (
+                    clients.map(client => (
+                        <div key={client.id} className="p-4 border border-slate-200 rounded-2xl flex items-center gap-4 hover:border-orange-200 transition-all group">
+                            <div className="flex-1">
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-bold text-slate-700">{client.name}</span>
+                                        {isGoalReached(client) && <Trophy className="text-yellow-500" size={18} />}
+                                    </div>
+                                    <span className="text-xs font-black text-slate-400 uppercase">
+                                        {settings.loyaltyMode === 'card' 
+                                            ? `${client.loyaltyCardCount || 0} / ${settings.loyaltyCardGoal || 0} visitas` 
+                                            : `${client.loyaltyPoints || 0} / ${settings.loyaltyPointsGoal || 0} pts`}
+                                    </span>
+                                </div>
+                                <div className="w-full bg-slate-100 rounded-full h-2.5 p-0.5 border border-slate-200">
+                                    <div 
+                                        className={`h-full rounded-full transition-all duration-1000 ${isGoalReached(client) ? 'bg-emerald-500' : 'bg-orange-500'}`} 
+                                        style={{ width: `${getProgress(client)}%` }}
+                                    ></div>
+                                </div>
+                                <div className="mt-2 text-[10px] text-slate-400 font-bold uppercase tracking-tight flex justify-between">
+                                    <span>Última visita: {client.createdAt ? new Date(client.createdAt).toLocaleDateString('pt-BR') : '—'}</span>
+                                    {isGoalReached(client) && <span className="text-emerald-500">🏆 PRÊMIO DISPONÍVEL</span>}
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => openWhatsApp(client.phone)}
+                                title="Enviar mensagem"
+                                className="w-10 h-10 flex items-center justify-center bg-slate-50 text-slate-400 hover:bg-green-50 hover:text-green-600 rounded-xl transition-all border border-slate-200"
+                            >
+                                <WhatsappIcon size={20} />
+                            </button>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );
