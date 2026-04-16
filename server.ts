@@ -872,6 +872,12 @@ async function runCronLogic() {
 
     // 6. Aniversariantes do Dia
     // FIX 5: Usa RPC com índice de expressão em vez de ilike sem índice
+    // Guarda de horário: envia aniversários apenas a partir das 9h (horário de SP)
+    const currentHourSP = now.hour();
+    if (currentHourSP < 9) {
+        console.log(`[Cron] Aniversários aguardando janela das 9h (hora atual SP: ${currentHourSP}h). Pulando.`);
+    } else {
+
     const { data: bdayClients, error: bdayError } = await supabaseAdmin
         .rpc('get_birthday_clients_today');
 
@@ -906,6 +912,8 @@ async function runCronLogic() {
             }
         }
     }
+
+    } // fim do bloco de guarda de horário (aniversários)
 
     // FIX 2 (Cron Semanal): Limpa sessões de chatbot inativas há mais de 7 dias
     // Executa apenas às segundas-feiras (dia 1 da semana no dayjs)

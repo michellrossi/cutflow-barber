@@ -232,6 +232,17 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   <SidebarItem icon={<User size={18} />} label="Perfil" active={activeTab === 'profile'} onClick={() => handleTabChange('profile')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<Settings size={18} />} label="Configurações" active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} expanded={isSidebarExpanded} />
+
+  {userRole === 'owner' && (
+    <button
+      onClick={() => setIsAddUnitOpen(true)}
+      className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-xs gap-3 text-slate-700 hover:bg-orange-50 hover:text-orange-600 ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}
+      title="Nova Barbearia / Unidade"
+    >
+      <span className="shrink-0 text-slate-400"><Store size={18} /></span>
+      {isSidebarExpanded && <span className="font-bold">+ Nova Unidade</span>}
+    </button>
+  )}
   
   <div className="pt-2 mt-1">
       <div className="h-px bg-slate-100 mb-2 mx-2"></div>
@@ -242,7 +253,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           <Smartphone size={18} className="group-hover:text-orange-500 transition-colors shrink-0" />
           {isSidebarExpanded && (
             <>
-              <span className="flex-1 text-left text-sm">Agenda Digital</span>
+              <span className="flex-1 text-left text-xs">Agenda Digital</span>
               <ExternalLink size={12} className="opacity-50" />
             </>
           )}
@@ -398,7 +409,7 @@ const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: bool
     return (
         <button 
             onClick={onClick}
-            className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${expanded ? 'gap-3' : 'justify-center'} ${active ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
+            className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-xs ${expanded ? 'gap-3' : 'justify-center'} ${active ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
         >
             <span className={`shrink-0 ${active ? 'text-orange-500' : 'text-slate-700'}`}>{icon}</span>
             {expanded && <span>{label}</span>}
