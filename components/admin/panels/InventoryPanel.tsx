@@ -248,27 +248,6 @@ export const InventoryPanel: React.FC = () => {
         </button>
       </div>
 
-      {/* 5. Relatório de Margem e Performance (Top Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <InsightCard 
-          icon={<DollarSign className="text-emerald-500" />}
-          label="Valor em Estoque"
-          value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(insights.totalCost)}
-          subtitle="Capital imobilizado"
-        />
-        <InsightCard 
-          icon={<TrendingUp className="text-blue-500" />}
-          label="Margem Média"
-          value={`${insights.avgMargin.toFixed(1)}%`}
-          subtitle="Rentabilidade da vitrine"
-        />
-        <InsightCard 
-          icon={<Package className="text-orange-500" />}
-          label="Item Principal"
-          value={insights.topProduct}
-          subtitle="Maior volume"
-        />
-      </div>
 
       {/* 2. Sub-menu Estilo 'Interruptor' (Categorias) */}
       <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">

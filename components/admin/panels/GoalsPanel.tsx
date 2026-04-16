@@ -158,12 +158,6 @@ export const GoalsPanel: React.FC = () => {
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-6 mb-8">
-        <InsightCard icon={<Target className="text-blue-500" />}   label="Total"       value={String(stats.total)} subtitle="Metas no período"     />
-        <InsightCard icon={<Trophy className="text-orange-500" />}  label="Concluídas"  value={String(stats.done)}  subtitle="100% ou mais"          />
-        <InsightCard icon={<TrendingUp className="text-emerald-500" />} label="Taxa"   value={`${stats.pct}%`}     subtitle="Aproveitamento geral"  />
-      </div>
 
       {/* Tabs + Criar */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">

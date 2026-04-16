@@ -33,7 +33,7 @@ const BADGE_COLOR = (i: number) =>
 const KPI: React.FC<{
   icon: React.ReactNode; label: string; value: string; sub?: string;
   accent?: string; bg?: string;
-}> = ({ icon, label, value, sub, accent = 'text-[#F16A1B]', bg = 'bg-orange-50' }) => (
+}> = ({ icon, label, value, sub, accent = 'text-slate-900', bg = 'bg-slate-50' }) => (
   <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
     <div className="flex items-center gap-2 mb-3">
       <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center`}>{icon}</div>

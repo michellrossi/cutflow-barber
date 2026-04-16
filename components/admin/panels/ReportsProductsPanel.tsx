@@ -60,7 +60,7 @@ const RankingCard: React.FC<{
 const KPI: React.FC<{
   icon: React.ReactNode; label: string; value: string; sub?: string;
   accent?: string; bg?: string;
-}> = ({ icon, label, value, sub, accent = 'text-[#F16A1B]', bg = 'bg-orange-50' }) => (
+}> = ({ icon, label, value, sub, accent = 'text-slate-900', bg = 'bg-slate-50' }) => (
   <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
     <div className="flex items-center gap-3 mb-4">
       <div className={`w-10 h-10 rounded-xl ${bg} flex items-center justify-center`}>{icon}</div>
@@ -128,6 +128,13 @@ export const ReportsProductsPanel: React.FC<Props> = ({ dateRange }) => {
   const ticketMedio = useMemo(() =>
     completedAppts.length > 0 ? fatRealizado / completedAppts.length : 0,
     [fatRealizado, completedAppts]);
+
+  // Margem média ponderada dos produtos
+  const margemMedia = useMemo(() => {
+    const valid = products.filter(p => p.salePrice > 0);
+    if (valid.length === 0) return 0;
+    return valid.reduce((s, p) => s + ((p.salePrice - p.costPrice) / p.salePrice) * 100, 0) / valid.length;
+  }, [products]);
 
   // ── Alertas de estoque ──────────────────────────────────────────────────────
   const criticos = useMemo(() =>
@@ -206,9 +213,11 @@ export const ReportsProductsPanel: React.FC<Props> = ({ dateRange }) => {
         <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
           <Zap size={16} className="text-orange-500" /> Desempenho de Vendas
         </h3>
-        <div className="grid grid-cols-1 gap-5 mb-5">
-          <KPI icon={<ShoppingBag size={18} className="text-[#F16A1B]" />}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
+          <KPI icon={<ShoppingBag size={18} className="text-slate-600" />}
                label="Ticket Médio por Agendamento" value={fmt(ticketMedio)} sub={`Baseado em ${completedAppts.length} agendamentos concluídos`} />
+          <KPI icon={<TrendingUp size={18} className="text-slate-600" />}
+               label="Margem Média" value={`${margemMedia.toFixed(1)}%`} sub="Média ponderada dos produtos cadastrados" />
         </div>
 
         {/* Curva ABC */}
