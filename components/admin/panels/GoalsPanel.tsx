@@ -320,8 +320,8 @@ const GoalProgressCard: React.FC<{
           <div className="flex justify-between items-center mb-2">
             <span className={`text-2xl font-black ${colors.text}`}>{rawPct.toFixed(1)}%</span>
             <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${isBeat ? 'bg-emerald-100 text-emerald-700' :
-                clampPct >= 80 ? 'bg-emerald-50 text-emerald-600' :
-                  clampPct >= 50 ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
+              clampPct >= 80 ? 'bg-emerald-50 text-emerald-600' :
+                clampPct >= 50 ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'
               }`}>
               {isBeat && <Star size={10} className="inline mr-0.5 fill-current" />}
               {motiveText()}
@@ -393,51 +393,57 @@ const DailyGoalCalendar: React.FC<{
         </div>
       </div>
 
-      {/* Day labels */}
-      <div className="grid grid-cols-7 gap-1 max-w-xs mx-auto">
-        {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((d, i) => (
-          <div key={i} className="text-center text-[16px] font-black text-slate-600 uppercase tracking-wider">{d}</div>
-        ))}
+      {/* Cabeçalho dos Dias - Alinhamento fixo */}
+      <div className="flex justify-center mb-2">
+        <div className="grid grid-cols-7 gap-1 w-full max-w-sm">
+          {['dom', 'seg', 'ter', 'qua', 'qui', 'sex', 'sáb'].map(d => (
+            <div key={d} className="text-center text-[10px] font-black text-slate-400 uppercase tracking-tighter">
+              {d}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Calendar grid — sem rolagem, dias quadrados */}
-      <div className="space-y-1">
-        {weeks.map((week, wi) => (
-          <div key={wi} className="grid grid-cols-7 gap-1">
-            {week.map(({ date, isInRange }) => {
-              const dayNum = parseInt(date.split('-')[2]);
-              if (!isInRange) return <div key={date} className="aspect-square" />;
+      {/* Grid do Calendário - Centralizado e Compacto */}
+      <div className="flex justify-center">
+        <div className="grid grid-cols-7 gap-1 w-full max-w-sm">
+          {weeks.map((week, wi) => (
+            <React.Fragment key={wi}>
+              {week.map(({ date, isInRange }) => {
+                const dayNum = parseInt(date.split('-')[2]);
+                if (!isInRange) return <div key={date} className="aspect-square" />;
 
-              const val = dayValues[date] || 0;
-              const pct = goal.targetValue > 0 ? (val / goal.targetValue) * 100 : 0;
-              const isFuture = date > today;
-              const isToday = date === today;
-              const bubble = getBubbleClass(pct, isFuture);
+                const val = dayValues[date] || 0;
+                const pct = goal.targetValue > 0 ? (val / goal.targetValue) * 100 : 0;
+                const isFuture = date > today;
+                const isToday = date === today;
+                const bubble = getBubbleClass(pct, isFuture);
 
-              return (
-                <div key={date}
-                  className={`aspect-square rounded-xl border-2 flex flex-col items-center justify-center text-center transition-all ${bubble} ${isToday ? 'ring-2 ring-orange-500 ring-offset-1' : ''
-                    } ${isFuture ? 'opacity-35' : 'cursor-default'}`}>
-                  <span className="text-[14px] font-black leading-none">{dayNum}</span>
-                  {!isFuture ? (
-                    <>
-                      <span className="text-[12px] font-bold leading-tight text-center w-full px-0.5 mt-0.5">
-                        {isCount
-                          ? `${Math.round(val)}/${goal.targetValue}`
-                          : `${fmtShort(val)}/${fmtShort(goal.targetValue)}`}
-                      </span>
-                      <span className="text-[12px] font-black leading-none mt-0.5">
-                        ({pct.toFixed(0)}%)
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-[12px] opacity-25">–</span>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+                return (
+                  <div key={date}
+                    className={`aspect-square rounded-xl border flex flex-col items-center justify-start pt-1.5 pb-1 transition-all ${bubble} ${
+                      isToday ? 'ring-2 ring-orange-500 ring-offset-1 z-10' : ''
+                    } ${isFuture ? 'opacity-30' : 'cursor-default'}`}>
+                    
+                    {/* Dia do mês no centro, superior e maior */}
+                    <span className="text-sm font-black leading-none mb-1">{dayNum}</span>
+                    
+                    {!isFuture && (
+                      <div className="flex flex-col items-center leading-none">
+                        <span className="text-[8px] font-bold opacity-90 truncate px-0.5 mb-0.5">
+                          {isCount ? Math.round(val) : fmtShort(val)}
+                        </span>
+                        <span className="text-[8px] font-black">
+                          {pct.toFixed(0)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </React.Fragment>
+          ))}
+        </div>
       </div>
 
       {/* Legend */}
@@ -539,7 +545,7 @@ const GoalModal: React.FC<{
                 {!isCount && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">R$</span>}
                 <input name="targetValue" type="number" step={isCount ? '1' : '0.01'} min="1"
                   defaultValue={editingGoal?.targetValue} required
-                  className={`w-12 h-12 rounded-xl border-2 flex flex-col items-center justify-center text-center transition-all ${bubble}`}
+                  className={`w-full py-2.5 border border-orange-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none text-sm font-bold ${!isCount ? 'pl-10 pr-4' : 'px-4'}`}
                   placeholder={isCount ? 'Ex: 50' : 'Ex: 5000'} />
               </div>
             </div>
