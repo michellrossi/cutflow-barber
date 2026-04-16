@@ -188,6 +188,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     expanded={isSidebarExpanded}
   />
   
+  <SidebarItem icon={<CalendarCheck size={18} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} expanded={isSidebarExpanded} />
+  
   <SidebarItem 
     icon={<Users size={18} />} 
     label="Equipe" 
