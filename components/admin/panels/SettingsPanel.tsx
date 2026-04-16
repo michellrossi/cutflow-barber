@@ -13,8 +13,88 @@ export const SettingsPanel: React.FC = () => {
             </div>
 
             {/* Settings Content */}
-            <div className="bg-white border-slate-200 rounded-xl">
+            <div className="bg-white border-slate-200 rounded-xl space-y-12">
                 <ProfileSettings />
+                
+                <div className="pt-12 border-t border-slate-100 pb-12">
+                    <DangerZone />
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const DangerZone: React.FC = () => {
+    const { deleteCurrentShop, shop } = useShop();
+    const { showToast } = useToast();
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
+    const [confirmText, setConfirmText] = useState('');
+
+    const handleDelete = async () => {
+        if (confirmText !== 'EXCLUIR') return;
+        
+        setIsDeleting(true);
+        const { success, error } = await deleteCurrentShop();
+        setIsDeleting(false);
+
+        if (success) {
+            showToast('Unidade excluída com sucesso!');
+        } else {
+            showToast(error || 'Erro ao excluir unidade.', 'error');
+        }
+    };
+
+    return (
+        <div className="max-w-4xl bg-red-50/30 border border-red-100 rounded-xl p-8">
+            <div className="flex items-start gap-4">
+                <div className="p-3 bg-red-100 rounded-lg text-red-600">
+                    <Shield size={24} />
+                </div>
+                <div>
+                    <h3 className="text-xl font-bold text-red-900 mb-2">Zona de Perigo</h3>
+                    <p className="text-red-700/70 text-sm mb-6">
+                        Ao excluir esta unidade, todos os agendamentos, clientes, serviços e configurações da barbearia <strong>"{shop?.name}"</strong> serão removidos permanentemente. Esta ação não pode ser desfeita.
+                    </p>
+                    
+                    {!showConfirm ? (
+                        <button 
+                            onClick={() => setShowConfirm(true)}
+                            className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-md font-bold transition-all shadow-sm"
+                        >
+                            Excluir Unidade Permanentemente
+                        </button>
+                    ) : (
+                        <div className="space-y-4 animate-fade-in">
+                            <p className="text-sm font-bold text-red-900">
+                                Para confirmar, digite <span className="bg-red-100 px-2 py-0.5 rounded">EXCLUIR</span> abaixo:
+                            </p>
+                            <div className="flex gap-4">
+                                <input 
+                                    type="text" 
+                                    value={confirmText}
+                                    onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
+                                    placeholder="EXCLUIR"
+                                    className="px-4 py-3 border border-red-200 rounded-md bg-white text-red-900 font-bold focus:outline-none focus:ring-2 focus:ring-red-500 w-full max-w-[200px]"
+                                />
+                                <button 
+                                    onClick={handleDelete}
+                                    disabled={confirmText !== 'EXCLUIR' || isDeleting}
+                                    className={`px-8 py-3 rounded-md font-bold text-white transition-all flex items-center gap-2 ${confirmText === 'EXCLUIR' ? 'bg-red-600 hover:bg-red-700' : 'bg-red-300 cursor-not-allowed'}`}
+                                >
+                                    {isDeleting && <Loader2 size={18} className="animate-spin" />}
+                                    Confirmar Exclusão
+                                </button>
+                                <button 
+                                    onClick={() => { setShowConfirm(false); setConfirmText(''); }}
+                                    className="px-6 py-3 text-slate-500 hover:text-slate-800 font-bold transition-all"
+                                >
+                                    Cancelar
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

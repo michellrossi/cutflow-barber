@@ -22,6 +22,7 @@ interface ShopContextType extends ShopState {
   loadShopBySlug: (slug: string) => Promise<boolean>; 
   switchShop: (shopId: string) => Promise<void>;
   addAdditionalUnit: (shopName: string, slug: string, phone: string) => MutationResult;
+  deleteCurrentShop: () => MutationResult;
   refresh: () => void;
 
   // Actions - Now returning MutationResult
@@ -511,6 +512,15 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         let shopId = targetShopId;
         let currentShopData: Shop | null = state.shop;
 
+        // Se um targetShopId foi passado, precisamos garantir que temos os dados dessa loja
+        if (targetShopId) {
+            const { data: targetShopData } = await supabase.from('shops').select('*').eq('id', targetShopId).single();
+            if (targetShopData) {
+                shopId = targetShopId;
+                currentShopData = mapShop(targetShopData);
+            }
+        }
+
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         // Só tenta descobrir o shopId se ele NÃO foi passado
@@ -655,6 +665,32 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error("Error fetching data:", error);
     } finally {
         setLoading(false);
+    }
+  };
+
+  const deleteCurrentShop = async (): Promise<MutationResult> => {
+    try {
+        const shopId = state.shop?.id;
+        if (!shopId) throw new Error("Loja não identificada.");
+
+        // 1. Deleta a loja (Cascade no DB deve cuidar do resto)
+        const { error } = await supabase.from('shops').delete().eq('id', shopId);
+        if (error) throw error;
+
+        // 2. Atualiza a lista de lojas locais
+        const remainingShops = state.myShops.filter(s => s.id !== shopId);
+        
+        if (remainingShops.length > 0) {
+            // Se restarem lojas, muda para a primeira
+            await switchShop(remainingShops[0].id);
+        } else {
+            // Se não restarem lojas, desloga ou limpa tudo
+            await logout();
+        }
+
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
     }
   };
 
@@ -2233,6 +2269,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       loadShopBySlug,
       switchShop,
       addAdditionalUnit,
+      deleteCurrentShop,
       resetPassword,
       addService, updateService, removeService,
       addProfessional, updateProfessional, removeProfessional,
