@@ -445,7 +445,7 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
 
     // 2. Passa a instrução para a criação do modelo (AQUI É O LUGAR CERTO)
     const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
+        model: "gemini-1.5-flash",
         tools,
         systemInstruction,
     });
