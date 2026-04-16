@@ -428,17 +428,8 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
         }
     ];
 
-    const model = genAI.getGenerativeModel({
-        model: "gemini-2.0-flash",
-        tools,
-    });
-
-    const chat = model.startChat({
-        history: (session.messages || []).slice(-10).map((m: any) => ({
-            role: m.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: m.content }]
-        })),
-        systemInstruction: `Você é a IA assistente da barbearia "${shop?.name}". Seu objetivo é ajudar o cliente a agendar um serviço pelo WhatsApp.
+    // 1. Guarda a instrução em uma variável
+    const systemInstruction = `Você é a IA assistente da barbearia "${shop?.name}". Seu objetivo é ajudar o cliente a agendar um serviço pelo WhatsApp.
         Seja educado, breve e eficiente.
         Fluxo Sugerido:
         1. Se for a primeira vez, dê as boas-vindas e mostre os serviços.
@@ -450,7 +441,21 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
         Sempre use as ferramentas disponíveis para obter informações reais do banco de dados. Nunca invente horários ou preços.
         Linguagem: Português do Brasil de forma amigável.
         Hoje é: ${dayjs().tz('America/Sao_Paulo').format('dddd, DD [de] MMMM [de] YYYY')}.
-        O número do cliente é ${remoteJid.split('@')[0]}.`,
+        O número do cliente é ${remoteJid.split('@')[0]}.`;
+
+    // 2. Passa a instrução para a criação do modelo (AQUI É O LUGAR CERTO)
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        tools,
+        systemInstruction,
+    });
+
+    // 3. O chat inicia apenas com o histórico
+    const chat = model.startChat({
+        history: (session.messages || []).slice(-10).map((m: any) => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+        })),
     });
 
     // -------------------------------------------------------
