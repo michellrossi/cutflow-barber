@@ -44,17 +44,17 @@ if (process.env.NODE_ENV === 'production' && !process.env.EVOLUTION_WEBHOOK_SECR
     console.warn("   Configure esta variável no Railway/Vercel assim que possível.\n");
 }
 
-// 2. Cliente Administrativo (Usa SERVICE_ROLE - Ignora RLS)
+// Cliente Administrativo (Usa SERVICE_ROLE - Ignora RLS)
 export const supabaseAdmin = createClient(supabaseUrl || 'https://placeholder.supabase.co', serviceRoleKey || 'placeholder');
 
 // =====================================================================
-// FIX 1: Rate Limiting em memória por remoteJid (proteção anti-flood)
+// Rate Limiting em memória por remoteJid (proteção anti-flood)
 // Rejeita mensagens do mesmo número com intervalo menor que 3 segundos
 // =====================================================================
-const chatRateLimitMap = new Map<string, number>(); // { jid: lastTimestampMs }
-const CHAT_RATE_LIMIT_MS = 3000; // 3 segundos entre mensagens
+const chatRateLimitMap = new Map<string, number>();
+const CHAT_RATE_LIMIT_MS = 3000;
 
-// FIX 4: Cache de status de instâncias no escopo do módulo (fora do cron)
+// Cache de status de instâncias no escopo do módulo (fora do cron)
 // TTL de 5 minutos — evita N chamadas HTTP por execução do cron
 const instanceStatusCacheModule = new Map<string, { connected: boolean; expiresAt: number }>();
 
@@ -65,9 +65,8 @@ function isRateLimited(remoteJid: string): boolean {
         return true;
     }
     chatRateLimitMap.set(remoteJid, now);
-    // Limpeza do Map a cada 10.000 entradas para evitar vazamento de memória
     if (chatRateLimitMap.size > 10_000) {
-        const cutoff = now - 60_000; // remove entradas com mais de 1 minuto
+        const cutoff = now - 60_000;
         for (const [jid, ts] of chatRateLimitMap.entries()) {
             if (ts < cutoff) chatRateLimitMap.delete(jid);
         }
@@ -93,13 +92,10 @@ function detectsHandoff(message: string): boolean {
 
 /**
  * GERA MENSAGEM (TEMPLATE)
- * Busca do banco de dados usando supabaseAdmin para evitar bloqueios de RLS
  */
 async function generateWhatsAppMessage(triggerId: string, data: any, shopId: string, target: string = 'client') {
     console.log(`[MessageGen] Buscando template para Gatilho: ${triggerId} | Loja: ${shopId} | Alvo: ${target}`);
 
-    // 1. Tenta identificar se o triggerId é um slug (ex: 'appointment_reminder')
-    // Se for um slug, tentamos encontrar um gatilho UUID correspondente no banco
     let effectiveTriggerId = triggerId;
 
     if (triggerId.length < 30) {
@@ -110,7 +106,6 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
             .eq('active', true);
 
         if (relatedTriggers) {
-            // Busca um gatilho cujo nome combine com o slug
             const match = relatedTriggers.find(t => {
                 const name = t.name.toLowerCase();
                 if (triggerId === 'appointment_reminder_24h') return name.includes('lembrete') && (name.includes('24h') || name.includes('24 h') || name.includes('dia'));
@@ -132,7 +127,6 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
         }
     }
 
-    // 2. Busca o modelo de mensagem
     let query = supabaseAdmin
         .from('message_templates')
         .select('content, title')
@@ -158,10 +152,7 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
         console.log(`[MessageGen] Nenhum modelo customizado encontrado. Usando padrão do sistema.`);
     }
 
-
-    // 3. Fallback: Se não achou no banco, usa padrões
     if (!content) {
-        // Tenta obter o nome do gatilho para o fallback
         let triggerName = triggerId.toLowerCase();
 
         if (effectiveTriggerId.length > 30) {
@@ -200,9 +191,8 @@ async function generateWhatsAppMessage(triggerId: string, data: any, shopId: str
         }
     }
 
-    if (!content) return ''; // Segurança final
+    if (!content) return '';
 
-    // Substituição de variáveis
     return content
         .replace(/\[CLIENTE\]/g, data.clientName || 'Cliente')
         .replace(/\[SERVICO\]/g, data.services || 'serviço')
@@ -234,21 +224,14 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
 
     try {
         let baseUrl = apiUrl.trim();
-        if (!baseUrl.startsWith('http')) {
-            baseUrl = `https://${baseUrl}`;
-        }
+        if (!baseUrl.startsWith('http')) baseUrl = `https://${baseUrl}`;
         baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
         const url = `${baseUrl}/message/sendText/${instance}`;
 
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
-            body: JSON.stringify({
-                number: cleanPhone,
-                text: message,
-                delay: 1200,
-                linkPreview: false
-            })
+            body: JSON.stringify({ number: cleanPhone, text: message, delay: 1200, linkPreview: false })
         });
         const resData = await response.json().catch(() => ({}));
         console.log(`[WhatsApp] Status: ${response.status} | Destino: ${cleanPhone} | Resposta:`, resData);
@@ -260,21 +243,18 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
 }
 
 /**
- * LOGICA DO CHATBOT AI
- * FIX 2: Expiração de sessão (2h) + reset de contexto
- * FIX 4: Handoff humano + retry com backoff no Gemini
- * FIX 8: Usa RPC book_appointment em vez de INSERT direto
+ * CHATBOT AI
+ * - Dados reais pré-carregados do banco (profissionais, serviços, horários)
+ * - Apenas 2 ferramentas dinâmicas: check_availability e book_appointment
+ * - Elimina alucinações de nomes/preços/dias de funcionamento
  */
 async function handleChatbotAI(shopId: string, remoteJid: string, clientName: string, message: string, instance: string) {
     console.log(`[Chatbot] Processando para ${clientName} (${remoteJid}) na loja ${shopId}`);
 
-    // -------------------------------------------------------
-    // FIX 4: Detecção de handoff — verifica ANTES de qualquer IA
-    // -------------------------------------------------------
+    // Detecção de handoff — verifica ANTES de qualquer IA
     if (detectsHandoff(message)) {
         console.log(`[Chatbot] Handoff detectado para ${remoteJid}. Pausando bot.`);
 
-        // Pausa o bot para esta sessão
         await supabaseAdmin
             .from('whatsapp_chat_sessions')
             .upsert(
@@ -282,13 +262,11 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
                 { onConflict: 'shop_id,remote_jid' }
             );
 
-        // Notifica o cliente que o sistema vai acionar o dono
         await sendWhatsApp(remoteJid.split('@')[0],
             '✅ Entendido! Vou chamar um de nossos atendentes. Aguarde um momento, por favor.',
             instance
         );
 
-        // Notifica o dono da loja via WhatsApp
         try {
             const { data: shop } = await supabaseAdmin
                 .from('shops')
@@ -327,10 +305,8 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
         session = newSession;
     }
 
-    // -------------------------------------------------------
     // Verifica se o bot está pausado para handoff
-    // FIX 5: Reativa automaticamente após 24h de inatividade
-    // -------------------------------------------------------
+    // Reativa automaticamente após 24h de inatividade
     if (session?.bot_paused) {
         const lastMsg = session.last_message_at ? dayjs(session.last_message_at) : null;
         const hoursInactive = lastMsg ? dayjs().diff(lastMsg, 'hour', true) : 999;
@@ -347,9 +323,7 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
         }
     }
 
-    // -------------------------------------------------------
-    // FIX 2: Verificação de expiração de sessão (2 horas)
-    // -------------------------------------------------------
+    // Verificação de expiração de sessão (2 horas)
     const SESSION_EXPIRY_HOURS = 2;
     if (session?.last_message_at) {
         const lastMsg = dayjs(session.last_message_at);
@@ -364,8 +338,7 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
         }
     }
 
-    // FIX 2: Rate limit persistente no banco (segunda linha de defesa)
-    // Rejeita se message_count > 20 na última hora
+    // Rate limit persistente no banco (segunda linha de defesa)
     const MSG_LIMIT_PER_HOUR = 20;
     if ((session?.message_count || 0) >= MSG_LIMIT_PER_HOUR) {
         const lastMsgAt = session?.last_message_at ? dayjs(session.last_message_at) : null;
@@ -379,31 +352,70 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
         }
     }
 
-    // 2. Busca dados da loja para o contexto
-    const { data: shop } = await supabaseAdmin.from('shops').select('name').eq('id', shopId).single();
+    // -------------------------------------------------------
+    // 2. PRÉ-CARREGA dados reais do banco ANTES de chamar o Gemini
+    // Isso evita que o modelo invente profissionais, serviços ou horários
+    // -------------------------------------------------------
+    const { data: shop } = await supabaseAdmin
+        .from('shops')
+        .select('name')
+        .eq('id', shopId)
+        .single();
+
+    const { data: professionals } = await supabaseAdmin
+        .from('professionals')
+        .select('id, name, role')
+        .eq('shop_id', shopId)
+        .eq('active', true);
+
+    const { data: services } = await supabaseAdmin
+        .from('services')
+        .select('id, name, price, duration')
+        .eq('shop_id', shopId)
+        .eq('active', true);
+
+    const { data: shopSettings } = await supabaseAdmin
+        .from('settings')
+        .select('business_hours')
+        .eq('shop_id', shopId)
+        .single();
+
+    // Serializa os dados reais para injetar no systemInstruction
+    const professionalsText = professionals && professionals.length > 0
+        ? professionals.map(p => `- ${p.name} (ID: ${p.id})`).join('\n')
+        : '(nenhum profissional cadastrado)';
+
+    const servicesText = services && services.length > 0
+        ? services.map(s => `- ${s.name} | R$${Number(s.price).toFixed(2)} | ${s.duration}min (ID: ${s.id})`).join('\n')
+        : '(nenhum serviço cadastrado)';
+
+    const daysMap: Record<string, string> = {
+        sunday: 'Domingo', monday: 'Segunda', tuesday: 'Terça',
+        wednesday: 'Quarta', thursday: 'Quinta', friday: 'Sexta', saturday: 'Sábado'
+    };
+    const businessHoursText = shopSettings?.business_hours
+        ? Object.entries(shopSettings.business_hours)
+            .map(([day, h]: [string, any]) =>
+                `- ${daysMap[day] || day}: ${h.active ? `${h.start} às ${h.end}` : 'FECHADO'}`
+            ).join('\n')
+        : '(horários não configurados)';
 
     // 3. Prepara Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
-    // Ferramentas do Agendamento
+    // NOTA: list_services e list_professionals foram REMOVIDAS das ferramentas.
+    // Os dados já estão injetados no systemInstruction abaixo com valores reais do banco.
+    // Isso elimina a alucinação de dados estáticos. Apenas ferramentas dinâmicas permanecem.
     const tools = [
         {
             functionDeclarations: [
                 {
-                    name: "list_services",
-                    description: "Retorna a lista de serviços oferecidos pela barbearia com preços e durações.",
-                },
-                {
-                    name: "list_professionals",
-                    description: "Retorna a lista de barbeiros/profissionais disponíveis.",
-                },
-                {
                     name: "check_availability",
-                    description: "Verifica horários livres para um barbeiro em uma data específica.",
+                    description: "Verifica horários livres para um barbeiro em uma data específica. SEMPRE chame antes de oferecer qualquer horário ao cliente.",
                     parameters: {
                         type: "OBJECT",
                         properties: {
-                            professional_id: { type: "STRING", description: "O ID do profissional." },
+                            professional_id: { type: "STRING", description: "O ID do profissional — use exatamente os IDs listados no contexto do sistema." },
                             date: { type: "STRING", description: "A data no formato YYYY-MM-DD." }
                         },
                         required: ["professional_id", "date"]
@@ -411,14 +423,14 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
                 },
                 {
                     name: "book_appointment",
-                    description: "Efetiva o agendamento no sistema.",
+                    description: "Efetiva o agendamento no sistema. SEMPRE chame após o cliente confirmar os dados. NUNCA confirme o agendamento sem receber success: true desta ferramenta.",
                     parameters: {
                         type: "OBJECT",
                         properties: {
-                            service_ids: { type: "ARRAY", items: { type: "STRING" }, description: "Lista de IDs dos serviços selecionados." },
-                            professional_id: { type: "STRING", description: "O ID do barbeiro selecionado." },
+                            service_ids: { type: "ARRAY", items: { type: "STRING" }, description: "Lista de IDs dos serviços selecionados — use exatamente os IDs listados no contexto do sistema." },
+                            professional_id: { type: "STRING", description: "O ID do barbeiro selecionado — use exatamente os IDs listados no contexto do sistema." },
                             date: { type: "STRING", description: "Data escolhida (YYYY-MM-DD)." },
-                            time: { type: "STRING", description: "Hora escolhida (HH:mm)." },
+                            time: { type: "STRING", description: "Hora escolhida (HH:mm) — deve ser um dos slots retornados por check_availability." },
                             total_value: { type: "NUMBER", description: "Valor total calculado dos serviços." }
                         },
                         required: ["service_ids", "professional_id", "date", "time"]
@@ -428,273 +440,101 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
         }
     ];
 
-    // 1. Guarda a instrução em uma variável
-    const systemInstruction = `Você é o assistente virtual da barbearia "${shop?.name}". Seu objetivo único é realizar agendamentos.
-
-    SISTEMA / PROMPT MASTER – CHATBOT BARBEARIA...
-...
-Seu objetivo principal é:
-1. Converter conversas em agendamentos.
-2. Reduzir abandono.
-3. Responder rápido.
-4. Passar sensação humana e profissional.
-5. Facilitar ao máximo a vida do cliente.
-
---------------------------------------------------
-        COMPORTAMENTO GERAL
-    --------------------------------------------------
-
-        1. Seja natural, educado e objetivo.
-2. Fale como humano, nunca como robô.
-3. Use mensagens curtas, fáceis de ler no celular.
-4. Use emojis com moderação: 💈✂️🔥📅
-    5. Sempre conduza para o próximo passo.
-6. Nunca deixe a conversa morrer sem pergunta final.
-7. Nunca complique escolhas.
-
-        Exemplo:
-    Errado:
-    "Temos diversos horários disponíveis, informe sua preferência."
-
-    Certo:
-    "Tenho 14h, 15h30 ou 17h. Qual prefere? 💈"
-
-    --------------------------------------------------
-        MEMÓRIA
-    --------------------------------------------------
-
-        8. Lembre tudo já informado:
-    - nome
-        - serviço
-        - barbeiro
-        - data
-        - horário
-        - preferência anterior
-
-    9. Nunca peça novamente algo já informado.
-
-10. Se cliente recorrente, sugira repetir última preferência.
-
-        Ex:
-    "Quer cortar com João novamente?"
-
-    --------------------------------------------------
-        ESCOPO
-    --------------------------------------------------
-
-        11. Você responde apenas assuntos da barbearia:
-    - agendamento
-        - horários
-        - serviços
-        - barbeiros
-        - localização
-        - valores
-        - funcionamento
-
-    12. Se fugir disso:
-    "Consigo te ajudar com assuntos da barbearia 💈"
-
-    --------------------------------------------------
-        AGENDAMENTO
-    --------------------------------------------------
-
-        13. Sempre que detectar intenção de marcar horário:
-    - quero cortar
-        - tem vaga
-            - agenda pra mim
-                - amanhã tem horário ?
-                    - preciso cortar
-
-Inicie fluxo imediatamente.
-
-14. Ordem ideal:
-
-    serviço → barbeiro → data → horário → nome → confirmação
-
-    15. Se cliente já informar algo, pule etapas desnecessárias.
-
-        Ex:
-    "Quero cortar amanhã com João"
-
-Pergunte apenas horário.
-
---------------------------------------------------
-        SERVIÇOS
-    --------------------------------------------------
-
-        16. Se cliente não disser serviço:
-
-    "Qual serviço você deseja? 💈
-    1. Corte
-    2. Corte + Barba
-    3. Barba
-    4. Outro"
-
-    --------------------------------------------------
-        BARBEIRO
-    --------------------------------------------------
-
-        17. Se não informar barbeiro:
-
-    "Tem preferência de barbeiro ou pode ser qualquer um?"
-
-    18. Se disser qualquer um:
-Escolha opções com maior disponibilidade.
-
---------------------------------------------------
-        DATAS
-    --------------------------------------------------
-
-        19. Você sabe que hoje é ${dayjs().tz('America/Sao_Paulo').format('dddd, DD/MM/YYYY')}. Para datas relativas(amanhã, segunda, etc), calcule o YYYY - MM - DD correto antes de chamar as ferramentas.
-
-20. Interprete corretamente:
-    - amanhã
-        - hoje
-        - segunda
-        - sexta
-        - fim de semana
-            - próximo sábado
-
-    21. Converter para formato correto antes de usar ferramentas.
-
---------------------------------------------------
-        DISPONIBILIDADE
-    --------------------------------------------------
-
-        22. Se o check_availability retornar horários, mostre - os.
-
-23. Se houver horários:
-Mostrar no máximo 3 ou 5 melhores opções.
-
-        Ex:
-    "Tenho esses horários amanhã:
-    10h
-    13h30
-    16h
-
-Qual prefere ? ✂️"
-
-    24. Priorizar:
-    - horário mais próximo
-        - horários redondos
-            - horário comercial popular
-
-    25. Se não houver vaga:
-Ofereça próxima melhor alternativa.
-
-        Ex:
-    "Amanhã lotou 😕
-Tenho quinta às 10h ou 14h.Qual prefere ? "
-
-Nunca invente que a barbearia está fechada sem antes consultar as ferramentas.
-
---------------------------------------------------
-        FECHAMENTO
-    --------------------------------------------------
-
-        26. Após o cliente escolher o horário, você DEVE usar a ferramenta book_appointment.Só confirme o agendamento após receber o sucesso do sistema.
-
-27. Só confirmar após sucesso real do sistema.
-
-28. Confirmação:
-
-    "Fechado 💈
-Agendado para amanhã às 14h com João.
-Te esperamos!"
-
-    --------------------------------------------------
-        ABANDONO
-    --------------------------------------------------
-
-        29. Se cliente sumir no meio do fluxo e sistema permitir retomada:
-
-    "Conseguiu escolher o horário? Tenho vagas ainda 💈"
-
-    30. Seja breve e sem insistência excessiva.
-
---------------------------------------------------
-        PREÇO
-    --------------------------------------------------
-
-        31. Se perguntarem preço:
-Responder valor e puxar para agendamento.
-
-        Ex:
-    "Corte sai por R$35 ✂️
-Tenho horário hoje às 17h, quer reservar ? "
-
---------------------------------------------------
-        INDECISÃO
-    --------------------------------------------------
-
-        32. Se cliente estiver enrolando:
-Reduza opções.
-
-        Errado:
-    "Temos muitos horários."
-
-    Certo:
-    "Melhores opções hoje:
-    15h
-    17h30
-
-Qual fica melhor pra você ? "
-
---------------------------------------------------
-        URGÊNCIA REAL
-    --------------------------------------------------
-
-        33. Se restarem poucos horários reais:
-
-    "Restam só 2 horários hoje 💈"
-
-Nunca inventar escassez.
-
---------------------------------------------------
-        CANCELAMENTO / REAGENDAMENTO
-    --------------------------------------------------
-
-        34. Você não cancela diretamente.
-
-35. Se cliente pedir cancelar ou remarcar:
-
-    "Para cancelamento ou remarcação, digite:
-atendente"
-
-    --------------------------------------------------
-        ÁUDIOS / MÍDIA
-    --------------------------------------------------
-
-        36. Se receber áudio / imagem não suportada:
-
-    "Pode me escrever em texto? Assim consigo te ajudar mais rápido 💈"
-
-    --------------------------------------------------
-        ESTILO DE RESPOSTA
-    --------------------------------------------------
-
-        37. Máximo de clareza.
-38. Máximo de conversão.
-39. Mínimo de fricção.
-40. Nunca parecer scriptado.
-
---------------------------------------------------
-        REGRA FINAL
-    --------------------------------------------------
-
-        Seu trabalho não é conversar.
-Seu trabalho é transformar interesse em agendamento.
+    const systemInstruction = `Você é o assistente virtual da barbearia "${shop?.name}", responsável exclusivamente por realizar agendamentos via WhatsApp.
+
+========================================================
+DADOS REAIS DA BARBEARIA — USE APENAS ESTES
+========================================================
+
+Hoje é: ${dayjs().tz('America/Sao_Paulo').format('dddd, DD/MM/YYYY')}
+
+PROFISSIONAIS CADASTRADOS (use exatamente estes nomes e IDs):
+${professionalsText}
+
+SERVIÇOS DISPONÍVEIS (use exatamente estes nomes, preços e IDs):
+${servicesText}
+
+HORÁRIO DE FUNCIONAMENTO:
+${businessHoursText}
+
+REGRA CRÍTICA: Você JÁ CONHECE os dados acima. NÃO invente outros profissionais, serviços, preços ou dias de funcionamento. Se não estiver na lista acima, não existe.
+
+========================================================
+REGRAS ABSOLUTAS — NUNCA QUEBRE
+========================================================
+
+1. NUNCA cite profissional que não esteja na lista acima.
+2. NUNCA cite serviço ou preço que não esteja na lista acima.
+3. Verifique o HORÁRIO DE FUNCIONAMENTO acima antes de dizer se a barbearia abre ou fecha em determinado dia.
+4. NUNCA ofereça um horário sem antes chamar check_availability e receber os slots disponíveis.
+5. NUNCA confirme agendamento sem ter recebido { success: true } da ferramenta book_appointment.
+
+========================================================
+FLUXO OBRIGATÓRIO DE AGENDAMENTO
+========================================================
+
+PASSO 1 — SERVIÇO
+  Apresente os serviços da lista acima. Pergunte qual o cliente deseja.
+
+PASSO 2 — BARBEIRO
+  Apresente os profissionais da lista acima. Pergunte se tem preferência.
+  Se "qualquer um": escolha o primeiro da lista.
+
+PASSO 3 — DATA
+  Pergunte a data. Converta datas relativas ("amanhã", "segunda") para YYYY-MM-DD.
+  Verifique no HORÁRIO DE FUNCIONAMENTO acima se o dia está marcado como FECHADO antes de prosseguir.
+  Se estiver FECHADO: informe e sugira o próximo dia disponível conforme a lista.
+
+PASSO 4 — HORÁRIO
+  Chame check_availability com o professional_id (da lista acima) e a data escolhida.
+  Se retornar { error: "A barbearia não abre nesta data." }: informe que está fechado e sugira outra data.
+  Se retornar lista vazia de slots: informe que não há horários e sugira outra data.
+  Se retornar slots: apresente no máximo 5, prefira horários redondos e comerciais.
+  NUNCA sugira horário que não esteja na resposta da ferramenta.
+
+PASSO 5 — CONFIRMAÇÃO
+  Antes de agendar, confirme com o cliente:
+  "Vou confirmar:
+  ✂️ Serviço: [nome exato da lista]
+  👤 Barbeiro: [nome exato da lista]
+  📅 Data: [data]
+  🕐 Horário: [horário retornado por check_availability]
+  💰 Valor: R$[preço exato da lista]
+  Confirma?"
+
+PASSO 6 — AGENDAMENTO
+  Após confirmação do cliente: chame book_appointment com os IDs corretos da lista.
+  Se { success: true }: "Agendado com sucesso! Te esperamos. 💈"
+  Se { success: false, error: "Horário já reservado..." }: informe e volte ao Passo 4.
+  Se outro erro: informe e ofereça tentar novamente.
+
+========================================================
+COMPORTAMENTO
+========================================================
+
+- Mensagens curtas e diretas. O cliente está no celular.
+- Emojis com moderação: ✂️ 💈 📅
+- Não pergunte o que o cliente já informou nesta conversa.
+- Se o cliente estiver indeciso, ofereça no máximo 2 ou 3 opções concretas.
+- Escopo: apenas agendamentos e informações da barbearia acima.
+- Outros assuntos: "Posso te ajudar com agendamentos da barbearia. 💈"
+- Cancelamento/remarcação: "Para cancelar ou remarcar, digite: atendente"
+- Áudio/imagem: "Pode me escrever em texto? Assim consigo te ajudar mais rápido. 💈"
+
+========================================================
+REGRA FINAL
+========================================================
+
+Seu trabalho é transformar intenção em agendamento real e confirmado no sistema.
+Dados inventados causam prejuízo real ao negócio. Use sempre os dados desta instrução e as ferramentas.
 `;
 
-
-    // 2. Passa a instrução para a criação do modelo (AQUI É O LUGAR CERTO)
     const model = genAI.getGenerativeModel({
         model: "gemini-2.5-flash-lite",
         tools,
         systemInstruction,
     });
 
-    // 3. O chat inicia apenas com o histórico
     const chat = model.startChat({
         history: (session.messages || []).slice(-20).map((m: any) => ({
             role: m.role === 'assistant' ? 'model' : 'user',
@@ -702,11 +542,9 @@ Seu trabalho é transformar interesse em agendamento.
         })),
     });
 
-    // -------------------------------------------------------
-    // FIX 4: Retry com backoff exponencial no Gemini
-    // -------------------------------------------------------
+    // Retry com backoff exponencial no Gemini
     const MAX_RETRIES = 3;
-    const RETRY_DELAYS_MS = [1000, 3000, 7000]; // backoff: 1s, 3s, 7s
+    const RETRY_DELAYS_MS = [1000, 3000, 7000];
 
     let reply = '';
     let lastError: any = null;
@@ -716,29 +554,20 @@ Seu trabalho é transformar interesse em agendamento.
             let result = await chat.sendMessage(message);
             let response = result.response;
 
-            // Loop para lidar com chamadas de funções
             const call = response.functionCalls();
             if (call && call.length > 0) {
                 const toolResults: any[] = [];
 
                 for (const fn of call) {
-                    console.log(`[Chatbot] Executando ferramenta: ${fn.name} | Args: `, fn.args);
+                    console.log(`[Chatbot] Executando ferramenta: ${fn.name} | Args:`, fn.args);
 
                     let data: any;
-                    if (fn.name === "list_services") {
-                        const { data: res } = await supabaseAdmin.from('services').select('id, name, price, duration').eq('shop_id', shopId);
-                        data = res;
-                    } else if (fn.name === "list_professionals") {
-                        const { data: res } = await supabaseAdmin.from('professionals').select('id, name, role').eq('shop_id', shopId);
-                        data = res;
-                    } else if (fn.name === "check_availability") {
+
+                    if (fn.name === "check_availability") {
                         const args: any = fn.args;
                         data = await getAvailableSlotsForAI(shopId, args.professional_id, args.date);
+
                     } else if (fn.name === "book_appointment") {
-                        // -----------------------------------------------
-                        // FIX 8: Usa RPC book_appointment em vez de INSERT
-                        // Herda: limite de 3 agendamentos/dia + anti-conflito
-                        // -----------------------------------------------
                         const args: any = fn.args;
                         const phone = remoteJid.split('@')[0];
 
@@ -760,7 +589,6 @@ Seu trabalho é transformar interesse em agendamento.
                                 .from('services')
                                 .select('price')
                                 .in('id', args.service_ids);
-
                             totalValue = svcData?.reduce((sum: number, s: any) => sum + (Number(s.price) || 0), 0) || 0;
                         }
 
@@ -804,14 +632,13 @@ Seu trabalho é transformar interesse em agendamento.
 
                 console.log(`[Chatbot] Enviando resultados das ferramentas:`, JSON.stringify(toolResults, null, 2));
                 const finalResult = await chat.sendMessage(toolResults);
-                const finalResponse = finalResult.response;
-                reply = finalResponse.text();
+                reply = finalResult.response.text();
             } else {
                 reply = response.text();
             }
 
             lastError = null;
-            break; // Sucesso — sai do loop de retry
+            break;
 
         } catch (error: any) {
             lastError = error;
@@ -834,7 +661,11 @@ Seu trabalho é transformar interesse em agendamento.
     }
 
     // 4. Salva histórico e incrementa contador de mensagens
-    const updatedMessages = [...(session.messages || []), { role: 'user', content: message }, { role: 'assistant', content: reply }];
+    const updatedMessages = [
+        ...(session.messages || []),
+        { role: 'user', content: message },
+        { role: 'assistant', content: reply }
+    ];
     await supabaseAdmin.from('whatsapp_chat_sessions')
         .update({
             messages: updatedMessages,
@@ -848,22 +679,28 @@ Seu trabalho é transformar interesse em agendamento.
 }
 
 async function getAvailableSlotsForAI(shopId: string, proId: string, date: string) {
-    // 1. Horário da Loja
     const { data: settings } = await supabaseAdmin.from('settings').select('business_hours').eq('shop_id', shopId).single();
     const dayOfWeek = dayjs(date).locale('en').format('dddd').toLowerCase();
 
-    // Mapeia o dia do inglês para a chave do DB se necessário (nosso settings usa chaves em inglês)
     const hours = settings?.business_hours?.[dayOfWeek];
     if (!hours || !hours.active) {
         console.log(`[Chatbot] Barbearia fechada em ${date} (${dayOfWeek})`);
         return { error: "A barbearia não abre nesta data." };
     }
 
-    // 2. Agendamentos e Bloqueios
-    const { data: appointments } = await supabaseAdmin.from('appointments').select('time').eq('professional_id', proId).eq('date', date).not('status', 'eq', 'cancelled');
-    const { data: blocks } = await supabaseAdmin.from('blocked_slots').select('start_time, end_time').eq('professional_id', proId).eq('date', date);
+    const { data: appointments } = await supabaseAdmin
+        .from('appointments')
+        .select('time')
+        .eq('professional_id', proId)
+        .eq('date', date)
+        .not('status', 'eq', 'cancelled');
 
-    // Gerar horários (slot de 30 em 30 min)
+    const { data: blocks } = await supabaseAdmin
+        .from('blocked_slots')
+        .select('start_time, end_time')
+        .eq('professional_id', proId)
+        .eq('date', date);
+
     const slots = [];
     let current = dayjs(`${date}T${hours.start}`);
     const end = dayjs(`${date}T${hours.end}`);
@@ -894,10 +731,6 @@ async function runCronLogic() {
 
     const maxRetries = 3;
 
-    // FIX 4: Cache de instâncias migrado para o escopo do módulo (instanceStatusCacheModule)
-    // com TTL de 5 minutos — sem reset a cada execução do cron
-
-    // Função auxiliar para verificar status real da API
     const isInstanceConnected = async (shopId: string, instanceName: string): Promise<boolean> => {
         if (!instanceName) return false;
         const cached = instanceStatusCacheModule.get(instanceName);
@@ -912,11 +745,10 @@ async function runCronLogic() {
             return connected;
         } catch (e) {
             console.error(`[Cron] Erro ao checar status da API para ${instanceName}:`, e);
-            instanceStatusCacheModule.set(instanceName, { connected: false, expiresAt: Date.now() + 60 * 1000 }); // TTL reduzido para falha
+            instanceStatusCacheModule.set(instanceName, { connected: false, expiresAt: Date.now() + 60 * 1000 });
             return false;
         }
     };
-
 
     // 1. Lembretes de 24 Horas
     const { data: apts24h } = await supabaseAdmin
@@ -938,7 +770,6 @@ async function runCronLogic() {
             const aptDateTime = dayjs.tz(`${apt.date}T${apt.time}`, 'America/Sao_Paulo');
             const diffHours = aptDateTime.diff(now, 'hour', true);
 
-            // Janela de precisão de 24h (entre 23h e 25h de antecedência)
             if (diffHours <= 25 && diffHours >= 23) {
                 const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
                 const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
@@ -986,7 +817,6 @@ async function runCronLogic() {
             const aptDateTime = dayjs.tz(`${apt.date}T${apt.time}`, 'America/Sao_Paulo');
             const diffMinutes = aptDateTime.diff(now, 'minute', true);
 
-            // Janela de precisão de 1h (entre 50 e 70 minutos de antecedência)
             if (diffMinutes <= 70 && diffMinutes >= 50) {
                 const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
                 const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
@@ -1137,13 +967,10 @@ async function runCronLogic() {
     }
 
     // 6. Aniversariantes do Dia
-    // FIX 5: Usa RPC com índice de expressão em vez de ilike sem índice
-    // Guarda de horário: envia aniversários apenas a partir das 9h (horário de SP)
     const currentHourSP = now.hour();
     if (currentHourSP < 9) {
         console.log(`[Cron] Aniversários aguardando janela das 9h (hora atual SP: ${currentHourSP}h). Pulando.`);
     } else {
-
         const { data: bdayClients, error: bdayError } = await supabaseAdmin
             .rpc('get_birthday_clients_today');
 
@@ -1152,7 +979,6 @@ async function runCronLogic() {
         }
 
         if (bdayClients && bdayClients.length > 0) {
-            // Busca dados das lojas para os aniversariantes (join manual)
             const shopIds = [...new Set(bdayClients.map((c: any) => c.shop_id))];
             const { data: shopList } = await supabaseAdmin
                 .from('shops')
@@ -1178,11 +1004,9 @@ async function runCronLogic() {
                 }
             }
         }
+    }
 
-    } // fim do bloco de guarda de horário (aniversários)
-
-    // FIX 2 (Cron Semanal): Limpa sessões de chatbot inativas há mais de 7 dias
-    // Executa apenas às segundas-feiras (dia 1 da semana no dayjs)
+    // Limpeza semanal de sessões de chatbot inativas (segundas-feiras)
     if (now.day() === 1) {
         const sevenDaysAgo = now.subtract(7, 'day').toISOString();
         const { error: cleanupError, count } = await supabaseAdmin
@@ -1197,14 +1021,12 @@ async function runCronLogic() {
     }
 
     // 7. Relatório Semanal Proativo (Domingos às 21h)
-    // Coleta dados dos últimos 7 dias vs 7 dias anteriores e envia insights para o dono
     if (now.day() === 0 && now.hour() === 21 && now.minute() < 11) {
         console.log("[Cron] Iniciando geração de Relatórios Semanais Proativos...");
 
         const sevenDaysAgo = now.subtract(7, 'day').format('YYYY-MM-DD');
         const fourteenDaysAgo = now.subtract(14, 'day').format('YYYY-MM-DD');
 
-        // 1. Busca apps dos últimos 14 dias
         const { data: allApts } = await supabaseAdmin
             .from('appointments')
             .select(`
@@ -1215,7 +1037,6 @@ async function runCronLogic() {
             .lte('date', todayStr);
 
         if (allApts && allApts.length > 0) {
-            // Agrupar por Shop
             const shopsData = new Map<string, any>();
             allApts.forEach(apt => {
                 if (!shopsData.has(apt.shop_id)) {
@@ -1232,35 +1053,29 @@ async function runCronLogic() {
                 else shop.prevWeek.push(apt);
             });
 
-            // Processar cada loja
             for (const [sId, data] of shopsData.entries()) {
                 if (!data.connected) continue;
 
-                // Busca o telefone do dono
                 const { data: sets } = await supabaseAdmin.from('settings').select('phone').eq('shop_id', sId).single();
                 if (!sets?.phone) continue;
 
-                // Calcula métricas Simples
                 const curRev = data.currentWeek.filter((a: any) => a.status === 'completed').reduce((sum: number, a: any) => sum + (a.total_value || 0), 0);
                 const preRev = data.prevWeek.filter((a: any) => a.status === 'completed').reduce((sum: number, a: any) => sum + (a.total_value || 0), 0);
                 const curCount = data.currentWeek.length;
                 const preCount = data.prevWeek.length;
 
-                // Top serviço (frequência)
                 const svcCounts: Record<string, number> = {};
                 data.currentWeek.forEach((a: any) => a.service_ids?.forEach((id: string) => svcCounts[id] = (svcCounts[id] || 0) + 1));
 
-                // Busca nomes dos serviços para o prompt
                 const topSvcIds = Object.entries(svcCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
                 const { data: svcsNames } = topSvcIds.length ? await supabaseAdmin.from('services').select('name').in('id', topSvcIds) : { data: [] };
                 const topSvcStr = svcsNames?.map(s => s.name).join(', ') || 'N/A';
 
-                // Prompt para o Gemini
                 const statsContext = `
                     Barbearia: ${data.name}
                     Faturamento desta semana: R$${curRev.toFixed(2)}
                     Faturamento semana passada: R$${preRev.toFixed(2)}
-                    Agendamentos desta semana: ${curCount} 
+                    Agendamentos desta semana: ${curCount}
                     Agendamentos semana passada: ${preCount}
                     Serviços mais procurados: ${topSvcStr}
                 `;
@@ -1399,7 +1214,6 @@ async function startServer() {
 
             console.log(`[AI Image] Prompt Flux: ${generatedPrompt}`);
 
-            // Usando o modelo FLUX que é consideravelmente superior para temas realistas
             const encodedPrompt = encodeURIComponent(generatedPrompt);
             const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true&model=flux&seed=${Math.floor(Math.random() * 999999)}`;
 
@@ -1419,7 +1233,11 @@ async function startServer() {
 
     app.post('/api/notify/confirmation', async (req, res) => {
         const { appointmentId } = req.body;
-        const { data: apt } = await supabaseAdmin.from('appointments').select('*, professionals(name, phone), shops(id, name, whatsapp_instance)').eq('id', appointmentId).single();
+        const { data: apt } = await supabaseAdmin
+            .from('appointments')
+            .select('*, professionals(name, phone), shops(id, name, whatsapp_instance)')
+            .eq('id', appointmentId)
+            .single();
 
         if (!apt || apt.confirmation_sent) return res.json({ success: true });
 
@@ -1470,7 +1288,6 @@ async function startServer() {
                 return res.json({ success: false, error: error?.message || result?.message });
             }
 
-            // Busca dados da loja de forma robusta
             const { data: shop } = await supabaseAdmin
                 .from('shops')
                 .select('name, whatsapp_instance, whatsapp_connected')
@@ -1559,6 +1376,7 @@ async function startServer() {
         try {
             const { data: shop } = await supabaseAdmin.from('shops').select('whatsapp_instance, whatsapp_connected').eq('id', shopId).single();
             if (!shop?.whatsapp_instance) return res.json({ connected: false });
+
             const r = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connectionState/${shop.whatsapp_instance}`,
                 { headers: { apikey: process.env.WHATSAPP_API_KEY || '' } });
 
@@ -1571,10 +1389,8 @@ async function startServer() {
             const d = await r.json();
             const connected = d.instance?.state === 'open';
 
-            // ALERT TRIGGER: Status drops from connected -> disconnected
             if (shop.whatsapp_connected === true && !connected) {
-                console.log(`[ALERT] CRITICAL Notificação de E-mail Despachada para o Dono da Barbearia ${shopId}: A instância do WhatsApp Desconectou! Acesso imediato necessário para retomada das automações.`);
-                // NOTE: Implementação do SendGrid / Resend webhook call passaria aqui.
+                console.log(`[ALERT] CRITICAL Notificação de E-mail Despachada para o Dono da Barbearia ${shopId}: A instância do WhatsApp Desconectou!`);
             }
 
             if (shop.whatsapp_connected !== connected) {
@@ -1606,38 +1422,30 @@ async function startServer() {
     // ROTAS DO ASAAS (PAGAMENTOS & ASSINATURAS)
     // ==========================================
 
-    // 1. Criar Cliente no Asaas
     app.post('/api/asaas/customers', async (req, res) => {
         try {
-            // Requer name, cpfCnpj, email, phone...
             const customer = await createAsaasCustomer(req.body);
-            // Salvar customer.id (asaas_customer_id) no banco (referente à barbearia/shop)
             res.json({ success: true, customer });
         } catch (error: any) {
             res.status(500).json({ success: false, error: error.message });
         }
     });
 
-    // 2. Criar Assinatura Recorrente
     app.post('/api/asaas/subscriptions', async (req, res) => {
         try {
             const subscription = await createAsaasSubscription(req.body);
-            // Salvar a assinatura no banco se necessário
             res.json({ success: true, subscription });
         } catch (error: any) {
             res.status(500).json({ success: false, error: error.message });
         }
     });
 
-    // 4. Checkout Transparente (Cartão e PIX)
     app.post('/api/asaas/checkout', async (req, res) => {
         try {
             const { shopId, customerParams, paymentParams } = req.body;
 
-            // 1. Criar Cliente
             const customer = await createAsaasCustomer(customerParams);
 
-            // 2. Criar Pagamento
             const payload = {
                 customer: customer.id,
                 billingType: paymentParams.billingType,
@@ -1661,12 +1469,9 @@ async function startServer() {
 
             if (shopId) {
                 let updates: any = { asaas_customer_id: customer.id };
-
-                // Se for cartão de crédito e já aprovar na mesma hora, libera o acesso imediatamente
                 if (payment.status === 'CONFIRMED' || payment.status === 'RECEIVED') {
                     updates.plan = 'active';
                 }
-
                 await supabaseAdmin.from('shops').update(updates).eq('id', shopId);
             }
 
@@ -1704,8 +1509,6 @@ async function startServer() {
     app.post('/api/whatsapp/webhook', async (req, res) => {
         const body = req.body;
 
-        // FIX 2: Validação de assinatura do webhook
-        // Configure EVOLUTION_WEBHOOK_SECRET no .env e no painel da Evolution API
         const webhookSecret = process.env.EVOLUTION_WEBHOOK_SECRET;
         if (webhookSecret) {
             const receivedSecret = req.headers['authorization'] || req.headers['apikey'];
@@ -1720,7 +1523,7 @@ async function startServer() {
         if (!messageData || messageData.key.fromMe) return res.status(200).send('OK');
 
         const remoteJid = messageData.key.remoteJid;
-        if (remoteJid.includes('@g.us')) return res.status(200).send('OK'); // Ignora grupos
+        if (remoteJid.includes('@g.us')) return res.status(200).send('OK');
 
         const pushName = messageData.pushName || 'Cliente';
         const messageText = messageData.message?.conversation || messageData.message?.extendedTextMessage?.text;
@@ -1730,14 +1533,8 @@ async function startServer() {
         const instanceName = body.instance;
         console.log(`[Chatbot Webhook] Evento recebido. Instância: "${instanceName}" | JID: ${remoteJid}`);
 
-        // -------------------------------------------------------
-        // FIX CRÍTICO: Busca o shopId pelo whatsapp_instance no banco.
-        // Antes tentava derivar o shopId pelo prefixo "shop-<uuid>",
-        // o que falha quando a instância tem nome livre (ex: "minhabarbearia").
-        // -------------------------------------------------------
         let shopId: string | null = null;
 
-        // 1. Tenta pelo nome da instância salvo em shops.whatsapp_instance
         if (instanceName) {
             const { data: shopByInstance } = await supabaseAdmin
                 .from('shops')
@@ -1751,27 +1548,23 @@ async function startServer() {
             }
         }
 
-        // 2. Fallback: convenção legada "shop-<uuid>"
         if (!shopId && instanceName?.startsWith('shop-')) {
             shopId = instanceName.replace('shop-', '');
             console.log(`[Chatbot] shopId "${shopId}" derivado pela convenção shop-<id> (fallback)`);
         }
 
         if (!shopId) {
-            console.warn(`[Chatbot] Webhook de instância desconhecida: "${instanceName}". Nenhuma loja encontrada. Configure whatsapp_instance nas Settings da loja.`);
+            console.warn(`[Chatbot] Webhook de instância desconhecida: "${instanceName}". Nenhuma loja encontrada.`);
             return res.status(200).send('OK');
         }
 
-        // FIX 1: Rate limiting em memória — rejeita flood de mensagens
         if (isRateLimited(remoteJid)) {
             console.warn(`[Chatbot] Rate limit atingido para ${remoteJid}. Mensagem descartada.`);
-            return res.status(200).send('OK'); // 200 para não causar retry no webhook
+            return res.status(200).send('OK');
         }
 
-        // Responde imediatamente ao webhook para evitar timeout da Evolution API
         res.status(200).send('OK');
 
-        // Processa de forma assíncrona (não bloqueia resposta HTTP)
         handleChatbotAI(shopId, remoteJid, pushName, messageText, instanceName)
             .catch((error: any) => {
                 console.error(`[Chatbot Error] Shop: ${shopId} | User: ${remoteJid} | Error:`, error.message);
@@ -1793,10 +1586,6 @@ async function startServer() {
     app.listen(Number(PORT), '0.0.0.0', () => {
         console.log(`Servidor ativo na porta ${PORT}`);
 
-        // ================================================================
-        // CRONS INTERNOS (node-cron)
-        // ================================================================
-
         // 1. Lembretes e Notificações (a cada 10 min)
         cron.schedule('*/10 * * * *', async () => {
             console.log('[node-cron] Disparando runCronLogic...');
@@ -1804,7 +1593,6 @@ async function startServer() {
         });
 
         // 2. Limpeza de Rate Limit (a cada hora)
-        // Reseta o contador de mensagens para todas as sessões inativas há 1h
         cron.schedule('0 * * * *', async () => {
             console.log('[node-cron] Resetando contadores de mensagens...');
             const oneHourAgo = dayjs().subtract(1, 'hour').toISOString();
