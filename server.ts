@@ -442,7 +442,7 @@ ESTILO: Amigável, curto, use emojis 💈✂️. Fale como um humano, não use l
 
     // 2. Passa a instrução para a criação do modelo (AQUI É O LUGAR CERTO)
     const model = genAI.getGenerativeModel({
-        model: "gemini-1.5-flash",
+        model: "gemini-2.5-flash-lite",
         tools,
         systemInstruction,
     });
@@ -604,7 +604,7 @@ async function getAvailableSlotsForAI(shopId: string, proId: string, date: strin
     // 1. Horário da Loja
     const { data: settings } = await supabaseAdmin.from('settings').select('business_hours').eq('shop_id', shopId).single();
     const dayOfWeek = dayjs(date).locale('en').format('dddd').toLowerCase();
-    
+
     // Mapeia o dia do inglês para a chave do DB se necessário (nosso settings usa chaves em inglês)
     const hours = settings?.business_hours?.[dayOfWeek];
     if (!hours || !hours.active) {
