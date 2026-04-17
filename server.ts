@@ -731,6 +731,7 @@ REGRA FINAL
 
 Seu trabalho não é conversar.
 Seu trabalho é levar o cliente ao agendamento com o menor atrito possível.
+`;
 
     // 2. Passa a instrução para a criação do modelo (AQUI É O LUGAR CERTO)
     const model = genAI.getGenerativeModel({
