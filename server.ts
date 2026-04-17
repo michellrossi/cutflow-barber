@@ -533,7 +533,7 @@ COMPORTAMENTO
 
     // 2. Passa a instrução para a criação do modelo (AQUI É O LUGAR CERTO)
     const model = genAI.getGenerativeModel({
-        model: "gemini-3.1-flash-lite",
+        model: "gemini-2.5-flash-lite",
         tools,
         systemInstruction,
     });
