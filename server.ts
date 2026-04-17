@@ -431,13 +431,10 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
     // 1. Guarda a instrução em uma variável
     const systemInstruction = `Você é o assistente virtual da barbearia "${shop?.name}". Seu objetivo único é realizar agendamentos.
 
-```text id = "m1q8yv"
-    SISTEMA / PROMPT MASTER – CHATBOT BARBEARIA(VERSÃO CONVERSÃO)
-
-Você é a recepcionista virtual oficial da barbearia no WhatsApp.
-
+    SISTEMA / PROMPT MASTER – CHATBOT BARBEARIA...
+...
 Seu objetivo principal é:
-    1. Converter conversas em agendamentos.
+1. Converter conversas em agendamentos.
 2. Reduzir abandono.
 3. Responder rápido.
 4. Passar sensação humana e profissional.
@@ -548,7 +545,7 @@ Escolha opções com maior disponibilidade.
         DATAS
     --------------------------------------------------
 
-        19. Você sabe que hoje é ${ dayjs().tz('America/Sao_Paulo').format('dddd, DD/MM/YYYY') }. Para datas relativas(amanhã, segunda, etc), calcule o YYYY - MM - DD correto antes de chamar as ferramentas.
+        19. Você sabe que hoje é ${dayjs().tz('America/Sao_Paulo').format('dddd, DD/MM/YYYY')}. Para datas relativas(amanhã, segunda, etc), calcule o YYYY - MM - DD correto antes de chamar as ferramentas.
 
 20. Interprete corretamente:
     - amanhã
@@ -687,7 +684,7 @@ atendente"
 
         Seu trabalho não é conversar.
 Seu trabalho é transformar interesse em agendamento.
-```
+`;
 
 
     // 2. Passa a instrução para a criação do modelo (AQUI É O LUGAR CERTO)
@@ -725,7 +722,7 @@ Seu trabalho é transformar interesse em agendamento.
                 const toolResults: any[] = [];
 
                 for (const fn of call) {
-                    console.log(`[Chatbot] Executando ferramenta: ${ fn.name } | Args: `, fn.args);
+                    console.log(`[Chatbot] Executando ferramenta: ${fn.name} | Args: `, fn.args);
 
                     let data: any;
                     if (fn.name === "list_services") {
@@ -788,66 +785,66 @@ Seu trabalho é transformar interesse em agendamento.
                             data = { success: true, appointmentId: rpcResult.id };
                             // Dispara confirmação assíncrona
                             fetch(`http://localhost:${process.env.PORT || 3000}/api/notify/confirmation`, {
-    method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ appointmentId: rpcResult.id })
-}).catch (e => console.error('[Chatbot] Erro ao disparar notificação:', e));
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ appointmentId: rpcResult.id })
+                            }).catch(e => console.error('[Chatbot] Erro ao disparar notificação:', e));
                         } else {
-    data = { success: false, error: rpcResult.message || 'Erro desconhecido.' };
-}
+                            data = { success: false, error: rpcResult.message || 'Erro desconhecido.' };
+                        }
                     }
 
-toolResults.push({
-    functionResponse: {
-        name: fn.name,
-        response: { content: data }
-    }
-});
+                    toolResults.push({
+                        functionResponse: {
+                            name: fn.name,
+                            response: { content: data }
+                        }
+                    });
                 }
 
-console.log(`[Chatbot] Enviando resultados das ferramentas:`, JSON.stringify(toolResults, null, 2));
-const finalResult = await chat.sendMessage(toolResults);
-const finalResponse = finalResult.response;
-reply = finalResponse.text();
+                console.log(`[Chatbot] Enviando resultados das ferramentas:`, JSON.stringify(toolResults, null, 2));
+                const finalResult = await chat.sendMessage(toolResults);
+                const finalResponse = finalResult.response;
+                reply = finalResponse.text();
             } else {
-    reply = response.text();
-}
+                reply = response.text();
+            }
 
-lastError = null;
-break; // Sucesso — sai do loop de retry
+            lastError = null;
+            break; // Sucesso — sai do loop de retry
 
         } catch (error: any) {
-    lastError = error;
-    const isLastAttempt = attempt === MAX_RETRIES - 1;
-    console.warn(`[Gemini Chatbot] Tentativa ${attempt + 1}/${MAX_RETRIES} falhou:`, error.message);
-    if (!isLastAttempt) {
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+            lastError = error;
+            const isLastAttempt = attempt === MAX_RETRIES - 1;
+            console.warn(`[Gemini Chatbot] Tentativa ${attempt + 1}/${MAX_RETRIES} falhou:`, error.message);
+            if (!isLastAttempt) {
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+            }
+        }
     }
-}
+
+    if (lastError || !reply) {
+        console.error('[Gemini Chatbot] Todas as tentativas falharam:', lastError);
+        await sendWhatsApp(
+            remoteJid.split('@')[0],
+            '⚠️ Tive uma dificuldade técnica momentânea. Tente novamente em alguns instantes ou escreva "atendente" para falar com nossa equipe.',
+            instance
+        );
+        return;
     }
 
-if (lastError || !reply) {
-    console.error('[Gemini Chatbot] Todas as tentativas falharam:', lastError);
-    await sendWhatsApp(
-        remoteJid.split('@')[0],
-        '⚠️ Tive uma dificuldade técnica momentânea. Tente novamente em alguns instantes ou escreva "atendente" para falar com nossa equipe.',
-        instance
-    );
-    return;
-}
+    // 4. Salva histórico e incrementa contador de mensagens
+    const updatedMessages = [...(session.messages || []), { role: 'user', content: message }, { role: 'assistant', content: reply }];
+    await supabaseAdmin.from('whatsapp_chat_sessions')
+        .update({
+            messages: updatedMessages,
+            last_message_at: new Date().toISOString(),
+            message_count: (session.message_count || 0) + 1
+        })
+        .eq('id', session.id);
 
-// 4. Salva histórico e incrementa contador de mensagens
-const updatedMessages = [...(session.messages || []), { role: 'user', content: message }, { role: 'assistant', content: reply }];
-await supabaseAdmin.from('whatsapp_chat_sessions')
-    .update({
-        messages: updatedMessages,
-        last_message_at: new Date().toISOString(),
-        message_count: (session.message_count || 0) + 1
-    })
-    .eq('id', session.id);
-
-// 5. Envia resposta via WhatsApp
-await sendWhatsApp(remoteJid.split('@')[0], reply, instance);
+    // 5. Envia resposta via WhatsApp
+    await sendWhatsApp(remoteJid.split('@')[0], reply, instance);
 }
 
 async function getAvailableSlotsForAI(shopId: string, proId: string, date: string) {
