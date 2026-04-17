@@ -367,49 +367,54 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
     // 2. Pré-carrega dados reais do banco ANTES de chamar o Gemini
     // Isso evita que o modelo invente profissionais, serviços ou horários
     // ============================================================
-    const { data: shop } = await supabaseAdmin
+    const { data: shop, error: shopError } = await supabaseAdmin
         .from('shops')
         .select('name')
         .eq('id', shopId)
         .single();
 
-    const { data: professionals } = await supabaseAdmin
+    const { data: professionals, error: prosError } = await supabaseAdmin
         .from('professionals')
         .select('id, name, role')
         .eq('shop_id', shopId)
         .eq('active', true);
 
-    const { data: services } = await supabaseAdmin
+    const { data: services, error: servicesError } = await supabaseAdmin
         .from('services')
         .select('id, name, price, duration')
         .eq('shop_id', shopId)
         .eq('active', true);
 
-    const { data: settings } = await supabaseAdmin
+    const { data: settings, error: settingsError } = await supabaseAdmin
         .from('settings')
         .select('business_hours')
         .eq('shop_id', shopId)
         .single();
 
-    // Serializa os dados reais para injetar no prompt
-    const professionalsText = professionals && professionals.length > 0
-        ? professionals.map(p => `- ${p.name} (ID: ${p.id})`).join('\n')
-        : '(nenhum profissional cadastrado)';
+    console.log("SHOP:", shop, shopError);
+    console.log("PROFISSIONALS:", professionals, prosError);
+    console.log("SERVICES:", services, servicesError);
+    console.log("SETTINGS:", settings, settingsError);
 
-    const servicesText = services && services.length > 0
-        ? services.map(s => `- ${s.name} | R$${Number(s.price).toFixed(2)} | ${s.duration}min (ID: ${s.id})`).join('\n')
-        : '(nenhum serviço cadastrado)';
+    // Serializa os dados reais para injetar no prompt
+    const professionalsText = prosError || !professionals || professionals.length === 0
+        ? "ERRO AO CARREGAR PROFISSIONAIS OU NENHUM CADASTRADO"
+        : professionals.map(p => `- ${p.name} (ID: ${p.id})`).join('\n');
+
+    const servicesText = servicesError || !services || services.length === 0
+        ? "ERRO AO CARREGAR SERVIÇOS OU NENHUM CADASTRADO"
+        : services.map(s => `- ${s.name} | R$${Number(s.price).toFixed(2)} | ${s.duration}min (ID: ${s.id})`).join('\n');
 
     const daysMap: Record<string, string> = {
         sunday: 'Domingo', monday: 'Segunda', tuesday: 'Terça',
         wednesday: 'Quarta', thursday: 'Quinta', friday: 'Sexta', saturday: 'Sábado'
     };
-    const businessHoursText = settings?.business_hours
-        ? Object.entries(settings.business_hours)
+    const businessHoursText = settingsError || !settings?.business_hours
+        ? "ERRO AO CARREGAR HORÁRIOS OU NENHUM CONFIGURADO"
+        : Object.entries(settings.business_hours)
             .map(([day, h]: [string, any]) =>
                 `- ${daysMap[day] || day}: ${h.active ? `${h.start} às ${h.end}` : 'FECHADO'}`
-            ).join('\n')
-        : '(horários não configurados)';
+            ).join('\n');
 
     // 3. Prepara Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -486,7 +491,9 @@ FLUXO OBRIGATÓRIO
 ========================================================
 
 PASSO 1 — SERVIÇO
-  Apresente os serviços da lista acima. Pergunte qual o cliente deseja.
+  → Chame list_services IMEDIATAMENTE ao detectar intenção de agendamento.
+  → Apresente apenas os serviços retornados pela ferramenta (nome e preço exatos).
+  → Pergunte qual o cliente deseja.
 
 PASSO 2 — BARBEIRO
   Apresente os profissionais da lista acima. Pergunte se tem preferência.
