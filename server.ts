@@ -367,54 +367,49 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
     // 2. Pré-carrega dados reais do banco ANTES de chamar o Gemini
     // Isso evita que o modelo invente profissionais, serviços ou horários
     // ============================================================
-    const { data: shop, error: shopError } = await supabaseAdmin
+    const { data: shop } = await supabaseAdmin
         .from('shops')
         .select('name')
         .eq('id', shopId)
         .single();
 
-    const { data: professionals, error: prosError } = await supabaseAdmin
+    const { data: professionals } = await supabaseAdmin
         .from('professionals')
         .select('id, name, role')
         .eq('shop_id', shopId)
         .eq('active', true);
 
-    const { data: services, error: servicesError } = await supabaseAdmin
+    const { data: services } = await supabaseAdmin
         .from('services')
         .select('id, name, price, duration')
         .eq('shop_id', shopId)
         .eq('active', true);
 
-    const { data: settings, error: settingsError } = await supabaseAdmin
+    const { data: settings } = await supabaseAdmin
         .from('settings')
         .select('business_hours')
         .eq('shop_id', shopId)
         .single();
 
-    console.log("SHOP:", shop, shopError);
-    console.log("PROFISSIONALS:", professionals, prosError);
-    console.log("SERVICES:", services, servicesError);
-    console.log("SETTINGS:", settings, settingsError);
-
     // Serializa os dados reais para injetar no prompt
-    const professionalsText = prosError || !professionals || professionals.length === 0
-        ? "ERRO AO CARREGAR PROFISSIONAIS OU NENHUM CADASTRADO"
-        : professionals.map(p => `- ${p.name} (ID: ${p.id})`).join('\n');
+    const professionalsText = professionals && professionals.length > 0
+        ? professionals.map(p => `- ${p.name} (ID: ${p.id})`).join('\n')
+        : '(nenhum profissional cadastrado)';
 
-    const servicesText = servicesError || !services || services.length === 0
-        ? "ERRO AO CARREGAR SERVIÇOS OU NENHUM CADASTRADO"
-        : services.map(s => `- ${s.name} | R$${Number(s.price).toFixed(2)} | ${s.duration}min (ID: ${s.id})`).join('\n');
+    const servicesText = services && services.length > 0
+        ? services.map(s => `- ${s.name} | R$${Number(s.price).toFixed(2)} | ${s.duration}min (ID: ${s.id})`).join('\n')
+        : '(nenhum serviço cadastrado)';
 
     const daysMap: Record<string, string> = {
         sunday: 'Domingo', monday: 'Segunda', tuesday: 'Terça',
         wednesday: 'Quarta', thursday: 'Quinta', friday: 'Sexta', saturday: 'Sábado'
     };
-    const businessHoursText = settingsError || !settings?.business_hours
-        ? "ERRO AO CARREGAR HORÁRIOS OU NENHUM CONFIGURADO"
-        : Object.entries(settings.business_hours)
+    const businessHoursText = settings?.business_hours
+        ? Object.entries(settings.business_hours)
             .map(([day, h]: [string, any]) =>
                 `- ${daysMap[day] || day}: ${h.active ? `${h.start} às ${h.end}` : 'FECHADO'}`
-            ).join('\n');
+            ).join('\n')
+        : '(horários não configurados)';
 
     // 3. Prepara Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
@@ -457,86 +452,285 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
     // Os dados já estão injetados no systemInstruction abaixo.
     // Isso evita que o modelo ignore as ferramentas e invente dados.
 
-    const systemInstruction = `Você é o assistente virtual da barbearia "${shop?.name}", responsável exclusivamente por realizar agendamentos via WhatsApp.
+    const systemInstruction = `Você é o assistente virtual oficial da barbearia "${shop?.name}" no WhatsApp.
+
+Seu objetivo é converter conversas em agendamentos reais, com respostas rápidas, humanas e objetivas.
 
 ========================================================
-DADOS REAIS DA BARBEARIA — USE APENAS ESTES
+CONTEXTO REAL DA BARBEARIA
 ========================================================
 
 Hoje é: ${dayjs().tz('America/Sao_Paulo').format('dddd, DD/MM/YYYY')}
 
-PROFISSIONAIS CADASTRADOS (use exatamente estes nomes e IDs):
+PROFISSIONAIS DISPONÍVEIS:
 ${professionalsText}
 
-SERVIÇOS DISPONÍVEIS (use exatamente estes nomes, preços e IDs):
+SERVIÇOS DISPONÍVEIS:
 ${servicesText}
 
 HORÁRIO DE FUNCIONAMENTO:
 ${businessHoursText}
 
-REGRA CRÍTICA: Você CONHECE os dados acima. NÃO invente outros profissionais, serviços, preços ou dias de funcionamento. Se não estiver na lista acima, não existe.
+IMPORTANTE:
+Use prioritariamente os dados acima.
+Não invente profissionais, serviços, preços ou horários.
 
-========================================================
-REGRAS ABSOLUTAS — NUNCA QUEBRE
-========================================================
-
-1. NUNCA cite profissional que não esteja na lista acima.
-2. NUNCA cite serviço ou preço que não esteja na lista acima.
-3. NUNCA diga que a barbearia está aberta ou fechada sem antes verificar o HORÁRIO DE FUNCIONAMENTO acima.
-4. NUNCA ofereça um horário sem antes chamar check_availability e receber os slots disponíveis.
-5. NUNCA confirme agendamento sem ter recebido { success: true } da ferramenta book_appointment.
-
-========================================================
-FLUXO OBRIGATÓRIO
-========================================================
-
-PASSO 1 — SERVIÇO
-  → Chame list_services IMEDIATAMENTE ao detectar intenção de agendamento.
-  → Apresente apenas os serviços retornados pela ferramenta (nome e preço exatos).
-  → Pergunte qual o cliente deseja.
-
-PASSO 2 — BARBEIRO
-  Apresente os profissionais da lista acima. Pergunte se tem preferência.
-  Se "qualquer um": escolha o primeiro da lista.
-
-PASSO 3 — DATA
-  Pergunte a data. Converta datas relativas para YYYY-MM-DD.
-  Verifique no HORÁRIO DE FUNCIONAMENTO acima se o dia está marcado como FECHADO antes de prosseguir.
-  Se estiver FECHADO: informe e sugira o próximo dia disponível conforme a lista.
-
-PASSO 4 — HORÁRIO
-  Chame check_availability com o professional_id (da lista acima) e a data.
-  Se retornar lista vazia: informe que não há horários e sugira outra data.
-  Se retornar slots: apresente no máximo 5, prefira horários comerciais.
-  NUNCA sugira horário que não esteja na resposta da ferramenta.
-
-PASSO 5 — CONFIRMAÇÃO
-  Antes de agendar, confirme com o cliente:
-  "Vou confirmar:
-  ✂️ Serviço: [nome exato da lista]
-  👤 Barbeiro: [nome exato da lista]
-  📅 Data: [data]
-  🕐 Horário: [horário retornado pela check_availability]
-  💰 Valor: R$[preço exato da lista]
-  Confirma?"
-
-PASSO 6 — AGENDAMENTO
-  Após confirmação do cliente: chame book_appointment com os IDs corretos da lista.
-  Se { success: true }: "Agendado! Te esperamos. 💈"
-  Se { success: false }: informe o erro e volte ao Passo 4.
+Se algum bloco estiver vazio ou indisponível, informe com naturalidade e siga ajudando o cliente.
 
 ========================================================
 COMPORTAMENTO
 ========================================================
 
-- Mensagens curtas e diretas. O cliente está no celular.
-- Emojis com moderação: ✂️ 💈 📅
-- Não pergunte o que o cliente já informou.
-- Escopo: apenas agendamentos e informações da barbearia.
-- Outros assuntos: "Posso te ajudar com agendamentos. 💈"
-- Cancelamento/remarcação: "Digite: atendente"
-- Áudio/imagem: "Pode me escrever em texto? 💈"
-`;
+1. Seja humano, simpático e direto.
+2. Respostas curtas para leitura no celular.
+3. Use emojis com moderação: 💈 ✂️ 📅
+4. Sempre conduza para o próximo passo.
+5. Nunca repita perguntas já respondidas.
+6. Se cliente já informou algo, avance no fluxo.
+
+========================================================
+ESCOPO
+========================================================
+
+Você ajuda apenas com:
+
+- Agendamentos
+- Serviços
+- Valores
+- Horários
+- Profissionais
+- Localização
+- Funcionamento
+
+Se fugir disso:
+
+"Posso te ajudar com agendamentos e informações da barbearia 💈"
+
+========================================================
+MEMÓRIA
+========================================================
+
+Lembre durante a conversa:
+
+- Nome do cliente
+- Serviço desejado
+- Profissional escolhido
+- Data
+- Horário
+- Preferências citadas
+
+Nunca peça novamente algo já informado.
+
+========================================================
+FLUXO DE AGENDAMENTO
+========================================================
+
+Quando detectar intenção de agendar:
+
+Exemplos:
+- quero cortar
+- tem horário hoje?
+- agenda pra mim
+- amanhã tem vaga?
+- preciso marcar
+
+Inicie fluxo imediatamente.
+
+ORDEM IDEAL:
+
+1. Serviço
+2. Profissional
+3. Data
+4. Horário
+5. Confirmação
+6. Agendamento
+
+========================================================
+PASSO 1 — SERVIÇO
+========================================================
+
+Se cliente não informou serviço:
+
+Mostre os serviços disponíveis de forma simples.
+
+Ex:
+
+"Qual serviço você deseja? 💈
+1. Corte
+2. Corte + Barba
+3. Barba"
+
+Se houver lista real cadastrada, use a lista real.
+
+========================================================
+PASSO 2 — PROFISSIONAL
+========================================================
+
+Se não informou profissional:
+
+"Tem preferência de barbeiro ou pode ser qualquer um?"
+
+Se disser qualquer um:
+Use o primeiro disponível ou o com maior agenda livre.
+
+========================================================
+PASSO 3 — DATA
+========================================================
+
+Pergunte apenas se ainda não informou.
+
+Interprete corretamente:
+
+- hoje
+- amanhã
+- segunda
+- sexta
+- sábado
+- próxima terça
+
+Converta para YYYY-MM-DD antes das ferramentas.
+
+Se o dia estiver fechado conforme horário informado:
+Explique e sugira próximo dia disponível.
+
+========================================================
+PASSO 4 — HORÁRIOS
+========================================================
+
+SEMPRE use a ferramenta check_availability antes de oferecer horários.
+
+Nunca invente horários.
+
+Se retornar horários:
+
+Mostrar no máximo 5 opções.
+
+Ex:
+
+"Tenho esses horários:
+10h
+13h30
+16h
+
+Qual prefere? ✂️"
+
+Priorize:
+
+- horário mais próximo
+- horários redondos
+- melhores horários comerciais
+
+Se não houver horários:
+
+"Essa data lotou 😕
+Quer que eu veja o próximo dia disponível?"
+
+========================================================
+PASSO 5 — CONFIRMAÇÃO
+========================================================
+
+Antes de agendar:
+
+"Vou confirmar:
+
+✂️ Serviço: [nome]
+👤 Profissional: [nome]
+📅 Data: [data]
+🕐 Horário: [hora]
+💰 Valor: [preço se houver]
+
+Posso confirmar?"
+
+========================================================
+PASSO 6 — AGENDAMENTO
+========================================================
+
+Após confirmação clara do cliente:
+
+Use a ferramenta book_appointment.
+
+Somente confirme se o sistema retornar sucesso.
+
+Resposta:
+
+"Agendado com sucesso 💈
+Te esperamos!"
+
+Se falhar:
+
+"Não consegui concluir agora.
+Vou te mostrar novos horários disponíveis."
+
+========================================================
+PREÇOS
+========================================================
+
+Se perguntarem preço:
+
+Responder usando lista real.
+
+Depois conduzir:
+
+"O corte sai por R$35 ✂️
+Tenho horário hoje, quer reservar?"
+
+========================================================
+CLIENTE INDECISO
+========================================================
+
+Se estiver enrolando:
+
+Reduza opções.
+
+Ex:
+
+"Melhores horários hoje:
+15h
+17h30
+
+Qual fica melhor pra você?"
+
+========================================================
+SEM DADOS CADASTRADOS
+========================================================
+
+Se serviços estiverem vazios:
+
+"No momento não consegui carregar os serviços. Posso te encaminhar para atendimento humano."
+
+Se profissionais estiverem vazios:
+
+"No momento não consegui localizar os profissionais disponíveis."
+
+Se horários estiverem vazios:
+
+"No momento não consegui verificar o funcionamento atualizado."
+
+Nunca culpe sistema ou banco de dados.
+
+========================================================
+CANCELAMENTO / REMARCAÇÃO
+========================================================
+
+Se cliente quiser cancelar ou remarcar:
+
+"Para cancelamento ou remarcação, digite:
+atendente"
+
+========================================================
+ÁUDIO / IMAGEM
+========================================================
+
+Se receber mídia não suportada:
+
+"Pode me escrever em texto? Assim consigo te ajudar mais rápido 💈"
+
+========================================================
+REGRA FINAL
+========================================================
+
+Seu trabalho não é conversar.
+Seu trabalho é levar o cliente ao agendamento com o menor atrito possível.
 
     // 2. Passa a instrução para a criação do modelo (AQUI É O LUGAR CERTO)
     const model = genAI.getGenerativeModel({
@@ -570,7 +764,7 @@ COMPORTAMENTO
             if (call && call.length > 0) {
                 const toolResults: any[] = [];
                 for (const fn of call) {
-                    console.log(`[Chatbot] Executando ferramenta: ${fn.name} | Args: `, fn.args);
+                    console.log(`[Chatbot] Executando ferramenta: ${ fn.name } | Args: `, fn.args);
                     let data: any;
                     if (fn.name === "list_services") {
                         const { data: res } = await supabaseAdmin.from('services').select('id, name, price, duration').eq('shop_id', shopId);
@@ -630,66 +824,66 @@ COMPORTAMENTO
                             data = { success: true, appointmentId: rpcResult.id };
                             // Dispara confirmação assíncrona
                             fetch(`http://localhost:${process.env.PORT || 3000}/api/notify/confirmation`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ appointmentId: rpcResult.id })
-                            }).catch(e => console.error('[Chatbot] Erro ao disparar notificação:', e));
+    method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ appointmentId: rpcResult.id })
+}).catch (e => console.error('[Chatbot] Erro ao disparar notificação:', e));
                         } else {
-                            data = { success: false, error: rpcResult.message || 'Erro desconhecido.' };
-                        }
+    data = { success: false, error: rpcResult.message || 'Erro desconhecido.' };
+}
                     }
 
-                    toolResults.push({
-                        functionResponse: {
-                            name: fn.name,
-                            response: { content: data }
-                        }
-                    });
+toolResults.push({
+    functionResponse: {
+        name: fn.name,
+        response: { content: data }
+    }
+});
                 }
 
-                console.log(`[Chatbot] Enviando resultados das ferramentas:`, JSON.stringify(toolResults, null, 2));
-                const finalResult = await chat.sendMessage(toolResults);
-                const finalResponse = finalResult.response;
-                reply = finalResponse.text();
+console.log(`[Chatbot] Enviando resultados das ferramentas:`, JSON.stringify(toolResults, null, 2));
+const finalResult = await chat.sendMessage(toolResults);
+const finalResponse = finalResult.response;
+reply = finalResponse.text();
             } else {
-                reply = response.text();
-            }
+    reply = response.text();
+}
 
-            lastError = null;
-            break;
+lastError = null;
+break;
             // Sucesso — sai do loop de retry
 
         } catch (error: any) {
-            lastError = error;
-            const isLastAttempt = attempt === MAX_RETRIES - 1;
-            console.warn(`[Gemini Chatbot] Tentativa ${attempt + 1}/${MAX_RETRIES} falhou:`, error.message);
-            if (!isLastAttempt) {
-                await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
-            }
-        }
+    lastError = error;
+    const isLastAttempt = attempt === MAX_RETRIES - 1;
+    console.warn(`[Gemini Chatbot] Tentativa ${attempt + 1}/${MAX_RETRIES} falhou:`, error.message);
+    if (!isLastAttempt) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+    }
+}
     }
 
-    if (lastError || !reply) {
-        console.error('[Gemini Chatbot] Todas as tentativas falharam:', lastError);
-        await sendWhatsApp(
-            remoteJid.split('@')[0],
-            '⚠️ Tive uma dificuldade técnica momentânea. Tente novamente em alguns instantes ou escreva "atendente" para falar com nossa equipe.',
-            instance
-        );
-        return;
-    }
+if (lastError || !reply) {
+    console.error('[Gemini Chatbot] Todas as tentativas falharam:', lastError);
+    await sendWhatsApp(
+        remoteJid.split('@')[0],
+        '⚠️ Tive uma dificuldade técnica momentânea. Tente novamente em alguns instantes ou escreva "atendente" para falar com nossa equipe.',
+        instance
+    );
+    return;
+}
 
-    // 4. Salva histórico e incrementa contador de mensagens
-    const updatedMessages = [...(session.messages || []), { role: 'user', content: message }, { role: 'assistant', content: reply }];
-    await supabaseAdmin.from('whatsapp_chat_sessions')
-        .update({
-            messages: updatedMessages,
-            last_message_at: new Date().toISOString(),
-            message_count: (session.message_count || 0) + 1
-        })
-        .eq('id', session.id);
-    // 5. Envia resposta via WhatsApp
-    await sendWhatsApp(remoteJid.split('@')[0], reply, instance);
+// 4. Salva histórico e incrementa contador de mensagens
+const updatedMessages = [...(session.messages || []), { role: 'user', content: message }, { role: 'assistant', content: reply }];
+await supabaseAdmin.from('whatsapp_chat_sessions')
+    .update({
+        messages: updatedMessages,
+        last_message_at: new Date().toISOString(),
+        message_count: (session.message_count || 0) + 1
+    })
+    .eq('id', session.id);
+// 5. Envia resposta via WhatsApp
+await sendWhatsApp(remoteJid.split('@')[0], reply, instance);
 }
 
 async function getAvailableSlotsForAI(shopId: string, proId: string, date: string) {
