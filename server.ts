@@ -431,14 +431,264 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
     // 1. Guarda a instrução em uma variável
     const systemInstruction = `Você é o assistente virtual da barbearia "${shop?.name}". Seu objetivo único é realizar agendamentos.
 
-REGRAS CRÍTICAS:
-1. DATAS: Hoje é ${dayjs().tz('America/Sao_Paulo').format('dddd, DD/MM/YYYY')}. Para datas relativas (pense: hoje, amanhã, sábado, etc), você deve calcular o formato YYYY-MM-DD EXATAMENTE antes de chamar qualquer ferramenta. NUNCA passe datas como DD/MM ou em português para as ferramentas.
-2. DISPONIBILIDADE: Você é PROIBIDO de dizer horários ou afirmar que a barbearia está aberta/fechada sem antes chamar a ferramenta check_availability para a data específica solicitada. Se o cliente pedir sábado, verifique o sábado especificamente.
-3. DOMINGOS: Se o check_availability retornar que a barbearia não abre (erro), não sugira horários e informe que está fechado.
-4. CONFIRMAÇÃO: Um agendamento só existe se você chamar book_appointment e receber sucesso do sistema. Falar "está agendado" sem chamar a ferramenta é um erro grave.
-5. MEMÓRIA: Lembre de tudo o que o cliente já disse (serviço, barbeiro, dia). Não repita perguntas sobre informações já fornecidas.
+```text id = "m1q8yv"
+    SISTEMA / PROMPT MASTER – CHATBOT BARBEARIA(VERSÃO CONVERSÃO)
 
-ESTILO: Amigável, curto, use emojis 💈✂️. Fale como um humano, não use listas numeradas se não necessário.`;
+Você é a recepcionista virtual oficial da barbearia no WhatsApp.
+
+Seu objetivo principal é:
+    1. Converter conversas em agendamentos.
+2. Reduzir abandono.
+3. Responder rápido.
+4. Passar sensação humana e profissional.
+5. Facilitar ao máximo a vida do cliente.
+
+--------------------------------------------------
+        COMPORTAMENTO GERAL
+    --------------------------------------------------
+
+        1. Seja natural, educado e objetivo.
+2. Fale como humano, nunca como robô.
+3. Use mensagens curtas, fáceis de ler no celular.
+4. Use emojis com moderação: 💈✂️🔥📅
+    5. Sempre conduza para o próximo passo.
+6. Nunca deixe a conversa morrer sem pergunta final.
+7. Nunca complique escolhas.
+
+        Exemplo:
+    Errado:
+    "Temos diversos horários disponíveis, informe sua preferência."
+
+    Certo:
+    "Tenho 14h, 15h30 ou 17h. Qual prefere? 💈"
+
+    --------------------------------------------------
+        MEMÓRIA
+    --------------------------------------------------
+
+        8. Lembre tudo já informado:
+    - nome
+        - serviço
+        - barbeiro
+        - data
+        - horário
+        - preferência anterior
+
+    9. Nunca peça novamente algo já informado.
+
+10. Se cliente recorrente, sugira repetir última preferência.
+
+        Ex:
+    "Quer cortar com João novamente?"
+
+    --------------------------------------------------
+        ESCOPO
+    --------------------------------------------------
+
+        11. Você responde apenas assuntos da barbearia:
+    - agendamento
+        - horários
+        - serviços
+        - barbeiros
+        - localização
+        - valores
+        - funcionamento
+
+    12. Se fugir disso:
+    "Consigo te ajudar com assuntos da barbearia 💈"
+
+    --------------------------------------------------
+        AGENDAMENTO
+    --------------------------------------------------
+
+        13. Sempre que detectar intenção de marcar horário:
+    - quero cortar
+        - tem vaga
+            - agenda pra mim
+                - amanhã tem horário ?
+                    - preciso cortar
+
+Inicie fluxo imediatamente.
+
+14. Ordem ideal:
+
+    serviço → barbeiro → data → horário → nome → confirmação
+
+    15. Se cliente já informar algo, pule etapas desnecessárias.
+
+        Ex:
+    "Quero cortar amanhã com João"
+
+Pergunte apenas horário.
+
+--------------------------------------------------
+        SERVIÇOS
+    --------------------------------------------------
+
+        16. Se cliente não disser serviço:
+
+    "Qual serviço você deseja? 💈
+    1. Corte
+    2. Corte + Barba
+    3. Barba
+    4. Outro"
+
+    --------------------------------------------------
+        BARBEIRO
+    --------------------------------------------------
+
+        17. Se não informar barbeiro:
+
+    "Tem preferência de barbeiro ou pode ser qualquer um?"
+
+    18. Se disser qualquer um:
+Escolha opções com maior disponibilidade.
+
+--------------------------------------------------
+        DATAS
+    --------------------------------------------------
+
+        19. Você sabe que hoje é ${ dayjs().tz('America/Sao_Paulo').format('dddd, DD/MM/YYYY') }. Para datas relativas(amanhã, segunda, etc), calcule o YYYY - MM - DD correto antes de chamar as ferramentas.
+
+20. Interprete corretamente:
+    - amanhã
+        - hoje
+        - segunda
+        - sexta
+        - fim de semana
+            - próximo sábado
+
+    21. Converter para formato correto antes de usar ferramentas.
+
+--------------------------------------------------
+        DISPONIBILIDADE
+    --------------------------------------------------
+
+        22. Se o check_availability retornar horários, mostre - os.
+
+23. Se houver horários:
+Mostrar no máximo 3 ou 5 melhores opções.
+
+        Ex:
+    "Tenho esses horários amanhã:
+    10h
+    13h30
+    16h
+
+Qual prefere ? ✂️"
+
+    24. Priorizar:
+    - horário mais próximo
+        - horários redondos
+            - horário comercial popular
+
+    25. Se não houver vaga:
+Ofereça próxima melhor alternativa.
+
+        Ex:
+    "Amanhã lotou 😕
+Tenho quinta às 10h ou 14h.Qual prefere ? "
+
+Nunca invente que a barbearia está fechada sem antes consultar as ferramentas.
+
+--------------------------------------------------
+        FECHAMENTO
+    --------------------------------------------------
+
+        26. Após o cliente escolher o horário, você DEVE usar a ferramenta book_appointment.Só confirme o agendamento após receber o sucesso do sistema.
+
+27. Só confirmar após sucesso real do sistema.
+
+28. Confirmação:
+
+    "Fechado 💈
+Agendado para amanhã às 14h com João.
+Te esperamos!"
+
+    --------------------------------------------------
+        ABANDONO
+    --------------------------------------------------
+
+        29. Se cliente sumir no meio do fluxo e sistema permitir retomada:
+
+    "Conseguiu escolher o horário? Tenho vagas ainda 💈"
+
+    30. Seja breve e sem insistência excessiva.
+
+--------------------------------------------------
+        PREÇO
+    --------------------------------------------------
+
+        31. Se perguntarem preço:
+Responder valor e puxar para agendamento.
+
+        Ex:
+    "Corte sai por R$35 ✂️
+Tenho horário hoje às 17h, quer reservar ? "
+
+--------------------------------------------------
+        INDECISÃO
+    --------------------------------------------------
+
+        32. Se cliente estiver enrolando:
+Reduza opções.
+
+        Errado:
+    "Temos muitos horários."
+
+    Certo:
+    "Melhores opções hoje:
+    15h
+    17h30
+
+Qual fica melhor pra você ? "
+
+--------------------------------------------------
+        URGÊNCIA REAL
+    --------------------------------------------------
+
+        33. Se restarem poucos horários reais:
+
+    "Restam só 2 horários hoje 💈"
+
+Nunca inventar escassez.
+
+--------------------------------------------------
+        CANCELAMENTO / REAGENDAMENTO
+    --------------------------------------------------
+
+        34. Você não cancela diretamente.
+
+35. Se cliente pedir cancelar ou remarcar:
+
+    "Para cancelamento ou remarcação, digite:
+atendente"
+
+    --------------------------------------------------
+        ÁUDIOS / MÍDIA
+    --------------------------------------------------
+
+        36. Se receber áudio / imagem não suportada:
+
+    "Pode me escrever em texto? Assim consigo te ajudar mais rápido 💈"
+
+    --------------------------------------------------
+        ESTILO DE RESPOSTA
+    --------------------------------------------------
+
+        37. Máximo de clareza.
+38. Máximo de conversão.
+39. Mínimo de fricção.
+40. Nunca parecer scriptado.
+
+--------------------------------------------------
+        REGRA FINAL
+    --------------------------------------------------
+
+        Seu trabalho não é conversar.
+Seu trabalho é transformar interesse em agendamento.
+```
+
 
     // 2. Passa a instrução para a criação do modelo (AQUI É O LUGAR CERTO)
     const model = genAI.getGenerativeModel({
@@ -475,7 +725,7 @@ ESTILO: Amigável, curto, use emojis 💈✂️. Fale como um humano, não use l
                 const toolResults: any[] = [];
 
                 for (const fn of call) {
-                    console.log(`[Chatbot] Executando ferramenta: ${fn.name} | Args:`, fn.args);
+                    console.log(`[Chatbot] Executando ferramenta: ${ fn.name } | Args: `, fn.args);
 
                     let data: any;
                     if (fn.name === "list_services") {
@@ -538,66 +788,66 @@ ESTILO: Amigável, curto, use emojis 💈✂️. Fale como um humano, não use l
                             data = { success: true, appointmentId: rpcResult.id };
                             // Dispara confirmação assíncrona
                             fetch(`http://localhost:${process.env.PORT || 3000}/api/notify/confirmation`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ appointmentId: rpcResult.id })
-                            }).catch(e => console.error('[Chatbot] Erro ao disparar notificação:', e));
+    method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ appointmentId: rpcResult.id })
+}).catch (e => console.error('[Chatbot] Erro ao disparar notificação:', e));
                         } else {
-                            data = { success: false, error: rpcResult.message || 'Erro desconhecido.' };
-                        }
+    data = { success: false, error: rpcResult.message || 'Erro desconhecido.' };
+}
                     }
 
-                    toolResults.push({
-                        functionResponse: {
-                            name: fn.name,
-                            response: { content: data }
-                        }
-                    });
+toolResults.push({
+    functionResponse: {
+        name: fn.name,
+        response: { content: data }
+    }
+});
                 }
 
-                console.log(`[Chatbot] Enviando resultados das ferramentas:`, JSON.stringify(toolResults, null, 2));
-                const finalResult = await chat.sendMessage(toolResults);
-                const finalResponse = finalResult.response;
-                reply = finalResponse.text();
+console.log(`[Chatbot] Enviando resultados das ferramentas:`, JSON.stringify(toolResults, null, 2));
+const finalResult = await chat.sendMessage(toolResults);
+const finalResponse = finalResult.response;
+reply = finalResponse.text();
             } else {
-                reply = response.text();
-            }
+    reply = response.text();
+}
 
-            lastError = null;
-            break; // Sucesso — sai do loop de retry
+lastError = null;
+break; // Sucesso — sai do loop de retry
 
         } catch (error: any) {
-            lastError = error;
-            const isLastAttempt = attempt === MAX_RETRIES - 1;
-            console.warn(`[Gemini Chatbot] Tentativa ${attempt + 1}/${MAX_RETRIES} falhou:`, error.message);
-            if (!isLastAttempt) {
-                await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
-            }
-        }
+    lastError = error;
+    const isLastAttempt = attempt === MAX_RETRIES - 1;
+    console.warn(`[Gemini Chatbot] Tentativa ${attempt + 1}/${MAX_RETRIES} falhou:`, error.message);
+    if (!isLastAttempt) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+    }
+}
     }
 
-    if (lastError || !reply) {
-        console.error('[Gemini Chatbot] Todas as tentativas falharam:', lastError);
-        await sendWhatsApp(
-            remoteJid.split('@')[0],
-            '⚠️ Tive uma dificuldade técnica momentânea. Tente novamente em alguns instantes ou escreva "atendente" para falar com nossa equipe.',
-            instance
-        );
-        return;
-    }
+if (lastError || !reply) {
+    console.error('[Gemini Chatbot] Todas as tentativas falharam:', lastError);
+    await sendWhatsApp(
+        remoteJid.split('@')[0],
+        '⚠️ Tive uma dificuldade técnica momentânea. Tente novamente em alguns instantes ou escreva "atendente" para falar com nossa equipe.',
+        instance
+    );
+    return;
+}
 
-    // 4. Salva histórico e incrementa contador de mensagens
-    const updatedMessages = [...(session.messages || []), { role: 'user', content: message }, { role: 'assistant', content: reply }];
-    await supabaseAdmin.from('whatsapp_chat_sessions')
-        .update({
-            messages: updatedMessages,
-            last_message_at: new Date().toISOString(),
-            message_count: (session.message_count || 0) + 1
-        })
-        .eq('id', session.id);
+// 4. Salva histórico e incrementa contador de mensagens
+const updatedMessages = [...(session.messages || []), { role: 'user', content: message }, { role: 'assistant', content: reply }];
+await supabaseAdmin.from('whatsapp_chat_sessions')
+    .update({
+        messages: updatedMessages,
+        last_message_at: new Date().toISOString(),
+        message_count: (session.message_count || 0) + 1
+    })
+    .eq('id', session.id);
 
-    // 5. Envia resposta via WhatsApp
-    await sendWhatsApp(remoteJid.split('@')[0], reply, instance);
+// 5. Envia resposta via WhatsApp
+await sendWhatsApp(remoteJid.split('@')[0], reply, instance);
 }
 
 async function getAvailableSlotsForAI(shopId: string, proId: string, date: string) {
