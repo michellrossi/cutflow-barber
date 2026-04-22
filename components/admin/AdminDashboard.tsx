@@ -50,7 +50,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     if (savedTab === 'settings') setIsSettingsOpen(true);
   }, []);
 
-  const { settings, trialStatus, daysRemaining, theme, toggleTheme, shop, myShops, switchShop, addAdditionalUnit, userRole } = useShop();
+  const { settings, trialStatus, daysRemaining, theme, toggleTheme, shop, myShops, switchShop, addAdditionalUnit, userRole, clients, reloadClients, botPausedCount } = useShop();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isAddUnitOpen, setIsAddUnitOpen] = useState(false);
 
@@ -59,6 +59,13 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   useEffect(() => {
       localStorage.setItem('adminSidebarPinned', String(isSidebarPinned));
   }, [isSidebarPinned]);
+
+  // Lazy load de clientes: só carrega quando o usuário abre a aba pela 1ª vez
+  useEffect(() => {
+      if (activeTab === 'clients' && shop?.id && clients.length === 0) {
+          reloadClients(shop.id);
+      }
+  }, [activeTab, shop?.id]);
 
   const handleTabChange = (tab: AdminTab, filter?: string) => {
       setActiveTab(tab);
@@ -157,15 +164,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
                             <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                     </select>
-                    {userRole === 'owner' && (
-                        <button 
-                            onClick={() => setIsAddUnitOpen(true)}
-                            className="p-1 text-slate-400 hover:text-orange-600 transition-colors"
-                            title="Nova unidade"
-                        >
-                            <Plus size={16} />
-                        </button>
-                    )}
                 </div>
             </div>
           )}
@@ -190,6 +188,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     expanded={isSidebarExpanded}
   />
   
+  <SidebarItem icon={<CalendarCheck size={18} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} expanded={isSidebarExpanded} />
+  
   <SidebarItem 
     icon={<Users size={18} />} 
     label="Equipe" 
@@ -197,10 +197,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     onClick={() => handleTabChange('team')} 
     expanded={isSidebarExpanded}
   />
-
-  <SidebarItem icon={<Scissors size={18} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<CalendarCheck size={18} />} label="Agenda" active={activeTab === 'appointments'} onClick={() => handleTabChange('appointments')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<Scissors size={18} />} label="Serviços" active={activeTab === 'services'} onClick={() => handleTabChange('services')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<UserCircle size={18} />} label="Clientes" active={activeTab === 'clients'} onClick={() => handleTabChange('clients')} expanded={isSidebarExpanded} />
   
@@ -225,22 +223,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   <SidebarItem icon={<User size={18} />} label="Perfil" active={activeTab === 'profile'} onClick={() => handleTabChange('profile')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<Settings size={18} />} label="Configurações" active={activeTab === 'settings'} onClick={() => handleTabChange('settings')} expanded={isSidebarExpanded} />
-  
-  <div className="pt-2 mt-1">
-      <div className="h-px bg-slate-100 mb-2 mx-2"></div>
-      <button 
-          onClick={onViewClient}
-          className={`flex items-center px-4 py-2 w-full rounded-lg text-slate-700 hover:bg-slate-50 hover:text-slate-900 transition-colors group ${isSidebarExpanded ? 'gap-3' : 'justify-center'}`}
-      >
-          <Smartphone size={18} className="group-hover:text-orange-500 transition-colors shrink-0" />
-          {isSidebarExpanded && (
-            <>
-              <span className="flex-1 text-left text-sm">Agenda Digital</span>
-              <ExternalLink size={12} className="opacity-50" />
-            </>
-          )}
-      </button>
-  </div>
 </nav>
 
         <div className="p-4 border-t border-slate-100">
@@ -274,15 +256,36 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
 
         <header className="h-16 bg-white border-b border-slate-200 flex items-center px-4 md:px-8 justify-between shrink-0">
              <h2 className="text-xl md:text-2xl font-bold text-slate-900">{getTabLabel(activeTab)}</h2>
-             <div className="flex items-center gap-4">
+             <div className="flex items-center gap-2 md:gap-4">
+                {/* Desktop Buttons */}
+                <div className="hidden md:flex items-center gap-3 mr-2">
+                    <button 
+                        onClick={onViewClient}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-all"
+                        title="Abrir Agenda do Cliente"
+                    >
+                        <Smartphone size={16}/> Agenda Digital
+                    </button>
+                    
+                    {userRole === 'owner' && (
+                        <button 
+                            onClick={() => setIsAddUnitOpen(true)}
+                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-50 text-orange-600 hover:bg-orange-100 text-xs font-bold transition-all border border-orange-100"
+                        >
+                            <Plus size={16}/> Unidade
+                        </button>
+                    )}
+                </div>
+
                 <button 
                     onClick={onViewClient}
                     className="flex items-center gap-2 px-4 py-2 rounded-lg border border-orange-500/30 text-orange-500 hover:bg-orange-500/10 text-sm font-medium transition-colors md:hidden"
                 >
                     <ExternalLink size={16}/> Ver Agenda
                 </button>
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold uppercase">
+                
+                <div className="flex items-center gap-2 pl-2 border-l border-slate-100">
+                    <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold uppercase shadow-sm">
                         {settings.name?.charAt(0) || 'A'}
                     </div>
                     <span className="text-sm text-slate-800 hidden md:inline font-bold">
@@ -387,14 +390,19 @@ const AddUnitModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
     );
 };
 
-const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void, expanded?: boolean }> = ({ icon, label, active, onClick, expanded = true }) => {
+const SidebarItem: React.FC<{ icon: React.ReactNode, label: string, active: boolean, onClick: () => void, expanded?: boolean, badge?: number }> = ({ icon, label, active, onClick, expanded = true, badge }) => {
     return (
         <button 
             onClick={onClick}
-            className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-sm ${expanded ? 'gap-3' : 'justify-center'} ${active ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
+            className={`flex items-center px-4 py-2.5 w-full rounded-r-lg transition-all duration-200 text-xs relative ${expanded ? 'gap-3' : 'justify-center'} ${active ? 'bg-orange-50/80 text-orange-600 font-semibold border-l-4 border-orange-500 shadow-sm' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
         >
             <span className={`shrink-0 ${active ? 'text-orange-500' : 'text-slate-700'}`}>{icon}</span>
             {expanded && <span>{label}</span>}
+            {badge && badge > 0 && (
+                <span className={`flex items-center justify-center bg-red-500 text-white text-[9px] font-black rounded-full min-w-[16px] h-[16px] px-1 shadow-sm ${expanded ? 'ml-auto' : 'absolute top-1 right-2 animate-pulse'}`}>
+                    {badge}
+                </span>
+            )}
         </button>
     );
 }

@@ -7,7 +7,7 @@ import { Plus, Edit2, Trash2, CalendarCheck, Loader2, X, Clock, Image as ImageIc
 import { useToast } from '../../ui/ToastContext';
 
 export const ServicesPanel: React.FC = () => {
-    const { services, addService, updateService, removeService, settings } = useShop();
+    const { services, addService, updateService, removeService, settings, formatCurrencyBRL } = useShop();
     const { showToast } = useToast();
 
     const [activeCategory, setActiveCategory] = useState('Todos');
@@ -468,7 +468,7 @@ export const ServicesPanel: React.FC = () => {
 
                             <div className="mt-auto">
                                 <p className="text-2xl font-bold text-orange-500 mb-6">
-                                    R$ {service.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                                    {formatCurrencyBRL(service.price)}
                                 </p>
 
                                 <div className="flex gap-3">

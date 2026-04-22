@@ -22,6 +22,7 @@ interface ShopContextType extends ShopState {
   loadShopBySlug: (slug: string) => Promise<boolean>; 
   switchShop: (shopId: string) => Promise<void>;
   addAdditionalUnit: (shopName: string, slug: string, phone: string) => MutationResult;
+  deleteCurrentShop: () => MutationResult;
   refresh: () => void;
 
   // Actions - Now returning MutationResult
@@ -95,6 +96,8 @@ interface ShopContextType extends ShopState {
   // New Report Method
   fetchFinancialReport: (startDate: string, endDate: string) => Promise<Appointment[]>;
   toggleTheme: () => void;
+  formatCurrencyBRL: (value: number) => string;
+  reloadClients: (shopId: string) => Promise<void>;
 }
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -151,7 +154,8 @@ const INITIAL_STATE: ShopState = {
   automationTriggers: [],
   products: [],
   goals: [],
-  myShops: []
+  myShops: [],
+  botPausedCount: 0
 };
 
 const sanitize = (text: string): string => {
@@ -160,6 +164,13 @@ const sanitize = (text: string): string => {
     ALLOWED_TAGS: [],
     ALLOWED_ATTR: []
   });
+};
+
+export const formatCurrencyBRL = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+    }).format(value || 0).replace(/\s/g, '');
 };
 
 export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -371,10 +382,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       shopId: data.shop_id,
       name: data.name,
       category: data.category,
-      costPrice: data.cost_price,
-      salePrice: data.sale_price,
-      currentStock: data.current_stock,
-      minStock: data.min_stock,
+      costPrice: Number(data.cost_price || 0),
+      salePrice: Number(data.sale_price || 0),
+      currentStock: Number(data.current_stock || 0),
+      minStock: Number(data.min_stock || 0),
       createdAt: data.created_at
   });
 
@@ -384,8 +395,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       professionalId: data.professional_id,
       name: data.name,
       category: data.category,
-      targetValue: Number(data.target_value),
-      currentValue: Number(data.current_value),
+      targetValue: Number(data.target_value || 0),
+      currentValue: Number(data.current_value || 0),
       period: data.period,
       startDate: data.start_date,
       endDate: data.end_date,
@@ -439,9 +450,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   // --- Helper to reload ONLY appointments (Lighter than fetchData) ---
+  // Janela de 90 dias: cobre Dashboard (30d), Relatórios (90d) e Metas
+  const APPT_WINDOW_DAYS = 90;
+
   const reloadAppointments = async (shopId: string) => {
       const pastDate = new Date();
-      pastDate.setDate(pastDate.getDate() - 30);
+      pastDate.setDate(pastDate.getDate() - APPT_WINDOW_DAYS);
       const dateLimitStr = pastDate.toISOString().split('T')[0];
       
       const { data: appts } = await supabase
@@ -498,6 +512,15 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         let shopId = targetShopId;
         let currentShopData: Shop | null = state.shop;
 
+        // Se um targetShopId foi passado, precisamos garantir que temos os dados dessa loja
+        if (targetShopId) {
+            const { data: targetShopData } = await supabase.from('shops').select('*').eq('id', targetShopId).single();
+            if (targetShopData) {
+                shopId = targetShopId;
+                currentShopData = mapShop(targetShopData);
+            }
+        }
+
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         // Só tenta descobrir o shopId se ele NÃO foi passado
@@ -542,26 +565,27 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
 
         // Executa queries de configurações e dados estáticos em paralelo
-        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, clientsRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes, goalsRes] = await Promise.all([
+        // LAZY LOAD: clients NÃO está aqui — é carregado sob demanda pela aba Clientes
+        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes, goalsRes, sessionsRes] = await Promise.all([
             supabase.from('settings').select('*').eq('shop_id', shopId).single(),
             supabase.from('services').select('*').eq('shop_id', shopId),
             supabase.from('professionals').select('*').eq('shop_id', shopId),
             supabase.from('coupons').select('*').eq('shop_id', shopId),
             supabase.from('blocked_slots').select('*').eq('shop_id', shopId),
-            supabase.from('clients').select('*').eq('shop_id', shopId),
             supabase.from('message_templates').select('*').eq('shop_id', shopId),
             supabase.from('message_categories').select('*').eq('shop_id', shopId),
             supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
             supabase.from('client_subscriptions').select('*').eq('shop_id', shopId),
             supabase.from('automation_triggers').select('*').eq('shop_id', shopId),
             supabase.from('products').select('*').eq('shop_id', shopId),
-            supabase.from('goals').select('*').eq('shop_id', shopId)
+            supabase.from('goals').select('*').eq('shop_id', shopId),
+            supabase.from('whatsapp_chat_sessions').select('id', { count: 'exact', head: true }).eq('shop_id', shopId).eq('bot_paused', true)
         ]);
 
-        // OTIMIZAÇÃO: Carregar apenas agendamentos recentes e futuros
-        const pastDate = new Date();
-        pastDate.setDate(pastDate.getDate() - 30); // 30 dias atrás
-        const dateLimitStr = pastDate.toISOString().split('T')[0];
+        // Agendamentos: janela de 90 dias para cobrir dashboard + relatórios + metas
+        const date90d = new Date();
+        date90d.setDate(date90d.getDate() - 90);
+        const dateLimitStr = date90d.toISOString().split('T')[0];
 
         let appointmentsData: Appointment[] = [];
         
@@ -569,14 +593,15 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             .from('appointments')
             .select('*')
             .eq('shop_id', shopId)
-            .gte('date', dateLimitStr) // Apenas >= 30 dias atrás
-            .order('date', { ascending: false }) // Ordem decrescente de data
+            .gte('date', dateLimitStr)
+            .order('date', { ascending: false })
             .order('time', { ascending: false });
 
         if (appts) appointmentsData = appts.map(mapAppointment);
 
         const mappedProfessionals = (prosRes.data || []).map((p: any, i: number) => mapProfessional(p, i));
-        const mappedClients = (clientsRes.data || []).map(mapClient);
+        // Clientes: array vazio no boot — carregados lazy na aba Clientes
+        const mappedClients: ReturnType<typeof mapClient>[] = [];
         const mappedPlans = (plansRes.data || []).map(mapSubscriptionPlan);
         const mappedSubs = (subsRes.data || []).map(mapClientSubscription);
         const mappedCategories = (categoriesRes.data || []).map(mapMessageCategory);
@@ -632,13 +657,40 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             products: (productsRes.data || []).map(mapProduct),
             goals: (goalsRes.data || []).map(mapGoal),
             trialStatus: trialInfo.status,
-            daysRemaining: trialInfo.days
+            daysRemaining: trialInfo.days,
+            botPausedCount: sessionsRes.count || 0
         }));
 
     } catch (error) {
         console.error("Error fetching data:", error);
     } finally {
         setLoading(false);
+    }
+  };
+
+  const deleteCurrentShop = async (): Promise<MutationResult> => {
+    try {
+        const shopId = state.shop?.id;
+        if (!shopId) throw new Error("Loja não identificada.");
+
+        // 1. Deleta a loja (Cascade no DB deve cuidar do resto)
+        const { error } = await supabase.from('shops').delete().eq('id', shopId);
+        if (error) throw error;
+
+        // 2. Atualiza a lista de lojas locais
+        const remainingShops = state.myShops.filter(s => s.id !== shopId);
+        
+        if (remainingShops.length > 0) {
+            // Se restarem lojas, muda para a primeira
+            await switchShop(remainingShops[0].id);
+        } else {
+            // Se não restarem lojas, desloga ou limpa tudo
+            await logout();
+        }
+
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
     }
   };
 
@@ -689,7 +741,77 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         )
         .subscribe();
 
-      // 3. Listen for Client Changes
+      // 3. Listen for Goal Changes
+      const goalsChannel = supabase.channel('goals_sync')
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'goals',
+                filter: `shop_id=eq.${state.shop.id}`
+            },
+            (payload) => {
+                // Ignora eventos sem 'new' (ex: DELETE)
+                if (!payload.new || !payload.new.id) {
+                    if (payload.eventType === 'DELETE') {
+                        setState(prev => ({
+                            ...prev,
+                            goals: prev.goals.filter(g => g.id !== payload.old?.id)
+                        }));
+                    }
+                    return;
+                }
+                const updatedGoal = mapGoal(payload.new);
+                setState(prev => {
+                    // INSERT ou UPDATE: upsert para evitar duplicação
+                    // (upsertGoal() já adiciona ao state antes do Realtime chegar)
+                    const alreadyExists = prev.goals.some(g => g.id === updatedGoal.id);
+                    if (alreadyExists) {
+                        // Sempre atualiza com o dado mais recente (ex: current_value do trigger)
+                        return { ...prev, goals: prev.goals.map(g => g.id === updatedGoal.id ? updatedGoal : g) };
+                    }
+                    // Só adiciona se não existe (ex: inserção feita por outro dispositivo)
+                    if (payload.eventType === 'INSERT') {
+                        return { ...prev, goals: [...prev.goals, updatedGoal] };
+                    }
+                    return prev;
+                });
+            }
+        )
+        .subscribe();
+
+      // 4. Listen for Product/Inventory Changes
+      const productsChannel = supabase.channel('products_sync')
+        .on(
+            'postgres_changes',
+            {
+                event: '*',
+                schema: 'public',
+                table: 'products',
+                filter: `shop_id=eq.${state.shop.id}`
+            },
+            (payload) => {
+                const updatedProduct = mapProduct(payload.new);
+                setState(prev => {
+                    if (payload.eventType === 'INSERT') {
+                        const exists = prev.products.some(p => p.id === updatedProduct.id);
+                        if (exists) return prev;
+                        return { ...prev, products: [...prev.products, updatedProduct] };
+                    }
+                    if (payload.eventType === 'UPDATE') {
+                        return { ...prev, products: prev.products.map(p => p.id === updatedProduct.id ? updatedProduct : p) };
+                    }
+                    if (payload.eventType === 'DELETE') {
+                        return { ...prev, products: prev.products.filter(p => p.id !== payload.old.id) };
+                    }
+                    return prev;
+                });
+            }
+        )
+        .subscribe();
+
+      // 5. Listen for Client Changes
       const clientsChannel = supabase.channel('clients_sync')
         .on(
             'postgres_changes',
@@ -708,6 +830,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return () => {
           supabase.removeChannel(shopChannel);
           supabase.removeChannel(appointmentsChannel);
+          supabase.removeChannel(goalsChannel);
+          supabase.removeChannel(productsChannel);
           supabase.removeChannel(clientsChannel);
       }
   }, [state.shop?.id]);
@@ -1767,6 +1891,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.address !== undefined) payload.address = sanitize(updated.address);
         if (updated.phone !== undefined) payload.phone = sanitize(updated.phone);
 
+        // FIDELIDADE
+        if (updated.loyaltyEnabled !== undefined) payload.loyalty_enabled = updated.loyaltyEnabled;
+        if (updated.loyaltyMode !== undefined) payload.loyalty_mode = updated.loyaltyMode;
+        if (updated.loyaltyCardGoal !== undefined) payload.loyalty_card_goal = updated.loyaltyCardGoal;
+        if (updated.loyaltyPointsRatio !== undefined) payload.loyalty_points_ratio = updated.loyaltyPointsRatio;
+        if (updated.loyaltyPointsGoal !== undefined) payload.loyalty_points_goal = updated.loyaltyPointsGoal;
+        if (updated.loyaltyRewardValue !== undefined) payload.loyalty_reward_value = updated.loyaltyRewardValue;
+        if (updated.loyaltyRewardType !== undefined) payload.loyalty_reward_type = updated.loyaltyRewardType;
+        if (updated.loyaltyRewardValidityDays !== undefined) payload.loyalty_reward_validity_days = updated.loyaltyRewardValidityDays;
+
         const { data, error } = await supabase.from('settings').update(payload).eq('shop_id', shopId).select().single();
         if (error) throw error;
         
@@ -1774,7 +1908,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setState(prev => ({ 
             ...prev, 
             settings: newSettings,
-            shop: (updated.name || updated.slug) ? { ...prev.shop!, name: updated.name || prev.shop!.name, slug: updated.slug || prev.shop!.slug } : prev.shop
+            shop: (updated.name || updated.slug) ? { ...prev.shop!, name: updated.name || prev.shop!.name, slug: updated.slug || prev.shop!.slug } : prev.shop,
+            myShops: (updated.name || updated.slug) ? prev.myShops.map(s => s.id === shopId ? { ...s, name: updated.name || s.name, slug: updated.slug || s.slug } : s) : prev.myShops
         }));
         
         return { success: true };
@@ -2025,19 +2160,32 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               end_date: goal.endDate
           };
 
-          let result;
+          let updatedGoal: Goal;
+
           if (goal.id) {
-              result = await supabase.from('goals').update(payload).eq('id', goal.id).eq('shop_id', shopId).select().single();
+              // UPDATE: re-fetch normalmente
+              const { data, error } = await supabase
+                  .from('goals').update(payload)
+                  .eq('id', goal.id).eq('shop_id', shopId)
+                  .select().single();
+              if (error) throw error;
+              updatedGoal = mapGoal(data);
           } else {
-              result = await supabase.from('goals').insert(payload).select().single();
+              // INSERT: após inserção, faz re-fetch para obter current_value
+              // calculado pelo trigger trg_sync_goal_initial (roda na mesma tx)
+              const { data: inserted, error: insertError } = await supabase
+                  .from('goals').insert(payload).select('id').single();
+              if (insertError) throw insertError;
+
+              const { data: fresh, error: fetchError } = await supabase
+                  .from('goals').select('*').eq('id', inserted.id).single();
+              if (fetchError) throw fetchError;
+              updatedGoal = mapGoal(fresh);
           }
 
-          if (result.error) throw result.error;
-
-          const updatedGoal = mapGoal(result.data);
           setState(prev => ({
               ...prev,
-              goals: goal.id 
+              goals: goal.id
                 ? prev.goals.map(g => g.id === goal.id ? updatedGoal : g)
                 : [...prev.goals, updatedGoal]
           }));
@@ -2046,6 +2194,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           return { success: false, error: e.message };
       }
   };
+
 
   const removeGoal = async (id: string): MutationResult => {
       try {
@@ -2120,6 +2269,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       loadShopBySlug,
       switchShop,
       addAdditionalUnit,
+      deleteCurrentShop,
       resetPassword,
       addService, updateService, removeService,
       addProfessional, updateProfessional, removeProfessional,
@@ -2148,6 +2298,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       validateClientToken,
       logoutClient,
       toggleTheme,
+      reloadClients,
+      formatCurrencyBRL,
       refresh: () => fetchData(state.shop?.id)
     }}>
       {children}

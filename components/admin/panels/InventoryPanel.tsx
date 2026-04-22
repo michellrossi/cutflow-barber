@@ -28,7 +28,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '../../ui/ToastContext';
 
 export const InventoryPanel: React.FC = () => {
-  const { products, addProduct, updateProduct, removeProduct, settings } = useShop();
+  const { products, addProduct, updateProduct, removeProduct, settings, formatCurrencyBRL } = useShop();
   const { showToast } = useToast();
   
   // UI State
@@ -177,8 +177,8 @@ export const InventoryPanel: React.FC = () => {
     const productData = {
       name: formData.name,
       category: formData.category,
-      costPrice: Number(formData.costPrice),
-      salePrice: Number(formData.salePrice),
+      costPrice: Math.round(Number(formData.costPrice) * 100) / 100,
+      salePrice: Math.round(Number(formData.salePrice) * 100) / 100,
       currentStock: Number(formData.currentStock),
       minStock: Number(formData.minStock)
     };
@@ -248,27 +248,6 @@ export const InventoryPanel: React.FC = () => {
         </button>
       </div>
 
-      {/* 5. Relatório de Margem e Performance (Top Cards) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <InsightCard 
-          icon={<DollarSign className="text-emerald-500" />}
-          label="Valor em Estoque"
-          value={new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(insights.totalCost)}
-          subtitle="Capital imobilizado"
-        />
-        <InsightCard 
-          icon={<TrendingUp className="text-blue-500" />}
-          label="Margem Média"
-          value={`${insights.avgMargin.toFixed(1)}%`}
-          subtitle="Rentabilidade da vitrine"
-        />
-        <InsightCard 
-          icon={<Package className="text-orange-500" />}
-          label="Item Principal"
-          value={insights.topProduct}
-          subtitle="Maior volume"
-        />
-      </div>
 
       {/* 2. Sub-menu Estilo 'Interruptor' (Categorias) */}
       <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
@@ -421,51 +400,53 @@ export const InventoryPanel: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
         {filteredProducts.map(product => (
-          <div key={product.id} onClick={() => handleEdit(product)} className="bg-white rounded-lg border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all shadow-xl cursor-pointer">
-            <div className="p-6 flex flex-col h-full relative">
+          <div key={product.id} onClick={() => handleEdit(product)} className="bg-white rounded-lg border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all shadow cursor-pointer">
+            <div className="p-4 flex flex-col h-full relative">
                {/* Badge de Alerta de Estoque */}
                {product.currentStock <= product.minStock && (
-                  <div className="absolute top-4 right-4 animate-pulse">
-                     <AlertTriangle className={product.currentStock === 0 ? "text-red-500" : "text-amber-500"} size={20} />
+                  <div className="absolute top-3 right-3 animate-pulse">
+                     <AlertTriangle className={product.currentStock === 0 ? "text-red-500" : "text-amber-500"} size={16} />
                   </div>
                )}
 
-              <h3 className="font-bold text-slate-900 text-lg leading-tight mb-1 group-hover:text-orange-600 transition-colors uppercase">{product.name}</h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase mb-6">{product.category}</p>
+              <div className="min-h-[40px] mb-1">
+                <h3 className="font-bold text-slate-900 text-sm leading-tight group-hover:text-orange-600 transition-colors uppercase pr-4 line-clamp-2">{product.name}</h3>
+              </div>
+              <p className="text-[9px] text-slate-400 font-bold uppercase mb-3">{product.category}</p>
 
-              <div className="grid grid-cols-2 gap-4 mb-6 pb-6 border-b border-slate-50">
+              <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-slate-50">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Preço Venda</p>
-                  <p className="text-xl font-black text-slate-900">R$ {product.salePrice.toFixed(2)}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Venda</p>
+                  <p className="text-base font-black text-slate-900">{formatCurrencyBRL(product.salePrice)}</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Estoque</p>
-                  <p className={`text-xl font-black ${product.currentStock <= product.minStock ? 'text-orange-500' : 'text-slate-900'}`}>{product.currentStock}</p>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Estoque</p>
+                  <p className={`text-base font-black ${product.currentStock <= product.minStock ? 'text-orange-500' : 'text-slate-900'}`}>{product.currentStock}</p>
                 </div>
               </div>
 
-              <div className="mt-auto space-y-4">
-                <div className="flex justify-between items-center text-[10px] font-bold px-2 py-1.5 bg-emerald-50 text-emerald-600 rounded">
-                  <span>Margem Real</span>
+              <div className="mt-auto space-y-2">
+                <div className="flex justify-between items-center text-[9px] font-bold px-2 py-1 bg-emerald-50 text-emerald-600 rounded">
+                  <span>Margem</span>
                   <span>
-                    +{((product.salePrice - product.costPrice) / product.salePrice * 100).toFixed(0)}%
+                    +{product.salePrice > 0 ? ((product.salePrice - product.costPrice) / product.salePrice * 100).toFixed(0) : 0}%
                   </span>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-1.5">
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleEdit(product); }} 
-                    className="flex-1 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all font-bold text-xs flex items-center justify-center gap-2"
+                    className="flex-1 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all font-bold text-xs flex items-center justify-center gap-1"
                   >
-                    <Edit2 size={12} /> Editar
+                    <Edit2 size={11} /> Editar
                   </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); setDeleteId(product.id); }} 
-                    className="px-3 py-3 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                    className="px-2 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
                   >
-                    <Trash2 size={16}/>
+                    <Trash2 size={13}/>
                   </button>
                 </div>
               </div>
@@ -481,15 +462,15 @@ export const InventoryPanel: React.FC = () => {
             setSelectedCat('');
             setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', minStock: '2' }); 
           }}
-          className="bg-slate-50 rounded-lg border-2 border-dashed border-slate-200 p-8 flex flex-col items-center justify-center gap-6 hover:border-slate-300 hover:bg-slate-100 transition-all min-h-[350px] group"
+          className="bg-slate-50 rounded-lg border-2 border-dashed border-slate-200 p-4 flex flex-col items-center justify-center gap-3 hover:border-slate-300 hover:bg-slate-100 transition-all min-h-[200px] group"
         >
-          <div className="w-16 h-16 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-orange-500 group-hover:scale-110 transition-all shadow-xl">
-            <Plus size={32} />
+          <div className="w-12 h-12 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-orange-500 group-hover:scale-110 transition-all shadow">
+            <Plus size={24} />
           </div>
           <div className="text-center">
-            <p className="text-xl font-bold text-slate-900 mb-2">Novo Produto</p>
-            <p className="text-sm text-slate-500 leading-relaxed max-w-[180px]">
-              Expanda sua vitrine e aumente seu ticket médio.
+            <p className="text-sm font-bold text-slate-900 mb-1">Novo Produto</p>
+            <p className="text-xs text-slate-500 leading-relaxed max-w-[140px]">
+              Expanda sua vitrine.
             </p>
           </div>
         </button>

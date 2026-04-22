@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useShop } from '../../../store';
-import { MessageSquare, Plus, Save, Trash2, Bell, Clock, CheckCircle, RefreshCw, Eye, Copy, Info, Sparkles, Users, UserCheck, Tags, Smile, Smartphone, Loader2 } from 'lucide-react';
+import { supabase } from '../../../supabaseClient';
+import { MessageSquare, Plus, Save, Trash2, Bell, Clock, CheckCircle, RefreshCw, Eye, Copy, Info, Sparkles, Users, UserCheck, Tags, Smile, Smartphone, Loader2, UserMinus } from 'lucide-react';
 import { MessageTemplate, MessageCategory } from '../../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
@@ -11,7 +12,7 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
         messageTemplates, addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
         messageCategories, addMessageCategory, removeMessageCategory,
         automationTriggers, addAutomationTrigger, updateAutomationTrigger, removeAutomationTrigger,
-        settings, professionals, services, shop,
+        settings, professionals, services, shop, botPausedCount,
         getWhatsAppQRCode, getWhatsAppStatus, disconnectWhatsApp
     } = useShop();
     const { showToast } = useToast();
@@ -312,6 +313,21 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
                     <Bell size={18} />
                     Preferências
                 </button>
+                <button
+                    onClick={() => setActiveTab('chatbot')}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all relative ${activeTab === 'chatbot'
+                            ? 'bg-white text-orange-600 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                >
+                    <MessageSquare size={18} />
+                    Atendimento IA
+                    {botPausedCount > 0 && (
+                        <span className="flex items-center justify-center bg-red-500 text-white text-[10px] font-black rounded-full w-5 h-5 shadow-sm animate-pulse">
+                            {botPausedCount}
+                        </span>
+                    )}
+                </button>
             </div>
 
             {activeTab === 'whatsapp' ? (
@@ -480,6 +496,8 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
                         </div>
                     </div>
                 </div>
+            ) : activeTab === 'chatbot' ? (
+                <ChatbotSessionsPanel />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredTemplates.map((template) => (
@@ -837,6 +855,128 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
                     </div>
                 )}
             </AnimatePresence>
+        </div>
+    );
+};
+
+const ChatbotSessionsPanel: React.FC = () => {
+    const { shop } = useShop();
+    const { showToast } = useToast();
+    const [sessions, setSessions] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const loadSessions = async () => {
+        if (!shop?.id) return;
+        setLoading(true);
+        try {
+            const { data, error } = await supabase
+                .from('whatsapp_chat_sessions')
+                .select('*')
+                .eq('shop_id', shop.id)
+                .eq('bot_paused', true)
+                .order('last_message_at', { ascending: false });
+            
+            if (error) throw error;
+            setSessions(data || []);
+        } catch (err) {
+            console.error('Erro ao carregar sessões:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadSessions();
+    }, [shop?.id]);
+
+    const handleReactivate = async (sessionId: string) => {
+        const { error } = await supabase
+            .from('whatsapp_chat_sessions')
+            .update({ bot_paused: false })
+            .eq('id', sessionId);
+
+        if (error) {
+            showToast('Erro ao reativar bot', 'error');
+        } else {
+            showToast('Chatbot reativado com sucesso!');
+            setSessions(prev => prev.filter(s => s.id !== sessionId));
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center py-20 bg-white border border-slate-200 rounded-lg shadow-sm">
+                <Loader2 size={40} className="text-orange-500 animate-spin mb-4" />
+                <p className="text-slate-400 font-medium font-montserrat uppercase text-[10px] tracking-widest">Buscando atendimentos pendentes...</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+            <div className="p-8 border-b border-slate-100 bg-slate-50/50">
+                <h2 className="text-lg font-bold text-slate-900 font-montserrat">Atendimentos Humanos Pendentes</h2>
+                <p className="text-sm text-slate-500">Clientes que solicitaram falar com um atendente e estão com a IA pausada.</p>
+            </div>
+
+            {sessions.length === 0 ? (
+                <div className="p-20 text-center">
+                    <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                        <UserCheck size={32} className="text-slate-300" />
+                    </div>
+                    <p className="text-slate-400 font-medium">Nenhum atendimento humano pendente no momento.</p>
+                </div>
+            ) : (
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-[0.1em]">
+                            <tr>
+                                <th className="px-8 py-4">Cliente</th>
+                                <th className="px-8 py-4">Última Mensagem</th>
+                                <th className="px-8 py-4">Pausado em</th>
+                                <th className="px-8 py-4 text-right">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {sessions.map(session => (
+                                <tr key={session.id} className="hover:bg-slate-50/30 transition-all">
+                                    <td className="px-8 py-6">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center font-bold">
+                                                {session.remote_jid?.charAt(0) || 'C'}
+                                            </div>
+                                            <div>
+                                                <div className="font-bold text-slate-700">+{session.remote_jid?.split('@')[0]}</div>
+                                                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">Sessão Ativa</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-6 max-w-xs">
+                                        <div className="text-sm text-slate-600 truncate italic">
+                                            "{session.messages?.[session.messages.length - 2]?.content || 'Mensagem não disponível'}"
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-6">
+                                        <div className="flex items-center gap-2 text-slate-600 font-medium">
+                                            <Clock size={14} className="text-slate-400" />
+                                            {new Date(session.last_message_at).toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' })}
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-6 text-right">
+                                        <button
+                                            onClick={() => handleReactivate(session.id)}
+                                            className="px-4 py-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-lg font-bold text-xs transition-all border border-emerald-100 flex items-center gap-2 ml-auto shadow-sm"
+                                        >
+                                            <RefreshCw size={14} />
+                                            REATIVAR BOT
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 };

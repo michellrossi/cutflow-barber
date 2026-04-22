@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { BarChart3, Users, Briefcase, Scissors, Settings, Users as UsersIcon, Plus, Download } from 'lucide-react';
+import { BarChart3, Users, Briefcase, Scissors, Settings, Users as UsersIcon, Plus, Download, Package, Target } from 'lucide-react';
 import { useShop } from '../../../store';
 import { ReportsFinancePanel } from './ReportsFinancePanel';
 import { ReportsClientsPanel } from './ReportsClientsPanel';
 import { ReportsTeamPanel } from './ReportsTeamPanel';
 import { ReportsServicesPanel } from './ReportsServicesPanel';
+import { ReportsProductsPanel } from './ReportsProductsPanel';
+import { ReportsGoalsPanel } from './ReportsGoalsPanel';
 import { DateRangeFilter } from '../ui/DateRangeFilter';
 
-type ReportSubTab = 'finance' | 'clients' | 'team' | 'services';
+type ReportSubTab = 'finance' | 'clients' | 'team' | 'services' | 'products' | 'goals';
 
 export const ReportsPanel: React.FC = () => {
     const { appointments, clients, services, professionals } = useShop();
@@ -100,10 +102,12 @@ export const ReportsPanel: React.FC = () => {
     };
 
     const tabs = [
-        { id: 'finance', label: 'Financeiro', icon: BarChart3 },
-        { id: 'clients', label: 'Clientes', icon: UsersIcon },
-        { id: 'team', label: 'Profissionais', icon: Users },
-        { id: 'services', label: 'Serviços', icon: Scissors },
+        { id: 'finance',  label: 'Financeiro',  icon: BarChart3  },
+        { id: 'clients',  label: 'Clientes',    icon: UsersIcon  },
+        { id: 'team',     label: 'Profissionais', icon: Users    },
+        { id: 'services', label: 'Serviços',    icon: Scissors   },
+        { id: 'products', label: 'Produtos',    icon: Package    },
+        { id: 'goals',    label: 'Metas',       icon: Target     },
     ];
 
     return (
@@ -143,10 +147,12 @@ export const ReportsPanel: React.FC = () => {
             </div>
 
             <div className="animate-fade-in">
-                {activeTab === 'finance' && <ReportsFinancePanel dateRange={dateRange} />}
-                {activeTab === 'clients' && <ReportsClientsPanel dateRange={dateRange} />}
-                {activeTab === 'team' && <ReportsTeamPanel dateRange={dateRange} />}
+                {activeTab === 'finance'  && <ReportsFinancePanel  dateRange={dateRange} />}
+                {activeTab === 'clients'  && <ReportsClientsPanel  dateRange={dateRange} />}
+                {activeTab === 'team'     && <ReportsTeamPanel     dateRange={dateRange} />}
                 {activeTab === 'services' && <ReportsServicesPanel dateRange={dateRange} />}
+                {activeTab === 'products' && <ReportsProductsPanel dateRange={dateRange} />}
+                {activeTab === 'goals'    && <ReportsGoalsPanel    dateRange={dateRange} />}
             </div>
         </div>
     );

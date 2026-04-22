@@ -68,15 +68,10 @@ export const ProfilePanel = () => {
     const handleUpdateSlug = async () => {
         if (!slug || slug === shop?.slug) return;
         setSlugSaving(true);
-        try {
-            const { error } = await supabase.from('shops').update({ slug: slug.toLowerCase().trim() }).eq('id', shop?.id);
-            if (error) throw error;
-            showToast('Slug da barbearia atualizado!', 'success');
-        } catch (e: any) {
-            showToast(e.message || 'Erro ao atualizar link.', 'error');
-        } finally {
-            setSlugSaving(false);
-        }
+        const result = await updateSettings({ slug: slug.toLowerCase().trim() });
+        setSlugSaving(false);
+        if (result?.success) showToast('Link da agenda atualizado!', 'success');
+        else showToast(result?.error || 'Erro ao atualizar link.', 'error');
     };
 
     return (
