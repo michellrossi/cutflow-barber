@@ -53,12 +53,6 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
     };
 
-        if (result.success && result.url) {
-            setSent(true);
-        } else {
-            setError(result.error || 'Ocorreu um erro ao solicitar o acesso.');
-        }
-    };
 
     if (sent) {
         return (
