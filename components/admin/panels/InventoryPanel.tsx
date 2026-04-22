@@ -51,6 +51,30 @@ export const InventoryPanel: React.FC = () => {
   const [selectedCat, setSelectedCat] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
 
+  // Sales data state
+  const [productSales, setProductSales] = useState<Record<string, number>>({});
+  
+  // Fetch sales
+  React.useEffect(() => {
+    if (products.length === 0) return;
+    const fetchSales = async () => {
+      const { supabase } = await import('../../../supabaseClient');
+      if (!settings?.shopId) return;
+      const { data } = await supabase
+        .from('appointment_products')
+        .select('product_id, quantity');
+      if (data) {
+        const salesStats: Record<string, number> = {};
+        data.forEach(item => {
+          if (!salesStats[item.product_id]) salesStats[item.product_id] = 0;
+          salesStats[item.product_id] += item.quantity;
+        });
+        setProductSales(salesStats);
+      }
+    };
+    fetchSales();
+  }, [products]);
+
   // --- CATALOGO PRE-DEFINIDO (Baseado no pedido do usuário) ---
   const PRODUCT_CATEGORIES = [
     'Cuidados com o Cabelo',
@@ -405,11 +429,17 @@ export const InventoryPanel: React.FC = () => {
           <div key={product.id} onClick={() => handleEdit(product)} className="bg-white rounded-lg border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all shadow cursor-pointer">
             <div className="p-4 flex flex-col h-full relative">
                {/* Badge de Alerta de Estoque */}
-               {product.currentStock <= product.minStock && (
-                  <div className="absolute top-3 right-3 animate-pulse">
-                     <AlertTriangle className={product.currentStock === 0 ? "text-red-500" : "text-amber-500"} size={16} />
-                  </div>
-               )}
+               {(() => {
+                 const current = product.currentStock - (productSales[product.id] || 0);
+                 if (current <= product.minStock) {
+                   return (
+                     <div className="absolute top-3 right-3 animate-pulse">
+                        <AlertTriangle className={current <= 0 ? "text-red-500" : "text-amber-500"} size={16} />
+                     </div>
+                   );
+                 }
+                 return null;
+               })()}
 
               <div className="min-h-[40px] mb-1">
                 <h3 className="font-bold text-slate-900 text-sm leading-tight group-hover:text-orange-600 transition-colors uppercase pr-4 line-clamp-2">{product.name}</h3>
@@ -435,11 +465,13 @@ export const InventoryPanel: React.FC = () => {
                 </div>
                 <div className="flex justify-between mt-2 pt-2 border-t border-slate-50">
                   <span className="text-[9px] font-bold text-slate-400 uppercase">Est. Inicial</span>
-                  <span className="text-[10px] font-black text-slate-900">{product.minStock}</span> 
+                  <span className="text-[10px] font-black text-slate-900">{product.currentStock}</span> 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[9px] font-bold text-slate-400 uppercase">Est. Atual</span>
-                  <span className={`text-[10px] font-black ${product.currentStock <= product.minStock ? 'text-orange-500' : 'text-slate-900'}`}>{product.currentStock}</span>
+                  <span className={`text-[10px] font-black ${(product.currentStock - (productSales[product.id] || 0)) <= product.minStock ? 'text-orange-500' : 'text-slate-900'}`}>
+                    {product.currentStock - (productSales[product.id] || 0)}
+                  </span>
                 </div>
               </div>
 
