@@ -3,6 +3,27 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { Send, Bot, User, Loader2, Sparkles, TrendingUp, Users, Scissors, DollarSign } from 'lucide-react';
 
+function CalendarCheck({ size = 16 }: { size?: number }) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
+            <path d="M16 2v4" />
+            <path d="M3 10h18" />
+            <path d="m9 16 2 2 4-4" />
+            <path d="M8 2v4" />
+        </svg>
+    );
+}
+
+const StatBadge: React.FC<{ icon: React.ReactNode, label: string, value: string | number }> = ({ icon, label, value }) => (
+    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs shadow-sm">
+        <span className="text-slate-400">{icon}</span>
+        <span className="text-slate-500">{label}:</span>
+        <span className="text-slate-900 font-bold">{value}</span>
+    </div>
+);
+
+
 interface Message {
     role: 'user' | 'assistant';
     content: string;
@@ -68,7 +89,7 @@ export const InsightPanel: React.FC = () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    prompt: userMessage,
+                    prompt: input,
                     context: contextData,
                     history: messages.slice(-6),
                     shopId: shop?.id
@@ -154,14 +175,4 @@ export const InsightPanel: React.FC = () => {
     );
 };
 
-const StatBadge: React.FC<{ icon: React.ReactNode, label: string, value: string | number }> = ({ icon, label, value }) => (
-    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 text-xs shadow-sm">
-        <span className="text-slate-400">{icon}</span>
-        <span className="text-slate-500">{label}:</span>
-        <span className="text-slate-900 font-bold">{value}</span>
-    </div>
-);
 
-const CalendarCheck: React.FC<{size?: number}> = ({size = 16}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><path d="M16 2v4"/><path d="M3 10h18"/><path d="m9 16 2 2 4-4"/><path d="M8 2v4"/></svg>
-);
