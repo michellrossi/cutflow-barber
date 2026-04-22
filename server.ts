@@ -1426,6 +1426,23 @@ async function startServer() {
         res.json({ success: true });
     });
 
+    app.post('/api/notify/login-link', async (req, res) => {
+        const { phone, url, shopId } = req.body;
+        if (!phone || !url || !shopId) return res.status(400).json({ error: "Faltam parâmetros" });
+
+        try {
+            const { data: shop } = await supabaseAdmin.from('shops').select('name, whatsapp_instance').eq('id', shopId).single();
+            const shopName = shop?.name || "Nossa Barbearia";
+
+            const message = `👋 Olá! Aqui é da *${shopName}*.\n\nVocê solicitou um acesso rápido. Clique no link abaixo para entrar no seu perfil e ver/agendar seus horários:\n\n🔗 ${url}\n\n_Este link é seguro e expira em 15 minutos._`;
+
+            const ok = await sendWhatsApp(phone, message, shop?.whatsapp_instance);
+            res.json({ success: ok });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     app.post('/api/loyalty/check-reward', async (req, res) => {
         const { clientId, shopId } = req.body;
         try {

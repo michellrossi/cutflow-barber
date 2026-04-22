@@ -530,7 +530,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // 1. Tenta encontrar as lojas onde o usuário é DONO
             if (userId) {
-                const { data: shopsData } = await supabase.from('shops').select('*').eq('owner_id', userId);
+                const { data: shopsData } = await supabase.from('shops').select('*').eq('owner_id', userId).order('created_at', { ascending: true });
                 if (shopsData && shopsData.length > 0) {
                     const mappedShops = shopsData.map(mapShop);
                     // Pega a primeira como inicial se nenhuma estiver ativa

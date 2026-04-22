@@ -56,7 +56,8 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     if (sent) {
         return (
-            <div className="max-w-md mx-auto p-6 border rounded-2xl text-center space-y-6 animate-in fade-in zoom-in duration-300" style={{ backgroundColor: settings.cardBackgroundColor || '#0f172a', borderColor: settings.borderColor || '#1e293b' }}>
+            <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
+                <div className="max-w-md w-full mx-auto p-6 border rounded-2xl text-center space-y-6 animate-in fade-in zoom-in duration-300" style={{ backgroundColor: settings.cardBackgroundColor || '#0f172a', borderColor: settings.borderColor || '#1e293b' }}>
                 <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle2 size={32} />
                 </div>
@@ -77,12 +78,14 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <button onClick={onBack} className="w-full py-4 rounded-xl font-bold transition-all hover:brightness-110" style={{ backgroundColor: settings.cardBackgroundColor || '#1e293b', color: settings.buttonTextColor || '#ffffff', borderColor: settings.borderColor || '#334155' }}>
                     Voltar para o agendamento
                 </button>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="max-w-md mx-auto p-6 border rounded-2xl space-y-8 shadow-2xl" style={{ backgroundColor: settings.cardBackgroundColor || '#0f172a', borderColor: settings.borderColor || '#1e293b' }}>
+        <div className="min-h-[80vh] flex flex-col items-center justify-center p-4">
+            <div className="max-w-md w-full mx-auto p-6 border rounded-2xl space-y-8 shadow-2xl" style={{ backgroundColor: settings.cardBackgroundColor || '#0f172a', borderColor: settings.borderColor || '#1e293b' }}>
             <div className="text-center space-y-2">
                 <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${settings.accentColor || settings.primaryColor}33`, color: settings.accentColor || settings.primaryColor }}>
                     <Smartphone size={24} />
@@ -189,6 +192,7 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <button onClick={onBack} className="text-sm transition-colors hover:brightness-110" style={{ color: settings.textColor || '#64748b' }}>
                     Voltar para o agendamento
                 </button>
+            </div>
             </div>
         </div>
     );

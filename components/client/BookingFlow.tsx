@@ -55,7 +55,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
             setCustomerInfo({ 
                 name: currentClient.name, 
                 phone: currentClient.phone, 
-                birthDate: currentClient.birthDate || '' 
+                birthDate: currentClient.birthDate ? currentClient.birthDate.split('T')[0] : '' 
             });
         }
     }, [currentClient]);

@@ -13,7 +13,7 @@ export const InsightPanel: React.FC = () => {
     const [messages, setMessages] = useState<Message[]>([
         { role: 'assistant', content: `Olá! Sou seu assistente de inteligência de negócios. Posso analisar os dados da sua barbearia (${settings.name}) e te dar insights sobre performance, finanças e clientes. O que gostaria de saber hoje?` }
     ]);
-    const [input, setInput] = useState('');
+    const [input] = useState('Por favor, faça uma análise gerencial e estratégica da minha barbearia com base nos meus dados reais. Destaque pontos fortes, pontos de atenção e sugira ações práticas (em no máximo 3 tópicos curtos). Nunca inicie com "Claro", vá direto ao ponto.');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -25,13 +25,10 @@ export const InsightPanel: React.FC = () => {
         scrollToBottom();
     }, [messages]);
 
-    const handleSend = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!input.trim() || isLoading) return;
+    const handleGenerateInsight = async () => {
+        if (isLoading) return;
 
-        const userMessage = input.trim();
-        setInput('');
-        setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+        setMessages(prev => [...prev, { role: 'user', content: "Gerar Insights Estratégicos" }]);
         setIsLoading(true);
 
         try {
@@ -140,28 +137,19 @@ export const InsightPanel: React.FC = () => {
             </div>
 
             {/* Input Area */}
-            <form onSubmit={handleSend} className="p-4 border-t border-slate-200 bg-slate-50">
-                <div className="relative flex items-center">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        placeholder="Pergunte sobre faturamento, barbeiro mais produtivo, clientes..."
-                        className="w-full bg-white border border-slate-200 rounded-lg py-4 pl-4 pr-14 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-orange-500 transition-all shadow-sm"
-                        disabled={isLoading}
-                    />
-                    <button
-                        type="submit"
-                        disabled={!input.trim() || isLoading}
-                        className="absolute right-2 p-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-all disabled:opacity-50 disabled:hover:bg-orange-500 shadow-md"
-                    >
-                        <Send size={20} />
-                    </button>
-                </div>
-                <p className="text-[10px] text-slate-400 mt-2 text-center">
-                    A IA analisa dados reais do seu banco de dados para responder.
+            <div className="p-4 border-t border-slate-200 bg-slate-50 flex flex-col items-center justify-center">
+                <button
+                    onClick={handleGenerateInsight}
+                    disabled={isLoading}
+                    className="w-full md:w-auto px-8 py-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 disabled:hover:bg-orange-600"
+                >
+                    {isLoading ? <Loader2 size={24} className="animate-spin" /> : <TrendingUp size={24} />}
+                    {isLoading ? 'Analisando dados...' : 'Gerar Novo Insight Estratégico'}
+                </button>
+                <p className="text-xs text-slate-400 mt-3 text-center max-w-lg">
+                    Com apenas um clique, a inteligência artificial cruzará todos os seus dados de agendamentos, clientes e finanças para entregar orientações automáticas e acionáveis.
                 </p>
-            </form>
+            </div>
         </div>
     );
 };
