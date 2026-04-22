@@ -170,8 +170,15 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
     const [isTesting, setIsTesting] = useState(false);
     const [isGeneratingAI, setIsGeneratingAI] = useState(false);
 
+    const [textGenCount, setTextGenCount] = useState(0);
+
     const handleGenerateAI = async () => {
         if (!editingTemplate?.triggerId) return;
+        if (textGenCount >= 2) {
+            showToast('Limite máximo de 2 gerações por sessão atingido.', 'error');
+            return;
+        }
+        
         const triggerName = getTriggerName(editingTemplate.triggerId);
 
         setIsGeneratingAI(true);
@@ -192,6 +199,7 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
                     ...prev,
                     content: data.text
                 }));
+                setTextGenCount(prev => prev + 1);
             } else {
                 throw new Error(data.error);
             }

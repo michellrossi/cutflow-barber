@@ -416,24 +416,34 @@ export const InventoryPanel: React.FC = () => {
               </div>
               <p className="text-[9px] text-slate-400 font-bold uppercase mb-3">{product.category}</p>
 
-              <div className="grid grid-cols-2 gap-2 mb-3 pb-3 border-b border-slate-50">
-                <div>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Venda</p>
-                  <p className="text-base font-black text-slate-900">{formatCurrencyBRL(product.salePrice)}</p>
+              <div className="space-y-1 mb-3 pb-3 border-b border-slate-50">
+                <div className="flex justify-between">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Custo</span>
+                  <span className="text-[10px] font-black text-slate-900">{formatCurrencyBRL(product.costPrice)}</span>
                 </div>
-                <div className="text-right">
-                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Estoque</p>
-                  <p className={`text-base font-black ${product.currentStock <= product.minStock ? 'text-orange-500' : 'text-slate-900'}`}>{product.currentStock}</p>
+                <div className="flex justify-between">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Venda</span>
+                  <span className="text-[10px] font-black text-slate-900">{formatCurrencyBRL(product.salePrice)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[9px] font-bold text-emerald-500 uppercase">Lucro</span>
+                  <span className="text-[10px] font-black text-emerald-600">{formatCurrencyBRL(product.salePrice > product.costPrice ? product.salePrice - product.costPrice : 0)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Margem (%)</span>
+                  <span className="text-[10px] font-black text-slate-900">{product.salePrice > 0 ? ((product.salePrice - product.costPrice) / product.salePrice * 100).toFixed(0) : 0}%</span>
+                </div>
+                <div className="flex justify-between mt-2 pt-2 border-t border-slate-50">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Est. Inicial</span>
+                  <span className="text-[10px] font-black text-slate-900">{product.minStock}</span> 
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Est. Atual</span>
+                  <span className={`text-[10px] font-black ${product.currentStock <= product.minStock ? 'text-orange-500' : 'text-slate-900'}`}>{product.currentStock}</span>
                 </div>
               </div>
 
               <div className="mt-auto space-y-2">
-                <div className="flex justify-between items-center text-[9px] font-bold px-2 py-1 bg-emerald-50 text-emerald-600 rounded">
-                  <span>Margem</span>
-                  <span>
-                    +{product.salePrice > 0 ? ((product.salePrice - product.costPrice) / product.salePrice * 100).toFixed(0) : 0}%
-                  </span>
-                </div>
 
                 <div className="flex gap-1.5">
                   <button 

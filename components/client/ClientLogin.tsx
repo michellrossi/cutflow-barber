@@ -5,7 +5,9 @@ import { Smartphone, ArrowRight, Loader2, CheckCircle2, MessageSquare } from 'lu
 
 export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const { requestClientLogin, settings } = useShop();
+    const [name, setName] = useState('');
     const [phone, setPhone] = useState('');
+    const [birthDate, setBirthDate] = useState('');
     const [loading, setLoading] = useState(false);
     const [sent, setSent] = useState(false);
     const [error, setError] = useState('');
@@ -19,7 +21,7 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
         setLoading(true);
         setError('');
-        const result = await requestClientLogin(phone);
+        const result = await requestClientLogin(phone, name, birthDate);
         setLoading(false);
 
         if (result.success && result.url) {
@@ -63,10 +65,32 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     <Smartphone size={24} />
                 </div>
                 <h2 className="text-2xl font-bold" style={{ color: settings.titleColor || '#ffffff' }}>Acesse seu Perfil</h2>
-                <p style={{ color: settings.textColor || '#94a3b8' }}>Entre apenas com seu número de telefone para ver seu histórico e pontos.</p>
+        <p style={{ color: settings.textColor || '#94a3b8' }}>Entre com seus dados para acessar o agendamento e seu histórico.</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                    <label className="text-sm font-medium" style={{ color: settings.textColor || '#cbd5e1' }}>Nome Completo (Primeiro Acesso)</label>
+                    <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        placeholder="Seu nome"
+                        className="w-full border rounded-xl py-3 px-4 focus:outline-none transition-all"
+                        style={{ backgroundColor: settings.inputBackgroundColor || '#020617', borderColor: settings.borderColor || '#1e293b', color: settings.inputTextColor || '#ffffff' }}
+                    />
+                </div>
+                
+                <div className="space-y-2">
+                    <label className="text-sm font-medium" style={{ color: settings.textColor || '#cbd5e1' }}>Data de Nascimento (Primeiro Acesso)</label>
+                    <input
+                        type="date"
+                        value={birthDate}
+                        onChange={(e) => setBirthDate(e.target.value)}
+                        className="w-full border rounded-xl py-3 px-4 focus:outline-none transition-all"
+                        style={{ backgroundColor: settings.inputBackgroundColor || '#020617', borderColor: settings.borderColor || '#1e293b', color: settings.inputTextColor || '#ffffff' }}
+                    />
+                </div>
                 <div className="space-y-2">
                     <label className="text-sm font-medium" style={{ color: settings.textColor || '#cbd5e1' }}>Seu WhatsApp</label>
                     <div className="relative">
@@ -76,7 +100,7 @@ export const ClientLogin: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
                             placeholder="(00) 00000-0000"
-                            className="w-full border rounded-xl py-4 pl-12 pr-4 focus:outline-none transition-all"
+                            className="w-full border rounded-xl py-3 pl-12 pr-4 focus:outline-none transition-all"
                             style={{ 
                                 backgroundColor: settings.inputBackgroundColor || '#020617', 
                                 borderColor: settings.borderColor || '#1e293b', 

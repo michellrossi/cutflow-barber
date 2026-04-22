@@ -46,9 +46,15 @@ export const ServicesPanel: React.FC = () => {
         return services.filter(s => s.category === activeCategory);
     }, [services, activeCategory]);
 
+    const [imageGenCount, setImageGenCount] = useState(0);
+
     const generateAIImage = async () => {
         if (!formData.name) {
             showToast('Digite o nome do serviço primeiro!', 'error');
+            return;
+        }
+        if (imageGenCount >= 2) {
+            showToast('Limite de 2 imagens geradas por vez.', 'error');
             return;
         }
 
@@ -83,6 +89,7 @@ export const ServicesPanel: React.FC = () => {
 
                 const { data: urlData } = supabase.storage.from('images').getPublicUrl(filePath);
                 setFormData(prev => ({ ...prev, imageUrl: urlData.publicUrl }));
+                setImageGenCount(prev => prev + 1);
                 showToast('Imagem gerada com IA e salva com sucesso!');
             } else {
                 throw new Error(data.error);

@@ -1937,7 +1937,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const requestClientLogin = async (phone: string) => {
+  const requestClientLogin = async (phone: string, name?: string, birthDate?: string) => {
       try {
           const shopId = state.shop?.id;
           if (!shopId) throw new Error("Loja não identificada");
@@ -1949,8 +1949,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           if (!client) {
               const { data: newClient, error: createError } = await supabase.from('clients').insert({
                   shop_id: shopId,
-                  name: 'Cliente',
-                  phone: cleanPhone
+                  name: name || 'Cliente',
+                  phone: cleanPhone,
+                  birth_date: birthDate || null
               }).select().single();
               if (createError) throw createError;
               client = newClient;

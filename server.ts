@@ -1178,9 +1178,9 @@ async function runCronLogic() {
         }
     }
 
-    // 7. Relatório Semanal Proativo (Domingos às 21h)
+    // 7. Relatório Semanal Proativo (Segunda às 7h)
     // Coleta dados dos últimos 7 dias vs 7 dias anteriores e envia insights para o dono
-    if (now.day() === 0 && now.hour() === 21 && now.minute() < 11) {
+    if (now.day() === 1 && now.hour() === 7 && now.minute() < 11) {
         console.log("[Cron] Iniciando geração de Relatórios Semanais Proativos...");
         const sevenDaysAgo = now.subtract(7, 'day').format('YYYY-MM-DD');
         const fourteenDaysAgo = now.subtract(14, 'day').format('YYYY-MM-DD');
@@ -1450,11 +1450,11 @@ async function startServer() {
                 validity: result.validityDays,
                 shopName: shop?.name || "Nossa Barbearia"
             }, shopId);
-            if (msg && shop?.whatsapp_connected) {
-                console.log(`[Loyalty] Enviando prêmio para ${result.clientPhone} via instância ${shop.whatsapp_instance}`);
-                await sendWhatsApp(result.clientPhone, msg, shop.whatsapp_instance);
+            if (msg) {
+                console.log(`[Loyalty] Enviando prêmio para ${result.clientPhone} via instância ${shop?.whatsapp_instance}`);
+                await sendWhatsApp(result.clientPhone, msg, shop?.whatsapp_instance);
             } else {
-                console.warn(`[Loyalty] Mensagem não enviada: Template vazio ou WhatsApp desconectado.`);
+                console.warn(`[Loyalty] Mensagem não enviada: Template vazio.`);
             }
 
             res.json({ success: true, couponCode: result.couponCode });
