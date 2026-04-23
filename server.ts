@@ -1443,6 +1443,37 @@ async function startServer() {
         }
     });
 
+    // ==========================================
+    // ROTAS DE SAAS ADMIN (Bypass RLS)
+    // ==========================================
+    app.get('/api/saas/shops', async (req, res) => {
+        try {
+            const { data, error } = await supabaseAdmin
+                .from('shops')
+                .select(`id, name, owner_id, plan, created_at, whatsapp_connected, slug`)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            res.json({ success: true, shops: data });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    app.post('/api/saas/shops/plan', async (req, res) => {
+        const { shopId, plan } = req.body;
+        try {
+            const updates: any = { plan };
+            if (plan === 'active') updates.payment_confirmed_at = new Date().toISOString();
+
+            const { error } = await supabaseAdmin.from('shops').update(updates).eq('id', shopId);
+            if (error) throw error;
+            res.json({ success: true });
+        } catch (error: any) {
+            res.status(500).json({ error: error.message });
+        }
+    });
+
     app.post('/api/loyalty/check-reward', async (req, res) => {
         const { clientId, shopId } = req.body;
         try {

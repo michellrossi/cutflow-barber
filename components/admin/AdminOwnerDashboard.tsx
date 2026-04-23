@@ -79,15 +79,20 @@ export const AdminOwnerDashboard: React.FC = () => {
         
         setActionLoadingId(shopId);
         try {
-            const updates: any = { plan: newPlan };
-            if (newPlan === 'active') {
-                updates.payment_confirmed_at = new Date().toISOString();
-            }
+            const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? 'http://localhost:3000' 
+                : `https://${window.location.hostname}`;
+                
+            const res = await fetch(`${serverUrl}/api/saas/shops/plan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shopId, plan: newPlan })
+            });
+            const result = await res.json();
             
-            const { error } = await supabase.from('shops').update(updates).eq('id', shopId);
-            if (error) throw error;
+            if (!res.ok) throw new Error(result.error || 'Erro na API');
             
-            setShops(prev => prev.map(s => s.id === shopId ? { ...s, plan: newPlan } : s));
+            setShops(prev => prev.map((s: any) => s.id === shopId ? { ...s, plan: newPlan } : s));
         } catch (error: any) {
             alert('Erro ao atualizar plano: ' + error.message);
         } finally {

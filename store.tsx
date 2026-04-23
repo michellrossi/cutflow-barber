@@ -673,22 +673,15 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const fetchGlobalShops = async () => {
     try {
-        const { data, error } = await supabase
-            .from('shops')
-            .select(`
-                id, 
-                name, 
-                owner_id, 
-                plan, 
-                created_at, 
-                whatsapp_connected,
-                slug,
-                users:owner_id ( email )
-            `)
-            .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        return { success: true, data };
+        const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:3000' 
+            : `https://${window.location.hostname}`;
+            
+        const res = await fetch(`${serverUrl}/api/saas/shops`);
+        const result = await res.json();
+        
+        if (!res.ok) throw new Error(result.error);
+        return { success: true, data: result.shops };
     } catch (error: any) {
         console.error("Error fetching global shops:", error);
         return { success: false, error: error.message };
