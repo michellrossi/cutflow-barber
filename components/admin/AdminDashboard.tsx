@@ -7,7 +7,7 @@ import { TeamPanel } from './panels/TeamPanel';
 import { ServicesPanel } from './panels/ServicesPanel';
 import { CouponsPanel } from './panels/CouponsPanel';
 import { AppointmentsPanel } from './panels/AppointmentsPanel';
-import { FinancePanel } from './panels/FinancePanel';
+
 import { ClientsPanel } from './panels/ClientsPanel';
 import { SettingsPanel } from './panels/SettingsPanel';
 import { LoyaltyPanel } from './panels/LoyaltyPanel';
@@ -17,7 +17,6 @@ import { RemindersPanel } from './panels/RemindersPanel';
 import { SubscriptionsPanel } from './panels/SubscriptionsPanel';
 import { InventoryPanel } from './panels/InventoryPanel';
 import { GoalsPanel } from './panels/GoalsPanel';
-import { CashControlPanel } from './panels/CashControlPanel';
 import { FinancialPanel } from './panels/FinancialPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
 import { PaymentModal } from '../billing/PaymentModal';
@@ -25,7 +24,7 @@ import { PaymentModal } from '../billing/PaymentModal';
 import { PlanPanel } from './panels/PlanPanel';
 import { ProfilePanel } from './panels/ProfilePanel';
 
-type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan' | 'reports' | 'profile' | 'inventory' | 'goals' | 'cash' | 'financial';
+type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan' | 'reports' | 'profile' | 'inventory' | 'goals' | 'financial';
 
 type TeamSubTab = 'list' | 'schedules' | 'blocks';
 
@@ -111,7 +110,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'profile': return <ProfilePanel />;
       case 'inventory': return <InventoryPanel />;
       case 'goals': return <GoalsPanel />;
-      case 'cash': return <CashControlPanel />;
       case 'financial': return <FinancialPanel />;
       default: return <DashboardPanel onNavigate={handleTabChange} />;
     }
@@ -135,7 +133,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'profile': return 'Perfil';
           case 'inventory': return 'Produtos';
           case 'goals': return 'Gestão de Metas';
-          case 'cash': return 'Controle de Caixa';
           case 'financial': return 'Financeiro';
       }
   }
@@ -217,8 +214,6 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   <SidebarItem icon={<BarChart3 size={18} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => handleTabChange('reports')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<Package size={18} />} label="Produtos" active={activeTab === 'inventory'} onClick={() => handleTabChange('inventory')} expanded={isSidebarExpanded} />
-  
-  <SidebarItem icon={<DollarSign size={18} />} label="Caixa" active={activeTab === 'cash'} onClick={() => handleTabChange('cash')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<TrendingUp size={18} />} label="Financeiro" active={activeTab === 'financial'} onClick={() => handleTabChange('financial')} expanded={isSidebarExpanded} />
   

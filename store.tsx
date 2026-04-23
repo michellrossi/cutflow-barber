@@ -1408,12 +1408,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             throw error;
         }
 
-        // Se o status mudou para 'completed' ou 'confirmed', processar fidelidade e assinaturas
-        // Checagem de appointment.status (estado anterior) para evitar duplicidade
-        const isActivatingStatus = (status === 'completed' || status === 'confirmed');
-        const wasInactiveStatus = appointment ? (appointment.status !== 'completed' && appointment.status !== 'confirmed') : true;
+        // Somente status 'completed' contabiliza visita/pontos de fidelidade
+        const isActivatingStatus = (status === 'completed');
+        const wasNotCompleted = appointment ? (appointment.status !== 'completed') : true;
 
-        if (isActivatingStatus && wasInactiveStatus && appointment) {
+        if (isActivatingStatus && wasNotCompleted && appointment) {
             await processLoyalty(appointment);
             
             if (status === 'completed' && appointment.usedSubscriptionId) {

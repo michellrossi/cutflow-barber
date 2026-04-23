@@ -582,7 +582,8 @@ export const AppointmentsPanel: React.FC = () => {
                                                             className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100 transition-colors"
                                                         >
                                                             <option value="pix">PIX</option>
-                                                            <option value="credit">Cartão</option>
+                                                            <option value="credit">Cartão de Crédito</option>
+                                                            <option value="debit">Cartão de Débito</option>
                                                             <option value="cash">Dinheiro</option>
                                                             {getClientActiveSubscription(apt.clientPhone, apt.clientName) && (
                                                                 <option value="subscription">Assinatura</option>
@@ -738,7 +739,8 @@ export const AppointmentsPanel: React.FC = () => {
                                                         className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded-lg p-1.5 focus:outline-none focus:border-orange-500"
                                                     >
                                                         <option value="pix">PIX</option>
-                                                        <option value="credit">Cartão</option>
+                                                        <option value="credit">Cartão de Crédito</option>
+                                                        <option value="debit">Cartão de Débito</option>
                                                         <option value="cash">Dinheiro</option>
                                                         {getClientActiveSubscription(apt.clientPhone, apt.clientName) && (
                                                             <option value="subscription">Assinatura</option>
@@ -889,6 +891,7 @@ export const AppointmentsPanel: React.FC = () => {
                                     >
                                         <option value="pix">PIX</option>
                                         <option value="credit">Cartão de Crédito</option>
+                                        <option value="debit">Cartão de Débito</option>
                                         <option value="cash">Dinheiro</option>
                                         {getClientActiveSubscription(completionTarget.clientPhone, completionTarget.clientName) && (
                                             <option value="subscription">Assinatura</option>

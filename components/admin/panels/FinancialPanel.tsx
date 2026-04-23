@@ -467,6 +467,7 @@ const BillingTab: React.FC<{ period: string }> = ({ period }) => {
   const avgTicket = completed.length > 0 ? totalRevenue / completed.length : 0;
   const pixTotal = completed.filter(a => a.paymentMethod === 'pix').reduce((s, a) => s + a.totalValue, 0);
   const cardTotal = completed.filter(a => a.paymentMethod === 'credit').reduce((s, a) => s + a.totalValue, 0);
+  const debitTotal = completed.filter(a => a.paymentMethod === 'debit').reduce((s, a) => s + a.totalValue, 0);
   const cashTotal = completed.filter(a => a.paymentMethod === 'cash').reduce((s, a) => s + a.totalValue, 0);
 
   // Top profissionais
@@ -484,7 +485,8 @@ const BillingTab: React.FC<{ period: string }> = ({ period }) => {
 
   const PAYMENT_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
     pix: { label: 'PIX', icon: <Smartphone size={14} />, color: 'bg-teal-50 text-teal-700 border-teal-200' },
-    credit: { label: 'Cartão', icon: <CreditCard size={14} />, color: 'bg-purple-50 text-purple-700 border-purple-200' },
+    credit: { label: 'Crédito', icon: <CreditCard size={14} />, color: 'bg-purple-50 text-purple-700 border-purple-200' },
+    debit: { label: 'Débito', icon: <CreditCard size={14} />, color: 'bg-blue-50 text-blue-700 border-blue-200' },
     cash: { label: 'Dinheiro', icon: <Banknote size={14} />, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
     subscription: { label: 'Assinatura', icon: <Award size={14} />, color: 'bg-orange-50 text-orange-700 border-orange-200' },
   };
@@ -499,9 +501,10 @@ const BillingTab: React.FC<{ period: string }> = ({ period }) => {
         <KpiCard label="Atendimentos" value={String(completed.length)} sub={`${todayCompleted.length} hoje`} icon={<Scissors />} />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="PIX Recebido" value={fmtBRL(pixTotal)} icon={<Smartphone />} color="blue" sub={`${completed.filter(a => a.paymentMethod === 'pix').length} transações`} />
-        <KpiCard label="Cartão Recebido" value={fmtBRL(cardTotal)} icon={<CreditCard />} color="default" sub={`${completed.filter(a => a.paymentMethod === 'credit').length} transações`} />
+        <KpiCard label="Crédito" value={fmtBRL(cardTotal)} icon={<CreditCard />} color="default" sub={`${completed.filter(a => a.paymentMethod === 'credit').length} transações`} />
+        <KpiCard label="Débito" value={fmtBRL(debitTotal)} icon={<CreditCard />} color="blue" sub={`${completed.filter(a => a.paymentMethod === 'debit').length} transações`} />
         <KpiCard label="Dinheiro" value={fmtBRL(cashTotal)} icon={<Banknote />} color="green" sub={`${completed.filter(a => a.paymentMethod === 'cash').length} transações`} />
       </div>
 
@@ -512,9 +515,9 @@ const BillingTab: React.FC<{ period: string }> = ({ period }) => {
           <h4 className="font-bold text-slate-900 mb-4">Mix de Pagamento</h4>
           {totalRevenue > 0 ? (
             <div className="space-y-3">
-              {Object.entries({ pix: pixTotal, credit: cardTotal, cash: cashTotal }).map(([key, val]) => (
+              {Object.entries({ pix: pixTotal, credit: cardTotal, debit: debitTotal, cash: cashTotal }).map(([key, val]) => (
                 <SimpleBar key={key} label={PAYMENT_CONFIG[key]?.label || key} value={val} max={totalRevenue}
-                  valueLabel={fmtBRL(val)} color={key === 'pix' ? 'bg-teal-500' : key === 'credit' ? 'bg-purple-500' : 'bg-emerald-500'} />
+                  valueLabel={fmtBRL(val)} color={key === 'pix' ? 'bg-teal-500' : key === 'credit' ? 'bg-purple-500' : key === 'debit' ? 'bg-blue-500' : 'bg-emerald-500'} />
               ))}
             </div>
           ) : <p className="text-slate-400 text-sm text-center py-4">Sem dados no período</p>}
