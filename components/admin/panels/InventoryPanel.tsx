@@ -37,6 +37,9 @@ export const InventoryPanel: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [restockId, setRestockId] = useState<string | null>(null);
+  
+  const [restockData, setRestockData] = useState({ quantity: '', unitCost: '' });
   
   const [formData, setFormData] = useState({
     name: '',
@@ -239,6 +242,49 @@ export const InventoryPanel: React.FC = () => {
     }
   };
 
+  const handleRestockSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!restockId) return;
+    
+    setIsSaving(true);
+    const addedQuantity = Number(restockData.quantity);
+    const unitCost = Math.round(Number(restockData.unitCost) * 100) / 100;
+    
+    const { success, error } = await restockProduct(restockId, addedQuantity, unitCost);
+    setIsSaving(false);
+    
+    if (success) {
+        showToast('Estoque atualizado com sucesso!');
+        setRestockId(null);
+        setRestockData({ quantity: '', unitCost: '' });
+    } else {
+        showToast(error || 'Erro ao registrar entrada de estoque.', 'error');
+    }
+  };
+
+  // Encontra o produto sendo reposto para mostrar preview
+  const restockProductInstance = useMemo(() => {
+     return products.find(p => p.id === restockId);
+  }, [products, restockId]);
+
+  const restockPreview = useMemo(() => {
+     if (!restockProductInstance) return null;
+     const currentStock = restockProductInstance.currentStock;
+     const currentCost = restockProductInstance.costPrice;
+     const addQty = Number(restockData.quantity) || 0;
+     const addCost = Number(restockData.unitCost) || 0;
+     
+     const newStock = currentStock + addQty;
+     let newAvgCost = currentCost;
+     if (newStock > 0) {
+         newAvgCost = ((currentStock * currentCost) + (addQty * addCost)) / newStock;
+     }
+     return {
+         stock: newStock,
+         avgCost: newAvgCost
+     };
+  }, [restockProductInstance, restockData]);
+
   return (
     <div className="p-1 animate-fade-in">
       <ConfirmationModal 
@@ -250,6 +296,66 @@ export const InventoryPanel: React.FC = () => {
         confirmText="Remover"
         isDestructive
       />
+
+      {/* Restock Modal */}
+      <AnimatePresence>
+        {restockId && restockProductInstance && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setRestockId(null)}>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white p-8 rounded-2xl border border-slate-200 w-full max-w-lg shadow-2xl relative"
+            >
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h3 className="text-xl font-bold text-slate-900">Nova Entrada de Estoque</h3>
+                    <p className="text-sm font-medium text-slate-500 mt-1">{restockProductInstance.name}</p>
+                </div>
+                <button onClick={() => setRestockId(null)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={24}/></button>
+              </div>
+
+              <form onSubmit={handleRestockSubmit} className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                      <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Qtd. Comprada</label>
+                          <input required type="number" min="1" value={restockData.quantity} onChange={e => setRestockData({...restockData, quantity: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="Ex: 5" />
+                      </div>
+                      <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Custo Unitário (R$)</label>
+                          <input required type="number" step="0.01" min="0" value={restockData.unitCost} onChange={e => setRestockData({...restockData, unitCost: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="Ex: 15.50" />
+                      </div>
+                  </div>
+
+                  {restockPreview && (
+                      <div className="bg-orange-50/50 border border-orange-100 rounded-xl p-4 flex justify-between items-center">
+                          <div>
+                              <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest mb-1">Preview após entrada</p>
+                              <div className="flex gap-4">
+                                  <div>
+                                      <p className="text-xs text-slate-500 font-medium">Novo Estoque:</p>
+                                      <p className="font-black text-slate-900">{restockPreview.stock} un</p>
+                                  </div>
+                                  <div>
+                                      <p className="text-xs text-slate-500 font-medium">Preço Médio:</p>
+                                      <p className="font-black text-slate-900">{formatCurrencyBRL(restockPreview.avgCost)}</p>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+
+                  <div className="flex gap-4 justify-end pt-2">
+                    <button type="button" onClick={() => setRestockId(null)} className="px-6 py-3 text-slate-500 font-bold hover:text-slate-900 transition-colors" disabled={isSaving}>Cancelar</button>
+                    <button type="submit" className="px-10 py-3 rounded-xl text-white font-bold flex items-center gap-2 shadow-lg hover:brightness-110 transition-all text-sm bg-orange-600" disabled={isSaving}>
+                      {isSaving ? <Loader2 size={20} className="animate-spin"/> : 'Confirmar Entrada'}
+                    </button>
+                  </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* 1. Cabeçalho e Descrição */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -477,16 +583,22 @@ export const InventoryPanel: React.FC = () => {
 
               <div className="mt-auto space-y-2">
 
-                <div className="flex gap-1.5">
+                <div className="flex gap-1.5 flex-wrap">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setRestockId(product.id); }} 
+                    className="flex-1 py-1 px-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100 transition-all font-bold text-[10px] flex items-center justify-center gap-1 uppercase"
+                  >
+                     <Package size={11} /> Repor
+                  </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleEdit(product); }} 
-                    className="flex-1 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all font-bold text-xs flex items-center justify-center gap-1"
+                    className="flex-1 py-1 px-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all font-bold text-[10px] flex items-center justify-center gap-1 uppercase"
                   >
                     <Edit2 size={11} /> Editar
                   </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); setDeleteId(product.id); }} 
-                    className="px-2 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                    className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center"
                   >
                     <Trash2 size={13}/>
                   </button>

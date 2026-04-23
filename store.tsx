@@ -76,6 +76,7 @@ interface ShopContextType extends ShopState {
   addProduct: (product: Omit<Product, 'id' | 'shopId' | 'createdAt'>) => MutationResult;
   updateProduct: (id: string, product: Partial<Product>) => MutationResult;
   removeProduct: (id: string) => MutationResult;
+  restockProduct: (productId: string, addedQuantity: number, newUnitCost: number) => MutationResult;
   addAppointmentProducts: (appointmentId: string, products: { productId: string, quantity: number, unitPrice: number }[]) => MutationResult;
   
   // Goal Actions
@@ -2147,6 +2148,59 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ...prev,
             products: prev.products.filter(p => p.id !== id)
         }));
+        return { success: true };
+    } catch (e: any) {
+        return { success: false, error: e.message };
+    }
+  };
+
+  const restockProduct = async (productId: string, addedQuantity: number, newUnitCost: number): Promise<MutationResult> => {
+    try {
+        // 1. Busca o estado atual no DB
+        const { data: p, error: fetchErr } = await supabase
+            .from('products')
+            .select('current_stock, cost_price')
+            .eq('id', productId)
+            .single();
+            
+        if (fetchErr) throw fetchErr;
+        
+        const currentStock = Number(p.current_stock) || 0;
+        const currentCost = Number(p.cost_price) || 0;
+        
+        // 2. Calcula o Preço Médio Ponderado
+        const newTotalStock = currentStock + addedQuantity;
+        let newAverageCost = currentCost;
+        
+        if (newTotalStock > 0) {
+            const totalCurrentValue = currentStock * currentCost;
+            const totalNewValue = addedQuantity * newUnitCost;
+            newAverageCost = (totalCurrentValue + totalNewValue) / newTotalStock;
+        }
+        
+        newAverageCost = Math.round(newAverageCost * 100) / 100;
+        
+        // 3. Atualiza o DB
+        const { error: updateErr } = await supabase
+            .from('products')
+            .update({
+                current_stock: newTotalStock,
+                cost_price: newAverageCost
+            })
+            .eq('id', productId);
+            
+        if (updateErr) throw updateErr;
+        
+        // 4. Atualiza o State local
+        setState(prev => ({
+            ...prev,
+            products: prev.products.map(prod => 
+                prod.id === productId 
+                    ? { ...prod, currentStock: newTotalStock, costPrice: newAverageCost } 
+                    : prod
+            )
+        }));
+        
         return { success: true };
     } catch (e: any) {
         return { success: false, error: e.message };
