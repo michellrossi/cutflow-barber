@@ -14,7 +14,7 @@ import { ArrowLeft } from 'lucide-react';
 type Step = 'home' | 'services' | 'professional' | 'datetime' | 'summary' | 'success' | 'login' | 'profile';
 
 export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick }) => {
-    const [step, setStep] = useState<Step>('home');
+    const [step, setStep] = useState<Step>('login');
     const { services, professionals, settings, coupons, addAppointment, appointments, blockedSlots, currentClient, logoutClient } = useShop();
 
     // Booking State
@@ -31,17 +31,23 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Handle initial view from query params
+    // Handle initial view from query params and authentication
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const view = params.get('view');
-        if (view === 'profile' && currentClient) {
-            setStep('profile');
+        if (!currentClient) {
+            setStep('login');
+        } else if (step === 'login') {
+            const params = new URLSearchParams(window.location.search);
+            const view = params.get('view');
+            if (view === 'profile') {
+                setStep('profile');
+            } else {
+                setStep('home');
+            }
             // Clean up URL without refreshing
             const newUrl = window.location.pathname;
             window.history.replaceState({}, '', newUrl);
         }
-    }, [currentClient]);
+    }, [currentClient, step]);
 
     // Auto-fill customer info if logged in
     useEffect(() => {
@@ -49,7 +55,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
             setCustomerInfo({ 
                 name: currentClient.name, 
                 phone: currentClient.phone, 
-                birthDate: currentClient.birthDate || '' 
+                birthDate: currentClient.birthDate ? currentClient.birthDate.split('T')[0] : '' 
             });
         }
     }, [currentClient]);

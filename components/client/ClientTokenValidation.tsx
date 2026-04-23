@@ -33,7 +33,7 @@ export const ClientTokenValidation: React.FC = () => {
                     const slug = result.slug || shop?.slug;
                     setTimeout(() => {
                         if (slug) {
-                            navigate(`/agendar/${slug}?view=profile`);
+                            navigate(`/agendar/${slug}`);
                         } else {
                             // Fallback se não tiver slug
                             navigate('/');

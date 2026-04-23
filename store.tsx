@@ -530,7 +530,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // 1. Tenta encontrar as lojas onde o usuário é DONO
             if (userId) {
-                const { data: shopsData } = await supabase.from('shops').select('*').eq('owner_id', userId);
+                const { data: shopsData } = await supabase.from('shops').select('*').eq('owner_id', userId).order('created_at', { ascending: true });
                 if (shopsData && shopsData.length > 0) {
                     const mappedShops = shopsData.map(mapShop);
                     // Pega a primeira como inicial se nenhuma estiver ativa
@@ -1937,7 +1937,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const requestClientLogin = async (phone: string) => {
+  const requestClientLogin = async (phone: string, name?: string, birthDate?: string, justCheck?: boolean) => {
       try {
           const shopId = state.shop?.id;
           if (!shopId) throw new Error("Loja não identificada");
@@ -1947,10 +1947,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           let { data: client } = await supabase.from('clients').select('*').eq('shop_id', shopId).eq('phone', cleanPhone).maybeSingle();
           
           if (!client) {
+              if (justCheck) {
+                  return { success: true, needsRegistration: true };
+              }
               const { data: newClient, error: createError } = await supabase.from('clients').insert({
                   shop_id: shopId,
-                  name: 'Cliente',
-                  phone: cleanPhone
+                  name: name || 'Cliente',
+                  phone: cleanPhone,
+                  birth_date: birthDate || null
               }).select().single();
               if (createError) throw createError;
               client = newClient;

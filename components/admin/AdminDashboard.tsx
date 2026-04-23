@@ -129,7 +129,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'subscriptions': return 'Assinaturas';
           case 'plan': return 'Meu Plano';
           case 'profile': return 'Perfil';
-          case 'inventory': return 'Gestão de Estoque';
+          case 'inventory': return 'Produtos';
           case 'goals': return 'Gestão de Metas';
       }
   }
@@ -210,7 +210,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   
   <SidebarItem icon={<BarChart3 size={18} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => handleTabChange('reports')} expanded={isSidebarExpanded} />
   
-  <SidebarItem icon={<Package size={18} />} label="Estoque" active={activeTab === 'inventory'} onClick={() => handleTabChange('inventory')} expanded={isSidebarExpanded} />
+  <SidebarItem icon={<Package size={18} />} label="Produtos" active={activeTab === 'inventory'} onClick={() => handleTabChange('inventory')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<Target size={18} />} label="Metas" active={activeTab === 'goals'} onClick={() => handleTabChange('goals')} expanded={isSidebarExpanded} />
   
@@ -308,7 +308,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     <MobileNavItem icon={<Tag size={16} />} label="Cupons" active={activeTab === 'coupons'} onClick={() => setActiveTab('coupons')} />
     <MobileNavItem icon={<Award size={16} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => setActiveTab('loyalty')} />
     <MobileNavItem icon={<BarChart3 size={16} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
-    <MobileNavItem icon={<Package size={16} />} label="Estoque" active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} />
+    <MobileNavItem icon={<Package size={16} />} label="Produtos" active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} />
     <MobileNavItem icon={<Target size={16} />} label="Metas" active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} />
     <MobileNavItem icon={<MessageSquare size={16} />} label="Automação" active={activeTab === 'reminders'} onClick={() => setActiveTab('reminders')} />
     <MobileNavItem icon={<Sparkles size={16} />} label="IA" active={activeTab === 'insight'} onClick={() => setActiveTab('insight')} />

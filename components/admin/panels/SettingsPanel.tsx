@@ -158,6 +158,22 @@ const ProfileSettings: React.FC = () => {
         }
     };
 
+    const handleResetColors = () => {
+        setPrimary('#f97316');
+        setSecondary('#3b82f6');
+        setTitleColor('#ffffff');
+        setTextColor('#94a3b8');
+        setBackgroundColor('#0f172a');
+        setCardBackgroundColor('#1e293b');
+        setButtonTextColor('#ffffff');
+        setPriceColor('#f97316');
+        setAccentColor('#f97316');
+        setBorderColor('#334155');
+        setInputBackgroundColor('#0f172a');
+        setInputTextColor('#ffffff');
+        showToast('Cores originais restauradas! Clique em Salvar para aplicar.');
+    };
+
     const handleSave = async () => {
         setIsSaving(true);
         const { success, error } = await updateSettings({ 
@@ -262,10 +278,13 @@ const ProfileSettings: React.FC = () => {
                         </div>
                     </div>
                     
-                    <div className="pt-6">
+                    <div className="pt-6 flex flex-col gap-3">
                         <button onClick={handleSave} className="w-full px-10 py-4 rounded-md text-white font-bold shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2" style={{ backgroundColor: primary }} disabled={isUploading || isSaving}>
                             {(isUploading || isSaving) && <Loader2 size={20} className="animate-spin" />}
                             Salvar Todas as Alterações
+                        </button>
+                        <button onClick={handleResetColors} className="w-full px-10 py-3 rounded-md bg-transparent border border-slate-300 text-slate-500 hover:bg-slate-50 font-bold transition-all active:scale-95">
+                            Resetar para Cores Padrão
                         </button>
                     </div>
                 </div>
@@ -307,7 +326,18 @@ const ProfileSettings: React.FC = () => {
                                         </div>
                                         <div className="p-6 rounded-lg border" style={{ backgroundColor: cardBackgroundColor, borderColor: borderColor }}>
                                             <h5 className="font-bold mb-4" style={{ color: titleColor }}>Próximo Passo</h5>
-                                            <p className="text-xs mb-6" style={{ color: textColor }}>Escolha os serviços que deseja realizar hoje.</p>
+                                            <p className="text-xs mb-4" style={{ color: textColor }}>Exemplo de campo de preenchimento:</p>
+                                            <input 
+                                                type="text" 
+                                                placeholder="Digite algo (exemplo)" 
+                                                className="w-full border rounded-md py-3 px-3 focus:outline-none mb-6 text-sm"
+                                                style={{ 
+                                                    backgroundColor: inputBackgroundColor, 
+                                                    borderColor: borderColor, 
+                                                    color: inputTextColor 
+                                                }}
+                                                disabled
+                                            />
                                             <button className="w-full py-4 rounded-md font-bold shadow-lg transition-all" style={{ backgroundColor: primary, color: buttonTextColor }}>
                                                 Começar Agendamento
                                             </button>
