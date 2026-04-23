@@ -98,6 +98,9 @@ interface ShopContextType extends ShopState {
   toggleTheme: () => void;
   formatCurrencyBRL: (value: number) => string;
   reloadClients: (shopId: string) => Promise<void>;
+  
+  // [NOVO] SAAS ADMIN
+  fetchGlobalShops: () => Promise<{ success: boolean; data?: any[]; error?: string }>;
 }
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -665,6 +668,30 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error("Error fetching data:", error);
     } finally {
         setLoading(false);
+    }
+  };
+
+  const fetchGlobalShops = async () => {
+    try {
+        const { data, error } = await supabase
+            .from('shops')
+            .select(`
+                id, 
+                name, 
+                owner_id, 
+                plan, 
+                created_at, 
+                whatsapp_connected,
+                slug,
+                users:owner_id ( email )
+            `)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+        return { success: true, data };
+    } catch (error: any) {
+        console.error("Error fetching global shops:", error);
+        return { success: false, error: error.message };
     }
   };
 
@@ -2304,6 +2331,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       toggleTheme,
       reloadClients,
       formatCurrencyBRL,
+      fetchGlobalShops,
       refresh: () => fetchData(state.shop?.id)
     }}>
       {children}

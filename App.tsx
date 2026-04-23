@@ -11,6 +11,7 @@ import { Login } from './components/auth/Login';
 import { UpdatePassword } from './components/auth/UpdatePassword';
 import { ClientTokenValidation } from './components/client/ClientTokenValidation';
 import { Loader2 } from 'lucide-react';
+import { AdminOwnerDashboard } from './components/admin/AdminOwnerDashboard';
 
 // Wrapper para carregar dados da barbearia baseado na URL (Visão do Cliente)
 const BookingRoute = () => {
@@ -197,6 +198,9 @@ const AppRoutes = () => {
             
             {/* Catch all (404) -> Home */}
             <Route path="*" element={<Navigate to="/" replace />} />
+            
+            {/* [NOVO] Painel do Administrador do SaaS */}
+            <Route path="/saas-admin" element={<AdminOwnerDashboard />} />
         </Routes>
     );
 }
