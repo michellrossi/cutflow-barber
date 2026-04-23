@@ -20,7 +20,7 @@ const thisMonthStart = () => { const d = new Date(); d.setDate(1); return d.toIS
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 const KpiCard: React.FC<{
   label: string; value: string; sub?: string; icon: React.ReactNode;
-  color?: 'default' | 'green' | 'red' | 'orange' | 'dark' | 'blue';
+  color?: 'default' | 'green' | 'red' | 'orange' | 'dark' | 'blue' | 'indigo';
   trend?: { pct: number };
 }> = ({ label, value, sub, icon, color = 'default', trend }) => {
   const colorMap: Record<string, string> = {
@@ -30,18 +30,22 @@ const KpiCard: React.FC<{
     orange:  'bg-orange-50 border-orange-200',
     dark:    'bg-slate-900 border-slate-800',
     blue:    'bg-blue-50 border-blue-200',
+    indigo:  'bg-indigo-600 border-indigo-700',
   };
   const textMap: Record<string, string> = {
     default: 'text-slate-900', green: 'text-emerald-800', red: 'text-red-800',
     orange: 'text-orange-800', dark: 'text-white', blue: 'text-blue-800',
+    indigo: 'text-white',
   };
   const subMap: Record<string, string> = {
     default: 'text-slate-500', green: 'text-emerald-600', red: 'text-red-600',
     orange: 'text-orange-600', dark: 'text-slate-400', blue: 'text-blue-600',
+    indigo: 'text-indigo-200',
   };
   const iconMap: Record<string, string> = {
     default: 'text-slate-400', green: 'text-emerald-400', red: 'text-red-400',
     orange: 'text-orange-400', dark: 'text-slate-500', blue: 'text-blue-400',
+    indigo: 'text-indigo-300',
   };
 
   return (
@@ -228,7 +232,7 @@ const CashTab: React.FC = () => {
         <KpiCard label="Aportes" value={fmtBRL(aportes)} icon={<ArrowUpCircle />} color="blue" />
         <KpiCard label="Sangrias" value={fmtBRL(sangrias)} icon={<ArrowDownCircle />} color="red" />
         <KpiCard label="Entradas Total" value={fmtBRL(totalInputs)} icon={<TrendingUp />} color="green" />
-        <KpiCard label="Saldo Gaveta" value={fmtBRL(expectedBalance)} icon={<DollarSign />} color="dark" />
+        <KpiCard label="Saldo Gaveta" value={fmtBRL(expectedBalance)} icon={<DollarSign />} color="indigo" />
       </div>
 
       {/* Tabela Extrato */}
@@ -595,7 +599,8 @@ const BillingTab: React.FC<{ period: string }> = ({ period }) => {
 // SUB-ABA 3: COMISSÕES
 // ═══════════════════════════════════════════════════════════════════════════════
 const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
-  const { appointments, professionals } = useShop();
+  const { appointments, professionals, addCashMovement } = useShop();
+  const { showToast } = useToast();
 
   const todayStr = today();
   const monthStart = thisMonthStart();
@@ -624,10 +629,35 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
   const topEarner = proStats[0];
 
   const [detailPro, setDetailPro] = useState<string | null>(null);
+  const [payModal, setPayModal] = useState<{ id: string; name: string; amount: number } | null>(null);
+  const [payObs, setPayObs] = useState('');
+  const [paying, setPaying] = useState(false);
+
   const detailData = useMemo(() => {
     if (!detailPro) return [];
     return completed.filter(a => a.professionalId === detailPro);
   }, [detailPro, completed]);
+
+  const handlePayout = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!payModal) return;
+    setPaying(true);
+    // Registra a saída no caixa como repasse de comissão
+    const r = await addCashMovement({
+      type: 'output',
+      category: 'Repasse Comissão',
+      amount: payModal.amount,
+      description: `Comissão de ${payModal.name}${payObs ? ' — ' + payObs : ''}`,
+    });
+    setPaying(false);
+    if (r.success) {
+      showToast(`Comissão de ${payModal.name} paga e registrada no caixa!`, 'success');
+      setPayModal(null);
+      setPayObs('');
+    } else {
+      showToast(r.error || 'Erro ao registrar pagamento', 'error');
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -635,7 +665,7 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <KpiCard label="Comissão Total" value={fmtBRL(totalCommission)} icon={<Award />} color="orange" />
         <KpiCard label="Repasses Pendentes" value={fmtBRL(totalCommission)} icon={<Clock />} color="red" sub="A pagar" />
-        <KpiCard label="Maior Faturador" value={topEarner?.name || '–'} icon={<Star />} color="dark" sub={topEarner ? fmtBRL(topEarner.revenue) : undefined} />
+        <KpiCard label="Maior Faturador" value={topEarner?.name || '–'} icon={<Star />} color="indigo" sub={topEarner ? fmtBRL(topEarner.revenue) : undefined} />
         <KpiCard label="Receita Loja" value={fmtBRL(totalRevenue - totalCommission)} icon={<TrendingUp />} color="green" />
       </div>
 
@@ -691,7 +721,8 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
                           <ChevronRight size={12} className={`transition-transform ${detailPro === p.id ? 'rotate-90' : ''}`} />
                           Detalhe
                         </button>
-                        <button className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-100 transition-colors">
+                        <button onClick={() => setPayModal({ id: p.id, name: p.name, amount: p.commission })}
+                          className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-100 transition-colors">
                           Pagar
                         </button>
                       </div>
@@ -722,20 +753,64 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
                   )}
                 </React.Fragment>
               ))}
-            </tbody>
-          </table>
-        </div>
         {proStats.length > 0 && (
-          <div className="px-5 py-4 bg-slate-900 flex flex-wrap items-center justify-between gap-4 text-white">
-            <span className="text-sm font-bold">Total Geral</span>
-            <div className="flex gap-8 text-sm font-bold">
-              <span>Receita: <span className="text-emerald-400">{fmtBRL(totalRevenue)}</span></span>
-              <span>Comissões: <span className="text-orange-400">{fmtBRL(totalCommission)}</span></span>
-              <span>Loja: <span className="text-emerald-400">{fmtBRL(totalRevenue - totalCommission)}</span></span>
-            </div>
-          </div>
+          <tfoot>
+            <tr className="bg-slate-900">
+              <td className="px-5 py-4 text-sm font-bold text-white">Total Geral</td>
+              <td className="px-5 py-4 text-center">
+                <span className="text-white font-bold text-sm">{proStats.reduce((s, p) => s + p.count, 0)}</span>
+              </td>
+              <td className="px-5 py-4 text-right font-bold text-emerald-400 text-sm">{fmtBRL(totalRevenue)}</td>
+              <td className="px-5 py-4"></td>
+              <td className="px-5 py-4 text-right font-bold text-orange-400 text-sm">{fmtBRL(totalCommission)}</td>
+              <td className="px-5 py-4 text-right font-bold text-emerald-400 text-sm">{fmtBRL(totalRevenue - totalCommission)}</td>
+              <td className="px-5 py-4"></td>
+            </tr>
+          </tfoot>
         )}
+      </table>
+        </div>
       </div>
+
+      {/* Modal Pagar Comissão */}
+      <AnimatePresence>
+        {payModal && (
+          <Modal title={`Pagar Comissão — ${payModal.name}`} onClose={() => { setPayModal(null); setPayObs(''); }}>
+            <form onSubmit={handlePayout} className="p-6 space-y-4">
+              <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Barbeiro</span>
+                  <span className="font-bold text-slate-900">{payModal.name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-500">Valor a pagar</span>
+                  <span className="font-black text-orange-600 text-lg">{fmtBRL(payModal.amount)}</span>
+                </div>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700 font-medium flex items-start gap-2">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                O valor será registrado como saída no caixa físico ativo, se houver.
+              </div>
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Observação (Opcional)</label>
+                <input value={payObs} onChange={e => setPayObs(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-900 focus:outline-none focus:border-emerald-500"
+                  placeholder="Ex: Referente à semana 17–23/04" />
+              </div>
+              <div className="flex gap-3">
+                <button type="button" onClick={() => { setPayModal(null); setPayObs(''); }}
+                  className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-50 transition-colors">
+                  Cancelar
+                </button>
+                <button type="submit" disabled={paying}
+                  className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+                  {paying ? <Loader2 className="animate-spin" size={16}/> : <><CheckCircle size={16}/> Confirmar Pagamento</>}
+                </button>
+              </div>
+            </form>
+          </Modal>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
@@ -813,7 +888,7 @@ const ReportsTab: React.FC<{ period: string }> = ({ period }) => {
       {/* KPIs Executivos */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <KpiCard label="Receita Bruta" value={fmtBRL(totalRevenue)} icon={<TrendingUp />} color="green" />
-        <KpiCard label="Lucro Estimado" value={fmtBRL(estimatedProfit)} icon={<DollarSign />} color="dark" />
+        <KpiCard label="Lucro Estimado" value={fmtBRL(estimatedProfit)} icon={<DollarSign />} color="indigo" />
         <KpiCard label="Total Comissões" value={fmtBRL(totalCommission)} icon={<Award />} color="orange" />
         <KpiCard label="Crescimento Mês" value={`${growthVsLastMonth >= 0 ? '+' : ''}${growthVsLastMonth.toFixed(1)}%`} icon={growthVsLastMonth >= 0 ? <TrendingUp /> : <TrendingDown />} color={growthVsLastMonth >= 0 ? 'green' : 'red'} />
         <KpiCard label="Cancelamentos" value={String(cancelled.length)} icon={<AlertCircle />} color={cancelled.length > 3 ? 'red' : 'default'} />
