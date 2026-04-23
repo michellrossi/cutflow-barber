@@ -84,6 +84,11 @@ interface ShopContextType extends ShopState {
   removeGoal: (id: string) => MutationResult;
   calculateGoalProgress: (goal: Goal) => { percentage: number; remaining: number; status: 'critical' | 'warning' | 'good' };
   
+  // Cash Control Actions
+  openCashSession: (openingBalance: number) => MutationResult;
+  closeCashSession: (closingBalance: number) => MutationResult;
+  addCashMovement: (entry: Omit<CashFlowEntry, 'id' | 'shopId' | 'sessionId' | 'createdAt'>) => MutationResult;
+
   // WhatsApp Actions
   getWhatsAppQRCode: () => Promise<{ qrcode?: string; error?: string }>;
   getWhatsAppStatus: () => Promise<{ connected: boolean; error?: string }>;
@@ -159,6 +164,8 @@ const INITIAL_STATE: ShopState = {
   products: [],
   goals: [],
   myShops: [],
+  cashSessions: [],
+  cashFlowEntries: [],
   botPausedCount: 0
 };
 
@@ -407,6 +414,28 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       createdAt: data.created_at
   });
 
+  const mapCashSession = (data: any): CashSession => ({
+      id: data.id,
+      shopId: data.shop_id,
+      status: data.status,
+      openingBalance: data.opening_balance,
+      closingBalance: data.closing_balance,
+      openedAt: data.opened_at,
+      closedAt: data.closed_at,
+      openedBy: data.opened_by
+  });
+
+  const mapCashFlowEntry = (data: any): CashFlowEntry => ({
+      id: data.id,
+      shopId: data.shop_id,
+      sessionId: data.session_id,
+      type: data.type,
+      category: data.category,
+      amount: data.amount,
+      description: data.description,
+      createdAt: data.created_at
+  });
+
   // --- Logic for Trial Calculation ---
   const calculateTrialStatus = (shop: Shop): { status: 'active' | 'expired' | 'paid', days: number } => {
       if (shop.plan === 'active') {
@@ -570,7 +599,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         // Executa queries de configurações e dados estáticos em paralelo
         // LAZY LOAD: clients NÃO está aqui — é carregado sob demanda pela aba Clientes
-        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes, goalsRes, sessionsRes] = await Promise.all([
+        const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes, goalsRes, cashSessionsRes, sessionsRes] = await Promise.all([
             supabase.from('settings').select('*').eq('shop_id', shopId).single(),
             supabase.from('services').select('*').eq('shop_id', shopId),
             supabase.from('professionals').select('*').eq('shop_id', shopId),
@@ -583,6 +612,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             supabase.from('automation_triggers').select('*').eq('shop_id', shopId),
             supabase.from('products').select('*').eq('shop_id', shopId),
             supabase.from('goals').select('*').eq('shop_id', shopId),
+            supabase.from('cash_sessions').select('*').eq('shop_id', shopId).eq('status', 'open').order('opened_at', { ascending: false }).limit(1),
             supabase.from('whatsapp_chat_sessions').select('id', { count: 'exact', head: true }).eq('shop_id', shopId).eq('bot_paused', true)
         ]);
 
@@ -611,8 +641,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const mappedCategories = (categoriesRes.data || []).map(mapMessageCategory);
         
         let mappedTriggers = (triggersRes.data || []).map(mapAutomationTrigger);
+        let mappedCashSessions = (cashSessionsRes.data || []).map(mapCashSession);
+        let mappedCashFlowEntries: CashFlowEntry[] = [];
 
-        // Gatilhos iniciais são criados explicitamente na função de signup.
+        if (mappedCashSessions.length > 0) {
+            const { data: movements } = await supabase.from('cash_flow_entries').select('*').eq('session_id', mappedCashSessions[0].id).order('created_at', { ascending: false });
+            if (movements) mappedCashFlowEntries = movements.map(mapCashFlowEntry);
+        }
 
         // --- LÓGICA DE ROLES ---
         if (currentSession?.user) {
@@ -660,6 +695,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             automationTriggers: mappedTriggers,
             products: (productsRes.data || []).map(mapProduct),
             goals: (goalsRes.data || []).map(mapGoal),
+            cashSessions: mappedCashSessions,
+            cashFlowEntries: mappedCashFlowEntries,
             trialStatus: trialInfo.status,
             daysRemaining: trialInfo.days,
             botPausedCount: sessionsRes.count || 0
@@ -1022,8 +1059,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
-  const logout = async () => {
-      await supabase.auth.signOut();
+  const logout = () => {
+      supabase.auth.signOut();
       setState(INITIAL_STATE);
       setSession(null);
       setUserRole(null);
@@ -2222,6 +2259,90 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } catch (e: any) {
         return { success: false, error: e.message };
     }
+  };
+
+  const openCashSession = async (openingBalance: number): Promise<MutationResult> => {
+      try {
+          const shopId = ensureShopId();
+          if (state.cashSessions.some(s => s.status === 'open')) {
+              throw new Error('Já existe um caixa aberto para esta loja no momento.');
+          }
+
+          const { data: userData } = await supabase.auth.getUser();
+
+          const { data, error } = await supabase.from('cash_sessions').insert([{
+              shop_id: shopId,
+              status: 'open',
+              opening_balance: Math.round(openingBalance * 100) / 100,
+              opened_by: userData?.user?.id
+          }]).select().single();
+
+          if (error) throw error;
+
+          const session = mapCashSession(data);
+          setState(prev => ({
+              ...prev,
+              cashSessions: [session, ...prev.cashSessions],
+              cashFlowEntries: [] // limpa movimentações antigas do state local
+          }));
+
+          return { success: true };
+      } catch (e: any) {
+          return { success: false, error: e.message };
+      }
+  };
+
+  const closeCashSession = async (closingBalance: number): Promise<MutationResult> => {
+      try {
+          const openSession = state.cashSessions.find(s => s.status === 'open');
+          if (!openSession) throw new Error('Não há caixa aberto no momento.');
+
+          const { error } = await supabase.from('cash_sessions').update({
+              status: 'closed',
+              closing_balance: Math.round(closingBalance * 100) / 100,
+              closed_at: new Date().toISOString()
+          }).eq('id', openSession.id);
+
+          if (error) throw error;
+
+          setState(prev => ({
+              ...prev,
+              cashSessions: prev.cashSessions.map(s => s.id === openSession.id ? { ...s, status: 'closed', closingBalance, closedAt: new Date().toISOString() } : s)
+          }));
+
+          return { success: true };
+      } catch (e: any) {
+          return { success: false, error: e.message };
+      }
+  };
+
+  const addCashMovement = async (entry: Omit<CashFlowEntry, 'id' | 'shopId' | 'sessionId' | 'createdAt'>): Promise<MutationResult> => {
+      try {
+          const shopId = ensureShopId();
+          const openSession = state.cashSessions.find(s => s.status === 'open');
+          if (!openSession) throw new Error('Não há caixa aberto no momento.');
+
+          const { data, error } = await supabase.from('cash_flow_entries').insert([{
+              shop_id: shopId,
+              session_id: openSession.id,
+              type: entry.type,
+              category: entry.category,
+              amount: Math.round(entry.amount * 100) / 100,
+              description: entry.description
+          }]).select().single();
+
+          if (error) throw error;
+
+          const newEntry = mapCashFlowEntry(data);
+          setState(prev => ({
+              ...prev,
+              cashFlowEntries: [newEntry, ...prev.cashFlowEntries]
+          }));
+
+          return { success: true };
+      } catch (e: any) {
+          return { success: false, error: e.message };
+      }
   };
 
   const upsertGoal = async (goal: Partial<Goal> & { name: string; category: string; targetValue: number; period: string; startDate: string; endDate: string }): MutationResult => {

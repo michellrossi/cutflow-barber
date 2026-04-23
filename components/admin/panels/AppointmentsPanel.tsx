@@ -18,7 +18,9 @@ export const AppointmentsPanel: React.FC = () => {
         messageTemplates,
         clients,
         clientSubscriptions,
-        subscriptionPlans
+        subscriptionPlans,
+        cashSessions,
+        addCashMovement
     } = useShop();
     const { showToast } = useToast();
 
@@ -175,6 +177,19 @@ export const AppointmentsPanel: React.FC = () => {
         if (success) {
             showToast('Agendamento registrado com sucesso!');
             setIsModalOpen(false);
+            // Auto registro no fluxo de caixa se concluído em dinheiro no momento da criação
+            if (formData.status === 'completed' && formData.paymentMethod === 'cash') {
+                const openSession = cashSessions.find(s => s.status === 'open');
+                if (openSession) {
+                    addCashMovement({ 
+                        type: 'input', 
+                        category: 'Venda / Serviço', 
+                        amount: calculateTotal(), 
+                        description: `Agendamento: ${formData.clientName}` 
+                    });
+                }
+            }
+
             setFormData({
                 clientName: '',
                 clientPhone: '',
@@ -906,6 +921,20 @@ export const AppointmentsPanel: React.FC = () => {
                                         // 2. Atualizar agendamento
                                         await updateAppointmentStatus(completionTarget.id, 'completed');
                                         await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
+
+                                        // 3. Registrar no Caixa (Dinheiro) se aberto
+                                        if (method === 'cash') {
+                                            const openSession = cashSessions.find(s => s.status === 'open');
+                                            if (openSession) {
+                                                const totalPaid = completionTarget.totalValue + selectedProductsForCompletion.reduce((acc, sp) => acc + (sp.quantity * sp.unitPrice), 0);
+                                                await addCashMovement({
+                                                    type: 'input',
+                                                    category: 'Venda / Serviço',
+                                                    amount: totalPaid,
+                                                    description: `Cliente: ${completionTarget.clientName}`
+                                                });
+                                            }
+                                        }
 
                                         showToast('Atendimento finalizado com sucesso!');
                                         setIsCompletionModalOpen(false);

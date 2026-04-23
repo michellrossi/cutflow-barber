@@ -245,6 +245,28 @@ export interface Goal {
   createdAt: string;
 }
 
+export interface CashSession {
+  id: string;
+  shopId: string;
+  status: 'open' | 'closed';
+  openingBalance: number;
+  closingBalance?: number;
+  openedAt: string;
+  closedAt?: string;
+  openedBy?: string;
+}
+
+export interface CashFlowEntry {
+  id: string;
+  shopId: string;
+  sessionId: string;
+  type: 'input' | 'output';
+  category: string;
+  amount: number;
+  description?: string;
+  createdAt: string;
+}
+
 export interface ShopState {
   shop: Shop | null;
   services: Service[];
@@ -259,6 +281,8 @@ export interface ShopState {
   products: Product[]; // [NOVO] Gestão de Estoque
   goals: Goal[]; // [NOVO] Gestão de Metas
   myShops: Shop[]; // [NOVO] Multi-unidades para o dono
+  cashSessions: CashSession[]; // [NOVO] Sessões de Caixa
+  cashFlowEntries: CashFlowEntry[]; // [NOVO] Movimentações do Caixa
   blockedSlots: BlockedSlot[];
   settings: ShopSettings;
   // [NOVO] Estado do Cliente Logado
