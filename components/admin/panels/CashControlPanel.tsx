@@ -109,16 +109,16 @@ export const CashControlPanel: React.FC = () => {
         </div>
         
         {openSession ? (
-            <div className="flex gap-2 w-full md:w-auto mt-4 md:mt-0">
+            <div className="flex flex-wrap gap-3 w-full md:w-auto mt-4 md:mt-0">
                 <button 
                   onClick={() => setIsMovementModalOpen(true)}
-                  className="bg-white border border-slate-200 text-slate-700 font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all hover:bg-slate-50 flex-1 whitespace-nowrap"
+                  className="bg-[#ea580c] text-white font-bold px-8 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-600/20 hover:scale-[1.02] active:scale-95 whitespace-nowrap"
                 >
-                  <FileText size={18} /> Lançar Extrato
+                  <Plus size={20} className="stroke-[3px]" /> Lançar Movimento
                 </button>
                 <button 
                   onClick={() => setIsClosingModalOpen(true)}
-                  className="bg-red-600 text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:bg-red-700 flex-1 whitespace-nowrap"
+                  className="bg-white border-2 border-red-100 text-red-600 font-bold px-8 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all hover:bg-red-50 active:scale-95 whitespace-nowrap shadow-sm"
                 >
                   <Lock size={18} className="stroke-[3px]" /> Fechar Caixa
                 </button>
@@ -127,9 +127,9 @@ export const CashControlPanel: React.FC = () => {
             <div className="w-full md:w-auto mt-4 md:mt-0">
                 <button 
                   onClick={() => setIsOpeningModalOpen(true)}
-                  className="bg-emerald-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-lg hover:bg-emerald-700 w-full"
+                  className="bg-[#ea580c] text-white font-bold px-8 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-lg shadow-orange-600/20 hover:scale-[1.02] active:scale-95 w-full md:w-auto"
                 >
-                  <Unlock size={20} className="stroke-[3px]" /> Abrir Caixa
+                  <Plus size={22} className="stroke-[3px]" /> Abrir Caixa
                 </button>
             </div>
         )}
@@ -222,9 +222,9 @@ export const CashControlPanel: React.FC = () => {
               <p className="text-[#6b7d99] text-sm mb-6 max-w-md">Para registrar pagamentos em dinheiro e gerenciar sangrias do dia, você precisa iniciar uma nova sessão de caixa.</p>
               <button 
                   onClick={() => setIsOpeningModalOpen(true)}
-                  className="bg-emerald-600 text-white font-bold px-8 py-3 rounded-xl transition-all shadow-lg hover:bg-emerald-700"
+                  className="bg-[#ea580c] text-white font-bold px-10 py-4 rounded-[2rem] flex items-center gap-2 transition-all shadow-lg shadow-orange-600/20 hover:scale-105 active:scale-95"
               >
-                  Abrir Caixa Agora
+                  <Plus size={24} className="stroke-[3px]" /> Abrir Caixa Agora
               </button>
           </div>
       )}

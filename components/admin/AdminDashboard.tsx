@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info, ShieldCheck, Pin, BarChart3, User, Package, Target, Plus } from 'lucide-react';
+import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info, ShieldCheck, Pin, BarChart3, User, Package, Target, Plus, TrendingUp } from 'lucide-react';
 import { DashboardPanel } from './panels/DashboardPanel';
 import { TeamPanel } from './panels/TeamPanel';
 import { ServicesPanel } from './panels/ServicesPanel';
@@ -18,13 +18,14 @@ import { SubscriptionsPanel } from './panels/SubscriptionsPanel';
 import { InventoryPanel } from './panels/InventoryPanel';
 import { GoalsPanel } from './panels/GoalsPanel';
 import { CashControlPanel } from './panels/CashControlPanel';
+import { FinancialPanel } from './panels/FinancialPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
 import { PaymentModal } from '../billing/PaymentModal';
 
 import { PlanPanel } from './panels/PlanPanel';
 import { ProfilePanel } from './panels/ProfilePanel';
 
-type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan' | 'reports' | 'profile' | 'inventory' | 'goals' | 'cash';
+type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan' | 'reports' | 'profile' | 'inventory' | 'goals' | 'cash' | 'financial';
 
 type TeamSubTab = 'list' | 'schedules' | 'blocks';
 
@@ -111,6 +112,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'inventory': return <InventoryPanel />;
       case 'goals': return <GoalsPanel />;
       case 'cash': return <CashControlPanel />;
+      case 'financial': return <FinancialPanel />;
       default: return <DashboardPanel onNavigate={handleTabChange} />;
     }
   };
@@ -134,6 +136,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'inventory': return 'Produtos';
           case 'goals': return 'Gestão de Metas';
           case 'cash': return 'Controle de Caixa';
+          case 'financial': return 'Financeiro';
       }
   }
 
@@ -216,6 +219,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   <SidebarItem icon={<Package size={18} />} label="Produtos" active={activeTab === 'inventory'} onClick={() => handleTabChange('inventory')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<DollarSign size={18} />} label="Caixa" active={activeTab === 'cash'} onClick={() => handleTabChange('cash')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<TrendingUp size={18} />} label="Financeiro" active={activeTab === 'financial'} onClick={() => handleTabChange('financial')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<Target size={18} />} label="Metas" active={activeTab === 'goals'} onClick={() => handleTabChange('goals')} expanded={isSidebarExpanded} />
   

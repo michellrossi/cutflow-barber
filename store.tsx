@@ -324,6 +324,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const mapAppointment = (data: any): Appointment => ({
       id: data.id,
       shopId: data.shop_id,
+      clientId: data.client_id,
       clientName: data.client_name,
       clientPhone: data.client_phone,
       serviceIds: data.service_ids || [], 
@@ -1407,11 +1408,15 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             throw error;
         }
 
-        // Se o status mudou para 'completed', processar fidelidade e assinaturas
-        if (status === 'completed' && appointment) {
+        // Se o status mudou para 'completed' ou 'confirmed', processar fidelidade e assinaturas
+        // Checagem de appointment.status (estado anterior) para evitar duplicidade
+        const isActivatingStatus = (status === 'completed' || status === 'confirmed');
+        const wasInactiveStatus = appointment ? (appointment.status !== 'completed' && appointment.status !== 'confirmed') : true;
+
+        if (isActivatingStatus && wasInactiveStatus && appointment) {
             await processLoyalty(appointment);
             
-            if (appointment.usedSubscriptionId) {
+            if (status === 'completed' && appointment.usedSubscriptionId) {
                 const sub = state.clientSubscriptions.find(s => s.id === appointment.usedSubscriptionId);
                 if (sub) {
                     await updateClientSubscription(sub.id, { 
@@ -1430,9 +1435,25 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const processLoyalty = async (appointment: Appointment) => {
       const shopId = appointment.shopId;
       const settings = state.settings;
-      const client = state.clients.find(c => c.id === appointment.clientId || c.phone === appointment.clientPhone);
+      
+      // Tenta achar no state, se não achar (Lazy Load), busca direto no DB
+      let client = state.clients.find(c => (appointment.clientId && c.id === appointment.clientId) || c.phone === appointment.clientPhone);
+      
+      if (!client) {
+          console.log("[Loyalty] Cliente não no state (Lazy Load), buscando no DB...", { phone: appointment.clientPhone });
+          const { data: dbClient } = await supabase.from('clients')
+            .select('*')
+            .eq('shop_id', shopId)
+            .or(`id.eq.${appointment.clientId || crypto.randomUUID()},phone.eq.${appointment.clientPhone}`)
+            .maybeSingle();
+            
+          if (dbClient) client = mapClient(dbClient);
+      }
 
-      if (!client || !settings.loyaltyMode) return;
+      if (!client || !settings.loyaltyEnabled) {
+          console.warn("[Loyalty] Processamento ignorado: Cliente não encontrado ou fidelidade desativada.");
+          return;
+      }
 
       let updatedPoints = client.loyaltyPoints || 0;
       let updatedCardCount = client.loyaltyCardCount || 0;
@@ -1443,42 +1464,35 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           updatedPoints += pointsEarned;
           if (updatedPoints >= (settings.loyaltyPointsGoal || 1000)) {
               rewardTriggered = true;
-              // No reset as requested, but we could subtract the goal if we wanted to allow multiple rewards.
-              // User said "sem reset", which I interpret as cumulative points.
-              // However, usually you "spend" points. If "sem reset", maybe they just keep growing.
-              // Let's assume they keep growing and we check if (total % goal) just happened.
-              // Actually, "sem reset" might mean the card doesn't clear, but the prize is given.
-              // Let's just increment and if it's >= goal, give prize. 
-              // To avoid giving prize every time after goal is reached, we should probably track how many prizes were given.
-              // But for simplicity, let's just give one prize and maybe the user manually manages it or we subtract the goal.
-              // "sem reset" usually means the total count doesn't go back to zero.
-              // I'll subtract the goal to allow earning the next one, but keep a "total_loyalty_points" if needed.
-              // Actually, I'll just follow "sem reset" literally: don't set to 0.
-              // But wait, if I don't reset, they will have > goal forever.
-              // I'll subtract the goal so they can earn the next one.
               updatedPoints -= (settings.loyaltyPointsGoal || 1000);
           }
       } else {
           updatedCardCount += 1;
           if (updatedCardCount >= (settings.loyaltyCardGoal || 10)) {
               rewardTriggered = true;
-              updatedCardCount = 0; // Card usually resets, but user said "sem reset".
-              // If "sem reset" for card, maybe it's 10, 20, 30...
-              // I'll stick to subtracting the goal to allow "next card".
+              updatedCardCount = 0; 
           }
       }
 
-      await supabase.from('clients').update({
+      const { error: updErr } = await supabase.from('clients').update({
           loyalty_points: updatedPoints,
           loyalty_card_count: updatedCardCount,
           total_spent: (client.totalSpent || 0) + appointment.totalValue
       }).eq('id', client.id);
 
+      if (updErr) {
+          console.error("[Loyalty] Erro ao atualizar cliente no DB:", updErr);
+          return;
+      }
+
       if (rewardTriggered) {
           await generateLoyaltyReward(client, settings);
       }
 
-      await reloadClients(shopId);
+      // Se a aba de clientes estiver aberta/carregada, recarrega para refletir pontos
+      if (state.clients.length > 0) {
+          await reloadClients(shopId);
+      }
   };
 
   const generateLoyaltyReward = async (client: Client, settings: ShopSettings) => {
