@@ -1448,13 +1448,23 @@ async function startServer() {
     // ==========================================
     app.get('/api/saas/shops', async (req, res) => {
         try {
-            const { data, error } = await supabaseAdmin
+            const { data: shops, error } = await supabaseAdmin
                 .from('shops')
                 .select(`id, name, owner_id, plan, created_at, whatsapp_connected, slug`)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
-            res.json({ success: true, shops: data });
+
+            // Fetch all users to map emails
+            const { data: { users }, error: userError } = await supabaseAdmin.auth.admin.listUsers();
+            const userMap = new Map((users || []).map(u => [u.id, u.email]));
+
+            const shopsWithOwners = (shops || []).map(s => ({
+                ...s,
+                owner_email: userMap.get(s.owner_id) || 'Desconhecido'
+            }));
+
+            res.json({ success: true, shops: shopsWithOwners });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
         }
