@@ -28,7 +28,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '../../ui/ToastContext';
 
 export const InventoryPanel: React.FC = () => {
-  const { products, addProduct, updateProduct, removeProduct, settings, formatCurrencyBRL } = useShop();
+  const { products, addProduct, updateProduct, removeProduct, restockProduct, settings, formatCurrencyBRL } = useShop();
   const { showToast } = useToast();
   
   // UI State
