@@ -25,12 +25,12 @@ const KpiCard: React.FC<{
 }> = ({ label, value, sub, icon, color = 'default', trend }) => {
   const colorMap: Record<string, string> = {
     default: 'bg-white border-slate-200',
-    green:   'bg-emerald-50 border-emerald-200',
-    red:     'bg-red-50 border-red-200',
-    orange:  'bg-orange-50 border-orange-200',
-    dark:    'bg-slate-900 border-slate-800',
-    blue:    'bg-blue-50 border-blue-200',
-    indigo:  'bg-indigo-600 border-indigo-700',
+    green: 'bg-emerald-50 border-emerald-200',
+    red: 'bg-red-50 border-red-200',
+    orange: 'bg-orange-50 border-orange-200',
+    dark: 'bg-slate-900 border-slate-800',
+    blue: 'bg-blue-50 border-blue-200',
+    indigo: 'bg-indigo-50 border-indigo-700',
   };
   const textMap: Record<string, string> = {
     default: 'text-slate-900', green: 'text-emerald-800', red: 'text-red-800',
@@ -73,13 +73,13 @@ const KpiCard: React.FC<{
 const AlertBanner: React.FC<{ type: 'warning' | 'danger' | 'info'; message: string; onDismiss?: () => void }> = ({ type, message, onDismiss }) => {
   const styles: Record<string, string> = {
     warning: 'bg-amber-50 border-amber-200 text-amber-800',
-    danger:  'bg-red-50 border-red-200 text-red-800',
-    info:    'bg-blue-50 border-blue-200 text-blue-800',
+    danger: 'bg-red-50 border-red-200 text-red-800',
+    info: 'bg-blue-50 border-blue-200 text-blue-800',
   };
   const icons: Record<string, React.ReactNode> = {
     warning: <AlertTriangle size={16} className="shrink-0" />,
-    danger:  <AlertCircle size={16} className="shrink-0 text-red-500" />,
-    info:    <CheckCircle size={16} className="shrink-0 text-blue-500" />,
+    danger: <AlertCircle size={16} className="shrink-0 text-red-500" />,
+    info: <CheckCircle size={16} className="shrink-0 text-blue-500" />,
   };
   return (
     <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${styles[type]} text-sm font-medium`}>
@@ -297,21 +297,21 @@ const CashTab: React.FC = () => {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Valor Inicial (R$)</label>
-                <input type="number" step="0.01" min="0" required value={form.amount} onChange={e => setForm({...form, amount: e.target.value})}
+                <input type="number" step="0.01" min="0" required value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-2xl font-black text-center text-slate-900 focus:outline-none focus:border-emerald-500" placeholder="0,00" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Responsável (Opcional)</label>
-                <input value={form.responsavel} onChange={e => setForm({...form, responsavel: e.target.value})
+                <input value={form.responsavel} onChange={e => setForm({ ...form, responsavel: e.target.value })
                 } className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-900 focus:outline-none focus:border-emerald-500" placeholder="Nome do responsável" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Observação (Opcional)</label>
-                <textarea value={form.obs} onChange={e => setForm({...form, obs: e.target.value})}
+                <textarea value={form.obs} onChange={e => setForm({ ...form, obs: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700 focus:outline-none focus:border-emerald-500 resize-none h-16" />
               </div>
               <button disabled={saving} type="submit" className="w-full bg-emerald-600 text-white font-bold py-4 rounded-xl hover:bg-emerald-700 active:scale-95 transition-all flex items-center justify-center gap-2">
-                {saving ? <Loader2 className="animate-spin" size={18}/> : <><Unlock size={18}/> Iniciar Sessão</>}
+                {saving ? <Loader2 className="animate-spin" size={18} /> : <><Unlock size={18} /> Iniciar Sessão</>}
               </button>
             </form>
           </Modal>
@@ -322,12 +322,12 @@ const CashTab: React.FC = () => {
             <form onSubmit={handleMovement('input', form.reason || 'Aporte')} className="p-6 space-y-4">
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Valor (R$)</label>
-                <input type="number" step="0.01" min="0.01" required value={form.amount} onChange={e => setForm({...form, amount: e.target.value})}
+                <input type="number" step="0.01" min="0.01" required value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-2xl font-black text-center text-slate-900 focus:outline-none focus:border-blue-500" placeholder="0,00" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Motivo</label>
-                <select value={form.reason} onChange={e => setForm({...form, reason: e.target.value})}
+                <select value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-900 focus:outline-none focus:border-blue-500">
                   <option value="">Selecione o motivo</option>
                   <option>Aporte Inicial</option><option>Reforço de Troco</option><option>Suprimento</option><option>Outro</option>
@@ -335,16 +335,16 @@ const CashTab: React.FC = () => {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Autorizado por</label>
-                <input value={form.responsavel} onChange={e => setForm({...form, responsavel: e.target.value})}
+                <input value={form.responsavel} onChange={e => setForm({ ...form, responsavel: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-900 focus:outline-none focus:border-blue-500" placeholder="Nome do responsável" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Observação</label>
-                <textarea value={form.obs} onChange={e => setForm({...form, obs: e.target.value})}
+                <textarea value={form.obs} onChange={e => setForm({ ...form, obs: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700 focus:outline-none focus:border-blue-500 resize-none h-16" />
               </div>
               <button disabled={saving} type="submit" className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl hover:bg-blue-700 active:scale-95 transition-all flex items-center justify-center gap-2">
-                {saving ? <Loader2 className="animate-spin" size={18}/> : <><ArrowUpCircle size={18}/> Confirmar Aporte</>}
+                {saving ? <Loader2 className="animate-spin" size={18} /> : <><ArrowUpCircle size={18} /> Confirmar Aporte</>}
               </button>
             </form>
           </Modal>
@@ -359,12 +359,12 @@ const CashTab: React.FC = () => {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Valor (R$)</label>
-                <input type="number" step="0.01" min="0.01" required value={form.amount} onChange={e => setForm({...form, amount: e.target.value})}
+                <input type="number" step="0.01" min="0.01" required value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-2xl font-black text-center text-slate-900 focus:outline-none focus:border-amber-500" placeholder="0,00" />
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Motivo</label>
-                <select value={form.reason} onChange={e => setForm({...form, reason: e.target.value})}
+                <select value={form.reason} onChange={e => setForm({ ...form, reason: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm font-bold text-slate-900 focus:outline-none focus:border-amber-500">
                   <option value="">Selecione</option>
                   <option>Sangria para Cofre</option><option>Pagamento Fornecedor</option><option>Despesa Operacional</option><option>Repasse ao Gerente</option><option>Outro</option>
@@ -374,7 +374,7 @@ const CashTab: React.FC = () => {
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Destino</label>
                 <div className="flex gap-2">
                   {['Cofre', 'Gerente', 'Banco'].map(d => (
-                    <button type="button" key={d} onClick={() => setForm({...form, destination: d})}
+                    <button type="button" key={d} onClick={() => setForm({ ...form, destination: d })}
                       className={`flex-1 py-2 rounded-lg text-xs font-bold border transition-all ${form.destination === d ? 'bg-amber-50 border-amber-400 text-amber-800' : 'bg-white border-slate-200 text-slate-500'}`}>
                       {d}
                     </button>
@@ -383,11 +383,11 @@ const CashTab: React.FC = () => {
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Observação</label>
-                <textarea value={form.obs} onChange={e => setForm({...form, obs: e.target.value})}
+                <textarea value={form.obs} onChange={e => setForm({ ...form, obs: e.target.value })}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-700 focus:outline-none focus:border-amber-500 resize-none h-16" />
               </div>
               <button disabled={saving} type="submit" className="w-full bg-amber-600 text-white font-bold py-4 rounded-xl hover:bg-amber-700 active:scale-95 transition-all flex items-center justify-center gap-2">
-                {saving ? <Loader2 className="animate-spin" size={18}/> : <><ArrowDownCircle size={18}/> Confirmar Sangria</>}
+                {saving ? <Loader2 className="animate-spin" size={18} /> : <><ArrowDownCircle size={18} /> Confirmar Sangria</>}
               </button>
             </form>
           </Modal>
@@ -428,7 +428,7 @@ const CashTab: React.FC = () => {
                 </div>
               )}
               <button disabled={saving} type="submit" className="w-full bg-red-600 text-white font-bold py-4 rounded-xl hover:bg-red-700 active:scale-95 transition-all flex items-center justify-center gap-2">
-                {saving ? <Loader2 className="animate-spin" size={18}/> : <><Lock size={18}/> Confirmar Fechamento</>}
+                {saving ? <Loader2 className="animate-spin" size={18} /> : <><Lock size={18} /> Confirmar Fechamento</>}
               </button>
             </form>
           </Modal>
@@ -483,10 +483,10 @@ const BillingTab: React.FC<{ period: string }> = ({ period }) => {
   const getProName = (id: string | null) => professionals.find(p => p.id === id)?.name || '–';
 
   const PAYMENT_CONFIG: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
-    pix: { label: 'PIX', icon: <Smartphone size={14}/>, color: 'bg-teal-50 text-teal-700 border-teal-200' },
-    credit: { label: 'Cartão', icon: <CreditCard size={14}/>, color: 'bg-purple-50 text-purple-700 border-purple-200' },
-    cash: { label: 'Dinheiro', icon: <Banknote size={14}/>, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    subscription: { label: 'Assinatura', icon: <Award size={14}/>, color: 'bg-orange-50 text-orange-700 border-orange-200' },
+    pix: { label: 'PIX', icon: <Smartphone size={14} />, color: 'bg-teal-50 text-teal-700 border-teal-200' },
+    credit: { label: 'Cartão', icon: <CreditCard size={14} />, color: 'bg-purple-50 text-purple-700 border-purple-200' },
+    cash: { label: 'Dinheiro', icon: <Banknote size={14} />, color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    subscription: { label: 'Assinatura', icon: <Award size={14} />, color: 'bg-orange-50 text-orange-700 border-orange-200' },
   };
 
   return (
@@ -739,7 +739,7 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
                             <tbody className="divide-y divide-slate-100">
                               {detailData.map(apt => (
                                 <tr key={apt.id} className="hover:bg-slate-50">
-                                  <td className="px-4 py-2.5 text-slate-500">{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR')} {apt.time?.substring(0,5)}</td>
+                                  <td className="px-4 py-2.5 text-slate-500">{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR')} {apt.time?.substring(0, 5)}</td>
                                   <td className="px-4 py-2.5 font-medium text-slate-800">{apt.clientName}</td>
                                   <td className="px-4 py-2.5 text-right font-bold text-slate-900">{fmtBRL(apt.totalValue)}</td>
                                   <td className="px-4 py-2.5 text-right font-bold text-orange-600">{fmtBRL(apt.totalValue * p.commPct / 100)}</td>
@@ -805,7 +805,7 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
                 </button>
                 <button type="submit" disabled={paying}
                   className="flex-1 bg-emerald-600 text-white font-bold py-3 rounded-xl hover:bg-emerald-700 active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
-                  {paying ? <Loader2 className="animate-spin" size={16}/> : <><CheckCircle size={16}/> Confirmar Pagamento</>}
+                  {paying ? <Loader2 className="animate-spin" size={16} /> : <><CheckCircle size={16} /> Confirmar Pagamento</>}
                 </button>
               </div>
             </form>
@@ -1026,17 +1026,17 @@ export const FinancialPanel: React.FC = () => {
   const openSession = cashSessions.find(s => s.status === 'open');
 
   const TABS: { id: FinancialTab; label: string; icon: React.ReactNode; badge?: string }[] = [
-    { id: 'cash',        label: 'Caixa Físico',  icon: <Wallet size={18} />,    badge: openSession ? 'Aberto' : undefined },
-    { id: 'billing',     label: 'Faturamento',   icon: <TrendingUp size={18} /> },
-    { id: 'commissions', label: 'Comissões',     icon: <Users size={18} /> },
-    { id: 'reports',     label: 'Relatórios',    icon: <BarChart3 size={18} /> },
+    { id: 'cash', label: 'Caixa Físico', icon: <Wallet size={18} />, badge: openSession ? 'Aberto' : undefined },
+    { id: 'billing', label: 'Faturamento', icon: <TrendingUp size={18} /> },
+    { id: 'commissions', label: 'Comissões', icon: <Users size={18} /> },
+    { id: 'reports', label: 'Relatórios', icon: <BarChart3 size={18} /> },
   ];
 
   const PERIOD_OPTIONS = [
     { value: 'today', label: 'Hoje' },
-    { value: 'week',  label: 'Esta Semana' },
+    { value: 'week', label: 'Esta Semana' },
     { value: 'month', label: 'Este Mês' },
-    { value: 'all',   label: 'Todo período' },
+    { value: 'all', label: 'Todo período' },
   ];
 
   return (
@@ -1085,10 +1085,10 @@ export const FinancialPanel: React.FC = () => {
       {/* ── Conteúdo ────────────────────────────────────────────────── */}
       <AnimatePresence mode="wait">
         <motion.div key={activeTab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18 }}>
-          {activeTab === 'cash'        && <CashTab />}
-          {activeTab === 'billing'     && <BillingTab period={period} />}
+          {activeTab === 'cash' && <CashTab />}
+          {activeTab === 'billing' && <BillingTab period={period} />}
           {activeTab === 'commissions' && <CommissionsTab period={period} />}
-          {activeTab === 'reports'     && <ReportsTab period={period} />}
+          {activeTab === 'reports' && <ReportsTab period={period} />}
         </motion.div>
       </AnimatePresence>
     </div>
