@@ -35,7 +35,7 @@ export const AdminOwnerDashboard: React.FC = () => {
         const suspendedList = shops.filter(s => s.plan === 'suspended');
         
         const totalSubscribers = activeList.length;
-        const mrr = totalSubscribers * PLAN_PRICE;
+        const mrr = activeList.reduce((sum, s) => sum + (Number(s.monthly_price) || PLAN_PRICE), 0);
         
         // Simulação de Churn: Suspensos / (Ativos + Suspensos + Trial) * 100
         const totalForChurn = shops.length > 0 ? shops.length : 1;
@@ -101,6 +101,30 @@ export const AdminOwnerDashboard: React.FC = () => {
             setShops(prev => prev.map((s: any) => s.id === shopId ? { ...s, plan: newPlan } : s));
         } catch (error: any) {
             alert('Erro ao atualizar plano: ' + error.message);
+        } finally {
+            setActionLoadingId(null);
+        }
+    };
+
+    const updateShopPrice = async (shopId: string, newPrice: number) => {
+        setActionLoadingId(shopId + '-price');
+        try {
+            const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+                ? 'http://localhost:3000' 
+                : `https://${window.location.hostname}`;
+                
+            const res = await fetch(`${serverUrl}/api/saas/shops/plan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shopId, monthly_price: newPrice })
+            });
+            const result = await res.json();
+            
+            if (!res.ok) throw new Error(result.error || 'Erro na API');
+            
+            setShops(prev => prev.map((s: any) => s.id === shopId ? { ...s, monthly_price: newPrice } : s));
+        } catch (error: any) {
+            console.error('Erro ao atualizar preço:', error);
         } finally {
             setActionLoadingId(null);
         }
@@ -219,6 +243,7 @@ export const AdminOwnerDashboard: React.FC = () => {
                                 <tr>
                                     <th className="px-6 py-4 font-bold text-slate-900">Barbearia</th>
                                     <th className="px-6 py-4 font-bold text-slate-900 text-center">Status / Ação</th>
+                                    <th className="px-6 py-4 font-bold text-slate-900 text-center">Mensalidade</th>
                                     <th className="px-6 py-4 font-bold text-slate-900">Contato</th>
                                     <th className="px-6 py-4 font-bold text-slate-900">Data Base</th>
                                 </tr>
@@ -258,6 +283,26 @@ export const AdminOwnerDashboard: React.FC = () => {
                                                         <button onClick={() => updatePlan(shop.id, 'suspended')} className="w-full text-left px-4 py-2 text-xs font-bold text-red-600 hover:bg-red-50">Suspender</button>
                                                     </div>
                                                 </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <div className="flex items-center justify-center gap-1.5">
+                                                <div className="relative group/price">
+                                                    <input 
+                                                        type="number"
+                                                        defaultValue={shop.monthly_price || PLAN_PRICE}
+                                                        disabled={actionLoadingId === shop.id + '-price'}
+                                                        onBlur={(e) => {
+                                                            const val = parseFloat(e.target.value);
+                                                            if (val !== shop.monthly_price) updateShopPrice(shop.id, val);
+                                                        }}
+                                                        className="w-20 text-center bg-slate-100 border border-transparent hover:border-slate-300 focus:bg-white focus:border-orange-500 rounded px-1 py-1 text-sm font-bold transition-all outline-none"
+                                                    />
+                                                    <span className="absolute -top-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/price:opacity-100 pointer-events-none transition-opacity whitespace-nowrap">
+                                                        Editar Valor Mensal
+                                                    </span>
+                                                </div>
+                                                <span className="text-slate-400 font-bold text-xs">R$</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">

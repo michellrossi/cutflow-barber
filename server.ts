@@ -1450,7 +1450,7 @@ async function startServer() {
         try {
             const { data: shops, error } = await supabaseAdmin
                 .from('shops')
-                .select(`id, name, owner_id, plan, created_at, whatsapp_connected, slug`)
+                .select(`id, name, owner_id, plan, created_at, whatsapp_connected, slug, monthly_price`)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -1471,9 +1471,11 @@ async function startServer() {
     });
 
     app.post('/api/saas/shops/plan', async (req, res) => {
-        const { shopId, plan } = req.body;
+        const { shopId, plan, monthly_price } = req.body;
         try {
-            const updates: any = { plan };
+            const updates: any = {};
+            if (plan !== undefined) updates.plan = plan;
+            if (monthly_price !== undefined) updates.monthly_price = monthly_price;
             if (plan === 'active') updates.payment_confirmed_at = new Date().toISOString();
 
             const { error } = await supabaseAdmin.from('shops').update(updates).eq('id', shopId);

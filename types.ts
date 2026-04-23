@@ -12,6 +12,7 @@ export interface Shop {
   // [NOVO] WhatsApp Multi-Instância
   whatsappInstance?: string;
   whatsappConnected?: boolean;
+  monthly_price?: number;
 }
 
 export interface Client {
