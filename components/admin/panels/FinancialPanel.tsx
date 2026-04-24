@@ -30,22 +30,22 @@ const KpiCard: React.FC<{
     orange: 'bg-orange-50 border-orange-200',
     dark: 'bg-slate-900 border-slate-800',
     blue: 'bg-blue-50 border-blue-200',
-    indigo: 'bg-indigo-50 border-indigo-700',
+    indigo: 'bg-indigo-50 border-indigo-200',
   };
   const textMap: Record<string, string> = {
     default: 'text-slate-900', green: 'text-emerald-800', red: 'text-red-800',
     orange: 'text-orange-800', dark: 'text-white', blue: 'text-blue-800',
-    indigo: 'text-white',
+    indigo: 'text-indigo-800',
   };
   const subMap: Record<string, string> = {
     default: 'text-slate-500', green: 'text-emerald-600', red: 'text-red-600',
     orange: 'text-orange-600', dark: 'text-slate-400', blue: 'text-blue-600',
-    indigo: 'text-indigo-200',
+    indigo: 'text-indigo-600',
   };
   const iconMap: Record<string, string> = {
     default: 'text-slate-400', green: 'text-emerald-400', red: 'text-red-400',
     orange: 'text-orange-400', dark: 'text-slate-500', blue: 'text-blue-400',
-    indigo: 'text-indigo-300',
+    indigo: 'text-indigo-400',
   };
 
   return (
