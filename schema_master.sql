@@ -17,6 +17,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- SHOPS
 ALTER TABLE public.shops
     ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'trial',
+    ADD COLUMN IF NOT EXISTS plan_tier TEXT DEFAULT 'essencial' CHECK (plan_tier IN ('essencial', 'profissional', 'premium')),
     ADD COLUMN IF NOT EXISTS whatsapp_instance TEXT,
     ADD COLUMN IF NOT EXISTS whatsapp_connected BOOLEAN DEFAULT false,
     ADD COLUMN IF NOT EXISTS asaas_customer_id TEXT;
@@ -704,6 +705,52 @@ WHERE NOT EXISTS (
     AND automation_triggers.name = 'Aniversário'
 );
 
+
+
+-- ==============================================================================
+-- SEÇÃO: CONTROLE DE CAIXA (cash_sessions + cash_flow_entries)
+-- Absorvido do arquivo separado cash_control_setup.sql
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.cash_sessions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
+    status TEXT NOT NULL CHECK (status IN ('open', 'closed')),
+    opening_balance NUMERIC(12,2) DEFAULT 0,
+    closing_balance NUMERIC(12,2),
+    opened_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL,
+    closed_at TIMESTAMP WITH TIME ZONE,
+    opened_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS public.cash_flow_entries (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
+    session_id UUID NOT NULL REFERENCES public.cash_sessions(id) ON DELETE CASCADE,
+    type TEXT NOT NULL CHECK (type IN ('input', 'output')),
+    category TEXT NOT NULL,
+    amount NUMERIC(12,2) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL
+);
+
+-- Garantir apenas uma sessão aberta por loja
+CREATE UNIQUE INDEX IF NOT EXISTS idx_single_open_session_per_shop
+    ON public.cash_sessions (shop_id)
+    WHERE status = 'open';
+
+ALTER TABLE public.cash_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cash_flow_entries ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Dono_Gere_Caixa" ON public.cash_sessions;
+CREATE POLICY "Dono_Gere_Caixa" ON public.cash_sessions FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.shops WHERE id = cash_sessions.shop_id AND owner_id = auth.uid())
+);
+
+DROP POLICY IF EXISTS "Dono_Gere_Movimentacoes" ON public.cash_flow_entries;
+CREATE POLICY "Dono_Gere_Movimentacoes" ON public.cash_flow_entries FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.shops WHERE id = cash_flow_entries.shop_id AND owner_id = auth.uid())
+);
 
 -- ==============================================================================
 -- FIM DO SCRIPT — Recarrega cache do PostgREST

@@ -37,9 +37,8 @@ if (!serviceRoleKey) {
 
 // SEGURANÇA: Em produção, EVOLUTION_WEBHOOK_SECRET é OBRIGATÓRIO
 if (process.env.NODE_ENV === 'production' && !process.env.EVOLUTION_WEBHOOK_SECRET) {
-    console.warn("\n⚠️  AVISO DE SEGURANÇA: EVOLUTION_WEBHOOK_SECRET não definido!");
-    console.warn("   O webhook do chatbot está operando SEM autenticação.");
-    console.warn("   Configure esta variável no Railway/Vercel assim que possível.\n");
+    console.error("\n🚨  ERRO CRÍTICO: EVOLUTION_WEBHOOK_SECRET não definido em produção!");
+    console.error("   O endpoint /api/whatsapp/webhook retornará 503 até que a variável seja configurada.\n");
 }
 
 // 2. Cliente Administrativo (Usa SERVICE_ROLE - Ignora RLS)
@@ -1282,6 +1281,50 @@ async function startServer() {
     app.get('/api/health', (req, res) => {
         res.json({ status: 'ok' });
     });
+
+    // =========================================================================
+    // MIDDLEWARE: requirePlan() — Barreira de Plano
+    // Bloqueia rotas com 403 se o tenant não tiver o tier mínimo exigido.
+    // Hierarquia: essencial < profissional < premium
+    // =========================================================================
+    const PLAN_HIERARCHY: Record<string, number> = { essencial: 1, profissional: 2, premium: 3 };
+
+    const requirePlan = (minTier: 'essencial' | 'profissional' | 'premium') => {
+        return async (req: any, res: any, next: any) => {
+            const shopId = req.body?.shopId || req.query?.shopId;
+            if (!shopId) return next(); // Sem shopId, deixa passar (validação específica da rota)
+
+            try {
+                const { data: shop } = await supabaseAdmin
+                    .from('shops')
+                    .select('plan_tier, plan')
+                    .eq('id', shopId)
+                    .single();
+
+                if (!shop) return res.status(403).json({ error: 'Loja não encontrada.' });
+
+                // Lojas ainda em trial ou plano ativo sem tier: tratar como 'essencial'
+                const tier = shop.plan_tier || 'essencial';
+                const shopLevel = PLAN_HIERARCHY[tier] ?? 1;
+                const minLevel = PLAN_HIERARCHY[minTier] ?? 1;
+
+                if (shopLevel < minLevel) {
+                    console.warn(`[requirePlan] Acesso negado: loja ${shopId} está em "${tier}" mas rota exige "${minTier}".`);
+                    return res.status(403).json({
+                        error: 'Plano insuficiente.',
+                        required: minTier,
+                        current: tier,
+                        message: `Esta funcionalidade requer o plano ${minTier.charAt(0).toUpperCase() + minTier.slice(1)} ou superior.`
+                    });
+                }
+
+                next();
+            } catch (err: any) {
+                console.error('[requirePlan] Erro ao verificar plano:', err.message);
+                next(); // Em caso de erro no middleware, não bloquear o serviço
+            }
+        };
+    };
     app.post('/api/notify/test', async (req, res) => {
         const { phone, templateId } = req.body;
         if (!phone || !templateId) return res.status(400).json({ error: "Telefone e ID do modelo são obrigatórios" });
@@ -1309,7 +1352,7 @@ async function startServer() {
         }
     });
 
-    app.post('/api/admin/insights', async (req, res) => {
+    app.post('/api/admin/insights', requirePlan('profissional'), async (req, res) => {
         const { prompt, context, history } = req.body;
         try {
             const systemInstruction = `Você é um consultor de negócios especializado em barbearias. Use os dados de "${context.shopName}".`;
@@ -1450,7 +1493,7 @@ async function startServer() {
         try {
             const { data: shops, error } = await supabaseAdmin
                 .from('shops')
-                .select(`id, name, owner_id, plan, created_at, whatsapp_connected, slug, monthly_price`)
+                .select(`id, name, owner_id, plan, plan_tier, created_at, whatsapp_connected, slug, monthly_price`)
                 .order('created_at', { ascending: false });
 
             if (error) throw error;
@@ -1471,10 +1514,11 @@ async function startServer() {
     });
 
     app.post('/api/saas/shops/plan', async (req, res) => {
-        const { shopId, plan, monthly_price } = req.body;
+        const { shopId, plan, plan_tier, monthly_price } = req.body;
         try {
             const updates: any = {};
             if (plan !== undefined) updates.plan = plan;
+            if (plan_tier !== undefined) updates.plan_tier = plan_tier;
             if (monthly_price !== undefined) updates.monthly_price = monthly_price;
             if (plan === 'active') updates.payment_confirmed_at = new Date().toISOString();
 
@@ -1719,8 +1763,14 @@ async function startServer() {
     // ==========================================
     // WHATSAPP CHATBOT AI (EVOLUTION API WEBHOOK)
     // ==========================================
-    app.post('/api/whatsapp/webhook', async (req, res) => {
+    app.post('/api/whatsapp/webhook', requirePlan('profissional'), async (req, res) => {
         const body = req.body;
+
+        // SEGURANÇA: Bloquear completamente o endpoint em produção se o secret não estiver configurado
+        if (process.env.NODE_ENV === 'production' && !process.env.EVOLUTION_WEBHOOK_SECRET) {
+            console.error('[Chatbot Webhook] Endpoint bloqueado: EVOLUTION_WEBHOOK_SECRET não configurado.');
+            return res.status(503).json({ error: 'Webhook not configured' });
+        }
 
         // FIX 2: Validação de assinatura do webhook
         // Configure EVOLUTION_WEBHOOK_SECRET no .env e no painel da Evolution API

@@ -4,12 +4,13 @@ export interface Shop {
   ownerId: string;
   name: string;
   slug: string;
-  // [NOVO] Campos de Trial e Plano
+  // Campos de Trial e Plano
   trialStartedAt?: string;
   trialEndsAt?: string;
   plan?: 'trial' | 'active' | 'suspended';
+  planTier?: 'essencial' | 'profissional' | 'premium';
   paymentConfirmedAt?: string;
-  // [NOVO] WhatsApp Multi-Instância
+  // WhatsApp Multi-Instância
   whatsappInstance?: string;
   whatsappConnected?: boolean;
   monthly_price?: number;

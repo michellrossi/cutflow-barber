@@ -52,7 +52,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
-    const { appointments, professionals, session, updateAppointmentStatus, settings, updateProfessional, blockedSlots, addBlockedSlot, removeBlockedSlot, refresh, theme, toggleTheme } = useShop();
+    const { appointments, professionals, session, updateAppointmentStatus, updateAppointmentPaymentMethod, settings, updateProfessional, blockedSlots, addBlockedSlot, removeBlockedSlot, refresh, theme, toggleTheme, products, addAppointmentProducts, cashSessions, addCashMovement, clientSubscriptions, subscriptionPlans } = useShop();
     const { showToast } = useToast();
 
     // 1. Identificar qual profissional é o usuário logado
@@ -74,6 +74,13 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
     
     // State para ações em agendamentos
     const [updatingAptId, setUpdatingAptId] = useState<string | null>(null);
+
+    // States para o Modal de Conclusão (igual ao AppointmentsPanel)
+    const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
+    const [completionTarget, setCompletionTarget] = useState<any>(null);
+    const [selectedProductsForCompletion, setSelectedProductsForCompletion] = useState<{ productId: string, quantity: number, unitPrice: number }[]>([]);
+    const [completionPaymentMethod, setCompletionPaymentMethod] = useState('pix');
+    const [isFinishing, setIsFinishing] = useState(false);
     
     // States para Bloqueios
     const [blockDate, setBlockDate] = useState('');
@@ -150,7 +157,15 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
         }
     }
 
-    const handleStatusChange = async (id: string, newStatus: string) => {
+    const handleStatusChange = async (id: string, newStatus: string, apt?: any) => {
+        // Se está finalizando, abrir o modal de conclusão
+        if (newStatus === 'completed' && apt) {
+            setCompletionTarget(apt);
+            setSelectedProductsForCompletion([]);
+            setCompletionPaymentMethod('pix');
+            setIsCompletionModalOpen(true);
+            return;
+        }
         setUpdatingAptId(id);
         try {
             const { success, error } = await updateAppointmentStatus(id, newStatus);
@@ -170,6 +185,50 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
             showToast('Erro de conexão.', 'error');
         } finally {
             setUpdatingAptId(null);
+        }
+    };
+
+    const getClientActiveSubscription = (phone: string, name: string) => {
+        return clientSubscriptions.find(sub => {
+            if (sub.status !== 'active') return false;
+            const plan = subscriptionPlans.find(p => p.id === sub.planId);
+            return plan !== undefined;
+        });
+    };
+
+    const handleFinishAppointment = async () => {
+        if (!completionTarget) return;
+        setIsFinishing(true);
+        try {
+            const method = completionPaymentMethod;
+            let subId = undefined;
+            if (method === 'subscription') {
+                const sub = getClientActiveSubscription(completionTarget.clientPhone, completionTarget.clientName);
+                subId = sub?.id;
+            }
+
+            if (selectedProductsForCompletion.length > 0) {
+                await addAppointmentProducts(completionTarget.id, selectedProductsForCompletion);
+            }
+
+            await updateAppointmentStatus(completionTarget.id, 'completed');
+            await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
+
+            if (method === 'cash') {
+                const openSession = cashSessions.find(s => s.status === 'open');
+                if (openSession) {
+                    const totalPaid = completionTarget.totalValue + selectedProductsForCompletion.reduce((acc: number, sp: any) => acc + (sp.quantity * sp.unitPrice), 0);
+                    await addCashMovement({ type: 'input', category: 'Venda / Serviço', amount: totalPaid, description: `Cliente: ${completionTarget.clientName}` });
+                }
+            }
+
+            showToast('Atendimento finalizado com sucesso! ✅');
+            setIsCompletionModalOpen(false);
+            setCompletionTarget(null);
+        } catch (err) {
+            showToast('Erro ao finalizar atendimento.', 'error');
+        } finally {
+            setIsFinishing(false);
         }
     };
 
@@ -296,11 +355,18 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
     }, [myAppointments, currentPro, commissionRate, chartStart, chartEnd, todayStr]);
 
     const STATUS_COLORS: Record<string, string> = {
-        scheduled: 'border-blue-500 text-blue-400',
-        confirmed: 'border-orange-500 text-orange-400',
-        completed: 'border-green-500 text-green-400',
-        cancelled: 'border-red-500 text-red-400',
-        noshow: 'border-slate-500 text-slate-400',
+        scheduled: 'border-blue-500',
+        confirmed: 'border-orange-500',
+        completed: 'border-green-500',
+        cancelled: 'border-red-500',
+        noshow: 'border-slate-500',
+    };
+    const STATUS_TEXT: Record<string, string> = {
+        scheduled: 'text-blue-700',
+        confirmed: 'text-orange-700',
+        completed: 'text-green-700',
+        cancelled: 'text-red-700',
+        noshow: 'text-slate-500',
     };
 
     const daysMap: {[key: string]: string} = {
@@ -323,6 +389,81 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
 
     return (
         <div className="min-h-screen bg-slate-900 text-slate-100 pb-20">
+            {/* Modal de Conclusão */}
+            {isCompletionModalOpen && completionTarget && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+                    <div className="absolute inset-0 bg-slate-900/70 backdrop-blur-sm" onClick={() => setIsCompletionModalOpen(false)} />
+                    <div className="relative w-full max-w-xl bg-white rounded-2xl shadow-2xl overflow-hidden">
+                        <div className="p-5 border-b border-slate-100 bg-emerald-50">
+                            <h3 className="text-lg font-bold text-emerald-900">Finalizar Atendimento</h3>
+                            <p className="text-emerald-700 text-sm">{completionTarget.clientName} • R$ {completionTarget.totalValue.toFixed(2)}</p>
+                        </div>
+                        <div className="p-5 space-y-5 max-h-[70vh] overflow-y-auto">
+                            {/* Produtos */}
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase mb-3 block">Produtos Adicionais (Opcional)</label>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {products.length === 0 && <p className="text-slate-400 text-sm italic">Nenhum produto no estoque.</p>}
+                                    {products.map(p => {
+                                        const selected = selectedProductsForCompletion.find(sp => sp.productId === p.id);
+                                        return (
+                                            <div key={p.id} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${selected ? 'bg-orange-50 border-orange-200' : 'bg-white border-slate-100 hover:border-slate-200'}`}>
+                                                <div>
+                                                    <p className="font-bold text-slate-900 text-sm">{p.name}</p>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase">{p.category} • R$ {p.salePrice}</p>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    {selected ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <button onClick={() => { if (selected.quantity > 1) setSelectedProductsForCompletion(prev => prev.map(sp => sp.productId === p.id ? { ...sp, quantity: sp.quantity - 1 } : sp)); else setSelectedProductsForCompletion(prev => prev.filter(sp => sp.productId !== p.id)); }} className="w-7 h-7 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-200 text-sm font-bold">-</button>
+                                                            <span className="font-bold text-slate-900 w-4 text-center">{selected.quantity}</span>
+                                                            <button onClick={() => setSelectedProductsForCompletion(prev => prev.map(sp => sp.productId === p.id ? { ...sp, quantity: sp.quantity + 1 } : sp))} className="w-7 h-7 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center hover:bg-orange-200 text-sm font-bold">+</button>
+                                                        </div>
+                                                    ) : (
+                                                        <button onClick={() => setSelectedProductsForCompletion(prev => [...prev, { productId: p.id, quantity: 1, unitPrice: p.salePrice }])} className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-200">Adicionar</button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <div className="h-px bg-slate-100" />
+                            {/* Total */}
+                            <div className="space-y-1">
+                                <div className="flex justify-between text-sm text-slate-500">
+                                    <span>Serviços</span><span className="font-bold text-slate-900">R$ {completionTarget.totalValue.toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-sm text-slate-500">
+                                    <span>Produtos</span><span className="font-bold text-emerald-600">+ R$ {selectedProductsForCompletion.reduce((acc, sp) => acc + sp.quantity * sp.unitPrice, 0).toFixed(2)}</span>
+                                </div>
+                                <div className="flex justify-between text-xl font-black text-slate-900 pt-2 border-t border-slate-100">
+                                    <span>Total Final</span>
+                                    <span className="text-orange-600">R$ {(completionTarget.totalValue + selectedProductsForCompletion.reduce((acc, sp) => acc + sp.quantity * sp.unitPrice, 0)).toFixed(2)}</span>
+                                </div>
+                            </div>
+                            {/* Forma de Pagamento */}
+                            <div>
+                                <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Forma de Pagamento</label>
+                                <select value={completionPaymentMethod} onChange={e => setCompletionPaymentMethod(e.target.value)}
+                                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-orange-500 outline-none font-bold text-slate-900">
+                                    <option value="pix">PIX</option>
+                                    <option value="credit">Cartão de Crédito</option>
+                                    <option value="debit">Cartão de Débito</option>
+                                    <option value="cash">Dinheiro</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="p-5 bg-slate-50 flex gap-3">
+                            <button onClick={() => setIsCompletionModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all">Cancelar</button>
+                            <button onClick={handleFinishAppointment} disabled={isFinishing}
+                                className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
+                                {isFinishing ? <Loader2 className="animate-spin" size={18}/> : 'Finalizar e Salvar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             {/* Modal de Configuração */}
             {isConfigOpen && schedule && (
                 <div 
@@ -571,55 +712,44 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                             {myAppointments.map(apt => {
                                 const isToday = apt.date === todayStr;
                                 const isProcessing = updatingAptId === apt.id;
-                                
-                                // Lógica para bloquear status futuros
                                 const apptDateTime = new Date(`${apt.date}T${apt.time}`);
                                 const now = new Date();
                                 const isFuture = apptDateTime > now;
 
+                                const prodsTotal = 0;
+
                                 return (
-                                    <div key={apt.id} className={`bg-slate-800 p-4 rounded-xl border-l-4 ${STATUS_COLORS[apt.status] || 'border-slate-500'} shadow-sm relative overflow-hidden transition-all`}>
-                                        
+                                    <div key={apt.id} className={`bg-white rounded-xl border-l-4 ${STATUS_COLORS[apt.status] || 'border-slate-300'} shadow-sm relative overflow-hidden transition-all`}>
                                         {isProcessing && (
-                                            <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-[1px] flex items-center justify-center z-10">
+                                            <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] flex items-center justify-center z-10">
                                                 <Loader2 size={24} className="text-orange-500 animate-spin" />
                                             </div>
                                         )}
-
-                                        <div className="flex justify-between items-start mb-3">
-                                            <div>
-                                                <h3 className="font-bold text-white text-lg">{apt.clientName}</h3>
-                                                <p className="text-slate-400 text-sm">{apt.clientPhone}</p>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-xl font-bold text-white">{apt.time}</div>
-                                                <div className={`text-xs uppercase font-bold ${isToday ? 'text-green-400' : 'text-slate-500'}`}>
-                                                    {isToday ? 'HOJE' : new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'})}
+                                        <div className="p-4">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div>
+                                                    <h3 className="font-bold text-slate-900 text-lg">{apt.clientName}</h3>
+                                                    <p className="text-slate-500 text-sm">{apt.clientPhone}</p>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-xl font-bold text-slate-900">{apt.time}</div>
+                                                    <div className={`text-xs uppercase font-bold ${isToday ? 'text-emerald-600' : 'text-slate-400'}`}>
+                                                        {isToday ? 'HOJE' : new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'})}
+                                                    </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        
-                                        <div className="border-t border-slate-700/50 pt-3 flex flex-col sm:flex-row gap-3 justify-between items-center">
-                                            <span className="text-sm font-medium" style={{ color: settings.primaryColor }}>
-                                                R$ {apt.totalValue.toFixed(2)}
-                                            </span>
-                                            
-                                            {/* Controles de Status Completo (Dropdown) */}
-                                            <div className="w-full sm:w-auto">
-                                                <select 
+                                            <div className="border-t border-slate-100 pt-3 flex flex-col sm:flex-row gap-3 justify-between items-center">
+                                                <span className="text-sm font-bold text-orange-600">R$ {apt.totalValue.toFixed(2)}</span>
+                                                <select
                                                     value={apt.status}
-                                                    onChange={(e) => handleStatusChange(apt.id, e.target.value)}
+                                                    onChange={(e) => handleStatusChange(apt.id, e.target.value, apt)}
                                                     disabled={isProcessing}
-                                                    className={`w-full sm:w-auto bg-slate-900 border border-slate-600 text-xs font-bold uppercase rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-700 transition-colors ${STATUS_COLORS[apt.status].replace('border-', 'text-')}`}
+                                                    className={`w-full sm:w-auto bg-slate-50 border border-slate-200 text-xs font-bold uppercase rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer ${STATUS_TEXT[apt.status] || 'text-slate-700'}`}
                                                 >
                                                     <option value="scheduled">Agendado</option>
                                                     <option value="confirmed">Confirmado</option>
-                                                    <option value="completed" disabled={isFuture && apt.status !== 'completed'}>
-                                                        Finalizado {isFuture && apt.status !== 'completed' ? '(Aguarde horário)' : ''}
-                                                    </option>
-                                                    <option value="noshow" disabled={isFuture && apt.status !== 'noshow'}>
-                                                        Não veio {isFuture && apt.status !== 'noshow' ? '(Aguarde horário)' : ''}
-                                                    </option>
+                                                    <option value="completed" disabled={isFuture && apt.status !== 'completed'}>Finalizado {isFuture && apt.status !== 'completed' ? '(Aguarde)' : ''}</option>
+                                                    <option value="noshow" disabled={isFuture && apt.status !== 'noshow'}>Não veio {isFuture && apt.status !== 'noshow' ? '(Aguarde)' : ''}</option>
                                                     <option value="cancelled">Cancelado</option>
                                                 </select>
                                             </div>

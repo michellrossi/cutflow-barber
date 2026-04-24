@@ -199,6 +199,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       trialStartedAt: data.trial_started_at,
       trialEndsAt: data.trial_ends_at,
       plan: data.plan,
+      planTier: data.plan_tier || 'essencial',
       paymentConfirmedAt: data.payment_confirmed_at,
       whatsappInstance: data.whatsapp_instance,
       whatsappConnected: data.whatsapp_connected
