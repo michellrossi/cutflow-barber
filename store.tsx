@@ -1999,10 +1999,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.loyaltyRewardType !== undefined) payload.loyalty_reward_type = updated.loyaltyRewardType;
         if (updated.loyaltyRewardValidityDays !== undefined) payload.loyalty_reward_validity_days = updated.loyaltyRewardValidityDays;
 
-        const { data, error } = await supabase.from('settings').update(payload).eq('shop_id', shopId).select().single();
+        const { data, error } = await supabase.from('settings').update(payload).eq('shop_id', shopId).select();
         if (error) throw error;
         
-        const newSettings = mapSettings(data);
+        const newSettings = mapSettings(data[0]);
         setState(prev => ({ 
             ...prev, 
             settings: newSettings,
