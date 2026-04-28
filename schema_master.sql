@@ -706,7 +706,13 @@ CREATE POLICY "Dono_Gere_Clientes" ON public.clients FOR ALL USING (EXISTS (SELE
 DROP POLICY IF EXISTS "Permitir_Auto_Cadastro" ON public.clients;
 CREATE POLICY "Permitir_Auto_Cadastro" ON public.clients FOR INSERT WITH CHECK (true);
 DROP POLICY IF EXISTS "Publico_Le_Proprio_Perfil" ON public.clients;
-CREATE POLICY "Publico_Le_Proprio_Perfil" ON public.clients FOR SELECT USING (true); -- Ajustado para permitir busca por telefone no agendamento
+CREATE POLICY "Publico_Le_Proprio_Perfil" ON public.clients 
+FOR SELECT 
+USING (
+  phone = current_setting('request.jwt.claims', true)::json->>'phone' -- Se autenticado via JWT
+  OR 
+  phone = current_setting('app.current_client_phone', true) -- Via variável de sessão manual
+);
 
 -- Automações, Categorias e Templates
 DROP POLICY IF EXISTS "Dono_Gere_Templates" ON public.message_templates;
@@ -740,8 +746,15 @@ CREATE POLICY "Publico_Ve_Planos" ON public.subscription_plans FOR SELECT USING 
 
 DROP POLICY IF EXISTS "Dono_Gere_Assinaturas_Clientes" ON public.client_subscriptions;
 CREATE POLICY "Dono_Gere_Assinaturas_Clientes" ON public.client_subscriptions FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = client_subscriptions.shop_id AND owner_id = auth.uid()));
-DROP POLICY IF EXISTS "Cliente_Ve_Propria_Assinatura" ON public.client_subscriptions;
-CREATE POLICY "Cliente_Ve_Propria_Assinatura" ON public.client_subscriptions FOR SELECT USING (true); -- Filtro adicional via API
+CREATE POLICY "Cliente_Ve_Propria_Assinatura" ON public.client_subscriptions 
+FOR SELECT 
+USING (
+  client_id IN (
+    SELECT id FROM public.clients 
+    WHERE phone = current_setting('request.jwt.claims', true)::json->>'phone'
+       OR phone = current_setting('app.current_client_phone', true)
+  )
+);
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- FIX CRÍTICO DE SEGURANÇA (era: USING (true) sem filtro de plano)

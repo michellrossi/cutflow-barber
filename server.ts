@@ -912,7 +912,7 @@ async function runCronLogic() {
             .eq('instance_name', instanceName)
             .maybeSingle();
 
-        if (cached && cached.expires_at > now) {
+        if (cached && Number(cached.expires_at) > now) {
             return cached.connected;
         }
 
@@ -1736,12 +1736,24 @@ async function startServer() {
             res.status(500).json({ error: error.message });
         }
     });
+    // Middleware de Autenticação para rotas administrativas/financeiras
+    const authenticate = async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+        const token = req.headers.authorization?.split(' ')[1];
+        if (!token) return res.status(401).json({ error: 'Token não fornecido' });
+
+        const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+        if (error || !user) return res.status(401).json({ error: 'Não autorizado' });
+
+        (req as any).user = user;
+        next();
+    };
+
     // ==========================================
     // ROTAS DO ASAAS (PAGAMENTOS & ASSINATURAS)
     // ==========================================
 
     // 1. Criar Cliente no Asaas
-    app.post('/api/asaas/customers', async (req, res) => {
+    app.post('/api/asaas/customers', authenticate, async (req, res) => {
         try {
             // Requer name, cpfCnpj, email, phone...
             const customer = await createAsaasCustomer(req.body);
@@ -1752,7 +1764,7 @@ async function startServer() {
         }
     });
     // 2. Criar Assinatura Recorrente
-    app.post('/api/asaas/subscriptions', async (req, res) => {
+    app.post('/api/asaas/subscriptions', authenticate, async (req, res) => {
         try {
             const subscription = await createAsaasSubscription(req.body);
             // Salvar a assinatura no banco se necessário
@@ -1762,7 +1774,7 @@ async function startServer() {
         }
     });
     // 4. Checkout Transparente (Cartão e PIX)
-    app.post('/api/asaas/checkout', async (req, res) => {
+    app.post('/api/asaas/checkout', authenticate, async (req, res) => {
         try {
             const { shopId, customerParams, paymentParams } = req.body;
 
