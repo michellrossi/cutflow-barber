@@ -13,7 +13,7 @@ import {
     Scissors, Calendar, User, MapPin, Clock, ArrowLeft, 
     ChevronRight, Check, Star, LogOut, History, Smartphone,
     ChevronDown, CreditCard, ChevronUp, Map, Instagram, Facebook,
-    Twitter, Phone, Award, Users, ShieldCheck, Loader2
+    Twitter, Phone, Award, Users, ShieldCheck, Loader2, Menu, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrencyBRL } from '../../store';
@@ -156,60 +156,101 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     // PREMIUM COMPONENTS
     // --------------------------------------------------------------------------------
 
+    const Navbar = () => (
+        <nav className="fixed top-0 left-0 right-0 z-[100] bg-black/40 backdrop-blur-md border-b border-white/5 px-6 py-4">
+            <div className="max-w-7xl mx-auto flex items-center justify-between">
+                {/* Lado Esquerdo: Logo e Nome */}
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-black flex items-center justify-center rounded-sm border border-white/10">
+                        <Scissors size={20} className="text-[#ff6a00]" />
+                    </div>
+                    <span className="text-lg font-black text-white uppercase tracking-tighter hidden sm:block">
+                        {settings.name || "Insight Barber"}
+                    </span>
+                </div>
+
+                {/* Centro: Menu Minimalista */}
+                <div className="hidden lg:flex items-center gap-8">
+                    {['Serviços', 'Barbeiros', 'Sobre nós', 'Localização', 'Redes Sociais'].map((item) => (
+                        <a 
+                            key={item} 
+                            href={`#${item.toLowerCase().replace(' ', '-')}`}
+                            className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] hover:text-[#ff6a00] transition-colors"
+                        >
+                            {item}
+                        </a>
+                    ))}
+                </div>
+
+                {/* Lado Direito: Botão Histórico */}
+                <div>
+                    <button 
+                        onClick={handleHistoryClick}
+                        className="px-6 py-2.5 bg-[#ff6a00] text-black font-black text-[10px] uppercase tracking-widest rounded-sm hover:bg-[#e55f00] transition-all flex items-center gap-2"
+                    >
+                        <History size={14} /> Acessar Histórico
+                    </button>
+                </div>
+            </div>
+        </nav>
+    );
+
     const HeroSection = () => (
-        <section className="relative h-screen flex items-center justify-center overflow-hidden">
+        <section className="relative h-[90vh] flex items-center overflow-hidden">
+            {/* Fundo com Imagem e Overlay */}
             <div className="absolute inset-0 z-0">
                 <img 
-                    src="/premium_barber_bg_1777399022964.png" 
-                    alt="Barbershop Background" 
-                    className="w-full h-full object-cover scale-105 animate-slow-zoom"
+                    src="https://i.freeimage.host/Bi588ss.png" 
+                    alt="Premium Barbershop Interior" 
+                    className="w-full h-full object-cover grayscale opacity-60 blur-[2px]"
                 />
-                <div className="absolute inset-0 bg-black/80 backdrop-blur-[2px]"></div>
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/20 to-[#050505]"></div>
+                <div className="absolute inset-0 bg-black/70"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/40 to-transparent"></div>
             </div>
 
-            <div className="relative z-10 container mx-auto px-6 text-center">
+            {/* Conteúdo Alinhado à Esquerda */}
+            <div className="relative z-10 container mx-auto px-6 md:px-12 lg:px-24">
                 <motion.div 
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, x: -50 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8 }}
+                    className="max-w-4xl"
                 >
-                    <span className="inline-block px-4 py-1 rounded-full border border-[#ff6a00]/30 bg-[#ff6a00]/10 text-[#ff6a00] text-[10px] font-black uppercase tracking-[0.3em] mb-6">
-                        Luxury Experience
+                    <span className="inline-block px-4 py-1.5 bg-[#ff6a00] text-black text-[10px] font-black uppercase tracking-[0.2em] mb-8 rounded-sm">
+                        AGENDAMENTO PREMIUM
                     </span>
-                    <h1 className="text-5xl md:text-8xl font-black text-white leading-none mb-6 tracking-tighter">
-                        CORTES PRECISOS PARA O <br />
-                        <span className="text-[#ff6a00] italic font-serif">HOMEM MODERNO</span>
+                    
+                    <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[0.9] mb-8 tracking-tighter uppercase">
+                        AGENDE OS MELHORES SERVIÇOS <br />
+                        COM A MELHOR BARBEARIA <br />
+                        <span className="text-[#ff6a00] italic">MODERN REBEL.</span>
                     </h1>
-                    <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
-                        Redefina seu estilo com mestres barbeiros em um ambiente projetado para quem valoriza a excelência e o detalhe.
+
+                    <p className="text-slate-300 text-lg md:text-xl mb-12 font-medium">
+                        Agende agora mesmo seu serviço e experimente a excelência.
                     </p>
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
+
+                    <div className="flex flex-col sm:flex-row items-center gap-8">
                         <button 
                             onClick={handleAgendarClick}
-                            className="group relative px-12 py-5 bg-[#ff6a00] text-black font-black text-sm uppercase tracking-widest rounded-sm overflow-hidden transition-all hover:pr-14 hover:shadow-[0_0_40px_rgba(255,106,0,0.4)]"
+                            className="group w-full sm:w-auto px-10 py-5 bg-[#ff6a00] text-black font-black text-xs uppercase tracking-[0.2em] rounded-sm transition-all hover:bg-[#e55f00] flex items-center justify-center gap-3"
                         >
-                            <span className="relative z-10">Agendar Agora</span>
-                            <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all" size={20} />
+                            <Calendar size={18} /> AGENDAR AGORA
                         </button>
                         <a 
                             href="#servicos"
-                            className="px-12 py-5 bg-white/5 border border-white/10 text-white font-black text-sm uppercase tracking-widest rounded-sm hover:bg-white/10 transition-all"
+                            className="w-full sm:w-auto px-10 py-5 bg-transparent border-2 border-white text-white font-black text-xs uppercase tracking-[0.2em] rounded-sm hover:bg-white hover:text-black transition-all text-center"
                         >
-                            Ver Serviços
+                            VER SERVIÇOS
                         </a>
                     </div>
                 </motion.div>
-            </div>
-
-            <div className="absolute bottom-10 left-1/2 -translate-x-1/2 animate-bounce opacity-30">
-                <ChevronDown size={32} className="text-white" />
             </div>
         </section>
     );
 
     const AboutSection = () => (
-        <section className="py-24 bg-[#050505] border-y border-white/5">
+        <section id="sobre-nós" className="py-24 bg-[#050505] border-y border-white/5">
             <div className="container mx-auto px-6">
                 <div className="flex flex-col lg:flex-row items-center gap-16">
                     <div className="w-full lg:w-1/2 relative">
@@ -248,7 +289,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     );
 
     const ServicesSection = () => (
-        <section id="servicos" className="py-24 bg-[#050505]">
+        <section id="serviços" className="py-24 bg-[#050505]">
             <div className="container mx-auto px-6">
                 <div className="text-center mb-16">
                     <h2 className="text-4xl md:text-6xl font-black text-white mb-4 tracking-tight">NOSSOS SERVIÇOS</h2>
@@ -306,7 +347,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     );
 
     const Footer = () => (
-        <footer className="py-20 bg-[#050505] border-t border-white/5">
+        <footer id="localização" className="py-20 bg-[#050505] border-t border-white/5">
             <div className="container mx-auto px-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                     <div className="col-span-1 md:col-span-2">
@@ -314,7 +355,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                         <p className="text-slate-500 max-w-sm mb-8 leading-relaxed">
                             Elevando o padrão da barbearia urbana. Excelência técnica e ambiente exclusivo para o homem de hoje.
                         </p>
-                        <div className="flex gap-4">
+                        <div id="redes-sociais" className="flex gap-4">
                             {[Instagram, Facebook, Twitter].map((Icon, i) => (
                                 <a key={i} href="#" className="w-10 h-10 rounded-sm bg-white/5 flex items-center justify-center text-slate-400 hover:bg-[#ff6a00] hover:text-black transition-all">
                                     <Icon size={20} />
@@ -354,9 +395,10 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     // --------------------------------------------------------------------------------
 
     return (
-        <div className="bg-[#050505] min-h-screen text-white font-sans selection:bg-[#ff6a00] selection:text-black">
+        <div className="bg-[#050505] min-h-screen text-white font-sans selection:bg-[#ff6a00] selection:text-black scroll-smooth">
             {step === 'home' ? (
                 <>
+                    <Navbar />
                     <HeroSection />
                     <AboutSection />
                     <ServicesSection />
