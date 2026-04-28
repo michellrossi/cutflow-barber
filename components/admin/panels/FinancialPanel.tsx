@@ -20,51 +20,42 @@ const thisMonthStart = () => { const d = new Date(); d.setDate(1); return d.toIS
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 const KpiCard: React.FC<{
   label: string; value: string; sub?: string; icon: React.ReactNode;
-  color?: 'default' | 'green' | 'red' | 'orange' | 'dark' | 'blue' | 'indigo';
+  color?: 'orange' | 'green' | 'red' | 'blue' | 'indigo' | 'slate';
   trend?: { pct: number };
-}> = ({ label, value, sub, icon, color = 'default', trend }) => {
-  const colorMap: Record<string, string> = {
-    default: 'bg-white border-slate-200',
-    green: 'bg-emerald-50 border-emerald-200',
-    red: 'bg-red-50 border-red-200',
-    orange: 'bg-orange-50 border-orange-200',
-    dark: 'bg-slate-900 border-slate-800',
-    blue: 'bg-blue-50 border-blue-200',
-    indigo: 'bg-indigo-50 border-indigo-200',
-  };
-  const textMap: Record<string, string> = {
-    default: 'text-slate-900', green: 'text-emerald-800', red: 'text-red-800',
-    orange: 'text-orange-800', dark: 'text-white', blue: 'text-blue-800',
-    indigo: 'text-indigo-800',
-  };
-  const subMap: Record<string, string> = {
-    default: 'text-slate-500', green: 'text-emerald-600', red: 'text-red-600',
-    orange: 'text-orange-600', dark: 'text-slate-400', blue: 'text-blue-600',
-    indigo: 'text-indigo-600',
-  };
-  const iconMap: Record<string, string> = {
-    default: 'text-slate-400', green: 'text-emerald-400', red: 'text-red-400',
-    orange: 'text-orange-400', dark: 'text-slate-500', blue: 'text-blue-400',
-    indigo: 'text-indigo-400',
+}> = ({ label, value, sub, icon, color = 'orange', trend }) => {
+  const colorMap: Record<string, { bg: string; icon: string; circle: string }> = {
+    orange: { bg: 'bg-white', icon: 'text-orange-600', circle: 'bg-orange-50' },
+    green: { bg: 'bg-white', icon: 'text-emerald-600', circle: 'bg-emerald-50' },
+    red: { bg: 'bg-white', icon: 'text-red-600', circle: 'bg-red-50' },
+    blue: { bg: 'bg-white', icon: 'text-blue-600', circle: 'bg-blue-50' },
+    indigo: { bg: 'bg-white', icon: 'text-indigo-600', circle: 'bg-indigo-50' },
+    slate: { bg: 'bg-white', icon: 'text-slate-600', circle: 'bg-slate-50' },
   };
 
+  const currentStyle = colorMap[color] || colorMap.orange;
+
   return (
-    <div className={`${colorMap[color]} border rounded-xl p-5 flex flex-col gap-2 relative overflow-hidden shadow-sm`}>
-      <div className={`absolute right-4 top-4 ${iconMap[color]} opacity-30`}>
-        {React.cloneElement(icon as React.ReactElement, { size: 36 })}
-      </div>
-      <p className={`text-[10px] font-bold uppercase tracking-widest ${subMap[color]}`}>{label}</p>
-      <p className={`text-2xl font-black ${textMap[color]} leading-tight`}>{value}</p>
-      {(sub || trend) && (
-        <div className="flex items-center gap-2">
-          {sub && <p className={`text-xs font-medium ${subMap[color]}`}>{sub}</p>}
-          {trend && (
-            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${trend.pct >= 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-              {trend.pct >= 0 ? '+' : ''}{trend.pct.toFixed(1)}%
-            </span>
-          )}
+    <div className={`${currentStyle.bg} border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4 transition-all hover:shadow-md`}>
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${currentStyle.circle}`}>
+          {React.cloneElement(icon as React.ReactElement, { size: 20, className: currentStyle.icon })}
         </div>
-      )}
+        <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">{label}</p>
+      </div>
+      
+      <div className="space-y-1">
+        <p className="text-3xl font-black text-slate-900">{value}</p>
+        {(sub || trend) && (
+          <div className="flex items-center gap-2">
+            {sub && <p className="text-sm text-slate-500">{sub}</p>}
+            {trend && (
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${trend.pct >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+                {trend.pct >= 0 ? '+' : ''}{trend.pct.toFixed(1)}%
+              </span>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -226,8 +217,8 @@ const CashTab: React.FC = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        <KpiCard label="Fundo Inicial" value={fmtBRL(openSession?.openingBalance || 0)} icon={<Wallet />} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+        <KpiCard label="Fundo Inicial" value={fmtBRL(openSession?.openingBalance || 0)} icon={<Wallet />} color="slate" />
         <KpiCard label="Vendas (Cash)" value={fmtBRL(cashSales)} icon={<Banknote />} color="green" />
         <KpiCard label="Aportes" value={fmtBRL(aportes)} icon={<ArrowUpCircle />} color="blue" />
         <KpiCard label="Sangrias" value={fmtBRL(sangrias)} icon={<ArrowDownCircle />} color="red" />
@@ -494,16 +485,16 @@ const BillingTab: React.FC<{ period: string }> = ({ period }) => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Faturamento Período" value={fmtBRL(totalRevenue)} icon={<TrendingUp />} color="green" />
-        <KpiCard label="Faturamento Hoje" value={fmtBRL(todayRevenue)} icon={<DollarSign />} />
-        <KpiCard label="Ticket Médio" value={fmtBRL(avgTicket)} icon={<BarChart3 />} color="orange" />
-        <KpiCard label="Atendimentos" value={String(completed.length)} sub={`${todayCompleted.length} hoje`} icon={<Scissors />} />
+        <KpiCard label="Faturamento Hoje" value={fmtBRL(todayRevenue)} icon={<DollarSign />} color="orange" />
+        <KpiCard label="Ticket Médio" value={fmtBRL(avgTicket)} icon={<BarChart3 />} color="blue" />
+        <KpiCard label="Atendimentos" value={String(completed.length)} sub={`${todayCompleted.length} hoje`} icon={<Scissors />} color="indigo" />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="PIX Recebido" value={fmtBRL(pixTotal)} icon={<Smartphone />} color="blue" sub={`${completed.filter(a => a.paymentMethod === 'pix').length} transações`} />
-        <KpiCard label="Crédito" value={fmtBRL(cardTotal)} icon={<CreditCard />} color="default" sub={`${completed.filter(a => a.paymentMethod === 'credit').length} transações`} />
+        <KpiCard label="Crédito" value={fmtBRL(cardTotal)} icon={<CreditCard />} color="slate" sub={`${completed.filter(a => a.paymentMethod === 'credit').length} transações`} />
         <KpiCard label="Débito" value={fmtBRL(debitTotal)} icon={<CreditCard />} color="blue" sub={`${completed.filter(a => a.paymentMethod === 'debit').length} transações`} />
         <KpiCard label="Dinheiro" value={fmtBRL(cashTotal)} icon={<Banknote />} color="green" sub={`${completed.filter(a => a.paymentMethod === 'cash').length} transações`} />
       </div>
@@ -665,7 +656,7 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Comissão Total" value={fmtBRL(totalCommission)} icon={<Award />} color="orange" />
         <KpiCard label="Repasses Pendentes" value={fmtBRL(totalCommission)} icon={<Clock />} color="red" sub="A pagar" />
         <KpiCard label="Maior Faturador" value={topEarner?.name || '–'} icon={<Star />} color="indigo" sub={topEarner ? fmtBRL(topEarner.revenue) : undefined} />

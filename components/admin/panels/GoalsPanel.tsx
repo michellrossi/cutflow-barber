@@ -421,19 +421,18 @@ const DailyGoalCalendar: React.FC<{
 
                 return (
                   <div key={date}
-                    className={`aspect-square rounded-2xl border flex flex-col items-center justify-between py-2 transition-all ${bubble} ${
-                      isToday ? 'ring-2 ring-orange-500 ring-offset-1 z-10' : ''
-                    } ${isFuture ? 'opacity-30' : 'cursor-default'}`}>
-                    
+                    className={`aspect-square rounded-2xl border flex flex-col items-center justify-between py-2 transition-all ${bubble} ${isToday ? 'ring-2 ring-orange-500 ring-offset-1 z-10' : ''
+                      } ${isFuture ? 'opacity-30' : 'cursor-default'}`}>
+
                     {/* Topo: Número do Dia */}
                     <span className="text-base font-black leading-none">{dayNum}</span>
-                    
+
                     {/* Base: Valor/Meta e Percentual */}
                     {!isFuture ? (
                       <div className="flex flex-col items-center leading-none">
                         <span className="text-[10px] font-bold opacity-90 truncate px-1 mb-1">
-                          {isCount 
-                            ? `${Math.round(val)}/${goal.targetValue}` 
+                          {isCount
+                            ? `${Math.round(val)}/${goal.targetValue}`
                             : `${fmtShort(val)}/${fmtShort(goal.targetValue)}`}
                         </span>
                         <span className="text-[11px] font-black">
