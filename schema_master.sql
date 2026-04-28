@@ -418,7 +418,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- ── RPC: Recompensa de Fidelidade (Atômica) ───────────────────────────────────
+-- ── RPC: Recompensa de Fidelidade (Atômica — suporta modo card e points) ────
+-- Chamada pelo servidor quando um cliente atinge a meta de visitas ou pontos.
+-- Gera cupom único + zera contadores + retorna dados para envio de WhatsApp.
 CREATE OR REPLACE FUNCTION public.award_loyalty_reward(p_client_id UUID, p_shop_id UUID)
 RETURNS JSON AS $$
 DECLARE
@@ -426,28 +428,69 @@ DECLARE
     v_settings RECORD;
     v_coupon_code TEXT;
     v_expires_at TIMESTAMPTZ;
+    v_meta_atingida BOOLEAN := false;
 BEGIN
+    -- Lock otimista: garante atomicidade para leituras concorrentes
     SELECT * INTO v_client FROM public.clients WHERE id = p_client_id AND shop_id = p_shop_id FOR UPDATE;
-    IF NOT FOUND THEN RETURN json_build_object('success', false, 'message', 'Cliente não encontrado'); END IF;
+    IF NOT FOUND THEN
+        RETURN json_build_object('success', false, 'message', 'Cliente não encontrado');
+    END IF;
 
     SELECT * INTO v_settings FROM public.settings WHERE shop_id = p_shop_id;
     IF NOT FOUND OR COALESCE(v_settings.loyalty_enabled, true) = false THEN
-        RETURN json_build_object('success', false, 'message', 'Fidelidade desativada');
+        RETURN json_build_object('success', false, 'message', 'Programa de fidelidade desativado');
     END IF;
 
-    IF v_client.loyalty_points < v_settings.loyalty_points_goal THEN
-        RETURN json_build_object('success', false, 'message', 'Meta não atingida');
+    -- Verifica se a meta foi realmente atingida conforme o modo
+    IF COALESCE(v_settings.loyalty_mode, 'card') = 'card' THEN
+        IF v_client.loyalty_card_count >= COALESCE(v_settings.loyalty_card_goal, 10) THEN
+            v_meta_atingida := true;
+        END IF;
+    ELSE
+        IF v_client.loyalty_points >= COALESCE(v_settings.loyalty_points_goal, 1000) THEN
+            v_meta_atingida := true;
+        END IF;
     END IF;
 
-    v_coupon_code := UPPER(SPLIT_PART(v_client.name, ' ', 1)) || RIGHT(v_client.phone, 4) || EXTRACT(DAY FROM CURRENT_DATE)::TEXT;
+    IF NOT v_meta_atingida THEN
+        RETURN json_build_object('success', false, 'message', 'Meta de fidelidade ainda não atingida');
+    END IF;
+
+    -- Gera código único do cupom
+    v_coupon_code := 'FIDELIDADE-' || UPPER(SUBSTR(MD5(RANDOM()::TEXT), 1, 6));
     v_expires_at := NOW() + (COALESCE(v_settings.loyalty_reward_validity_days, 90) || ' days')::INTERVAL;
 
-    INSERT INTO public.coupons (shop_id, client_id, code, discount_value, discount_type, expires_at, is_loyalty_reward)
-    VALUES (p_shop_id, p_client_id, v_coupon_code, COALESCE(v_settings.loyalty_reward_value, 0), COALESCE(v_settings.loyalty_reward_type, 'percentage'), v_expires_at, true);
+    -- Insere cupom usando colunas corretas da tabela coupons
+    INSERT INTO public.coupons (shop_id, client_id, code, type, value, active, max_uses, usage_count, expires_at, is_loyalty_reward)
+    VALUES (
+        p_shop_id,
+        p_client_id,
+        v_coupon_code,
+        COALESCE(v_settings.loyalty_reward_type, 'percentage'),
+        COALESCE(v_settings.loyalty_reward_value, 10),
+        true,
+        1,
+        0,
+        v_expires_at,
+        true
+    );
 
-    UPDATE public.clients SET loyalty_points = 0 WHERE id = p_client_id;
+    -- Zera o contador correto conforme o modo
+    IF COALESCE(v_settings.loyalty_mode, 'card') = 'card' THEN
+        UPDATE public.clients SET loyalty_card_count = 0 WHERE id = p_client_id;
+    ELSE
+        UPDATE public.clients SET loyalty_points = 0 WHERE id = p_client_id;
+    END IF;
 
-    RETURN json_build_object('success', true, 'couponCode', v_coupon_code, 'clientName', v_client.name, 'clientPhone', v_client.phone, 'discount', v_settings.loyalty_reward_value, 'discountType', v_settings.loyalty_reward_type, 'validityDays', v_settings.loyalty_reward_validity_days);
+    RETURN json_build_object(
+        'success', true,
+        'couponCode', v_coupon_code,
+        'clientName', v_client.name,
+        'clientPhone', v_client.phone,
+        'discount', v_settings.loyalty_reward_value,
+        'discountType', COALESCE(v_settings.loyalty_reward_type, 'percentage'),
+        'validityDays', COALESCE(v_settings.loyalty_reward_validity_days, 90)
+    );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

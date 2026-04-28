@@ -222,13 +222,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       borderColor: data.border_color || "#334155",
       inputBackgroundColor: data.input_background_color || "#0f172a",
       inputTextColor: data.input_text_color || "#ffffff",
-      loyaltyMode: data.loyalty_mode,
-      loyaltyCardGoal: data.loyalty_card_goal,
-      loyaltyPointsRatio: data.loyalty_points_ratio,
-      loyaltyPointsGoal: data.loyalty_points_goal,
-      loyaltyRewardValue: data.loyalty_reward_value,
-      loyaltyRewardType: data.loyalty_reward_type,
-      loyaltyRewardValidityDays: data.loyalty_reward_validity_days,
+      loyaltyEnabled: data.loyalty_enabled ?? true,
+      loyaltyMode: data.loyalty_mode || 'card',
+      loyaltyCardGoal: data.loyalty_card_goal || 10,
+      loyaltyPointsRatio: data.loyalty_points_ratio || 1,
+      loyaltyPointsGoal: data.loyalty_points_goal || 1000,
+      loyaltyRewardValue: data.loyalty_reward_value || 10,
+      loyaltyRewardType: data.loyalty_reward_type || 'percentage',
+      loyaltyRewardValidityDays: data.loyalty_reward_validity_days || 90,
       instagram: data.instagram || '',
       facebook: data.facebook || '',
       whatsapp: data.whatsapp || '',
@@ -1435,6 +1436,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const processLoyalty = async (appointment: Appointment) => {
       const shopId = appointment.shopId;
       const settings = state.settings;
+
+      if (!settings.loyaltyEnabled) {
+          console.log("[Loyalty] Fidelidade desativada nas configurações. Ignorando.");
+          return;
+      }
       
       // Tenta achar no state, se não achar (Lazy Load), busca direto no DB
       let client = state.clients.find(c => (appointment.clientId && c.id === appointment.clientId) || c.phone === appointment.clientPhone);
@@ -1444,17 +1450,20 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const { data: dbClient } = await supabase.from('clients')
             .select('*')
             .eq('shop_id', shopId)
-            .or(`id.eq.${appointment.clientId || crypto.randomUUID()},phone.eq.${appointment.clientPhone}`)
+            .eq('phone', appointment.clientPhone)
             .maybeSingle();
             
           if (dbClient) client = mapClient(dbClient);
       }
 
-      if (!client || !settings.loyaltyEnabled) {
-          console.warn("[Loyalty] Processamento ignorado: Cliente não encontrado ou fidelidade desativada.");
+      if (!client) {
+          console.warn("[Loyalty] Cliente não encontrado no DB para:", appointment.clientPhone);
           return;
       }
 
+      console.log(`[Loyalty] Processando visita de ${client.name} | Modo: ${settings.loyaltyMode}`);
+
+      // Incrementa contador localmente no banco
       let updatedPoints = client.loyaltyPoints || 0;
       let updatedCardCount = client.loyaltyCardCount || 0;
       let rewardTriggered = false;
@@ -1462,59 +1471,73 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (settings.loyaltyMode === 'points') {
           const pointsEarned = Math.floor(appointment.totalValue * (settings.loyaltyPointsRatio || 1));
           updatedPoints += pointsEarned;
+          console.log(`[Loyalty] +${pointsEarned} pts → total: ${updatedPoints} / meta: ${settings.loyaltyPointsGoal}`);
           if (updatedPoints >= (settings.loyaltyPointsGoal || 1000)) {
               rewardTriggered = true;
-              updatedPoints -= (settings.loyaltyPointsGoal || 1000);
           }
       } else {
+          // Modo cartão: conta visitas
           updatedCardCount += 1;
+          console.log(`[Loyalty] Visita ${updatedCardCount} / meta: ${settings.loyaltyCardGoal}`);
           if (updatedCardCount >= (settings.loyaltyCardGoal || 10)) {
               rewardTriggered = true;
-              updatedCardCount = 0; 
           }
       }
 
-      const { error: updErr } = await supabase.from('clients').update({
-          loyalty_points: updatedPoints,
-          loyalty_card_count: updatedCardCount,
+      // Atualiza o banco com o novo contador
+      const updatePayload: any = {
           total_spent: (client.totalSpent || 0) + appointment.totalValue
-      }).eq('id', client.id);
+      };
+      
+      if (!rewardTriggered) {
+          // Só atualiza contadores se a recompensa NÃO foi atingida
+          // (quando atingida, o endpoint do servidor zera via RPC atômica)
+          updatePayload.loyalty_points = updatedPoints;
+          updatePayload.loyalty_card_count = updatedCardCount;
+      }
 
+      const { error: updErr } = await supabase.from('clients').update(updatePayload).eq('id', client.id);
       if (updErr) {
-          console.error("[Loyalty] Erro ao atualizar cliente no DB:", updErr);
+          console.error("[Loyalty] Erro ao atualizar contador de visitas:", updErr);
           return;
       }
 
+      // Se atingiu a meta → chama endpoint do servidor para gerar cupom + enviar WhatsApp
       if (rewardTriggered) {
-          await generateLoyaltyReward(client, settings);
+          console.log(`[Loyalty] 🏆 Meta atingida! Gerando recompensa para ${client.name}...`);
+          await generateLoyaltyReward(client, shopId);
       }
 
-      // Se a aba de clientes estiver aberta/carregada, recarrega para refletir pontos
+      // Recarrega clientes para refletir a atualização na UI
       if (state.clients.length > 0) {
           await reloadClients(shopId);
       }
   };
 
-  const generateLoyaltyReward = async (client: Client, settings: ShopSettings) => {
-      const code = `FIDELIDADE-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + (settings.loyaltyRewardValidityDays || 90));
-
-      await supabase.from('coupons').insert({
-          shop_id: settings.shopId,
-          code: code,
-          type: settings.loyaltyRewardType || 'percentage',
-          value: settings.loyaltyRewardValue || 10,
-          active: true,
-          max_uses: 1,
-          usage_count: 0,
-          expires_at: expiresAt.toISOString(),
-          is_loyalty_reward: true,
-          client_id: client.id
-      });
-
-      // Here we would ideally send a WhatsApp message.
-      console.log(`Recompensa gerada para ${client.name}: ${code}`);
+  const generateLoyaltyReward = async (client: Client, shopId: string) => {
+      try {
+          // Chama o endpoint do servidor que:
+          // 1. Usa RPC atômica para gerar cupom e zerar contadores
+          // 2. Dispara WhatsApp ao cliente com o código do cupom
+          const response = await fetch('/api/loyalty/reward', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ clientId: client.id, shopId })
+          });
+          const result = await response.json();
+          if (result.success) {
+              console.log(`[Loyalty] ✅ Recompensa entregue! Cupom: ${result.couponCode} | WhatsApp: ${result.whatsappSent ? 'Enviado' : 'Falhou'}`);
+              // Recarrega cupons para exibir o novo na aba Cupons
+              const { data: couponsData } = await supabase.from('coupons').select('*').eq('shop_id', shopId);
+              if (couponsData) {
+                  setState(prev => ({ ...prev, coupons: couponsData.map(mapCoupon) }));
+              }
+          } else {
+              console.error(`[Loyalty] ❌ Falha ao gerar recompensa:`, result.error);
+          }
+      } catch (e: any) {
+          console.error("[Loyalty] Erro ao chamar endpoint de recompensa:", e.message);
+      }
   };
 
   const updateAppointmentPaymentMethod = async (id: string, paymentMethod: string, usedSubscriptionId?: string): MutationResult => {

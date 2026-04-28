@@ -1530,37 +1530,76 @@ async function startServer() {
         }
     });
 
-    app.post('/api/loyalty/check-reward', async (req, res) => {
+    // ── Novo endpoint principal de recompensa de fidelidade ───────────────
+    // Chamado pela store.tsx quando um cliente atinge a meta de visitas/pontos.
+    // Responsabilidades:
+    //   1. Chama RPC atômica award_loyalty_reward (gera cupom + zera contadores)
+    //   2. Envia WhatsApp ao cliente com o código do cupom
+    app.post('/api/loyalty/reward', async (req, res) => {
         const { clientId, shopId } = req.body;
+        if (!clientId || !shopId) return res.status(400).json({ success: false, error: 'Parâmetros inválidos' });
+
         try {
-            const { data: result, error } = await supabaseAdmin.rpc('award_loyalty_reward', { p_client_id: clientId, p_shop_id: shopId });
+            console.log(`[Loyalty] Processando recompensa para cliente ${clientId} na loja ${shopId}`);
+
+            const { data: result, error } = await supabaseAdmin.rpc('award_loyalty_reward', {
+                p_client_id: clientId,
+                p_shop_id: shopId
+            });
 
             if (error || !result?.success) {
-                console.error(`[Loyalty] Erro RPC para cliente ${clientId}:`, error || result?.message);
-                return res.json({ success: false, error: error?.message || result?.message });
+                const errMsg = error?.message || result?.message || 'Erro desconhecido na RPC';
+                console.error(`[Loyalty] Falha na RPC award_loyalty_reward:`, errMsg);
+                return res.json({ success: false, error: errMsg });
             }
 
-            // Busca dados da loja de forma robusta
+            console.log(`[Loyalty] ✅ Cupom gerado: ${result.couponCode} para ${result.clientName}`);
+
+            // Busca dados da loja para o WhatsApp
             const { data: shop } = await supabaseAdmin
                 .from('shops')
                 .select('name, whatsapp_instance, whatsapp_connected')
                 .eq('id', shopId)
                 .single();
 
+            // Monta e envia mensagem WhatsApp usando o template cadastrado em Automações
+            const discountLabel = result.discountType === 'percentage'
+                ? `${result.discount}%`
+                : `R$ ${Number(result.discount).toFixed(2)}`;
+
             const msg = await generateWhatsAppMessage('loyalty_reward', {
                 clientName: result.clientName,
-                discount: `${result.discount}${result.discountType === 'percentage' ? '%' : ' R$'}`,
+                discount: discountLabel,
                 code: result.couponCode,
-                validity: result.validityDays,
-                shopName: shop?.name || "Nossa Barbearia"
+                validity: String(result.validityDays || 90),
+                shopName: shop?.name || 'Nossa Barbearia'
             }, shopId);
-            if (msg) {
-                console.log(`[Loyalty] Enviando prêmio para ${result.clientPhone} via instância ${shop?.whatsapp_instance}`);
-                await sendWhatsApp(result.clientPhone, msg, shop?.whatsapp_instance);
+
+            let whatsappSent = false;
+            if (msg && result.clientPhone) {
+                console.log(`[Loyalty] Enviando WhatsApp para ${result.clientPhone} (instância: ${shop?.whatsapp_instance})`);
+                whatsappSent = await sendWhatsApp(result.clientPhone, msg, shop?.whatsapp_instance);
             } else {
-                console.warn(`[Loyalty] Mensagem não enviada: Template vazio.`);
+                console.warn(`[Loyalty] Mensagem WhatsApp não enviada — template vazio ou telefone ausente.`);
             }
 
+            res.json({ success: true, couponCode: result.couponCode, whatsappSent });
+        } catch (error: any) {
+            console.error('[Loyalty] Exceção no endpoint /api/loyalty/reward:', error.message);
+            res.status(500).json({ success: false, error: error.message });
+        }
+    });
+
+    // Alias legado — mantido para compatibilidade
+    app.post('/api/loyalty/check-reward', async (req, res) => {
+        const { clientId, shopId } = req.body;
+        try {
+            const { data: result, error } = await supabaseAdmin.rpc('award_loyalty_reward', { p_client_id: clientId, p_shop_id: shopId });
+            if (error || !result?.success) return res.json({ success: false, error: error?.message || result?.message });
+            const { data: shop } = await supabaseAdmin.from('shops').select('name, whatsapp_instance').eq('id', shopId).single();
+            const discountLabel = result.discountType === 'percentage' ? `${result.discount}%` : `R$ ${Number(result.discount).toFixed(2)}`;
+            const msg = await generateWhatsAppMessage('loyalty_reward', { clientName: result.clientName, discount: discountLabel, code: result.couponCode, validity: String(result.validityDays || 90), shopName: shop?.name || 'Nossa Barbearia' }, shopId);
+            if (msg) await sendWhatsApp(result.clientPhone, msg, shop?.whatsapp_instance);
             res.json({ success: true, couponCode: result.couponCode });
         } catch (error: any) {
             res.status(500).json({ error: error.message });
