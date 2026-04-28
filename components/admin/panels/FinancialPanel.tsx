@@ -750,15 +750,15 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
             </tbody>
             {proStats.length > 0 && (
               <tfoot>
-                <tr className="bg-slate-900">
-                  <td className="px-5 py-4 text-sm font-bold text-white">Total Geral</td>
+                <tr className="bg-slate-50 border-t-2 border-slate-200">
+                  <td className="px-5 py-4 text-sm font-black text-slate-900">Total Geral</td>
                   <td className="px-5 py-4 text-center">
-                    <span className="text-white font-bold text-sm">{proStats.reduce((s, p) => s + p.count, 0)}</span>
+                    <span className="text-slate-900 font-black text-sm">{proStats.reduce((s, p) => s + p.count, 0)}</span>
                   </td>
-                  <td className="px-5 py-4 text-right font-bold text-emerald-400 text-sm">{fmtBRL(totalRevenue)}</td>
+                  <td className="px-5 py-4 text-right font-black text-slate-900 text-sm">{fmtBRL(totalRevenue)}</td>
                   <td className="px-5 py-4"></td>
-                  <td className="px-5 py-4 text-right font-bold text-orange-400 text-sm">{fmtBRL(totalCommission)}</td>
-                  <td className="px-5 py-4 text-right font-bold text-emerald-400 text-sm">{fmtBRL(totalRevenue - totalCommission)}</td>
+                  <td className="px-5 py-4 text-right font-black text-slate-900 text-sm">{fmtBRL(totalCommission)}</td>
+                  <td className="px-5 py-4 text-right font-black text-slate-900 text-sm">{fmtBRL(totalRevenue - totalCommission)}</td>
                   <td className="px-5 py-4"></td>
                 </tr>
               </tfoot>
