@@ -9,7 +9,7 @@ import {
   ChevronRight, Instagram, Facebook, Twitter, Shield, ZapIcon
 } from 'lucide-react';
 
-const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ onStart, onLogin }) => {
+export const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ onStart, onLogin }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
 
@@ -196,4 +196,3 @@ const LandingPage: React.FC<{ onStart: () => void, onLogin: () => void }> = ({ o
   );
 };
 
-export default LandingPage;
