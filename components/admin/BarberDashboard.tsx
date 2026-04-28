@@ -52,7 +52,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
-    const { appointments, professionals, session, updateAppointmentStatus, updateAppointmentPaymentMethod, settings, updateProfessional, blockedSlots, addBlockedSlot, removeBlockedSlot, refresh, theme, toggleTheme, products, addAppointmentProducts, cashSessions, addCashMovement, clientSubscriptions, subscriptionPlans } = useShop();
+    const { appointments, professionals, session, updateAppointmentStatus, updateAppointmentPaymentMethod, settings, updateProfessional, blockedSlots, addBlockedSlot, removeBlockedSlot, refresh, products, addAppointmentProducts, cashSessions, addCashMovement, clientSubscriptions, subscriptionPlans } = useShop();
     const { showToast } = useToast();
 
     // 1. Identificar qual profissional é o usuário logado
@@ -582,13 +582,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                         </div>
                     </div>
                     <div className="flex gap-2">
-                        <button 
-                            onClick={toggleTheme}
-                            className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white border border-slate-700 transition-colors"
-                            title={theme === 'dark' ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro'}
-                        >
-                            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                        </button>
+
                         <button onClick={handleRefresh} className={`p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white border border-slate-700 ${isRefreshing ? 'animate-spin text-orange-500' : ''}`} title="Atualizar dados">
                             <RefreshCw size={18}/>
                         </button>

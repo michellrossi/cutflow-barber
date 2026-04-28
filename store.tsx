@@ -464,13 +464,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { status: 'active', days };
   };
 
-  // Load client session and theme from storage on init
-  useEffect(() => {
-    const savedClient = sessionStorage.getItem('currentClient');
-    const savedSession = sessionStorage.getItem('clientSession');
-    const savedTheme = 'light'; // Forçando modo claro
+    // Força modo claro em todas as inicializações
     setState(prev => ({ ...prev, theme: 'light' }));
-    document.documentElement.classList.add('light'); // Forçando classe light no HTML
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+    localStorage.setItem('theme', 'light');
 
     if (savedClient && savedSession) {
       try {
@@ -2487,12 +2485,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const toggleTheme = () => {
-      setState(prev => {
-          const newTheme = prev.theme === 'dark' ? 'light' : 'dark';
-          localStorage.setItem('theme', newTheme);
-          document.documentElement.classList.toggle('light', newTheme === 'light');
-          return { ...prev, theme: newTheme };
-      });
+      // Desativado: Sistema fixo em modo claro
+      console.log("Troca de tema desativada. Sistema fixo em modo claro.");
   };
 
   return (
