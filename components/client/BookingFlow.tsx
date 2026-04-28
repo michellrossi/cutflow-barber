@@ -157,7 +157,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     // --------------------------------------------------------------------------------
 
     const Navbar = () => (
-        <nav className="fixed top-0 left-0 right-0 z-[100] bg-black/85 backdrop-blur-md border-b border-white/5 px-6 py-4">
+        <nav className="fixed top-0 left-0 right-0 z-[100] bg-[#050505]/95 backdrop-blur-x1 border-b border-white/10 px-6 py-4">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 {/* Lado Esquerdo: Logo e Nome */}
                 <div className="flex items-center gap-4">
@@ -171,11 +171,11 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
 
                 {/* Centro: Menu Minimalista */}
                 <div className="hidden lg:flex items-center gap-8">
+                    <a href="#sobre-nós" className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] hover:text-[#ff6a00] transition-colors">Sobre nós</a>
                     <a href="#serviços" className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] hover:text-[#ff6a00] transition-colors">Serviços</a>
                     <a href="#barbeiros" className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] hover:text-[#ff6a00] transition-colors">Barbeiros</a>
-                    <a href="#sobre-nós" className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] hover:text-[#ff6a00] transition-colors">Sobre nós</a>
-                    <a href="#localização" className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] hover:text-[#ff6a00] transition-colors">Localização</a>
                     <a href="#redes-sociais" className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] hover:text-[#ff6a00] transition-colors">Redes Sociais</a>
+                    <a href="#localização" className="text-[10px] font-black text-white/60 uppercase tracking-[0.2em] hover:text-[#ff6a00] transition-colors">Localização</a>
                 </div>
 
                 {/* Lado Direito: Botão Histórico */}
@@ -302,12 +302,20 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                             whileHover={{ y: -10 }}
                             className="group relative overflow-hidden bg-black border border-white/5 rounded-sm transition-all duration-500"
                         >
-                            <div className="aspect-video w-full overflow-hidden relative">
+                            <div className="aspect-[16/10] w-full overflow-hidden relative bg-white/5">
                                 {service.photoUrl ? (
-                                    <img src={service.photoUrl} alt={service.name} className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" />
+                                    <img 
+                                        src={service.photoUrl} 
+                                        alt={service.name} 
+                                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" 
+                                        onError={(e) => {
+                                            const target = e.target as HTMLImageElement;
+                                            target.style.display = 'none';
+                                        }}
+                                    />
                                 ) : (
-                                    <div className="w-full h-full bg-white/5 flex items-center justify-center text-[#ff6a00]">
-                                        <Scissors size={40} />
+                                    <div className="w-full h-full flex items-center justify-center text-[#ff6a00]/40">
+                                        <Scissors size={48} />
                                     </div>
                                 )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
@@ -341,7 +349,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                     <div className="w-20 h-1 bg-[#ff6a00] mx-auto"></div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div className="flex flex-wrap justify-center gap-8">
                     {professionals.map((pro) => (
                         <motion.div
                             key={pro.id}
