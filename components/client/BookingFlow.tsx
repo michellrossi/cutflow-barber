@@ -9,8 +9,8 @@ import { SummaryStep } from './steps/SummaryStep';
 import { SuccessStep } from './steps/SuccessStep';
 import { ClientLogin } from './ClientLogin';
 import { ClientProfile } from './ClientProfile';
-import {
-    Scissors, Calendar, User, MapPin, Clock, ArrowLeft,
+import { 
+    Scissors, Calendar, User, MapPin, Clock, ArrowLeft, 
     ChevronRight, Check, Star, LogOut, History, Smartphone,
     ChevronDown, CreditCard, ChevronUp, Map, Instagram, Facebook,
     Twitter, Phone, Award, Users, ShieldCheck, Loader2, Menu, X
@@ -22,10 +22,10 @@ type Step = 'home' | 'services' | 'professional' | 'datetime' | 'summary' | 'suc
 
 export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick }) => {
     const [step, setStep] = useState<Step>('home');
-    const {
-        services, professionals, settings, coupons,
-        addAppointment, appointments, blockedSlots,
-        currentClient, logoutClient
+    const { 
+        services, professionals, settings, coupons, 
+        addAppointment, appointments, blockedSlots, 
+        currentClient, logoutClient 
     } = useShop();
 
     // Booking State
@@ -37,7 +37,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     const [couponCode, setCouponCode] = useState('');
     const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
     const [discountAmount, setDiscountAmount] = useState(0);
-
+    
     // Server feedback
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -48,6 +48,19 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     const totalDuration = selectedServices.reduce((acc, s) => acc + s.duration, 0);
     const total = Math.max(0, subtotal - discountAmount);
 
+    // Mapeamento de cores premium para os sub-componentes (steps)
+    const premiumTheme = {
+        ...settings,
+        backgroundColor: '#050505',
+        cardBackgroundColor: '#111111',
+        borderColor: '#222222',
+        titleColor: '#ffffff',
+        textColor: '#b3b3b3',
+        primaryColor: '#ff6a00',
+        accentColor: '#ff6a00',
+        buttonTextColor: '#000000'
+    };
+
     // Initial load logic
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -57,10 +70,10 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
 
     // Auto-fill customer info if logged in
     useEffect(() => {
-        if (currentClient && !customerInfo.name && !customerInfo.phone) {
+        if (currentClient) {
             setCustomerInfo({
-                name: currentClient.name,
-                phone: currentClient.phone,
+                name: currentClient.name || '',
+                phone: currentClient.phone || '',
                 birthDate: currentClient.birthDate ? currentClient.birthDate.split('T')[0] : ''
             });
         }
@@ -157,7 +170,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     // --------------------------------------------------------------------------------
 
     const Navbar = () => (
-        <nav className="fixed top-0 left-0 right-0 z-[100] bg-[#050505]/95 backdrop-blur-x1 border-b border-white/10 px-6 py-4">
+        <nav className="fixed top-0 left-0 right-0 z-[100] bg-[#050505]/95 backdrop-blur-xl border-b border-white/10 px-6 py-4">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
                 {/* Lado Esquerdo: Logo e Nome */}
                 <div className="flex items-center gap-4">
@@ -180,7 +193,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
 
                 {/* Lado Direito: Botão Histórico */}
                 <div>
-                    <button
+                    <button 
                         onClick={handleHistoryClick}
                         className="px-6 py-2.5 bg-[#ff6a00] text-black font-black text-[10px] uppercase tracking-widest rounded-sm hover:bg-[#e55f00] transition-all flex items-center gap-2"
                     >
@@ -195,9 +208,9 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         <section className="relative h-[90vh] flex items-center overflow-hidden">
             {/* Fundo com Imagem e Overlay */}
             <div className="absolute inset-0 z-0">
-                <img
-                    src="https://iili.io/BiYGwMB.md.jpg"
-                    alt="Premium Barbershop Interior"
+                <img 
+                    src="https://iili.io/BiYGwMB.md.jpg" 
+                    alt="Premium Barbershop Interior" 
                     className="w-full h-full object-cover brightness-[0.38] contrast-125 saturate-75 scale-105"
                 />
                 <div className="absolute inset-0 bg-black/82"></div>
@@ -206,7 +219,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
 
             {/* Conteúdo Alinhado à Esquerda */}
             <div className="relative z-10 container mx-auto px-6 md:px-12 lg:px-24">
-                <motion.div
+                <motion.div 
                     initial={{ opacity: 0, x: -50 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.8 }}
@@ -215,7 +228,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                     <span className="inline-block px-4 py-1.5 bg-[#ff6a00] text-black text-[10px] font-black uppercase tracking-[0.2em] mb-8 rounded-sm">
                         AGENDAMENTO PREMIUM
                     </span>
-
+                    
                     <h1 className="text-5xl md:text-7xl lg:text-8xl font-black text-white leading-[0.9] mb-8 tracking-tighter uppercase">
                         AGENDE OS MELHORES SERVIÇOS <br />
                         <span className="text-[#ff6a00] italic">COM A MELHOR BARBEARIA</span>
@@ -226,13 +239,13 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                     </p>
 
                     <div className="flex flex-col sm:flex-row items-center gap-8">
-                        <button
+                        <button 
                             onClick={handleAgendarClick}
                             className="group w-full sm:w-auto px-10 py-5 bg-[#ff6a00] text-black font-black text-xs uppercase tracking-[0.2em] rounded-sm transition-all hover:bg-[#e55f00] flex items-center justify-center gap-3"
                         >
                             <Calendar size={18} /> AGENDAR AGORA
                         </button>
-                        <a
+                        <a 
                             href="#serviços"
                             className="w-full sm:w-auto px-10 py-5 bg-transparent border-2 border-white text-white font-black text-xs uppercase tracking-[0.2em] rounded-sm hover:bg-white hover:text-black transition-all text-center"
                         >
@@ -254,9 +267,9 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                 <div className="flex flex-col lg:flex-row items-center gap-16">
                     <div className="w-full lg:w-1/2 relative">
                         <div className="absolute -top-4 -left-4 w-24 h-24 border-t-2 border-l-2 border-[#ff6a00] z-10"></div>
-                        <img
-                            src="https://iili.io/Bi588ss.md.jpg"
-                            alt="Barbershop"
+                        <img 
+                            src="https://iili.io/Bi588ss.md.jpg" 
+                            alt="Barbershop" 
                             className="rounded-sm shadow-2xl grayscale hover:grayscale-0 transition-all duration-700 aspect-video object-cover"
                         />
                         <div className="absolute -bottom-10 -right-10 bg-[#ff6a00] p-8 hidden md:block">
@@ -265,10 +278,10 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                         </div>
                     </div>
                     <div className="w-full lg:w-1/2 space-y-8">
-                        <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight leading-none uppercase">
+                        <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight leading-none uppercase text-left">
                             SOBRE <span className="text-[#ff6a00]">NÓS</span>
                         </h2>
-                        <p className="text-slate-400 text-lg leading-relaxed italic">
+                        <p className="text-slate-400 text-lg leading-relaxed italic text-left">
                             "{settings.about_us || "Elevando o padrão da barbearia urbana. Excelência técnica e ambiente exclusivo para o homem de hoje."}"
                         </p>
                         <div className="grid grid-cols-2 gap-8 pt-6">
@@ -297,7 +310,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {services.map((service) => (
-                        <motion.div
+                        <motion.div 
                             key={service.id}
                             whileHover={{ y: -10 }}
                             className="group relative overflow-hidden bg-black border border-white/5 rounded-sm transition-all duration-500"
@@ -320,8 +333,8 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                                 )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
                             </div>
-
-                            <div className="p-8 relative">
+                            
+                            <div className="p-8 relative text-left">
                                 <div className="flex items-center gap-4 mb-4">
                                     <div className="p-2 bg-[#ff6a00]/10 rounded-sm text-[#ff6a00]">
                                         <Scissors size={18} />
@@ -351,10 +364,10 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
 
                 <div className="flex flex-wrap justify-center gap-8">
                     {professionals.map((pro) => (
-                        <motion.div
+                        <motion.div 
                             key={pro.id}
                             whileHover={{ y: -10 }}
-                            className="group bg-white/[0.02] border border-white/5 rounded-sm p-6 text-center hover:border-[#ff6a00]/50 transition-all"
+                            className="group bg-white/[0.02] border border-white/5 rounded-sm p-6 text-center hover:border-[#ff6a00]/50 transition-all min-w-[240px]"
                         >
                             <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-[#ff6a00] transition-colors p-1">
                                 {pro.photoUrl ? (
@@ -379,15 +392,15 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
             <div className="container mx-auto px-6 text-center">
                 <h2 className="text-5xl md:text-7xl font-black text-black mb-8 tracking-tighter uppercase">PRONTO PARA SUA <br />TRANSFORMAÇÃO?</h2>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                    <button
+                    <button 
                         onClick={handleAgendarClick}
-                        className="px-12 py-5 bg-black text-[#ff6a00] font-black text-sm uppercase tracking-[0.3em] rounded-sm hover:bg-slate-900 transition-all shadow-2xl"
+                        className="px-12 py-5 bg-black text-[#ff6a00] font-black text-sm uppercase tracking-widest rounded-sm hover:bg-slate-900 transition-all shadow-2xl"
                     >
                         Reservar Agora
                     </button>
-                    <button
+                    <button 
                         onClick={handleHistoryClick}
-                        className="px-12 py-5 bg-transparent border-2 border-black text-black font-black text-sm uppercase tracking-[0.3em] rounded-sm hover:bg-black hover:text-[#ff6a00] transition-all"
+                        className="px-12 py-5 bg-transparent border-2 border-black text-black font-black text-sm uppercase tracking-widest rounded-sm hover:bg-black hover:text-[#ff6a00] transition-all"
                     >
                         Ver Histórico
                     </button>
@@ -397,7 +410,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
     );
 
     const Footer = () => (
-        <footer id="localização" className="py-20 bg-[#050505] border-t border-white/5">
+        <footer className="py-20 bg-[#050505] border-t border-white/5">
             <div className="container mx-auto px-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                     <div className="col-span-1 md:col-span-2">
@@ -407,17 +420,17 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                         </p>
                         <div id="redes-sociais" className="flex gap-4">
                             {settings.instagram && (
-                                <a href={settings.instagram} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-sm bg-white/5 flex items-center justify-center text-slate-400 hover:bg-[#ff6a00] hover:text-black transition-all">
+                                <a href={settings.instagram.startsWith('http') ? settings.instagram : `https://instagram.com/${settings.instagram.replace('@', '')}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-sm bg-white/5 flex items-center justify-center text-slate-400 hover:bg-[#ff6a00] hover:text-black transition-all">
                                     <Instagram size={20} />
                                 </a>
                             )}
                             {settings.facebook && (
-                                <a href={settings.facebook} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-sm bg-white/5 flex items-center justify-center text-slate-400 hover:bg-[#ff6a00] hover:text-black transition-all">
+                                <a href={settings.facebook.startsWith('http') ? settings.facebook : `https://facebook.com/${settings.facebook}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-sm bg-white/5 flex items-center justify-center text-slate-400 hover:bg-[#ff6a00] hover:text-black transition-all">
                                     <Facebook size={20} />
                                 </a>
                             )}
                             {settings.twitter && (
-                                <a href={settings.twitter} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-sm bg-white/5 flex items-center justify-center text-slate-400 hover:bg-[#ff6a00] hover:text-black transition-all">
+                                <a href={settings.twitter.startsWith('http') ? settings.twitter : `https://twitter.com/${settings.twitter}`} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-sm bg-white/5 flex items-center justify-center text-slate-400 hover:bg-[#ff6a00] hover:text-black transition-all">
                                     <Twitter size={20} />
                                 </a>
                             )}
@@ -426,12 +439,22 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                     <div>
                         <h4 className="text-white font-black text-sm uppercase tracking-[0.2em] mb-6">Horários</h4>
                         <ul className="space-y-3 text-slate-500 text-sm font-medium">
-                            <li className="flex justify-between"><span>Seg - Sex</span> <span className="text-slate-300">09:00 - 20:00</span></li>
-                            <li className="flex justify-between"><span>Sábado</span> <span className="text-slate-300">09:00 - 18:00</span></li>
-                            <li className="flex justify-between"><span>Domingo</span> <span className="text-slate-300 text-[#ff6a00]">Fechado</span></li>
+                            {settings.business_hours ? Object.entries(settings.business_hours).map(([day, info]: [string, any]) => {
+                                const daysMap: any = { monday: 'Seg', tuesday: 'Ter', wednesday: 'Qua', thursday: 'Qui', friday: 'Sex', saturday: 'Sáb', sunday: 'Dom' };
+                                return (
+                                    <li key={day} className="flex justify-between">
+                                        <span>{daysMap[day] || day}</span> 
+                                        <span className={info.active ? "text-slate-300" : "text-[#ff6a00]"}>
+                                            {info.active ? `${info.start} - ${info.end}` : 'Fechado'}
+                                        </span>
+                                    </li>
+                                );
+                            }) : (
+                                <li className="text-slate-600 italic">Horários não informados</li>
+                            )}
                         </ul>
                     </div>
-                    <div>
+                    <div id="localização">
                         <h4 className="text-white font-black text-sm uppercase tracking-[0.2em] mb-6">Localização</h4>
                         <div className="flex gap-3 text-slate-500 text-sm leading-relaxed mb-6">
                             <MapPin className="text-[#ff6a00] shrink-0" size={18} />
@@ -470,7 +493,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                 <div className="min-h-screen pt-12 pb-24 px-4 md:px-8 max-w-5xl mx-auto">
                     {/* Header Simplificado para o Wizard */}
                     <div className="flex items-center justify-between mb-12">
-                        <button
+                        <button 
                             onClick={() => setStep('home')}
                             className="flex items-center gap-2 text-slate-400 hover:text-[#ff6a00] transition-colors uppercase text-[10px] font-black tracking-[0.2em]"
                         >
@@ -494,7 +517,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                                                 selectedServiceIds={selectedServiceIds}
                                                 setSelectedServiceIds={setSelectedServiceIds}
                                                 setStep={setStep}
-                                                settings={{ ...settings, backgroundColor: '#050505', textColor: '#ffffff', buttonColor: '#ff6a00' }}
+                                                settings={premiumTheme}
                                                 total={total}
                                             />
                                         </div>
@@ -507,7 +530,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                                                 selectedProId={selectedProId}
                                                 setSelectedProId={setSelectedProId}
                                                 setStep={setStep}
-                                                settings={{ ...settings, backgroundColor: '#050505', textColor: '#ffffff', buttonColor: '#ff6a00' }}
+                                                settings={premiumTheme}
                                                 total={total}
                                             />
                                         </div>
@@ -521,7 +544,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                                                 selectedTime={selectedTime}
                                                 setSelectedTime={setSelectedTime}
                                                 setStep={setStep}
-                                                settings={{ ...settings, backgroundColor: '#050505', textColor: '#ffffff', buttonColor: '#ff6a00' }}
+                                                settings={premiumTheme}
                                                 total={total}
                                                 selectedProId={selectedProId}
                                                 professionals={professionals}
@@ -541,7 +564,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                                                 setCouponCode={setCouponCode}
                                                 appliedCoupon={appliedCoupon}
                                                 handleApplyCoupon={handleApplyCoupon}
-                                                settings={{ ...settings, backgroundColor: '#050505', textColor: '#ffffff', buttonColor: '#ff6a00' }}
+                                                settings={premiumTheme}
                                                 selectedServices={selectedServices}
                                                 selectedProId={selectedProId}
                                                 professionals={professionals}
@@ -567,7 +590,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                                                 selectedProId={selectedProId}
                                                 professionals={professionals}
                                                 onReset={handleReset}
-                                                settings={{ ...settings, backgroundColor: '#050505', textColor: '#ffffff', buttonColor: '#ff6a00' }}
+                                                settings={premiumTheme}
                                             />
                                         </div>
                                     );
@@ -579,8 +602,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
             )}
 
             {/* Estilos customizados para animações */}
-            <style dangerouslySetInnerHTML={{
-                __html: `
+            <style dangerouslySetInnerHTML={{ __html: `
                 @keyframes slow-zoom {
                     0% { transform: scale(1); }
                     100% { transform: scale(1.1); }
@@ -594,6 +616,9 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                 .no-scrollbar {
                     -ms-overflow-style: none;
                     scrollbar-width: none;
+                }
+                #nprogress .bar {
+                    background: #ff6a00 !important;
                 }
             `}} />
         </div>
