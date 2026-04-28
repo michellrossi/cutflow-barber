@@ -51,9 +51,7 @@ const chatRateLimitMap = new Map<string, number>();
 // { jid: lastTimestampMs }
 const CHAT_RATE_LIMIT_MS = 3000; // 3 segundos entre mensagens
 
-// FIX 4: Cache de status de instâncias no escopo do módulo (fora do cron)
-// TTL de 5 minutos — evita N chamadas HTTP por execução do cron
-const instanceStatusCacheModule = new Map<string, { connected: boolean; expiresAt: number }>();
+// O Cache de instâncias agora é distribuído (tabela instance_status_cache) para suportar múltiplas réplicas
 
 function isRateLimited(remoteJid: string): boolean {
     const now = Date.now();
@@ -899,25 +897,49 @@ async function runCronLogic() {
 
     const maxRetries = 3;
 
-    // FIX 4: Cache de instâncias migrado para o escopo do módulo (instanceStatusCacheModule)
-    // com TTL de 5 minutos — sem reset a cada execução do cron
+    // FIX 4: Cache de instâncias migrado para o banco de dados (Supabase)
+    // Permite escalabilidade horizontal (Railway) sem perda de coerência do TTL
 
     // Função auxiliar para verificar status real da API
     const isInstanceConnected = async (shopId: string, instanceName: string): Promise<boolean> => {
         if (!instanceName) return false;
-        const cached = instanceStatusCacheModule.get(instanceName);
-        if (cached && cached.expiresAt > Date.now()) return cached.connected;
+        const now = Date.now();
+
+        // 1. Verifica no Cache Distribuído (Supabase)
+        const { data: cached } = await supabaseAdmin
+            .from('instance_status_cache')
+            .select('connected, expires_at')
+            .eq('instance_name', instanceName)
+            .maybeSingle();
+
+        if (cached && cached.expires_at > now) {
+            return cached.connected;
+        }
+
+        // 2. Busca na API se expirou
         try {
             const r = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connectionState/${instanceName}`, { headers: { apikey: process.env.WHATSAPP_API_KEY || '' } });
             const d = await r.json();
             const connected = d.instance?.state === 'open';
-            instanceStatusCacheModule.set(instanceName, { connected, expiresAt: Date.now() + 5 * 60 * 1000 });
+            
+            // 3. Atualiza o Cache Distribuído (5 minutos)
+            await supabaseAdmin.from('instance_status_cache').upsert({
+                instance_name: instanceName,
+                connected,
+                expires_at: now + 5 * 60 * 1000
+            });
+
             if (!connected) console.warn(`[Cron] Instância ${instanceName} da loja ${shopId} está offline na API. Pulando.`);
             return connected;
         } catch (e) {
             console.error(`[Cron] Erro ao checar status da API para ${instanceName}:`, e);
-            instanceStatusCacheModule.set(instanceName, { connected: false, expiresAt: Date.now() + 60 * 1000 });
-            // TTL reduzido para falha
+            
+            // Atualiza com TTL reduzido para falhas (1 minuto)
+            await supabaseAdmin.from('instance_status_cache').upsert({
+                instance_name: instanceName,
+                connected: false,
+                expires_at: now + 60 * 1000
+            });
             return false;
         }
     };
@@ -1477,19 +1499,40 @@ async function startServer() {
             const { data: shop } = await supabaseAdmin.from('shops').select('name, whatsapp_instance').eq('id', shopId).single();
             const shopName = shop?.name || "Nossa Barbearia";
 
-            const message = `👋 Olá! Aqui é da *${shopName}*.\n\nVocê solicitou um acesso rápido. Clique no link abaixo para entrar no seu perfil e ver/agendar seus horários:\n\n🔗 ${url}\n\n_Este link é seguro e expira em 15 minutos._`;
+            // Tenta buscar o nome do cliente para personalizar
+            const { data: client } = await supabaseAdmin.from('clients').select('name').eq('shop_id', shopId).eq('phone', phone).maybeSingle();
+            const clientName = client?.name || "Cliente";
 
-            const ok = await sendWhatsApp(phone, message, shop?.whatsapp_instance);
+            // Tenta usar template personalizado se existir
+            const customMsg = await generateWhatsAppMessage('link de acesso', { clientName, url, shopName }, shopId);
+            
+            // Se não houver template, usa o fallback padrão
+            const finalMessage = customMsg || `👋 Olá! Aqui é da *${shopName}*.\n\nVocê solicitou um acesso rápido. Clique no link abaixo para entrar no seu perfil e ver/agendar seus horários:\n\n🔗 ${url}\n\n_Este link é seguro e expira em 15 minutos._`;
+
+            const ok = await sendWhatsApp(phone, finalMessage, shop?.whatsapp_instance);
             res.json({ success: ok });
         } catch (error: any) {
+            console.error('[Login Link] Erro ao enviar:', error.message);
             res.status(500).json({ error: error.message });
         }
     });
 
     // ==========================================
+    // MIDDLEWARE: requireAdmin() — Proteção SaaS
+    // ==========================================
+    const requireAdmin = (req: any, res: any, next: any) => {
+        const adminKey = req.headers['x-admin-key'];
+        if (!adminKey || adminKey !== process.env.SAAS_ADMIN_KEY) {
+            console.warn(`[Security] Tentativa de acesso não autorizado à rota SaaS Admin de: ${req.ip}`);
+            return res.status(401).json({ error: 'Não autorizado. Admin Key inválida ou ausente.' });
+        }
+        next();
+    };
+
+    // ==========================================
     // ROTAS DE SAAS ADMIN (Bypass RLS)
     // ==========================================
-    app.get('/api/saas/shops', async (req, res) => {
+    app.get('/api/saas/shops', requireAdmin, async (req, res) => {
         try {
             const { data: shops, error } = await supabaseAdmin
                 .from('shops')
@@ -1513,7 +1556,7 @@ async function startServer() {
         }
     });
 
-    app.post('/api/saas/shops/plan', async (req, res) => {
+    app.post('/api/saas/shops/plan', requireAdmin, async (req, res) => {
         const { shopId, plan, plan_tier, monthly_price } = req.body;
         try {
             const updates: any = {};
@@ -1606,21 +1649,7 @@ async function startServer() {
         }
     });
 
-    app.post('/api/notify/login-link', async (req, res) => {
-        const { phone, url, shopId } = req.body;
-        const { data: shop } = await supabaseAdmin.from('shops').select('name, whatsapp_instance').eq('id', shopId).single();
-        const { data: client } = await supabaseAdmin.from('clients').select('name').eq('shop_id', shopId).eq('phone', phone).maybeSingle();
 
-        if (!shop) return res.status(404).json({ error: "Loja não encontrada" });
-
-        const msg = await generateWhatsAppMessage('link de acesso', { clientName: client?.name || "Cliente", url, shopName: shop.name }, shopId);
-        if (msg) {
-            const ok = await sendWhatsApp(phone, msg, shop.whatsapp_instance);
-            res.json({ success: ok });
-        } else {
-            res.json({ success: false, error: "Gatilho desativado" });
-        }
-    });
     app.get('/api/notify/cron', async (req, res) => {
         if (req.headers['x-cron-secret'] !== process.env.CRON_SECRET) return res.status(401).end();
         try {

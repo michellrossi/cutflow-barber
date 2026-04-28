@@ -1,7 +1,8 @@
 -- ==============================================================================
 -- CUTFLOW — SCHEMA MASTER (Fonte Canônica Única)
 -- Consolida: schema_completo.sql + supabase_security_fixes.sql +
---            supabase_metas_estoque_fixes.sql + security_webhook_fixes
+--            supabase_metas_estoque_fixes.sql + security_webhook_fixes +
+--            supabase_loyalty_fix.sql
 --
 -- Execute INTEGRALMENTE no SQL Editor do Supabase.
 -- Idempotente: seguro de rodar em ambiente existente ou novo.
@@ -225,6 +226,38 @@ CREATE TABLE IF NOT EXISTS public.appointment_products (
     quantity INTEGER NOT NULL DEFAULT 1,
     unit_price NUMERIC(10,2) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL
+);
+
+-- PLANOS DE ASSINATURA (Clube de Assinatura)
+CREATE TABLE IF NOT EXISTS public.subscription_plans (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    price NUMERIC(10,2) NOT NULL,
+    services_per_month INTEGER NOT NULL,
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL
+);
+
+-- ASSINATURAS DOS CLIENTES
+CREATE TABLE IF NOT EXISTS public.client_subscriptions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
+    client_id UUID NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
+    plan_id UUID NOT NULL REFERENCES public.subscription_plans(id) ON DELETE CASCADE,
+    status TEXT NOT NULL CHECK (status IN ('active', 'canceled', 'past_due')),
+    start_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    next_billing_date DATE,
+    services_used_this_month INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL
+);
+
+-- CACHE DISTRIBUÍDO DE INSTÂNCIAS (Substitui Map em memória)
+CREATE TABLE IF NOT EXISTS public.instance_status_cache (
+    instance_name TEXT PRIMARY KEY,
+    connected BOOLEAN NOT NULL,
+    expires_at BIGINT NOT NULL
 );
 
 
@@ -494,6 +527,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+GRANT EXECUTE ON FUNCTION public.award_loyalty_reward(UUID, UUID) TO service_role;
+
 -- ── RPC: Aniversariantes do Dia (Usa índice IMMUTABLE) ────────────────────────
 -- FIX consolidado do supabase_security_fixes.sql
 CREATE OR REPLACE FUNCTION public.get_birthday_clients_today()
@@ -663,7 +698,15 @@ CREATE POLICY "Criar Agendamento Paywall" ON public.appointments FOR INSERT WITH
 DROP POLICY IF EXISTS "Publico_Le_Agendamentos" ON public.appointments;
 CREATE POLICY "Publico_Le_Agendamentos" ON public.appointments FOR SELECT USING (EXISTS (SELECT 1 FROM public.shops WHERE id = appointments.shop_id AND owner_id = auth.uid()) OR EXISTS (SELECT 1 FROM public.professionals WHERE user_id = auth.uid() AND shop_id = appointments.shop_id));
 DROP POLICY IF EXISTS "Servidor_Atualiza_Flags" ON public.appointments;
-CREATE POLICY "Servidor_Atualiza_Flags" ON public.appointments FOR UPDATE USING (true) WITH CHECK (true);
+-- Nota: O servidor usa service_role, que ignora RLS. Donos já têm permissão via "Dono_Gere_Agendamentos".
+
+-- Clientes
+DROP POLICY IF EXISTS "Dono_Gere_Clientes" ON public.clients;
+CREATE POLICY "Dono_Gere_Clientes" ON public.clients FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = clients.shop_id AND owner_id = auth.uid()));
+DROP POLICY IF EXISTS "Permitir_Auto_Cadastro" ON public.clients;
+CREATE POLICY "Permitir_Auto_Cadastro" ON public.clients FOR INSERT WITH CHECK (true);
+DROP POLICY IF EXISTS "Publico_Le_Proprio_Perfil" ON public.clients;
+CREATE POLICY "Publico_Le_Proprio_Perfil" ON public.clients FOR SELECT USING (true); -- Ajustado para permitir busca por telefone no agendamento
 
 -- Automações, Categorias e Templates
 DROP POLICY IF EXISTS "Dono_Gere_Templates" ON public.message_templates;
@@ -688,6 +731,17 @@ CREATE POLICY "Dono_Gere_Sessoes" ON public.whatsapp_chat_sessions FOR ALL USING
 -- Metas
 DROP POLICY IF EXISTS "Dono_Gere_Metas" ON public.goals;
 CREATE POLICY "Dono_Gere_Metas" ON public.goals FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = goals.shop_id AND owner_id = auth.uid()));
+
+-- Assinaturas
+DROP POLICY IF EXISTS "Dono_Gere_Planos" ON public.subscription_plans;
+CREATE POLICY "Dono_Gere_Planos" ON public.subscription_plans FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = subscription_plans.shop_id AND owner_id = auth.uid()));
+DROP POLICY IF EXISTS "Publico_Ve_Planos" ON public.subscription_plans;
+CREATE POLICY "Publico_Ve_Planos" ON public.subscription_plans FOR SELECT USING (active = true);
+
+DROP POLICY IF EXISTS "Dono_Gere_Assinaturas_Clientes" ON public.client_subscriptions;
+CREATE POLICY "Dono_Gere_Assinaturas_Clientes" ON public.client_subscriptions FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = client_subscriptions.shop_id AND owner_id = auth.uid()));
+DROP POLICY IF EXISTS "Cliente_Ve_Propria_Assinatura" ON public.client_subscriptions;
+CREATE POLICY "Cliente_Ve_Propria_Assinatura" ON public.client_subscriptions FOR SELECT USING (true); -- Filtro adicional via API
 
 -- ──────────────────────────────────────────────────────────────────────────────
 -- FIX CRÍTICO DE SEGURANÇA (era: USING (true) sem filtro de plano)
@@ -784,6 +838,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_single_open_session_per_shop
 
 ALTER TABLE public.cash_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.cash_flow_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.subscription_plans ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.client_subscriptions ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Dono_Gere_Caixa" ON public.cash_sessions;
 CREATE POLICY "Dono_Gere_Caixa" ON public.cash_sessions FOR ALL USING (
