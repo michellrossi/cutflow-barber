@@ -464,6 +464,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       return { status: 'active', days };
   };
 
+  // Load client session and theme from storage on init
+  useEffect(() => {
+    const savedClient = sessionStorage.getItem('currentClient');
+    const savedSession = sessionStorage.getItem('clientSession');
+
     // Força modo claro em todas as inicializações
     setState(prev => ({ ...prev, theme: 'light' }));
     document.documentElement.classList.remove('dark');
