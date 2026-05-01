@@ -8,6 +8,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
 import dayjs from 'dayjs';
+import crypto from 'crypto';
 import utc from 'dayjs/plugin/utc.js';
 import timezone from 'dayjs/plugin/timezone.js';
 import cron from 'node-cron';
@@ -849,7 +850,10 @@ Seu trabalho é levar o cliente ao agendamento com o menor atrito possível.
                             // Dispara confirmação assíncrona
                             fetch(`http://localhost:${process.env.PORT || 3000}/api/notify/confirmation`, {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'x-internal-secret': process.env.INTERNAL_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 32) || ''
+                                },
                                 body: JSON.stringify({ appointmentId: rpcResult.id })
                             }).catch(e => console.error('[Chatbot] Erro ao disparar notificação:', e));
                         } else {
@@ -911,7 +915,20 @@ Seu trabalho é levar o cliente ao agendamento com o menor atrito possível.
 }
 
 async function getAvailableSlotsForAI(shopId: string, proId: string, date: string) {
-    // 1. Horário da Loja
+    // 1. Validação de Segurança: Garante que o profissional pertence a esta loja
+    const { data: proValidation } = await supabaseAdmin
+        .from('professionals')
+        .select('id')
+        .eq('id', proId)
+        .eq('shop_id', shopId)
+        .maybeSingle();
+        
+    if (!proValidation) {
+        console.warn(`[Segurança] IA tentou acessar profissional de outra loja. (Shop: ${shopId}, Pro: ${proId})`);
+        return { error: "Profissional não encontrado nesta barbearia." };
+    }
+
+    // 2. Horário da Loja
     const { data: settings } = await supabaseAdmin.from('settings').select('business_hours').eq('shop_id', shopId).single();
     const dayOfWeek = dayjs(date).locale('en').format('dddd').toLowerCase();
 
@@ -1370,6 +1387,7 @@ async function runCronLogic() {
 
 async function startServer() {
     const app = express();
+    app.set('trust proxy', 1);
 
     // CORS restrito — apenas origens confiáveis
     const allowedOrigins = [
@@ -1558,11 +1576,11 @@ async function startServer() {
         }
     });
     app.post('/api/notify/confirmation', async (req, res) => {
-        // FIX 6: Restringe a chamadas internas (localhost / server-to-server)
-        const callerIp = req.ip || req.socket.remoteAddress || '';
-        const isInternal = callerIp === '127.0.0.1' || callerIp === '::1' || callerIp === '::ffff:127.0.0.1';
-        if (!isInternal) {
-            console.warn(`[Security] /api/notify/confirmation chamado externamente de ${callerIp}. Bloqueado.`);
+        // FIX 6: Restringe a chamadas internas (via header secreto)
+        const secret = req.headers['x-internal-secret'];
+        const validSecret = process.env.INTERNAL_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY?.substring(0, 32);
+        if (!secret || secret !== validSecret) {
+            console.warn(`[Security] /api/notify/confirmation acesso não autorizado. Bloqueado.`);
             return res.status(403).json({ error: 'Acesso restrito a chamadas internas' });
         }
 
@@ -1656,7 +1674,13 @@ async function startServer() {
             console.error('[SaasAuth] SAAS_ADMIN_KEY não configurada no ambiente!');
             return res.status(500).json({ error: 'Serviço não configurado' });
         }
-        if (!password || password !== adminKey) {
+        
+        // Proteção contra Timing Attacks
+        const isValid = typeof password === 'string' && 
+                        password.length === adminKey.length && 
+                        crypto.timingSafeEqual(Buffer.from(password), Buffer.from(adminKey));
+                        
+        if (!isValid) {
             console.warn(`[SaasAuth] Tentativa de acesso negada de ${req.ip}`);
             return res.status(401).json({ error: 'Senha incorreta' });
         }
@@ -1973,10 +1997,27 @@ async function startServer() {
 
         const event = req.body.event;
         const payment = req.body.payment;
+        const eventId = req.body.id;
 
-        console.log(`[Asaas Webhook] Evento recebido: ${event}`);
+        console.log(`[Asaas Webhook] Evento recebido: ${event} (${eventId})`);
 
         try {
+            // Verificação de idempotência (at-least-once delivery handling)
+            if (eventId) {
+                const { data: existingEvent } = await supabaseAdmin
+                    .from('webhook_events')
+                    .select('id')
+                    .eq('event_id', eventId)
+                    .maybeSingle();
+
+                if (existingEvent) {
+                    console.log(`[Asaas Webhook] Evento ${eventId} já processado. Ignorando.`);
+                    return res.json({ success: true, message: 'Already processed' });
+                }
+
+                await supabaseAdmin.from('webhook_events').insert({ event_id: eventId, source: 'asaas' });
+            }
+
             if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
                 // Pagamento confirmado → ativa o plano
                 const asaasCustomerId = payment.customer;

@@ -890,3 +890,19 @@ CREATE POLICY "Dono_Gere_Movimentacoes" ON public.cash_flow_entries FOR ALL USIN
 -- FIM DO SCRIPT — Recarrega cache do PostgREST
 -- ==============================================================================
 NOTIFY pgrst, 'reload schema';
+
+-- ==============================================================================
+-- CORREÇÕES DE SEGURANÇA E IDEMPOTÊNCIA
+-- ==============================================================================
+
+-- 1. Proteção do cache de instâncias (Impede manipulação anônima)
+ALTER TABLE public.instance_status_cache ENABLE ROW LEVEL SECURITY;
+
+-- 2. Tabela de eventos para garantir idempotência em Webhooks (ex: Asaas)
+CREATE TABLE IF NOT EXISTS public.webhook_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_id TEXT UNIQUE NOT NULL,
+    source TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
