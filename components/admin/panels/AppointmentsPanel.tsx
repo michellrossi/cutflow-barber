@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useShop } from '../../../store';
 import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader2, List, Calendar as CalendarIcon, Phone, MessageCircle } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
@@ -59,6 +59,28 @@ export const AppointmentsPanel: React.FC = () => {
         paymentMethod: 'pix',
         usedSubscriptionId: ''
     });
+
+    const [showClientSuggestions, setShowClientSuggestions] = useState(false);
+    const suggestionRef = useRef<HTMLDivElement>(null);
+
+    const filteredClientsForSuggestions = useMemo(() => {
+        if (!formData.clientName || formData.clientName.length < 2) return [];
+        return clients.filter(c => 
+            c.name.toLowerCase().includes(formData.clientName.toLowerCase()) ||
+            (c.lastName && c.lastName.toLowerCase().includes(formData.clientName.toLowerCase())) ||
+            c.phone.includes(formData.clientName)
+        ).slice(0, 6);
+    }, [formData.clientName, clients]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
+                setShowClientSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // Modal de Conclusão (Venda de Produtos)
     const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
@@ -263,9 +285,49 @@ export const AppointmentsPanel: React.FC = () => {
                         <form onSubmit={handleCreate} className="p-6 space-y-6">
                             {/* Cliente */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
+                                <div className="relative" ref={suggestionRef}>
                                     <label className="block text-sm text-slate-500 mb-1">Nome do Cliente</label>
-                                    <input required value={formData.clientName} onChange={e => setFormData({ ...formData, clientName: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-orange-500" placeholder="Ex: João Silva" />
+                                    <div className="relative">
+                                        <input 
+                                            required 
+                                            value={formData.clientName} 
+                                            onChange={e => {
+                                                setFormData({ ...formData, clientName: e.target.value });
+                                                setShowClientSuggestions(true);
+                                            }} 
+                                            onFocus={() => setShowClientSuggestions(true)}
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-orange-500" 
+                                            placeholder="Ex: João Silva" 
+                                            autoComplete="off"
+                                        />
+                                        {showClientSuggestions && filteredClientsForSuggestions.length > 0 && (
+                                            <div className="absolute z-[100] w-full bg-white border border-slate-200 rounded-xl mt-1 shadow-2xl overflow-hidden animate-fade-in border-t-4 border-t-orange-500">
+                                                <div className="p-2 bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Clientes Encontrados</div>
+                                                {filteredClientsForSuggestions.map(client => (
+                                                    <div 
+                                                        key={client.id}
+                                                        onClick={() => {
+                                                            setFormData({ 
+                                                                ...formData, 
+                                                                clientName: `${client.name} ${client.lastName || ''}`.trim(),
+                                                                clientPhone: client.phone 
+                                                            });
+                                                            setShowClientSuggestions(false);
+                                                        }}
+                                                        className="p-3 hover:bg-orange-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors group"
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <div>
+                                                                <div className="font-bold text-slate-900 group-hover:text-orange-600 transition-colors">{client.name} {client.lastName}</div>
+                                                                <div className="text-xs text-slate-500">{client.phone}</div>
+                                                            </div>
+                                                            <div className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-400 group-hover:bg-orange-100 group-hover:text-orange-500 transition-colors">Selecionar</div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm text-slate-500 mb-1">Telefone (Opcional)</label>
