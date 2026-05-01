@@ -253,6 +253,55 @@ async function sendWhatsApp(phone: string, message: string, instanceName?: strin
  */
 async function handleChatbotAI(shopId: string, remoteJid: string, clientName: string, message: string, instance: string) {
     console.log(`[Chatbot] Processando para ${clientName} (${remoteJid}) na loja ${shopId}`);
+
+    // -------------------------------------------------------
+    // NPS: Captura resposta de avaliação antes de qualquer IA
+    // -------------------------------------------------------
+    {
+        const { data: npsSession } = await supabaseAdmin
+            .from('whatsapp_chat_sessions')
+            .select('context')
+            .eq('shop_id', shopId)
+            .eq('remote_jid', remoteJid)
+            .maybeSingle();
+
+        const ctx = npsSession?.context as any;
+        if (ctx?.nps_pending) {
+            const score = parseInt(message.trim(), 10);
+            if (score >= 1 && score <= 5) {
+                // Salva o score no agendamento
+                await supabaseAdmin
+                    .from('appointments')
+                    .update({ nps_score: score })
+                    .eq('id', ctx.nps_appointment_id);
+
+                // Remove o contexto NPS da sessão
+                await supabaseAdmin
+                    .from('whatsapp_chat_sessions')
+                    .update({ context: {}, last_message_at: new Date().toISOString() })
+                    .eq('shop_id', shopId)
+                    .eq('remote_jid', remoteJid);
+
+                const emojis = ['', '😞', '😕', '😐', '😊', '🤩'];
+                const ackMsg = score >= 4
+                    ? `Obrigado pela nota *${score}/5* ${emojis[score]}! Fico feliz que tenha gostado! Te esperamos em breve. ✂️💈`
+                    : `Obrigado pelo feedback! Nota *${score}/5* ${emojis[score]}. Vamos trabalhar para melhorar sempre. Qualquer dúvida, é só chamar! 🙏`;
+                await sendWhatsApp(remoteJid.split('@')[0], ackMsg, instance);
+
+                console.log(`[NPS] Score ${score} salvo para agendamento ${ctx.nps_appointment_id}`);
+                return; // Não processa mais nada
+            } else {
+                // Resposta inválida — lembra o cliente do formato
+                await sendWhatsApp(
+                    remoteJid.split('@')[0],
+                    'Por favor, responda apenas com um número de *1 a 5* para avaliar seu atendimento. 😊',
+                    instance
+                );
+                return;
+            }
+        }
+    }
+
     // -------------------------------------------------------
     // FIX 4: Detecção de handoff — verifica ANTES de qualquer IA
     // -------------------------------------------------------
@@ -1071,7 +1120,7 @@ async function runCronLogic() {
         }
     }
 
-    // 4. Pós-venda
+    // 4. Pós-venda + NPS
     const { data: aptsPostSale } = await supabaseAdmin
         .from('appointments')
         .select('*, professionals(name), shops(id, name, whatsapp_instance, whatsapp_connected)')
@@ -1105,6 +1154,32 @@ async function runCronLogic() {
                 const ok = await sendWhatsApp(apt.client_phone, msg, apt.shops?.whatsapp_instance);
                 if (ok) {
                     await supabaseAdmin.from('appointments').update({ post_sale_sent: true }).eq('id', apt.id);
+
+                    // ── NPS: envia pesquisa de satisfação simples logo em seguida ──
+                    const npsMsg =
+                        `⭐ Muito obrigado pelo seu feedback, ${apt.client_name || 'cliente'}!\n\n` +
+                        `De *1 a 5*, qual nota você daria para o seu atendimento de hoje?\n\n` +
+                        `1️⃣ Péssimo\n2️⃣ Ruim\n3️⃣ Regular\n4️⃣ Bom\n5️⃣ Ótimo\n\n` +
+                        `_Responda apenas com o número. Sua opinião nos ajuda a melhorar!_ ✏️`;
+
+                    const npsOk = await sendWhatsApp(apt.client_phone, npsMsg, apt.shops?.whatsapp_instance);
+                    if (npsOk) {
+                        // Marca a sessão do chatbot como "aguardando NPS" para este cliente
+                        // O chatbot detectará a resposta numérica e salvará como nps_score
+                        const remoteJid = `${apt.client_phone.replace(/\D/g, '').replace(/^(?!55)/, '55')}@s.whatsapp.net`;
+                        await supabaseAdmin
+                            .from('whatsapp_chat_sessions')
+                            .upsert(
+                                {
+                                    shop_id: apt.shop_id,
+                                    remote_jid: remoteJid,
+                                    context: { nps_pending: true, nps_appointment_id: apt.id },
+                                    last_message_at: new Date().toISOString()
+                                },
+                                { onConflict: 'shop_id,remote_jid', ignoreDuplicates: false }
+                            );
+                        console.log(`[Cron] ⭐ NPS enviado e sessão marcada para ${apt.client_phone} (agendamento ${apt.id})`);
+                    }
                 } else {
                     const attempts = (apt.send_attempts_postsale || 0) + 1;
                     await supabaseAdmin.from('appointments').update({ send_attempts_postsale: attempts }).eq('id', apt.id);
@@ -1530,6 +1605,26 @@ async function startServer() {
     };
 
     // ==========================================
+    // AUTENTICAÇÃO DO PAINEL SAAS ADMIN
+    // ==========================================
+    // Valida a senha do administrador SaaS sem nunca expor o segredo no bundle front-end.
+    // O cliente recebe apenas 200 (ok) ou 401 (negado) — a chave real fica somente no servidor.
+    app.post('/api/saas/auth', (req, res) => {
+        const { password } = req.body || {};
+        const adminKey = process.env.SAAS_ADMIN_KEY;
+        if (!adminKey) {
+            console.error('[SaasAuth] SAAS_ADMIN_KEY não configurada no ambiente!');
+            return res.status(500).json({ error: 'Serviço não configurado' });
+        }
+        if (!password || password !== adminKey) {
+            console.warn(`[SaasAuth] Tentativa de acesso negada de ${req.ip}`);
+            return res.status(401).json({ error: 'Senha incorreta' });
+        }
+        console.log(`[SaasAuth] Acesso concedido de ${req.ip}`);
+        return res.json({ success: true });
+    });
+
+    // ==========================================
     // ROTAS DE SAAS ADMIN (Bypass RLS)
     // ==========================================
     app.get('/api/saas/shops', requireAdmin, async (req, res) => {
@@ -1829,11 +1924,56 @@ async function startServer() {
 
         try {
             if (event === 'PAYMENT_RECEIVED' || event === 'PAYMENT_CONFIRMED') {
+                // Pagamento confirmado → ativa o plano
                 const asaasCustomerId = payment.customer;
                 if (asaasCustomerId) {
-                    await supabaseAdmin.from('shops').update({ plan: 'active' }).eq('asaas_customer_id', asaasCustomerId);
+                    const { error } = await supabaseAdmin
+                        .from('shops')
+                        .update({ plan: 'active', payment_confirmed_at: new Date().toISOString() })
+                        .eq('asaas_customer_id', asaasCustomerId);
+                    if (error) console.error('[Asaas Webhook] Erro ao ativar plano:', error.message);
+                    else console.log(`[Asaas Webhook] ✅ Plano ativado para customer: ${asaasCustomerId}`);
                 }
             }
+
+            // ── Inadimplência: suspende o acesso ──────────────────────────────────
+            // PAYMENT_OVERDUE: cobrança vencida (gatilho principal de inadimplência)
+            // PAYMENT_DELETED: cobrança removida/cancelada pelo gestor financeiro
+            if (event === 'PAYMENT_OVERDUE' || event === 'PAYMENT_DELETED') {
+                const asaasCustomerId = payment?.customer;
+                if (asaasCustomerId) {
+                    const { data: shopData, error } = await supabaseAdmin
+                        .from('shops')
+                        .update({ plan: 'suspended' })
+                        .eq('asaas_customer_id', asaasCustomerId)
+                        .select('id, name')
+                        .maybeSingle();
+                    if (error) {
+                        console.error(`[Asaas Webhook] Erro ao suspender plano (${event}):`, error.message);
+                    } else if (shopData) {
+                        console.log(`[Asaas Webhook] ⚠️ Plano suspenso por ${event} — Loja: ${shopData.name} (${shopData.id})`);
+                    }
+                }
+            }
+
+            // SUBSCRIPTION_DELETED: assinatura recorrente cancelada — suspende plano
+            if (event === 'SUBSCRIPTION_DELETED' || event === 'SUBSCRIPTION_INACTIVATED') {
+                const asaasCustomerId = req.body.subscription?.customer || payment?.customer;
+                if (asaasCustomerId) {
+                    const { data: shopData, error } = await supabaseAdmin
+                        .from('shops')
+                        .update({ plan: 'suspended' })
+                        .eq('asaas_customer_id', asaasCustomerId)
+                        .select('id, name')
+                        .maybeSingle();
+                    if (error) {
+                        console.error(`[Asaas Webhook] Erro ao suspender por cancelamento de assinatura:`, error.message);
+                    } else if (shopData) {
+                        console.log(`[Asaas Webhook] ⚠️ Assinatura cancelada — Plano suspenso para: ${shopData.name}`);
+                    }
+                }
+            }
+
             res.json({ success: true });
         } catch (error: any) {
             console.error('[Asaas Webhook] Erro ao processar:', error.message);

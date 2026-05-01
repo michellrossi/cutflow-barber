@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useParams, Navigate, useSearchParams } from 'react-router-dom';
 import { ShopProvider, useShop } from './store';
 import { ToastProvider } from './components/ui/ToastContext';
@@ -10,8 +10,128 @@ import { Signup } from './components/auth/Signup';
 import { Login } from './components/auth/Login';
 import { UpdatePassword } from './components/auth/UpdatePassword';
 import { ClientTokenValidation } from './components/client/ClientTokenValidation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShieldCheck, Eye, EyeOff, Lock } from 'lucide-react';
 import { AdminOwnerDashboard } from './components/admin/AdminOwnerDashboard';
+
+// ============================================================
+// GUARD DE ROTA: /saas-admin — Autenticação por senha secreta
+// ============================================================
+const SAAS_SESSION_KEY = 'saas_admin_auth';
+const SAAS_SESSION_TTL_MS = 2 * 60 * 60 * 1000; // 2 horas
+
+const SaasAdminGuard: React.FC = () => {
+    const [password, setPassword] = useState('');
+    const [showPw, setShowPw] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [authenticated, setAuthenticated] = useState(false);
+
+    // Verifica sessão existente ao montar
+    useEffect(() => {
+        try {
+            const raw = sessionStorage.getItem(SAAS_SESSION_KEY);
+            if (raw) {
+                const { expiresAt } = JSON.parse(raw);
+                if (Date.now() < expiresAt) {
+                    setAuthenticated(true);
+                }
+            }
+        } catch { /* sessão inválida, ignora */ }
+    }, []);
+
+    const handleLogin = useCallback(async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setError('');
+        try {
+            const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                ? 'http://localhost:3000'
+                : `https://${window.location.hostname}`;
+
+            // Valida a senha via API (o segredo nunca fica exposto no bundle)
+            const res = await fetch(`${serverUrl}/api/saas/auth`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password })
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || 'Senha incorreta');
+            }
+
+            // Grava sessão com TTL de 2h
+            sessionStorage.setItem(SAAS_SESSION_KEY, JSON.stringify({
+                expiresAt: Date.now() + SAAS_SESSION_TTL_MS
+            }));
+            // Guarda a senha para autorizar chamadas subsequentes à API (ex: fetchGlobalShops)
+            sessionStorage.setItem('saas_admin_pw', password);
+            setAuthenticated(true);
+        } catch (err: any) {
+            setError(err.message || 'Falha na autenticação');
+        } finally {
+            setLoading(false);
+        }
+    }, [password]);
+
+    if (authenticated) return <AdminOwnerDashboard />;
+
+    return (
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+            <div className="w-full max-w-sm">
+                <div className="flex flex-col items-center mb-8">
+                    <div className="w-16 h-16 rounded-2xl bg-orange-500/10 border border-orange-500/30 flex items-center justify-center mb-4">
+                        <ShieldCheck className="text-orange-500" size={32} />
+                    </div>
+                    <h1 className="text-2xl font-black text-white tracking-tight">Área Restrita</h1>
+                    <p className="text-slate-400 text-sm mt-1">Painel Master Admin — InsightBarber</p>
+                </div>
+
+                <form onSubmit={handleLogin} className="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">
+                            Senha de Administrador
+                        </label>
+                        <div className="relative">
+                            <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
+                            <input
+                                id="saas-admin-password"
+                                type={showPw ? 'text' : 'password'}
+                                required
+                                autoFocus
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                                placeholder="Digite a senha secreta"
+                                className="w-full pl-9 pr-10 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white text-sm placeholder-slate-500 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPw(v => !v)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                            >
+                                {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                        </div>
+                    </div>
+
+                    {error && (
+                        <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+                            ⚠️ {error}
+                        </p>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={loading || !password}
+                        className="w-full py-3 bg-orange-600 hover:bg-orange-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2"
+                    >
+                        {loading ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
+                        {loading ? 'Verificando...' : 'Acessar Painel'}
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
+};
 
 // Wrapper para carregar dados da barbearia baseado na URL (Visão do Cliente)
 const BookingRoute = () => {
@@ -199,8 +319,8 @@ const AppRoutes = () => {
             {/* Catch all (404) -> Home */}
             <Route path="*" element={<Navigate to="/" replace />} />
             
-            {/* [NOVO] Painel do Administrador do SaaS */}
-            <Route path="/saas-admin" element={<AdminOwnerDashboard />} />
+            {/* [SEGURO] Painel do Administrador do SaaS — guard de senha */}
+            <Route path="/saas-admin" element={<SaasAdminGuard />} />
         </Routes>
     );
 }

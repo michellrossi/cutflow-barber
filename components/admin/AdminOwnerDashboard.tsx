@@ -88,10 +88,15 @@ export const AdminOwnerDashboard: React.FC = () => {
             const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
                 ? 'http://localhost:3000' 
                 : `https://${window.location.hostname}`;
+
+            const adminPw = sessionStorage.getItem('saas_admin_pw') || '';
                 
             const res = await fetch(`${serverUrl}/api/saas/shops/plan`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-admin-key': adminPw
+                },
                 body: JSON.stringify({ shopId, plan: newPlan })
             });
             const result = await res.json();
@@ -112,10 +117,15 @@ export const AdminOwnerDashboard: React.FC = () => {
             const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
                 ? 'http://localhost:3000' 
                 : `https://${window.location.hostname}`;
+
+            const adminPw = sessionStorage.getItem('saas_admin_pw') || '';
                 
             const res = await fetch(`${serverUrl}/api/saas/shops/plan`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-admin-key': adminPw
+                },
                 body: JSON.stringify({ shopId, monthly_price: newPrice })
             });
             const result = await res.json();

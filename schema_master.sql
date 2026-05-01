@@ -21,7 +21,12 @@ ALTER TABLE public.shops
     ADD COLUMN IF NOT EXISTS plan_tier TEXT DEFAULT 'essencial' CHECK (plan_tier IN ('essencial', 'profissional', 'premium')),
     ADD COLUMN IF NOT EXISTS whatsapp_instance TEXT,
     ADD COLUMN IF NOT EXISTS whatsapp_connected BOOLEAN DEFAULT false,
-    ADD COLUMN IF NOT EXISTS asaas_customer_id TEXT;
+    ADD COLUMN IF NOT EXISTS asaas_customer_id TEXT,
+    ADD COLUMN IF NOT EXISTS monthly_price NUMERIC(10,2) DEFAULT 97.00,
+    ADD COLUMN IF NOT EXISTS payment_confirmed_at TIMESTAMPTZ;
+
+COMMENT ON COLUMN public.shops.monthly_price IS 'Valor mensal cobrado pelo plano SaaS';
+COMMENT ON COLUMN public.shops.payment_confirmed_at IS 'Data da última confirmação de pagamento via Asaas webhook';
 
 -- SERVICES
 ALTER TABLE public.services
@@ -103,7 +108,10 @@ ALTER TABLE public.appointments
     ADD COLUMN IF NOT EXISTS post_sale_sent BOOLEAN DEFAULT false,
     ADD COLUMN IF NOT EXISTS send_attempts_postsale INTEGER DEFAULT 0,
     ADD COLUMN IF NOT EXISTS reminder_30d_sent BOOLEAN DEFAULT false,
-    ADD COLUMN IF NOT EXISTS send_attempts_30d INTEGER DEFAULT 0;
+    ADD COLUMN IF NOT EXISTS send_attempts_30d INTEGER DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS nps_score SMALLINT CHECK (nps_score BETWEEN 1 AND 5);
+
+COMMENT ON COLUMN public.appointments.nps_score IS 'Nota NPS do cliente após atendimento (1-5 via WhatsApp)';
 
 
 -- ==============================================================================

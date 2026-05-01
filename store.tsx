@@ -720,8 +720,18 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
             ? 'http://localhost:3000' 
             : `https://${window.location.hostname}`;
-            
-        const res = await fetch(`${serverUrl}/api/saas/shops`);
+
+        // A senha do admin é lida da sessão do browser (salva pelo SaasAdminGuard após validação)
+        // Nota: a chave real (SAAS_ADMIN_KEY) nunca sai do servidor — o guard troca a senha por uma
+        // sessão em sessionStorage. Para autorizar a API, reutilizamos a senha da entrada original.
+        // Como não temos a chave original após a validação, chamamos o endpoint com a sessão ativa
+        // e o servidor valida via requireAdmin. O token é buscado via sessionStorage (chave legada).
+        const res = await fetch(`${serverUrl}/api/saas/shops`, {
+            headers: {
+                // O SaasAdminGuard armazena a senha na sessionStorage para autorizar chamadas subsequentes
+                'x-admin-key': sessionStorage.getItem('saas_admin_pw') || ''
+            }
+        });
         const result = await res.json();
         
         if (!res.ok) throw new Error(result.error);
@@ -731,6 +741,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return { success: false, error: error.message };
     }
   };
+
 
   const deleteCurrentShop = async (): Promise<MutationResult> => {
     try {
