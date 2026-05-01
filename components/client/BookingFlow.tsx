@@ -316,9 +316,9 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                             className="group relative overflow-hidden bg-black border border-white/5 rounded-sm transition-all duration-500"
                         >
                             <div className="aspect-[16/10] w-full overflow-hidden relative bg-white/5">
-                                {service.photoUrl ? (
+                                {service.imageUrl ? (
                                     <img 
-                                        src={service.photoUrl} 
+                                        src={service.imageUrl} 
                                         alt={service.name} 
                                         className="w-full h-full object-cover grayscale group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" 
                                         onError={(e) => {
