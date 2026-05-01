@@ -446,7 +446,7 @@ async function handleChatbotAI(shopId: string, remoteJid: string, clientName: st
     // 3. Prepara Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
     // Ferramentas do Agendamento
-    const tools = [
+    const tools: any = [
         {
             functionDeclarations: [
                 {
@@ -811,13 +811,21 @@ Seu trabalho é levar o cliente ao agendamento com o menor atrito possível.
                         }
 
                         // Calcula total_value real somando os preços da tabela de serviços
+                        // FIX 4: Filtra por shop_id para impedir agendamento de serviços de outra loja
                         let totalValue = 0;
                         if (args.service_ids?.length) {
                             const { data: svcData } = await supabaseAdmin
                                 .from('services')
-                                .select('price')
-                                .in('id', args.service_ids);
-                            totalValue = svcData?.reduce((sum: number, s: any) => sum + (Number(s.price) || 0), 0) || 0;
+                                .select('id, price')
+                                .in('id', args.service_ids)
+                                .eq('shop_id', shopId);
+                            // Se algum service_id não pertence a esta loja, rejeita
+                            if (!svcData || svcData.length !== args.service_ids.length) {
+                                data = { success: false, error: 'Um ou mais serviços selecionados não são válidos para esta barbearia.' };
+                                toolResults.push({ functionResponse: { name: fn.name, response: data } });
+                                continue;
+                            }
+                            totalValue = svcData.reduce((sum: number, s: any) => sum + (Number(s.price) || 0), 0);
                         }
 
                         // Chama a RPC transacional (trata conflito e limite diário)
@@ -1362,7 +1370,31 @@ async function runCronLogic() {
 
 async function startServer() {
     const app = express();
-    app.use(cors());
+
+    // CORS restrito — apenas origens confiáveis
+    const allowedOrigins = [
+        'https://www.insightbarber.com.br',
+        'https://insightbarber.com.br',
+        process.env.SERVER_URL,
+        // Dev local
+        'http://localhost:3000',
+        'http://localhost:5173',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:5173'
+    ].filter(Boolean) as string[];
+
+    app.use(cors({
+        origin: (origin, callback) => {
+            // Permite requests sem origin (server-to-server, cron, mobile apps)
+            if (!origin) return callback(null, true);
+            if (allowedOrigins.some(allowed => origin.startsWith(allowed))) {
+                return callback(null, true);
+            }
+            console.warn(`[CORS] Origem bloqueada: ${origin}`);
+            return callback(new Error('Bloqueado pela política de CORS'), false);
+        },
+        credentials: true
+    }));
     app.use(express.json());
 
     const notifyLimiter = rateLimit({
@@ -1526,6 +1558,14 @@ async function startServer() {
         }
     });
     app.post('/api/notify/confirmation', async (req, res) => {
+        // FIX 6: Restringe a chamadas internas (localhost / server-to-server)
+        const callerIp = req.ip || req.socket.remoteAddress || '';
+        const isInternal = callerIp === '127.0.0.1' || callerIp === '::1' || callerIp === '::ffff:127.0.0.1';
+        if (!isInternal) {
+            console.warn(`[Security] /api/notify/confirmation chamado externamente de ${callerIp}. Bloqueado.`);
+            return res.status(403).json({ error: 'Acesso restrito a chamadas internas' });
+        }
+
         const { appointmentId } = req.body;
         const { data: apt } = await supabaseAdmin.from('appointments').select('*, professionals(name, phone), shops(id, name, whatsapp_instance)').eq('id', appointmentId).single();
 
@@ -1728,20 +1768,13 @@ async function startServer() {
         }
     });
 
-    // Alias legado — mantido para compatibilidade
+    // FIX 8: Alias legado DEPRECIADO — redireciona para o endpoint principal
+    // Mantido apenas para não quebrar integrações externas existentes.
     app.post('/api/loyalty/check-reward', async (req, res) => {
-        const { clientId, shopId } = req.body;
-        try {
-            const { data: result, error } = await supabaseAdmin.rpc('award_loyalty_reward', { p_client_id: clientId, p_shop_id: shopId });
-            if (error || !result?.success) return res.json({ success: false, error: error?.message || result?.message });
-            const { data: shop } = await supabaseAdmin.from('shops').select('name, whatsapp_instance').eq('id', shopId).single();
-            const discountLabel = result.discountType === 'percentage' ? `${result.discount}%` : `R$ ${Number(result.discount).toFixed(2)}`;
-            const msg = await generateWhatsAppMessage('loyalty_reward', { clientName: result.clientName, discount: discountLabel, code: result.couponCode, validity: String(result.validityDays || 90), shopName: shop?.name || 'Nossa Barbearia' }, shopId);
-            if (msg) await sendWhatsApp(result.clientPhone, msg, shop?.whatsapp_instance);
-            res.json({ success: true, couponCode: result.couponCode });
-        } catch (error: any) {
-            res.status(500).json({ error: error.message });
-        }
+        console.warn('[Loyalty] ⚠️ Endpoint depreciado /api/loyalty/check-reward chamado. Use /api/loyalty/reward.');
+        // Redireciona internamente para o handler principal (evita duplicação de lógica)
+        req.url = '/api/loyalty/reward';
+        app.handle(req, res);
     });
 
 
@@ -1803,8 +1836,29 @@ async function startServer() {
 
             // ALERT TRIGGER: Status drops from connected -> disconnected
             if (shop.whatsapp_connected === true && !connected) {
-                console.log(`[ALERT] CRITICAL Notificação de E-mail Despachada para o Dono da Barbearia ${shopId}: A instância do WhatsApp Desconectou! Acesso imediato necessário para retomada das automações.`);
-                // NOTE: Implementação do SendGrid / Resend webhook call passaria aqui.
+                console.warn(`[ALERT] WhatsApp desconectou para loja ${shopId}!`);
+
+                // FIX 7: Notifica o dono via WhatsApp (usando instância padrão do sistema)
+                try {
+                    const { data: ownerSettings } = await supabaseAdmin
+                        .from('settings')
+                        .select('phone, name')
+                        .eq('shop_id', shopId)
+                        .single();
+                    if (ownerSettings?.phone) {
+                        const alertMsg =
+                            `🚨 *ALERTA CRÍTICO* 🚨\n\n` +
+                            `A instância do WhatsApp da sua barbearia *${ownerSettings.name || ''}* acabou de desconectar.\n\n` +
+                            `❗ Todas as automações (lembretes, confirmações, chatbot) estão PAUSADAS até a reconexão.\n\n` +
+                            `Acesse o painel e reconecte o WhatsApp o mais rápido possível.\n` +
+                            `🔗 ${process.env.SERVER_URL || 'https://insightbarber.com.br'}/dashboard`;
+                        // Envia pela instância padrão do sistema (não pela instância que caiu)
+                        await sendWhatsApp(ownerSettings.phone, alertMsg, process.env.WHATSAPP_INSTANCE || 'insightbarber');
+                        console.log(`[ALERT] Notificação de desconexão enviada para ${ownerSettings.phone}`);
+                    }
+                } catch (alertErr: any) {
+                    console.error(`[ALERT] Erro ao enviar notificação de desconexão:`, alertErr.message);
+                }
             }
 
             if (shop.whatsapp_connected !== connected) {

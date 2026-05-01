@@ -134,6 +134,7 @@ export interface ShopSettings {
   borderColor?: string; // [NOVO] Cor de bordas
   inputBackgroundColor?: string; // [NOVO] Cor de fundo de inputs
   inputTextColor?: string; // [NOVO] Cor de texto de inputs
+  loyaltyEnabled?: boolean; // [NOVO] Controle de fidelidade
   loyaltyMode?: 'points' | 'card';
   loyaltyCardGoal?: number;
   loyaltyPointsRatio?: number;
@@ -240,7 +241,7 @@ export interface Goal {
   category: 'faturamento' | 'atendimentos' | 'venda_produtos';
   targetValue: number;
   currentValue: number;
-  period: 'diário' | 'semanal' | 'mensal';
+  period: 'diário' | 'semanal' | 'mensal' | 'anual';
   startDate: string;
   endDate: string;
   createdAt: string;

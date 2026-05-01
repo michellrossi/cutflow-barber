@@ -439,7 +439,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                     <div>
                         <h4 className="text-white font-black text-sm uppercase tracking-[0.2em] mb-6">Horários</h4>
                         <ul className="space-y-3 text-slate-500 text-sm font-medium">
-                            {settings.business_hours ? Object.entries(settings.business_hours).map(([day, info]: [string, any]) => {
+                            {settings.businessHours ? Object.entries(settings.businessHours).map(([day, info]: [string, any]) => {
                                 const daysMap: any = { monday: 'Seg', tuesday: 'Ter', wednesday: 'Qua', thursday: 'Qui', friday: 'Sex', saturday: 'Sáb', sunday: 'Dom' };
                                 return (
                                     <li key={day} className="flex justify-between">

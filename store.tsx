@@ -15,7 +15,7 @@ interface ShopContextType extends ShopState {
   // Auth Actions
   login: (email: string, password: string) => Promise<{ error: any }>;
   signup: (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team', fullName: string, phone: string) => Promise<{ error: any }>;
-  logout: () => Promise<void>;
+  logout: () => void;
   resetPassword: (email: string) => Promise<{ success: boolean, error?: string }>;
 
   // Data Loading
@@ -95,7 +95,7 @@ interface ShopContextType extends ShopState {
   disconnectWhatsApp: () => Promise<{ success: boolean; error?: string }>;
 
   // Client Auth
-  requestClientLogin: (phone: string) => Promise<{ success: boolean; url?: string; error?: string }>;
+  requestClientLogin: (phone: string, name?: string, birthDate?: string, justCheck?: boolean) => Promise<{ success: boolean; url?: string; error?: string; needsRegistration?: boolean }>;
   validateClientToken: (token: string) => Promise<{ success: boolean; error?: string }>;
   logoutClient: () => void;
 
@@ -743,7 +743,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
 
-  const deleteCurrentShop = async (): Promise<MutationResult> => {
+  const deleteCurrentShop = async (): MutationResult => {
     try {
         const shopId = state.shop?.id;
         if (!shopId) throw new Error("Loja não identificada.");
@@ -1999,6 +1999,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.paymentMethods !== undefined) payload.payment_methods = updated.paymentMethods;
         if (updated.address !== undefined) payload.address = sanitize(updated.address);
         if (updated.phone !== undefined) payload.phone = sanitize(updated.phone);
+        if (updated.businessHours !== undefined) payload.business_hours = updated.businessHours;
 
         // FIDELIDADE
         if (updated.loyaltyEnabled !== undefined) payload.loyalty_enabled = updated.loyaltyEnabled;
@@ -2010,13 +2011,25 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         if (updated.loyaltyRewardType !== undefined) payload.loyalty_reward_type = updated.loyaltyRewardType;
         if (updated.loyaltyRewardValidityDays !== undefined) payload.loyalty_reward_validity_days = updated.loyaltyRewardValidityDays;
 
-        const { data, error } = await supabase.from('settings').update(payload).eq('shop_id', shopId).select();
-        if (error) throw error;
+        if (Object.keys(payload).length > 0) {
+            const { data, error } = await supabase.from('settings').update(payload).eq('shop_id', shopId).select();
+            if (error) throw error;
+            
+            if (data && data.length > 0) {
+                const newSettings = mapSettings(data[0]);
+                setState(prev => ({ 
+                    ...prev, 
+                    settings: newSettings,
+                    shop: (updated.name || updated.slug) ? { ...prev.shop!, name: updated.name || prev.shop!.name, slug: updated.slug || prev.shop!.slug } : prev.shop,
+                    myShops: (updated.name || updated.slug) ? prev.myShops.map(s => s.id === shopId ? { ...s, name: updated.name || s.name, slug: updated.slug || s.slug } : s) : prev.myShops
+                }));
+                return { success: true };
+            }
+        }
         
-        const newSettings = mapSettings(data[0]);
+        // Se o payload for vazio ou não retornou dados, atualiza apenas os shops no state
         setState(prev => ({ 
             ...prev, 
-            settings: newSettings,
             shop: (updated.name || updated.slug) ? { ...prev.shop!, name: updated.name || prev.shop!.name, slug: updated.slug || prev.shop!.slug } : prev.shop,
             myShops: (updated.name || updated.slug) ? prev.myShops.map(s => s.id === shopId ? { ...s, name: updated.name || s.name, slug: updated.slug || s.slug } : s) : prev.myShops
         }));
@@ -2242,7 +2255,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const restockProduct = async (productId: string, addedQuantity: number, newUnitCost: number): Promise<MutationResult> => {
+  const restockProduct = async (productId: string, addedQuantity: number, newUnitCost: number): MutationResult => {
     try {
         // 1. Busca o estado atual no DB
         const { data: p, error: fetchErr } = await supabase
@@ -2312,7 +2325,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const openCashSession = async (openingBalance: number): Promise<MutationResult> => {
+  const openCashSession = async (openingBalance: number): MutationResult => {
       try {
           const shopId = ensureShopId();
           if (state.cashSessions.some(s => s.status === 'open')) {
@@ -2343,7 +2356,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
-  const closeCashSession = async (closingBalance: number): Promise<MutationResult> => {
+  const closeCashSession = async (closingBalance: number): MutationResult => {
       try {
           const openSession = state.cashSessions.find(s => s.status === 'open');
           if (!openSession) throw new Error('Não há caixa aberto no momento.');
@@ -2367,7 +2380,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
-  const addCashMovement = async (entry: Omit<CashFlowEntry, 'id' | 'shopId' | 'sessionId' | 'createdAt'>): Promise<MutationResult> => {
+  const addCashMovement = async (entry: Omit<CashFlowEntry, 'id' | 'shopId' | 'sessionId' | 'createdAt'>): MutationResult => {
       try {
           const shopId = ensureShopId();
           const openSession = state.cashSessions.find(s => s.status === 'open');

@@ -98,6 +98,7 @@ ALTER TABLE public.coupons
 
 -- APPOINTMENTS
 ALTER TABLE public.appointments
+    ADD COLUMN IF NOT EXISTS client_id UUID REFERENCES public.clients(id) ON DELETE SET NULL,
     ADD COLUMN IF NOT EXISTS confirmation_sent BOOLEAN DEFAULT false,
     ADD COLUMN IF NOT EXISTS reminder_24h_sent BOOLEAN DEFAULT false,
     ADD COLUMN IF NOT EXISTS send_attempts_24h INTEGER DEFAULT 0,
@@ -111,7 +112,13 @@ ALTER TABLE public.appointments
     ADD COLUMN IF NOT EXISTS send_attempts_30d INTEGER DEFAULT 0,
     ADD COLUMN IF NOT EXISTS nps_score SMALLINT CHECK (nps_score BETWEEN 1 AND 5);
 
+COMMENT ON COLUMN public.appointments.client_id IS 'FK para clients — NULL em agendamentos anônimos/chatbot';
 COMMENT ON COLUMN public.appointments.nps_score IS 'Nota NPS do cliente após atendimento (1-5 via WhatsApp)';
+
+-- Índice para facilitar consultas NPS por barbearia
+CREATE INDEX IF NOT EXISTS idx_appointments_nps
+    ON public.appointments (shop_id, nps_score)
+    WHERE nps_score IS NOT NULL;
 
 
 -- ==============================================================================
@@ -339,12 +346,17 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE FUNCTION update_client_total_spent()
 RETURNS TRIGGER AS $$
 BEGIN
+    -- Guard: agendamentos anônimos (chatbot/link) podem não ter client_id
     IF (TG_OP = 'UPDATE' AND NEW.status = 'completed' AND OLD.status != 'completed')
     OR (TG_OP = 'INSERT' AND NEW.status = 'completed') THEN
-        UPDATE clients SET total_spent = total_spent + NEW.total_value WHERE id = NEW.client_id;
+        IF NEW.client_id IS NOT NULL THEN
+            UPDATE clients SET total_spent = total_spent + COALESCE(NEW.total_value, 0) WHERE id = NEW.client_id;
+        END IF;
     ELSIF (TG_OP = 'UPDATE' AND OLD.status = 'completed' AND NEW.status != 'completed')
     OR (TG_OP = 'DELETE' AND OLD.status = 'completed') THEN
-        UPDATE clients SET total_spent = total_spent - OLD.total_value WHERE id = OLD.client_id;
+        IF OLD.client_id IS NOT NULL THEN
+            UPDATE clients SET total_spent = total_spent - COALESCE(OLD.total_value, 0) WHERE id = OLD.client_id;
+        END IF;
     END IF;
     RETURN NULL;
 END;
@@ -754,6 +766,8 @@ CREATE POLICY "Publico_Ve_Planos" ON public.subscription_plans FOR SELECT USING 
 
 DROP POLICY IF EXISTS "Dono_Gere_Assinaturas_Clientes" ON public.client_subscriptions;
 CREATE POLICY "Dono_Gere_Assinaturas_Clientes" ON public.client_subscriptions FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = client_subscriptions.shop_id AND owner_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Cliente_Ve_Propria_Assinatura" ON public.client_subscriptions;
 CREATE POLICY "Cliente_Ve_Propria_Assinatura" ON public.client_subscriptions 
 FOR SELECT 
 USING (
