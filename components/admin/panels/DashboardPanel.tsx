@@ -39,21 +39,29 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
     }, [appointments, today]);
 
     const inactiveClientsCount = useMemo(() => {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        let count = 0;
+        const now = new Date().getTime();
+        
+        clients.forEach(client => {
+            const clientAppts = appointments.filter(a => 
+                (a.clientId === client.id) || 
+                (!a.clientId && a.clientPhone === client.phone)
+            ).filter(a => a.status === 'completed');
 
-        const lastAppByClient: Record<string, Date> = {};
-        appointments.forEach(app => {
-            if (app.clientId && app.status === 'completed') {
-                const appDate = new Date(app.date + 'T12:00:00');
-                if (!lastAppByClient[app.clientId] || appDate > lastAppByClient[app.clientId]) {
-                    lastAppByClient[app.clientId] = appDate;
+            if (clientAppts.length > 0) {
+                clientAppts.sort((a, b) => new Date(b.date + 'T' + b.time).getTime() - new Date(a.date + 'T' + a.time).getTime());
+                const lastCutDate = clientAppts[0].date;
+                const diff = now - new Date(lastCutDate).getTime();
+                const daysSinceLastCut = Math.floor(diff / (1000 * 60 * 60 * 24));
+                
+                if (daysSinceLastCut > 30) {
+                    count++;
                 }
             }
         });
-
-        return Object.values(lastAppByClient).filter(lastDate => lastDate < thirtyDaysAgo).length;
-    }, [appointments]);
+        
+        return count;
+    }, [clients, appointments]);
 
     const birthdayClientsCount = useMemo(() => {
         if (!today) return 0;
