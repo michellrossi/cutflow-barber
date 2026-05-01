@@ -1503,12 +1503,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           total_spent: (client.totalSpent || 0) + appointment.totalValue
       };
       
-      if (!rewardTriggered) {
-          // Só atualiza contadores se a recompensa NÃO foi atingida
-          // (quando atingida, o endpoint do servidor zera via RPC atômica)
-          updatePayload.loyalty_points = updatedPoints;
-          updatePayload.loyalty_card_count = updatedCardCount;
-      }
+      updatePayload.loyalty_points = updatedPoints;
+      updatePayload.loyalty_card_count = updatedCardCount;
 
       const { error: updErr } = await supabase.from('clients').update(updatePayload).eq('id', client.id);
       if (updErr) {
