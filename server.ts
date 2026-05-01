@@ -1792,13 +1792,10 @@ async function startServer() {
         }
     });
 
-    // FIX 8: Alias legado DEPRECIADO — redireciona para o endpoint principal
-    // Mantido apenas para não quebrar integrações externas existentes.
+    // Endpoint depreciado e desativado definitivamente
     app.post('/api/loyalty/check-reward', async (req, res) => {
-        console.warn('[Loyalty] ⚠️ Endpoint depreciado /api/loyalty/check-reward chamado. Use /api/loyalty/reward.');
-        // Redireciona internamente para o handler principal (evita duplicação de lógica)
-        req.url = '/api/loyalty/reward';
-        app.handle(req, res);
+        console.warn('[Loyalty] ⚠️ Endpoint obsoleto /api/loyalty/check-reward chamado. Retornando 410 Gone.');
+        res.status(410).json({ error: 'Este endpoint foi desativado permanentemente. Utilize /api/loyalty/reward.' });
     });
 
 
