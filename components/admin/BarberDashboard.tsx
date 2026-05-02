@@ -459,6 +459,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                     <span className="text-orange-600">R$ {(completionTarget.totalValue + selectedProductsForCompletion.reduce((acc, sp) => acc + sp.quantity * sp.unitPrice, 0)).toFixed(2)}</span>
                                 </div>
                             </div>
+                        </div>
                             {/* Forma de Pagamento */}
                             <div>
                                 <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Forma de Pagamento</label>
