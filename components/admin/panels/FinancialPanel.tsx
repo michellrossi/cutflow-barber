@@ -911,12 +911,12 @@ const ReportsTab: React.FC<{ period: string }> = ({ period }) => {
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
           <h4 className="font-bold text-slate-900 mb-4">Performance por Forma de Pagamento</h4>
           <div className="space-y-4">
-            {(['pix', 'credit', 'cash'] as const).map(pm => {
+            {(['pix', 'credit', 'debit', 'cash', 'subscription'] as const).map(pm => {
               const pmApts = completed.filter(a => a.paymentMethod === pm);
               const pmRev = pmApts.reduce((s, a) => s + a.totalValue, 0);
               const pct = totalRevenue > 0 ? (pmRev / totalRevenue * 100) : 0;
-              const labels: Record<string, string> = { pix: 'PIX', credit: 'Cartão', cash: 'Dinheiro' };
-              const colors: Record<string, string> = { pix: 'bg-teal-500', credit: 'bg-purple-500', cash: 'bg-emerald-500' };
+              const labels: Record<string, string> = { pix: 'PIX', credit: 'Cartão Crédito', debit: 'Cartão Débito', cash: 'Dinheiro', subscription: 'Assinatura' };
+              const colors: Record<string, string> = { pix: 'bg-teal-500', credit: 'bg-purple-500', debit: 'bg-blue-500', cash: 'bg-emerald-500', subscription: 'bg-orange-500' };
               return (
                 <div key={pm}>
                   <div className="flex items-center justify-between text-xs mb-1.5">

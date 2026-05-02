@@ -72,9 +72,11 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
         }));
 
         const paymentData = [
-            { name: 'Cartão', value: completed.filter(a => a.paymentMethod === 'credit').length, color: '#3b82f6' },
+            { name: 'Crédito', value: completed.filter(a => a.paymentMethod === 'credit').length, color: '#3b82f6' },
+            { name: 'Débito', value: completed.filter(a => a.paymentMethod === 'debit').length, color: '#6366f1' },
             { name: 'Dinheiro', value: completed.filter(a => a.paymentMethod === 'cash').length, color: '#eab308' },
             { name: 'Pix', value: completed.filter(a => a.paymentMethod === 'pix').length, color: '#22c55e' },
+            { name: 'Assinatura', value: completed.filter(a => a.paymentMethod === 'subscription').length, color: '#f97316' },
         ].filter(d => d.value > 0);
 
         // --- DADOS PARA O GRÁFICO DE OCUPAÇÃO ---

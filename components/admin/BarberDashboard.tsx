@@ -52,7 +52,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
-    const { appointments, professionals, session, updateAppointmentStatus, updateAppointmentPaymentMethod, settings, updateProfessional, blockedSlots, addBlockedSlot, removeBlockedSlot, refresh, products, addAppointmentProducts, cashSessions, addCashMovement, clientSubscriptions, subscriptionPlans } = useShop();
+    const { appointments, professionals, session, updateAppointmentStatus, updateAppointmentPaymentMethod, updateAppointmentTotalValue, settings, updateProfessional, blockedSlots, addBlockedSlot, removeBlockedSlot, refresh, products, addAppointmentProducts, cashSessions, addCashMovement, clientSubscriptions, subscriptionPlans } = useShop();
     const { showToast } = useToast();
 
     // 1. Identificar qual profissional é o usuário logado
@@ -211,14 +211,20 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                 await addAppointmentProducts(completionTarget.id, selectedProductsForCompletion);
             }
 
+            // Atualizar o totalValue para incluir produtos
+            const productsTotal = selectedProductsForCompletion.reduce((acc: number, sp: any) => acc + (sp.quantity * sp.unitPrice), 0);
+            const finalTotal = completionTarget.totalValue + productsTotal;
+            if (productsTotal > 0) {
+                await updateAppointmentTotalValue(completionTarget.id, finalTotal);
+            }
+
             await updateAppointmentStatus(completionTarget.id, 'completed');
             await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
 
             if (method === 'cash') {
                 const openSession = cashSessions.find(s => s.status === 'open');
                 if (openSession) {
-                    const totalPaid = completionTarget.totalValue + selectedProductsForCompletion.reduce((acc: number, sp: any) => acc + (sp.quantity * sp.unitPrice), 0);
-                    await addCashMovement({ type: 'input', category: 'Venda / Serviço', amount: totalPaid, description: `Cliente: ${completionTarget.clientName}` });
+                    await addCashMovement({ type: 'input', category: 'Venda / Serviço', amount: finalTotal, description: `Cliente: ${completionTarget.clientName}` });
                 }
             }
 

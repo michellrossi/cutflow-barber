@@ -59,6 +59,7 @@ interface ShopContextType extends ShopState {
     createManualAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
     updateAppointmentStatus: (id: string, status: string) => MutationResult;
     updateAppointmentPaymentMethod: (id: string, paymentMethod: string, usedSubscriptionId?: string) => MutationResult;
+    updateAppointmentTotalValue: (id: string, newTotal: number) => MutationResult;
 
     addBlockedSlot: (block: Omit<BlockedSlot, 'id' | 'shopId'>) => MutationResult;
     removeBlockedSlot: (id: string) => MutationResult;
@@ -1247,6 +1248,33 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
+    const updateAppointmentTotalValue = async (id: string, newTotal: number): MutationResult => {
+        try {
+            const rounded = Math.round(newTotal * 100) / 100;
+
+            // Optimistic Update
+            setState(prev => ({
+                ...prev,
+                appointments: prev.appointments.map(a =>
+                    a.id === id ? { ...a, totalValue: rounded } : a
+                )
+            }));
+
+            const { error } = await supabase.from('appointments').update({
+                total_value: rounded
+            }).eq('id', id);
+
+            if (error) {
+                await reloadAppointments(ensureShopId());
+                throw error;
+            }
+
+            return { success: true };
+        } catch (e: any) {
+            return { success: false, error: e.message };
+        }
+    };
+
     const updateAppointmentPaymentMethod = async (id: string, paymentMethod: string, usedSubscriptionId?: string): MutationResult => {
         try {
             const shopId = ensureShopId();
@@ -2248,6 +2276,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             createManualAppointment,
             updateAppointmentStatus,
             updateAppointmentPaymentMethod,
+            updateAppointmentTotalValue,
             addClient, updateClient, removeClient,
             addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
             addAutomationTrigger,

@@ -13,6 +13,7 @@ export const AppointmentsPanel: React.FC = () => {
         services,
         updateAppointmentStatus,
         updateAppointmentPaymentMethod,
+        updateAppointmentTotalValue,
         createManualAppointment,
         settings,
         messageTemplates,
@@ -988,8 +989,16 @@ export const AppointmentsPanel: React.FC = () => {
                                             }
 
                                             // 1. Adicionar produtos se houver (deve vir ANTES do status 'completed' para o Trigger funcionar)
+                                            const productsTotal = selectedProductsForCompletion.reduce((acc, sp) => acc + (sp.quantity * sp.unitPrice), 0);
                                             if (selectedProductsForCompletion.length > 0) {
                                                 await addAppointmentProducts(completionTarget.id, selectedProductsForCompletion);
+                                            }
+
+                                            // 1.5. Atualizar o totalValue do agendamento para incluir os produtos
+                                            // Isso é crucial para que Faturamento, Comissões e Relatórios reflitam o valor real
+                                            const finalTotal = completionTarget.totalValue + productsTotal;
+                                            if (productsTotal > 0) {
+                                                await updateAppointmentTotalValue(completionTarget.id, finalTotal);
                                             }
 
                                             // 2. Atualizar agendamento
@@ -1000,11 +1009,10 @@ export const AppointmentsPanel: React.FC = () => {
                                             if (method === 'cash') {
                                                 const openSession = cashSessions.find(s => s.status === 'open');
                                                 if (openSession) {
-                                                    const totalPaid = completionTarget.totalValue + selectedProductsForCompletion.reduce((acc, sp) => acc + (sp.quantity * sp.unitPrice), 0);
                                                     await addCashMovement({
                                                         type: 'input',
                                                         category: 'Venda / Serviço',
-                                                        amount: totalPaid,
+                                                        amount: finalTotal,
                                                         description: `Cliente: ${completionTarget.clientName}`
                                                     });
                                                 }

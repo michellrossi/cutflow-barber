@@ -229,8 +229,10 @@ export const WeeklyCalendar: React.FC<WeeklyCalendarProps> = ({ onNewAppointment
                                         className="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm text-slate-900 focus:outline-none focus:border-orange-500 disabled:opacity-50"
                                     >
                                         <option value="pix">PIX</option>
-                                        <option value="credit">Cartão</option>
+                                        <option value="credit">Crédito</option>
+                                        <option value="debit">Débito</option>
                                         <option value="cash">Dinheiro</option>
+                                        <option value="subscription">Assinatura</option>
                                     </select>
                                 </div>
                             </div>
