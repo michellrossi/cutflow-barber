@@ -89,13 +89,13 @@ export const AdminOwnerDashboard: React.FC = () => {
                 ? 'http://localhost:3000' 
                 : `https://${window.location.hostname}`;
 
-            const adminPw = sessionStorage.getItem('saas_admin_pw') || '';
+            const { data: { session } } = await supabase.auth.getSession();
                 
             const res = await fetch(`${serverUrl}/api/saas/shops/plan`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'x-admin-key': adminPw
+                    'Authorization': `Bearer ${session?.access_token || ''}`
                 },
                 body: JSON.stringify({ shopId, plan: newPlan })
             });
@@ -118,13 +118,13 @@ export const AdminOwnerDashboard: React.FC = () => {
                 ? 'http://localhost:3000' 
                 : `https://${window.location.hostname}`;
 
-            const adminPw = sessionStorage.getItem('saas_admin_pw') || '';
+            const { data: { session } } = await supabase.auth.getSession();
                 
             const res = await fetch(`${serverUrl}/api/saas/shops/plan`, {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'x-admin-key': adminPw
+                    'Authorization': `Bearer ${session?.access_token || ''}`
                 },
                 body: JSON.stringify({ shopId, monthly_price: newPrice })
             });

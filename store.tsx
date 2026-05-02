@@ -545,7 +545,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // --- Core Fetch Logic (Heavy - Use sparingly) ---
   const fetchData = async (targetShopId?: string) => {
-    if (!state.shop) setLoading(true);
+    setLoading(true);
     
     try {
         let shopId = targetShopId;
@@ -721,15 +721,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             ? 'http://localhost:3000' 
             : `https://${window.location.hostname}`;
 
-        // A senha do admin é lida da sessão do browser (salva pelo SaasAdminGuard após validação)
-        // Nota: a chave real (SAAS_ADMIN_KEY) nunca sai do servidor — o guard troca a senha por uma
-        // sessão em sessionStorage. Para autorizar a API, reutilizamos a senha da entrada original.
-        // Como não temos a chave original após a validação, chamamos o endpoint com a sessão ativa
-        // e o servidor valida via requireAdmin. O token é buscado via sessionStorage (chave legada).
+        const { data: { session } } = await supabase.auth.getSession();
+        
         const res = await fetch(`${serverUrl}/api/saas/shops`, {
             headers: {
-                // O SaasAdminGuard armazena a senha na sessionStorage para autorizar chamadas subsequentes
-                'x-admin-key': sessionStorage.getItem('saas_admin_pw') || ''
+                'Authorization': `Bearer ${session?.access_token || ''}`
             }
         });
         const result = await res.json();
@@ -1161,7 +1157,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const removeService = async (id: string): MutationResult => {
     try {
         const shopId = ensureShopId();
-        const { error } = await supabase.from('services').delete().eq('id', id);
+        const { error } = await supabase.from('services').delete().eq('id', id).eq('shop_id', shopId);
         if (error) throw error;
         
         // Optimistic Update
@@ -1608,19 +1604,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         if (error) throw error;
         
+        const newClient = mapClient(data);
         setState(prev => ({
             ...prev,
-            clients: [...prev.clients, {
-                id: data.id,
-                shopId: data.shop_id,
-                name: data.name,
-                phone: data.phone,
-                email: data.email,
-                avatarUrl: data.avatar_url,
-                notes: data.notes,
-                totalSpent: data.total_spent || 0,
-                createdAt: data.created_at
-            }]
+            clients: [...prev.clients, newClient]
         }));
         return { success: true };
     } catch (e: any) {
@@ -1700,21 +1687,24 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateMessageTemplate = async (id: string, template: Partial<MessageTemplate>): MutationResult => {
-      const updateData: any = { ...template };
+      const shopId = ensureShopId();
+      const updateData: any = {};
       
-      // Remover campos de controle e IDs que não devem ser alterados no PATCH
-      delete updateData.id;
-      delete updateData.shopId;
+      if (template.title !== undefined) updateData.title = template.title;
+      if (template.content !== undefined) updateData.content = template.content;
+      if (template.active !== undefined) updateData.active = template.active;
+      if (template.target !== undefined) updateData.target = template.target;
+      if (template.category !== undefined) updateData.category = template.category;
+      if (template.delayValue !== undefined) updateData.delay_value = template.delayValue;
+      if (template.delayUnit !== undefined) updateData.delay_unit = template.delayUnit;
       
-      // Mapear camelCase para snake_case e tratar UUIDs vazios
       if (template.triggerId !== undefined) {
           const triggerId = template.triggerId && template.triggerId !== "" ? template.triggerId : null;
           updateData.trigger_id = triggerId;
-          updateData.trigger = template.triggerId || 'custom'; // Garantir campo legado
-          delete updateData.triggerId;
+          updateData.trigger = template.triggerId || 'custom'; 
       }
       
-      const { error } = await supabase.from('message_templates').update(updateData).eq('id', id);
+      const { error } = await supabase.from('message_templates').update(updateData).eq('id', id).eq('shop_id', shopId);
       if (error) return { success: false, error: error.message };
       setState(prev => ({
           ...prev,
@@ -1724,7 +1714,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const removeMessageTemplate = async (id: string): MutationResult => {
-      const { error } = await supabase.from('message_templates').delete().eq('id', id);
+      const shopId = ensureShopId();
+      const { error } = await supabase.from('message_templates').delete().eq('id', id).eq('shop_id', shopId);
       if (error) return { success: false, error: error.message };
       setState(prev => ({ ...prev, messageTemplates: prev.messageTemplates.filter(t => t.id !== id) }));
       return { success: true };
@@ -1757,7 +1748,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const removeAutomationTrigger = async (id: string): MutationResult => {
-      const { error } = await supabase.from('automation_triggers').delete().eq('id', id);
+      const shopId = ensureShopId();
+      const { error } = await supabase.from('automation_triggers').delete().eq('id', id).eq('shop_id', shopId);
       if (error) return { success: false, error: error.message };
       setState(prev => ({ ...prev, automationTriggers: prev.automationTriggers.filter(t => t.id !== id) }));
       return { success: true };
@@ -1945,7 +1937,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const removeBlockedSlot = async (id: string): MutationResult => {
     try {
         const shopId = ensureShopId();
-        const { error } = await supabase.from('blocked_slots').delete().eq('id', id);
+        const { error } = await supabase.from('blocked_slots').delete().eq('id', id).eq('shop_id', shopId);
         if (error) throw error;
         
         setState(prev => ({ ...prev, blockedSlots: prev.blockedSlots.filter(b => b.id !== id) }));
@@ -2108,7 +2100,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
   };
 
-  const validateClientToken = useCallback(async (token: string) => {
+  const validateClientToken = async (token: string) => {
       try {
           console.log("[Auth] Validando token via RPC:", token);
           const { data: tokenData, error: tokenError } = await supabase.rpc('validate_client_token', { p_token: token });
@@ -2137,7 +2129,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       } catch (e: any) {
           return { success: false, error: e.message };
       }
-  }, [supabase]);
+  };
 
   const getWhatsAppQRCode = async () => {
     try {

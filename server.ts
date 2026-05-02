@@ -1653,12 +1653,27 @@ async function startServer() {
     // ==========================================
     // MIDDLEWARE: requireAdmin() — Proteção SaaS
     // ==========================================
-    const requireAdmin = (req: any, res: any, next: any) => {
-        const adminKey = req.headers['x-admin-key'];
-        if (!adminKey || adminKey !== process.env.SAAS_ADMIN_KEY) {
-            console.warn(`[Security] Tentativa de acesso não autorizado à rota SaaS Admin de: ${req.ip}`);
-            return res.status(401).json({ error: 'Não autorizado. Admin Key inválida ou ausente.' });
+    const requireAdmin = async (req: any, res: any, next: any) => {
+        const authHeader = req.headers['authorization'];
+        if (!authHeader) {
+            console.warn(`[Security] Tentativa de acesso não autorizado (Sem token JWT) de: ${req.ip}`);
+            return res.status(401).json({ error: 'Não autorizado. Token JWT ausente.' });
         }
+
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+
+        if (error || !user) {
+            return res.status(401).json({ error: 'Não autorizado. Token inválido ou expirado.' });
+        }
+
+        // Verifica se o usuário é o admin configurado
+        const adminEmail = process.env.ADMIN_EMAIL;
+        if (!adminEmail || user.email !== adminEmail) {
+            console.warn(`[Security] Usuário ${user.email} tentou acessar rota SaaS Admin. Negado.`);
+            return res.status(403).json({ error: 'Acesso negado. Esta conta não possui privilégios de administrador SaaS.' });
+        }
+
         next();
     };
 
@@ -1667,24 +1682,31 @@ async function startServer() {
     // ==========================================
     // Valida a senha do administrador SaaS sem nunca expor o segredo no bundle front-end.
     // O cliente recebe apenas 200 (ok) ou 401 (negado) — a chave real fica somente no servidor.
-    app.post('/api/saas/auth', (req, res) => {
-        const { password } = req.body || {};
-        const adminKey = process.env.SAAS_ADMIN_KEY;
-        if (!adminKey) {
-            console.error('[SaasAuth] SAAS_ADMIN_KEY não configurada no ambiente!');
+    app.post('/api/saas/auth', async (req, res) => {
+        const authHeader = req.headers['authorization'];
+        if (!authHeader) {
+            return res.status(401).json({ error: 'Token JWT ausente' });
+        }
+        
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+        
+        if (error || !user) {
+            return res.status(401).json({ error: 'Token inválido' });
+        }
+        
+        const adminEmail = process.env.ADMIN_EMAIL;
+        if (!adminEmail) {
+            console.error('[SaasAuth] ADMIN_EMAIL não configurada no ambiente!');
             return res.status(500).json({ error: 'Serviço não configurado' });
         }
         
-        // Proteção contra Timing Attacks
-        const isValid = typeof password === 'string' && 
-                        password.length === adminKey.length && 
-                        crypto.timingSafeEqual(Buffer.from(password), Buffer.from(adminKey));
-                        
-        if (!isValid) {
-            console.warn(`[SaasAuth] Tentativa de acesso negada de ${req.ip}`);
-            return res.status(401).json({ error: 'Senha incorreta' });
+        if (user.email !== adminEmail) {
+            console.warn(`[SaasAuth] Tentativa de acesso negada para email ${user.email} de ${req.ip}`);
+            return res.status(403).json({ error: 'Acesso negado' });
         }
-        console.log(`[SaasAuth] Acesso concedido de ${req.ip}`);
+        
+        console.log(`[SaasAuth] Acesso concedido para admin ${user.email} de ${req.ip}`);
         return res.json({ success: true });
     });
 
