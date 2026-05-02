@@ -538,9 +538,9 @@ export const InventoryPanel: React.FC = () => {
           <div key={product.id} onClick={() => handleEdit(product)} className="bg-white rounded-lg border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all shadow cursor-pointer">
             <div className="p-4 flex flex-col h-full relative">
                {/* Badge de Alerta de Estoque */}
-               {(() => {
-                 const current = product.currentStock - (productSales[product.id] || 0);
-                 if (current <= product.minStock) {
+                {(() => {
+                  const current = product.currentStock;
+                  if (current <= product.minStock) {
                    return (
                      <div className="absolute top-3 right-3 animate-pulse">
                         <AlertTriangle className={current <= 0 ? "text-red-500" : "text-amber-500"} size={16} />
@@ -578,8 +578,8 @@ export const InventoryPanel: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[9px] font-bold text-slate-400 uppercase">Est. Atual</span>
-                  <span className={`text-[10px] font-black ${(product.currentStock - (productSales[product.id] || 0)) <= product.minStock ? 'text-orange-500' : 'text-slate-900'}`}>
-                    {product.currentStock - (productSales[product.id] || 0)}
+                  <span className={`text-[10px] font-black ${product.currentStock <= product.minStock ? 'text-orange-500' : 'text-slate-900'}`}>
+                    {product.currentStock}
                   </span>
                 </div>
               </div>

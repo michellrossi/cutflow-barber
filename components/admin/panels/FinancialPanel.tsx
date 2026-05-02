@@ -816,7 +816,7 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
 // SUB-ABA 4: RELATÓRIOS
 // ═══════════════════════════════════════════════════════════════════════════════
 const ReportsTab: React.FC<{ period: string }> = ({ period }) => {
-  const { appointments, professionals, cashSessions, cashFlowEntries } = useShop();
+  const { appointments, professionals, cashSessions, cashFlowEntries, services } = useShop();
 
   const todayStr = today();
   const yesterdayStr = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split('T')[0]; })();
@@ -866,7 +866,6 @@ const ReportsTab: React.FC<{ period: string }> = ({ period }) => {
   }
 
   // Relatórios por serviço: simplified
-  const { services } = useShop();
   const serviceRevenue = services.map(s => {
     const apts = completed.filter(a => a.serviceIds.includes(s.id));
     return { name: s.name, count: apts.length, revenue: apts.reduce((sum, a) => sum + a.totalValue / (a.serviceIds.length || 1), 0) };
@@ -1018,8 +1017,36 @@ export const FinancialPanel: React.FC = () => {
   const [activeTab, setActiveTab] = useState<FinancialTab>('cash');
   const [period, setPeriod] = useState('month');
 
-  const { cashSessions } = useShop();
+  const { cashSessions, refresh, appointments, professionals, cashFlowEntries } = useShop();
+  const { showToast } = useToast();
   const openSession = cashSessions.find(s => s.status === 'open');
+
+  const handleExport = () => {
+    try {
+      let csvContent = "data:text/csv;charset=utf-8,";
+      if (activeTab === 'billing' || activeTab === 'reports') {
+          csvContent += "Data;Cliente;Profissional;Valor;Pagamento;Status\n";
+          appointments.forEach(a => {
+              csvContent += `${a.date};${a.clientName};${professionals.find(p => p.id === a.professionalId)?.name || '---'};${a.totalValue};${a.paymentMethod};${a.status}\n`;
+          });
+      } else {
+          csvContent += "Data;Tipo;Categoria;Valor;Descricao\n";
+          cashFlowEntries.forEach(e => {
+              csvContent += `${new Date(e.createdAt).toLocaleDateString('pt-BR')};${e.type};${e.category};${e.amount};${e.description}\n`;
+          });
+      }
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `cutflow_financeiro_${activeTab}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("Relatório exportado!");
+    } catch (e) {
+      showToast("Erro ao exportar", "error");
+    }
+  };
 
   const TABS: { id: FinancialTab; label: string; icon: React.ReactNode; badge?: string }[] = [
     { id: 'cash', label: 'Caixa Físico', icon: <Wallet size={18} />, badge: openSession ? 'Aberto' : undefined },
@@ -1051,10 +1078,16 @@ export const FinancialPanel: React.FC = () => {
               {PERIOD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           )}
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
+          <button 
+            onClick={handleExport}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
+          >
             <Download size={16} /> Exportar
           </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm">
+          <button 
+            onClick={() => { refresh(); showToast("Dados atualizados!"); }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
+          >
             <RefreshCw size={16} /> Atualizar
           </button>
         </div>
