@@ -207,7 +207,8 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                 subId = sub?.id;
             }
 
-            if (selectedProductsForCompletion.length > 0) {
+            const alreadyCompleted = completionTarget.status === 'completed';
+            if (selectedProductsForCompletion.length > 0 && !alreadyCompleted) {
                 await addAppointmentProducts(completionTarget.id, selectedProductsForCompletion);
             }
 
@@ -436,7 +437,17 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                             </div>
                             <div className="h-px bg-slate-100" />
                             {/* Total */}
-                            <div className="space-y-1">
+                            <div className="space-y-6">
+                                {completionTarget.status === 'completed' && (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 animate-pulse">
+                                        <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={18} />
+                                        <p className="text-xs font-bold text-amber-700 leading-relaxed">
+                                            Este atendimento já foi finalizado anteriormente. O estoque não será alterado novamente para evitar duplicidade.
+                                        </p>
+                                    </div>
+                                )}
+                                
+                                <div className="space-y-4">
                                 <div className="flex justify-between text-sm text-slate-500">
                                     <span>Serviços</span><span className="font-bold text-slate-900">R$ {completionTarget.totalValue.toFixed(2)}</span>
                                 </div>

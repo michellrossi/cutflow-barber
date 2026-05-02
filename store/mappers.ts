@@ -163,6 +163,7 @@ interface AppointmentRow {
     created_at: string;
     status?: Appointment['status'] | null;
     payment_method?: Appointment['paymentMethod'] | null;
+    stock_deducted?: boolean | null;
 }
 
 interface BlockedSlotRow {
@@ -420,6 +421,7 @@ export function mapAppointment(data: AppointmentRow): Appointment {
         createdAt: data.created_at,
         status: data.status || 'scheduled',
         paymentMethod: data.payment_method ?? undefined,
+        stockDeducted: data.stock_deducted ?? false
     };
 }
 

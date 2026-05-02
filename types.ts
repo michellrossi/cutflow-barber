@@ -115,6 +115,7 @@ export interface Appointment {
   createdAt: string;
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'noshow';
   paymentMethod?: 'pix' | 'credit' | 'debit' | 'cash' | 'subscription';
+  stockDeducted?: boolean;
 }
 
 export interface ShopSettings {

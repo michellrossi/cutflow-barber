@@ -65,7 +65,8 @@ export const InventoryPanel: React.FC = () => {
       if (!settings?.shopId) return;
       const { data } = await supabase
         .from('appointment_products')
-        .select('product_id, quantity');
+        .select('product_id, quantity, appointments!inner(shop_id)')
+        .eq('appointments.shop_id', settings.shopId);
       if (data) {
         const salesStats: Record<string, number> = {};
         data.forEach(item => {
@@ -472,7 +473,9 @@ export const InventoryPanel: React.FC = () => {
                       <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Estoque Inicial</label>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+                        {editingId ? `Ajuste de Estoque (atual: ${products.find(p=>p.id===editingId)?.currentStock}un)` : 'Quantidade em Estoque'}
+                      </label>
                       <input required type="number" value={formData.currentStock} onChange={e => setFormData({...formData, currentStock: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="0" />
                     </div>
                     <div>

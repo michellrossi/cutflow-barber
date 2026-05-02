@@ -929,6 +929,14 @@ export const AppointmentsPanel: React.FC = () => {
                                 </div>
 
                                 <div className="h-px bg-slate-100" />
+                                {completionTarget.status === 'completed' && (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 animate-pulse">
+                                        <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={18} />
+                                        <p className="text-xs font-bold text-amber-700 leading-relaxed">
+                                            Este atendimento já foi finalizado anteriormente. O estoque não será alterado novamente para evitar duplicidade.
+                                        </p>
+                                    </div>
+                                )}
 
                                 {/* Resumo de Valores */}
                                 <div className="space-y-2">
@@ -989,8 +997,11 @@ export const AppointmentsPanel: React.FC = () => {
                                             }
 
                                             // 1. Adicionar produtos se houver (deve vir ANTES do status 'completed' para o Trigger funcionar)
+                                            // Proteção: não adiciona se já foi finalizado (estoque já baixou)
                                             const productsTotal = selectedProductsForCompletion.reduce((acc, sp) => acc + (sp.quantity * sp.unitPrice), 0);
-                                            if (selectedProductsForCompletion.length > 0) {
+                                            const alreadyCompleted = completionTarget.status === 'completed';
+
+                                            if (selectedProductsForCompletion.length > 0 && !alreadyCompleted) {
                                                 await addAppointmentProducts(completionTarget.id, selectedProductsForCompletion);
                                             }
 

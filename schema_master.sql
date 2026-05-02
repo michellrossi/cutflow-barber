@@ -110,7 +110,8 @@ ALTER TABLE public.appointments
     ADD COLUMN IF NOT EXISTS send_attempts_postsale INTEGER DEFAULT 0,
     ADD COLUMN IF NOT EXISTS reminder_30d_sent BOOLEAN DEFAULT false,
     ADD COLUMN IF NOT EXISTS send_attempts_30d INTEGER DEFAULT 0,
-    ADD COLUMN IF NOT EXISTS nps_score SMALLINT CHECK (nps_score BETWEEN 1 AND 5);
+    ADD COLUMN IF NOT EXISTS nps_score SMALLINT CHECK (nps_score BETWEEN 1 AND 5),
+    ADD COLUMN IF NOT EXISTS stock_deducted BOOLEAN DEFAULT FALSE;
 
 COMMENT ON COLUMN public.appointments.client_id IS 'FK para clients — NULL em agendamentos anônimos/chatbot';
 COMMENT ON COLUMN public.appointments.nps_score IS 'Nota NPS do cliente após atendimento (1-5 via WhatsApp)';
@@ -416,7 +417,8 @@ FOR EACH ROW EXECUTE FUNCTION public.update_goals_on_completion();
 CREATE OR REPLACE FUNCTION public.handle_stock_on_completion()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF (TG_OP = 'UPDATE' AND NEW.status = 'completed' AND OLD.status != 'completed') THEN
+    -- 1. CASO: Finalizando (estoque ainda não deduzido)
+    IF (NEW.status = 'completed' AND OLD.status != 'completed' AND (NEW.stock_deducted = FALSE OR NEW.stock_deducted IS NULL)) THEN
         UPDATE public.products p
         SET current_stock = p.current_stock - sub.total_qty
         FROM (
@@ -426,7 +428,12 @@ BEGIN
             GROUP BY product_id
         ) sub
         WHERE p.id = sub.product_id;
-    ELSIF (TG_OP = 'UPDATE' AND OLD.status = 'completed' AND NEW.status != 'completed') THEN
+
+        -- Marca como deduzido
+        NEW.stock_deducted := TRUE;
+
+    -- 2. CASO: Revertendo de Finalizado (restaura estoque)
+    ELSIF (OLD.status = 'completed' AND NEW.status != 'completed' AND NEW.stock_deducted = TRUE) THEN
         UPDATE public.products p
         SET current_stock = p.current_stock + sub.total_qty
         FROM (
@@ -436,14 +443,18 @@ BEGIN
             GROUP BY product_id
         ) sub
         WHERE p.id = sub.product_id;
+
+        -- Marca como NÃO deduzido para permitir nova finalização futura
+        NEW.stock_deducted := FALSE;
     END IF;
+
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS trg_stock_on_completion ON public.appointments;
 CREATE TRIGGER trg_stock_on_completion
-AFTER UPDATE ON public.appointments
+BEFORE UPDATE ON public.appointments
 FOR EACH ROW EXECUTE FUNCTION public.handle_stock_on_completion();
 
 -- ── RPC: Tokens de Autenticação de Clientes ───────────────────────────────────
