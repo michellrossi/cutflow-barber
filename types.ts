@@ -114,7 +114,7 @@ export interface Appointment {
   usedSubscriptionId?: string;
   createdAt: string;
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'noshow';
-  paymentMethod?: 'pix' | 'credit' | 'cash' | 'subscription';
+  paymentMethod?: 'pix' | 'credit' | 'debit' | 'cash' | 'subscription';
 }
 
 export interface ShopSettings {
@@ -151,6 +151,11 @@ export interface ShopSettings {
   phone?: string;
   businessHours?: Record<string, { active: boolean; start: string; end: string }>;
   automationTriggers?: AutomationTrigger[];
+  // Campos legados/compat (algumas telas ainda usam)
+  slug?: string;
+  email?: string;
+  about_us?: string;
+  twitter?: string;
 }
 
 export interface AutomationTrigger {
@@ -179,9 +184,14 @@ export interface MessageTemplate {
   title: string;
   content: string;
   triggerId: string;
+  /** Campo legado: algumas telas ainda leem `template.trigger` */
+  trigger?: string;
   active: boolean;
   target?: 'client' | 'professional';
   category?: string;
+  /** Campos opcionais (persistidos como snake_case no DB) */
+  delayValue?: number;
+  delayUnit?: 'minutes' | 'hours' | 'days';
 }
 
 export interface SubscriptionPlan {

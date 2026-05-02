@@ -1,8 +1,25 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, WorkSchedule, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger, Product, AppointmentProduct, Goal } from './types';
+import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger, Product, AppointmentProduct, Goal, CashSession, CashFlowEntry } from './types';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
-import DOMPurify from 'dompurify';
+import {
+    mapShop, mapSettings, mapAutomationTrigger, mapClient,
+    mapService, mapProfessional, mapCoupon, mapAppointment,
+    mapBlockedSlot, mapMessageTemplate, mapMessageCategory,
+    mapSubscriptionPlan, mapClientSubscription,
+    mapProduct, mapGoal, mapCashSession, mapCashFlowEntry,
+    type ShopRow,
+    type GoalRow,
+    type ProductRow,
+} from './store/mappers';
+
+import {
+    sanitize, formatCurrencyBRL, calculateTrialStatus,
+    DEFAULT_SCHEDULE, PROFESSIONAL_COLORS, INITIAL_STATE,
+} from './store/helpers';
+
+// Compat export (alguns clients importam direto de `store.tsx`)
+export { formatCurrencyBRL };
 
 // Standard response type for mutations
 type MutationResult<T = any> = Promise<{ success: boolean; data?: T; error?: string }>;
@@ -62,11 +79,11 @@ interface ShopContextType extends ShopState {
     removeMessageCategory: (id: string) => MutationResult;
 
     // Subscription Actions
-    addSubscriptionPlan: (plan: Omit<SubscriptionPlan, 'id' | 'shopId'>) => MutationResult;
+    addSubscriptionPlan: (plan: Omit<SubscriptionPlan, 'id' | 'shopId' | 'createdAt'>) => MutationResult;
     updateSubscriptionPlan: (id: string, plan: Partial<SubscriptionPlan>) => MutationResult;
     removeSubscriptionPlan: (id: string) => MutationResult;
 
-    addClientSubscription: (sub: Omit<ClientSubscription, 'id' | 'shopId'>) => MutationResult;
+    addClientSubscription: (sub: Omit<ClientSubscription, 'id' | 'shopId' | 'createdAt'>) => MutationResult;
     updateClientSubscription: (id: string, sub: Partial<ClientSubscription>) => MutationResult;
     removeClientSubscription: (id: string) => MutationResult;
 
@@ -90,7 +107,7 @@ interface ShopContextType extends ShopState {
     addCashMovement: (entry: Omit<CashFlowEntry, 'id' | 'shopId' | 'sessionId' | 'createdAt'>) => MutationResult;
 
     // WhatsApp Actions
-    getWhatsAppQRCode: () => Promise<{ qrcode?: string; error?: string }>;
+    getWhatsAppQRCode: () => Promise<{ qrcode?: string; connected?: boolean; error?: string }>;
     getWhatsAppStatus: () => Promise<{ connected: boolean; error?: string }>;
     disconnectWhatsApp: () => Promise<{ success: boolean; error?: string }>;
 
@@ -111,358 +128,11 @@ interface ShopContextType extends ShopState {
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
 
-// Default Schedule helper
-const DEFAULT_SCHEDULE: WorkSchedule = {
-    monday: { start: '09:00', end: '19:00', lunchStart: '12:00', lunchEnd: '13:00', active: true },
-    tuesday: { start: '09:00', end: '19:00', lunchStart: '12:00', lunchEnd: '13:00', active: true },
-    wednesday: { start: '09:00', end: '19:00', lunchStart: '12:00', lunchEnd: '13:00', active: true },
-    thursday: { start: '09:00', end: '19:00', lunchStart: '12:00', lunchEnd: '13:00', active: true },
-    friday: { start: '09:00', end: '19:00', lunchStart: '12:00', lunchEnd: '13:00', active: true },
-    saturday: { start: '09:00', end: '17:00', lunchStart: '12:00', lunchEnd: '13:00', active: true },
-    sunday: { start: '09:00', end: '13:00', lunchStart: '00:00', lunchEnd: '00:00', active: false },
-};
-
-const INITIAL_STATE: ShopState = {
-    shop: null,
-    settings: {
-        shopId: "",
-        name: "Carregando...",
-        logoUrl: null,
-        primaryColor: "#f97316",
-        secondaryColor: "#1e293b",
-        titleColor: "#ffffff",
-        textColor: "#94a3b8",
-        backgroundColor: "#0f172a",
-        cardBackgroundColor: "#1e293b",
-        buttonTextColor: "#ffffff",
-        priceColor: "#f97316",
-        accentColor: "#f97316",
-        borderColor: "#334155",
-        inputBackgroundColor: "#0f172a",
-        inputTextColor: "#ffffff",
-        description: "",
-        facebook: "",
-        whatsapp: "",
-        paymentMethods: ['credit', 'debit', 'cash', 'pix']
-    },
-    services: [],
-    professionals: [],
-    coupons: [],
-    appointments: [],
-    clients: [],
-    messageTemplates: [],
-    messageCategories: [],
-    subscriptionPlans: [],
-    clientSubscriptions: [],
-    blockedSlots: [],
-    currentClient: null,
-    clientSession: null,
-    trialStatus: 'active',
-    daysRemaining: 14,
-    theme: 'light',
-    automationTriggers: [],
-    products: [],
-    goals: [],
-    myShops: [],
-    cashSessions: [],
-    cashFlowEntries: [],
-    botPausedCount: 0
-};
-
-const sanitize = (text: string): string => {
-    if (!text) return '';
-    return DOMPurify.sanitize(text, {
-        ALLOWED_TAGS: [],
-        ALLOWED_ATTR: []
-    });
-};
-
-export const formatCurrencyBRL = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-    }).format(value || 0).replace(/\s/g, '');
-};
-
 export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [state, setState] = useState<ShopState>(INITIAL_STATE);
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState<'owner' | 'barber' | null>(null);
-
-    // --- Mappers ---
-    const mapShop = (data: any): Shop => ({
-        id: data.id,
-        ownerId: data.owner_id,
-        name: data.name,
-        slug: data.slug,
-        trialStartedAt: data.trial_started_at,
-        trialEndsAt: data.trial_ends_at,
-        plan: data.plan,
-        planTier: data.plan_tier || 'essencial',
-        paymentConfirmedAt: data.payment_confirmed_at,
-        whatsappInstance: data.whatsapp_instance,
-        whatsappConnected: data.whatsapp_connected
-    });
-
-    const mapSettings = (data: any): ShopSettings => ({
-        id: data.id,
-        shopId: data.shop_id,
-        name: data.name || "Minha Barbearia",
-        logoUrl: data.logo_url,
-        primaryColor: data.primary_color || "#f97316",
-        secondaryColor: data.secondary_color || "#1e293b",
-        titleColor: data.title_color || "#ffffff",
-        textColor: data.text_color || "#94a3b8",
-        backgroundColor: data.background_color || "#0f172a",
-        cardBackgroundColor: data.card_background_color || "#1e293b",
-        buttonTextColor: data.button_text_color || "#ffffff",
-        priceColor: data.price_color || "#f97316",
-        accentColor: data.accent_color || "#f97316",
-        borderColor: data.border_color || "#334155",
-        inputBackgroundColor: data.input_background_color || "#0f172a",
-        inputTextColor: data.input_text_color || "#ffffff",
-        loyaltyEnabled: data.loyalty_enabled ?? true,
-        loyaltyMode: data.loyalty_mode || 'card',
-        loyaltyCardGoal: data.loyalty_card_goal || 10,
-        loyaltyPointsRatio: data.loyalty_points_ratio || 1,
-        loyaltyPointsGoal: data.loyalty_points_goal || 1000,
-        loyaltyRewardValue: data.loyalty_reward_value || 10,
-        loyaltyRewardType: data.loyalty_reward_type || 'percentage',
-        loyaltyRewardValidityDays: data.loyalty_reward_validity_days || 90,
-        instagram: data.instagram || '',
-        facebook: data.facebook || '',
-        whatsapp: data.whatsapp || '',
-        description: data.description || '',
-        paymentMethods: data.payment_methods || ['credit', 'debit', 'cash', 'pix'],
-        address: data.address || '',
-        phone: data.phone || '',
-        businessHours: data.business_hours || null,
-        automationTriggers: data.automation_triggers || [],
-    });
-
-    const mapAutomationTrigger = (data: any): AutomationTrigger => ({
-        id: data.id,
-        shopId: data.shop_id,
-        name: data.name,
-        value: data.value,
-        unit: data.unit,
-        period: data.period,
-        active: data.active
-    });
-
-    const mapClient = (c: any): Client => ({
-        id: c.id,
-        shopId: c.shop_id,
-        name: c.name,
-        lastName: c.last_name,
-        phone: c.phone,
-        email: c.email,
-        avatarUrl: c.avatar_url,
-        notes: c.notes,
-        birthDate: c.birth_date,
-        cpf: c.cpf,
-        gender: c.gender,
-        cep: c.cep,
-        street: c.street,
-        number: c.number,
-        complement: c.complement,
-        neighborhood: c.neighborhood,
-        city: c.city,
-        state: c.state,
-        totalSpent: c.total_spent || 0,
-        loyaltyPoints: c.loyalty_points || 0,
-        loyaltyCardCount: c.loyalty_card_count || 0,
-        createdAt: c.created_at
-    });
-
-    const mapService = (data: any): Service => ({
-        id: data.id,
-        shopId: data.shop_id,
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        duration: data.duration,
-        category: data.category || 'Geral',
-        imageUrl: data.image_url
-    });
-
-    const PROFESSIONAL_COLORS = [
-        '#f97316', // orange-500
-        '#3b82f6', // blue-500
-        '#10b981', // emerald-500
-        '#8b5cf6', // violet-500
-        '#ec4899', // pink-500
-        '#06b6d4', // cyan-500
-        '#f59e0b', // amber-500
-    ];
-
-    const mapProfessional = (data: any, index: number): Professional => ({
-        id: data.id,
-        shopId: data.shop_id,
-        name: data.name,
-        role: data.role,
-        photoUrl: data.photo_url,
-        workSchedule: data.work_schedule || DEFAULT_SCHEDULE,
-        email: data.email,
-        phone: data.phone,
-        userId: data.user_id,
-        commissionPercentage: data.commission_percentage || 50, // Default 50%
-        color: data.color || PROFESSIONAL_COLORS[index % PROFESSIONAL_COLORS.length]
-    });
-
-    const mapCoupon = (data: any): Coupon => ({
-        id: data.id,
-        shopId: data.shop_id,
-        code: data.code,
-        type: data.type,
-        value: data.value,
-        usageCount: data.usage_count,
-        active: data.active,
-        maxUses: data.max_uses,
-        expiresAt: data.expires_at
-    });
-
-    const mapAppointment = (data: any): Appointment => ({
-        id: data.id,
-        shopId: data.shop_id,
-        clientId: data.client_id,
-        clientName: data.client_name,
-        clientPhone: data.client_phone,
-        serviceIds: data.service_ids || [],
-        professionalId: data.professional_id,
-        date: data.date,
-        time: data.time,
-        totalValue: data.total_value,
-        couponCode: data.coupon_code,
-        usedSubscriptionId: data.used_subscription_id,
-        createdAt: data.created_at,
-        status: data.status || 'scheduled',
-        paymentMethod: data.payment_method
-    });
-
-    const mapBlockedSlot = (data: any): BlockedSlot => ({
-        id: data.id,
-        shopId: data.shop_id,
-        professionalId: data.professional_id,
-        date: data.date,
-        startTime: data.start_time,
-        endTime: data.end_time,
-        reason: data.reason
-    });
-
-    const mapMessageTemplate = (data: any): MessageTemplate => ({
-        id: data.id,
-        shopId: data.shop_id,
-        title: data.title,
-        content: data.content,
-        triggerId: data.trigger_id || data.trigger, // Fallback for old data
-        active: data.active,
-        target: data.target || 'client',
-        category: data.category
-    });
-
-    const mapMessageCategory = (data: any): MessageCategory => ({
-        id: data.id,
-        shopId: data.shop_id,
-        name: data.name
-    });
-
-    const mapSubscriptionPlan = (data: any): SubscriptionPlan => ({
-        id: data.id,
-        shopId: data.shop_id,
-        name: data.name,
-        description: data.description,
-        price: data.price,
-        servicesPerMonth: data.services_per_month,
-        active: data.active,
-        createdAt: data.created_at
-    });
-
-    const mapClientSubscription = (data: any): ClientSubscription => ({
-        id: data.id,
-        shop_id: data.shop_id,
-        clientId: data.client_id,
-        planId: data.plan_id,
-        status: data.status,
-        startDate: data.start_date,
-        nextBillingDate: data.next_billing_date,
-        servicesUsedThisMonth: data.services_used_this_month || 0,
-        createdAt: data.created_at
-    });
-
-    const mapProduct = (data: any): Product => ({
-        id: data.id,
-        shopId: data.shop_id,
-        name: data.name,
-        category: data.category,
-        costPrice: Number(data.cost_price || 0),
-        salePrice: Number(data.sale_price || 0),
-        currentStock: Number(data.current_stock || 0),
-        minStock: Number(data.min_stock || 0),
-        createdAt: data.created_at
-    });
-
-    const mapGoal = (data: any): Goal => ({
-        id: data.id,
-        shopId: data.shop_id,
-        professionalId: data.professional_id,
-        name: data.name,
-        category: data.category,
-        targetValue: Number(data.target_value || 0),
-        currentValue: Number(data.current_value || 0),
-        period: data.period,
-        startDate: data.start_date,
-        endDate: data.end_date,
-        createdAt: data.created_at
-    });
-
-    const mapCashSession = (data: any): CashSession => ({
-        id: data.id,
-        shopId: data.shop_id,
-        status: data.status,
-        openingBalance: data.opening_balance,
-        closingBalance: data.closing_balance,
-        openedAt: data.opened_at,
-        closedAt: data.closed_at,
-        openedBy: data.opened_by
-    });
-
-    const mapCashFlowEntry = (data: any): CashFlowEntry => ({
-        id: data.id,
-        shopId: data.shop_id,
-        sessionId: data.session_id,
-        type: data.type,
-        category: data.category,
-        amount: data.amount,
-        description: data.description,
-        createdAt: data.created_at
-    });
-
-    // --- Logic for Trial Calculation ---
-    const calculateTrialStatus = (shop: Shop): { status: 'active' | 'expired' | 'paid', days: number } => {
-        if (shop.plan === 'active') {
-            return { status: 'paid', days: 0 };
-        }
-
-        if (shop.plan === 'suspended') {
-            return { status: 'expired', days: 0 };
-        }
-
-        // Default: Trial
-        if (!shop.trialEndsAt) return { status: 'active', days: 14 }; // Fallback
-
-        const now = new Date();
-        const end = new Date(shop.trialEndsAt);
-        const diffTime = end.getTime() - now.getTime();
-        const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (days <= 0) {
-            return { status: 'expired', days: 0 };
-        }
-
-        return { status: 'active', days };
-    };
 
     // Load client session and theme from storage on init
     useEffect(() => {
@@ -780,7 +450,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     filter: `id=eq.${state.shop.id}`
                 },
                 (payload) => {
-                    const updatedShop = payload.new;
+                    const updatedShop = payload.new as ShopRow;
                     setState(prev => {
                         if (!prev.shop) return prev;
                         const newShopData = { ...prev.shop, ...mapShop(updatedShop) };
@@ -824,7 +494,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 },
                 (payload) => {
                     // Ignora eventos sem 'new' (ex: DELETE)
-                    if (!payload.new || !payload.new.id) {
+                    if (!payload.new || !(payload.new as any).id) {
                         if (payload.eventType === 'DELETE') {
                             setState(prev => ({
                                 ...prev,
@@ -833,7 +503,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                         }
                         return;
                     }
-                    const updatedGoal = mapGoal(payload.new);
+                    const updatedGoal = mapGoal(payload.new as GoalRow);
                     setState(prev => {
                         // INSERT ou UPDATE: upsert para evitar duplicação
                         // (upsertGoal() já adiciona ao state antes do Realtime chegar)
@@ -863,7 +533,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     filter: `shop_id=eq.${state.shop.id}`
                 },
                 (payload) => {
-                    const updatedProduct = mapProduct(payload.new);
+                    const updatedProduct = mapProduct(payload.new as ProductRow);
                     setState(prev => {
                         if (payload.eventType === 'INSERT') {
                             const exists = prev.products.some(p => p.id === updatedProduct.id);
@@ -874,7 +544,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                             return { ...prev, products: prev.products.map(p => p.id === updatedProduct.id ? updatedProduct : p) };
                         }
                         if (payload.eventType === 'DELETE') {
-                            return { ...prev, products: prev.products.filter(p => p.id !== payload.old.id) };
+                            return { ...prev, products: prev.products.filter(p => p.id !== (payload.old as any)?.id) };
                         }
                         return prev;
                     });
@@ -1789,7 +1459,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const addSubscriptionPlan = async (plan: Omit<SubscriptionPlan, 'id' | 'shopId'>): MutationResult => {
+    const addSubscriptionPlan = async (plan: Omit<SubscriptionPlan, 'id' | 'shopId' | 'createdAt'>): MutationResult => {
         try {
             const shopId = ensureShopId();
             const { data, error } = await supabase.from('subscription_plans').insert({
@@ -1850,7 +1520,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const addClientSubscription = async (sub: Omit<ClientSubscription, 'id' | 'shopId'>): MutationResult => {
+    const addClientSubscription = async (sub: Omit<ClientSubscription, 'id' | 'shopId' | 'createdAt'>): MutationResult => {
         try {
             const shopId = ensureShopId();
             const { data, error } = await supabase.from('client_subscriptions').insert({

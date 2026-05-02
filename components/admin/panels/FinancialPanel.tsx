@@ -38,7 +38,9 @@ const KpiCard: React.FC<{
     <div className={`${currentStyle.bg} border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4 transition-all hover:shadow-md`}>
       <div className="flex items-center gap-3">
         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${currentStyle.circle}`}>
-          {React.cloneElement(icon as React.ReactElement, { size: 20, className: currentStyle.icon })}
+          {React.isValidElement(icon)
+            ? React.cloneElement(icon as React.ReactElement<any>, { size: 20, className: currentStyle.icon })
+            : icon}
         </div>
         <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">{label}</p>
       </div>
@@ -153,7 +155,7 @@ const CashTab: React.FC = () => {
     else showToast(r.error || 'Erro', 'error');
   };
 
-  const handleMovement = async (type: 'input' | 'output', category: string) => async (e: React.FormEvent) => {
+  const handleMovement = (type: 'input' | 'output', category: string) => async (e: React.FormEvent) => {
     e.preventDefault(); setSaving(true);
     const r = await addCashMovement({ type, category, amount: Number(form.amount), description: form.obs || form.reason });
     setSaving(false);
@@ -886,7 +888,7 @@ const ReportsTab: React.FC<{ period: string }> = ({ period }) => {
         <KpiCard label="Lucro Estimado" value={fmtBRL(estimatedProfit)} icon={<DollarSign />} color="indigo" />
         <KpiCard label="Total Comissões" value={fmtBRL(totalCommission)} icon={<Award />} color="orange" />
         <KpiCard label="Crescimento Mês" value={`${growthVsLastMonth >= 0 ? '+' : ''}${growthVsLastMonth.toFixed(1)}%`} icon={growthVsLastMonth >= 0 ? <TrendingUp /> : <TrendingDown />} color={growthVsLastMonth >= 0 ? 'green' : 'red'} />
-        <KpiCard label="Cancelamentos" value={String(cancelled.length)} icon={<AlertCircle />} color={cancelled.length > 3 ? 'red' : 'default'} />
+        <KpiCard label="Cancelamentos" value={String(cancelled.length)} icon={<AlertCircle />} color={cancelled.length > 3 ? 'red' : 'slate'} />
         <KpiCard label="Taxa Conclusão" value={`${completionRate.toFixed(0)}%`} icon={<CheckCircle />} color={completionRate > 70 ? 'green' : 'orange'} />
       </div>
 

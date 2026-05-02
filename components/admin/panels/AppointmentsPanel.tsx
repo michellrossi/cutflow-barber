@@ -220,7 +220,8 @@ export const AppointmentsPanel: React.FC = () => {
                 date: new Date().toISOString().split('T')[0],
                 time: '12:00',
                 status: 'confirmed',
-                paymentMethod: 'pix'
+                paymentMethod: 'pix',
+                usedSubscriptionId: ''
             });
         } else {
             showToast(error || 'Erro ao criar agendamento.', 'error');

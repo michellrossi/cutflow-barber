@@ -1319,10 +1319,11 @@ async function runCronLogic() {
             const shopsData = new Map<string, any>();
             allApts.forEach(apt => {
                 if (!shopsData.has(apt.shop_id)) {
+                    const shopRow = Array.isArray(apt.shops) ? apt.shops[0] : apt.shops;
                     shopsData.set(apt.shop_id, {
-                        name: apt.shops?.name,
-                        instance: apt.shops?.whatsapp_instance,
-                        connected: apt.shops?.whatsapp_connected,
+                        name: shopRow?.name,
+                        instance: shopRow?.whatsapp_instance,
+                        connected: shopRow?.whatsapp_connected,
                         currentWeek: [],
                         prevWeek: []
                     });

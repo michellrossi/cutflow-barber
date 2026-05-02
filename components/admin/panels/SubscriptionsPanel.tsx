@@ -617,7 +617,7 @@ const StatCard: React.FC<{
   label: string,
   value: string | number,
   icon: React.ReactNode,
-  color: 'orange' | 'blue' | 'emerald' | 'purple'
+  color: 'orange' | 'blue' | 'emerald' | 'purple' | 'amber' | 'red'
 }> = ({ label, value, icon, color }) => {
   // Mapeamento de cores para o padrão de ícones com fundo suave
   const colorStyles = {
@@ -625,6 +625,8 @@ const StatCard: React.FC<{
     blue: "bg-blue-50 text-blue-600",
     emerald: "bg-emerald-50 text-emerald-600",
     purple: "bg-purple-50 text-purple-600",
+    amber: "bg-amber-50 text-amber-600",
+    red: "bg-red-50 text-red-600",
   };
 
   return (
@@ -632,7 +634,7 @@ const StatCard: React.FC<{
       <div className="flex items-center gap-3 mb-4">
         {/* Ícone com fundo suave e arredondado */}
         <div className={`w-10 h-10 rounded-full flex items-center justify-center ${colorStyles[color]}`}>
-          {React.cloneElement(icon as React.ReactElement, { size: 20 })}
+          {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 20 }) : icon}
         </div>
         {/* Label em caixa alta e cinza médio */}
         <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">

@@ -41,6 +41,10 @@ export interface SettingsRow {
     shop_id: string;
     name?: string | null;
     logo_url?: string | null;
+    slug?: string | null;
+    email?: string | null;
+    about_us?: string | null;
+    twitter?: string | null;
     primary_color?: string | null;
     secondary_color?: string | null;
     title_color?: string | null;
@@ -282,7 +286,11 @@ export function mapSettings(data: SettingsRow): ShopSettings {
         id: data.id,
         shopId: data.shop_id,
         name: data.name || 'Minha Barbearia',
-        logoUrl: data.logo_url,
+        logoUrl: data.logo_url ?? null,
+        slug: data.slug ?? undefined,
+        email: data.email ?? undefined,
+        about_us: data.about_us ?? undefined,
+        twitter: data.twitter ?? undefined,
         primaryColor: data.primary_color || '#f97316',
         secondaryColor: data.secondary_color || '#1e293b',
         titleColor: data.title_color || '#ffffff',
@@ -310,7 +318,7 @@ export function mapSettings(data: SettingsRow): ShopSettings {
         paymentMethods: data.payment_methods || ['credit', 'debit', 'cash', 'pix'],
         address: data.address || '',
         phone: data.phone || '',
-        businessHours: data.business_hours || null,
+        businessHours: data.business_hours ?? undefined,
         automationTriggers: data.automation_triggers || [],
     };
 }
@@ -430,12 +438,14 @@ export function mapBlockedSlot(data: BlockedSlotRow): BlockedSlot {
 }
 
 export function mapMessageTemplate(data: MessageTemplateRow): MessageTemplate {
+    const trigger = data.trigger_id || data.trigger || '';
     return {
         id: data.id,
         shopId: data.shop_id,
         title: data.title,
         content: data.content,
-        triggerId: data.trigger_id || data.trigger || '',
+        triggerId: trigger,
+        trigger,
         active: data.active,
         target: data.target || 'client',
         category: data.category ?? undefined,
