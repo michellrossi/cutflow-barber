@@ -418,9 +418,17 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF (TG_OP = 'UPDATE' AND NEW.status = 'completed' AND OLD.status != 'completed') THEN
         UPDATE public.products p
-        SET current_stock = p.current_stock - ap.quantity
-        FROM public.appointment_products ap
-        WHERE ap.appointment_id = NEW.id AND ap.product_id = p.id;
+        SET current_stock = p.current_stock - sub.total_qty
+        FROM (
+            SELECT product_id, SUM(quantity) as total_qty
+            FROM public.appointment_products
+            WHERE appointment_id = NEW.id
+            GROUP BY product_id
+        ) sub
+        WHERE p.id = sub.product_id;
+
+
+
     END IF;
     RETURN NEW;
 END;

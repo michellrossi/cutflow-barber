@@ -2026,6 +2026,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             if (rows.length === 0) return { success: true };
 
+            // Limpa produtos existentes para este agendamento antes de inserir os novos.
+            // Isso evita duplicatas caso o usuário tente finalizar o mesmo agendamento múltiplas vezes
+            // (ex: após um erro ou recarregamento).
+            await supabase.from('appointment_products').delete().eq('appointment_id', appointmentId);
+
             const { error } = await supabase.from('appointment_products').insert(rows);
             if (error) throw error;
             return { success: true };

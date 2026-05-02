@@ -87,6 +87,7 @@ export const AppointmentsPanel: React.FC = () => {
     const [completionTarget, setCompletionTarget] = useState<any>(null);
     const [selectedProductsForCompletion, setSelectedProductsForCompletion] = useState<{ productId: string, quantity: number, unitPrice: number }[]>([]);
     const { products, addAppointmentProducts } = useShop();
+    const [isFinishing, setIsFinishing] = useState(false);
 
     // --- Lógica de Filtros de Data ---
     const setPreset = (type: 'today' | 'tomorrow' | 'week' | 'month' | 'all') => {
@@ -972,42 +973,51 @@ export const AppointmentsPanel: React.FC = () => {
                                 </button>
                                 <button 
                                     onClick={async () => {
-                                        const method = (document.getElementById('completion-payment-method') as HTMLSelectElement).value;
-                                        let subId = undefined;
-                                        if (method === 'subscription') {
-                                            const sub = getClientActiveSubscription(completionTarget.clientPhone, completionTarget.clientName);
-                                            subId = sub?.id;
-                                        }
-
-                                        // 1. Adicionar produtos se houver (deve vir ANTES do status 'completed' para o Trigger funcionar)
-                                        if (selectedProductsForCompletion.length > 0) {
-                                            await addAppointmentProducts(completionTarget.id, selectedProductsForCompletion);
-                                        }
-
-                                        // 2. Atualizar agendamento
-                                        await updateAppointmentStatus(completionTarget.id, 'completed');
-                                        await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
-
-                                        // 3. Registrar no Caixa (Dinheiro) se aberto
-                                        if (method === 'cash') {
-                                            const openSession = cashSessions.find(s => s.status === 'open');
-                                            if (openSession) {
-                                                const totalPaid = completionTarget.totalValue + selectedProductsForCompletion.reduce((acc, sp) => acc + (sp.quantity * sp.unitPrice), 0);
-                                                await addCashMovement({
-                                                    type: 'input',
-                                                    category: 'Venda / Serviço',
-                                                    amount: totalPaid,
-                                                    description: `Cliente: ${completionTarget.clientName}`
-                                                });
+                                        if (isFinishing) return;
+                                        setIsFinishing(true);
+                                        try {
+                                            const method = (document.getElementById('completion-payment-method') as HTMLSelectElement).value;
+                                            let subId = undefined;
+                                            if (method === 'subscription') {
+                                                const sub = getClientActiveSubscription(completionTarget.clientPhone, completionTarget.clientName);
+                                                subId = sub?.id;
                                             }
-                                        }
 
-                                        showToast('Atendimento finalizado com sucesso!');
-                                        setIsCompletionModalOpen(false);
+                                            // 1. Adicionar produtos se houver (deve vir ANTES do status 'completed' para o Trigger funcionar)
+                                            if (selectedProductsForCompletion.length > 0) {
+                                                await addAppointmentProducts(completionTarget.id, selectedProductsForCompletion);
+                                            }
+
+                                            // 2. Atualizar agendamento
+                                            await updateAppointmentStatus(completionTarget.id, 'completed');
+                                            await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
+
+                                            // 3. Registrar no Caixa (Dinheiro) se aberto
+                                            if (method === 'cash') {
+                                                const openSession = cashSessions.find(s => s.status === 'open');
+                                                if (openSession) {
+                                                    const totalPaid = completionTarget.totalValue + selectedProductsForCompletion.reduce((acc, sp) => acc + (sp.quantity * sp.unitPrice), 0);
+                                                    await addCashMovement({
+                                                        type: 'input',
+                                                        category: 'Venda / Serviço',
+                                                        amount: totalPaid,
+                                                        description: `Cliente: ${completionTarget.clientName}`
+                                                    });
+                                                }
+                                            }
+
+                                            showToast('Atendimento finalizado com sucesso!');
+                                            setIsCompletionModalOpen(false);
+                                        } catch (err) {
+                                            showToast('Erro ao finalizar atendimento.', 'error');
+                                        } finally {
+                                            setIsFinishing(false);
+                                        }
                                     }}
-                                    className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+                                    disabled={isFinishing}
+                                    className={`flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 ${isFinishing ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
-                                    Finalizar e Salvar
+                                    {isFinishing ? <Loader2 className="animate-spin" size={18} /> : 'Finalizar e Salvar'}
                                 </button>
                             </div>
                         </motion.div>
