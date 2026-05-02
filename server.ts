@@ -1585,44 +1585,133 @@ async function startServer() {
             return res.status(403).json({ error: 'Acesso restrito a chamadas internas' });
         }
 
-        const { appointmentId } = req.body;
-        const { data: apt } = await supabaseAdmin.from('appointments').select('*, professionals(name, phone), shops(id, name, whatsapp_instance)').eq('id', appointmentId).single();
+        try {
+            const { appointmentId } = req.body;
+            const { data: apt } = await supabaseAdmin
+                .from('appointments')
+                .select('*, professionals(name, phone), shops(id, name, whatsapp_instance)')
+                .eq('id', appointmentId)
+                .single();
 
-        if (!apt || apt.confirmation_sent) return res.json({ success: true });
+            if (!apt || apt.confirmation_sent) return res.json({ success: true });
 
-        const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
-        const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
-        const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-        const formattedTime = apt.time.substring(0, 5);
+            const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
+            const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
+            const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+            const formattedTime = apt.time.substring(0, 5);
 
-        const clientMessage = await generateWhatsAppMessage('immediate_confirmation', {
-            clientName: apt.client_name,
-            services: servicesNames,
-            date: formattedDate,
-            time: formattedTime,
-            proName: apt.professionals?.name || "um de nossos profissionais",
-            shopName: apt.shops?.name
-        }, apt.shop_id, 'client');
-        if (clientMessage) {
-            const clientOk = await sendWhatsApp(apt.client_phone, clientMessage, apt.shops?.whatsapp_instance);
-            if (clientOk) await supabaseAdmin.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
-        }
-
-        if (apt.professionals?.phone) {
-            const proMessage = await generateWhatsAppMessage('immediate_confirmation', {
+            const clientMessage = await generateWhatsAppMessage('immediate_confirmation', {
                 clientName: apt.client_name,
                 services: servicesNames,
                 date: formattedDate,
                 time: formattedTime,
-                proName: apt.professionals.name,
+                proName: apt.professionals?.name || "um de nossos profissionais",
                 shopName: apt.shops?.name
-            }, apt.shop_id, 'professional');
-            if (proMessage) {
-                await sendWhatsApp(apt.professionals.phone, proMessage, apt.shops?.whatsapp_instance);
+            }, apt.shop_id, 'client');
+            if (clientMessage) {
+                const clientOk = await sendWhatsApp(apt.client_phone, clientMessage, apt.shops?.whatsapp_instance);
+                if (clientOk) await supabaseAdmin.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
             }
-        }
 
-        res.json({ success: true });
+            if (apt.professionals?.phone) {
+                const proMessage = await generateWhatsAppMessage('immediate_confirmation', {
+                    clientName: apt.client_name,
+                    services: servicesNames,
+                    date: formattedDate,
+                    time: formattedTime,
+                    proName: apt.professionals.name,
+                    shopName: apt.shops?.name
+                }, apt.shop_id, 'professional');
+                if (proMessage) {
+                    await sendWhatsApp(apt.professionals.phone, proMessage, apt.shops?.whatsapp_instance);
+                }
+            }
+
+            res.json({ success: true });
+        } catch (error: any) {
+            console.error('[Notify Confirmation] Erro:', error.message);
+            res.status(500).json({ error: error.message });
+        }
+    });
+
+    // Endpoint público (autenticado) para disparar confirmação ao criar agendamento via UI.
+    // Não expõe segredo; valida o JWT do usuário e autoriza por loja.
+    app.post('/api/notify/confirmation-client', async (req, res) => {
+        const authHeader = req.headers['authorization'];
+        if (!authHeader) return res.status(401).json({ error: 'Não autorizado. Token JWT ausente.' });
+        const token = authHeader.replace('Bearer ', '');
+
+        const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
+        if (error || !user) return res.status(401).json({ error: 'Não autorizado. Token inválido ou expirado.' });
+
+        const { appointmentId } = req.body || {};
+        if (!appointmentId) return res.status(400).json({ error: 'appointmentId é obrigatório' });
+
+        try {
+            const { data: apt } = await supabaseAdmin
+                .from('appointments')
+                .select('id, shop_id')
+                .eq('id', appointmentId)
+                .single();
+            if (!apt) return res.status(404).json({ error: 'Agendamento não encontrado' });
+
+            // Autoriza se for dono da loja ou profissional da loja.
+            const { data: shop } = await supabaseAdmin.from('shops').select('owner_id').eq('id', apt.shop_id).single();
+            const isOwner = shop?.owner_id === user.id;
+            const { data: pro } = await supabaseAdmin
+                .from('professionals')
+                .select('id')
+                .eq('shop_id', apt.shop_id)
+                .eq('user_id', user.id)
+                .maybeSingle();
+            if (!isOwner && !pro) return res.status(403).json({ error: 'Acesso negado' });
+
+            // Reusa a rota interna chamando a mesma lógica diretamente (evita duplicação de segredo).
+            // Executa a mesma lógica do endpoint restrito, mas já autenticado.
+            const { data: fullApt } = await supabaseAdmin
+                .from('appointments')
+                .select('*, professionals(name, phone), shops(id, name, whatsapp_instance)')
+                .eq('id', appointmentId)
+                .single();
+            if (!fullApt || fullApt.confirmation_sent) return res.json({ success: true });
+
+            const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', fullApt.service_ids || []);
+            const servicesNames = servicesData?.map(s => s.name).join(', ') || "serviços";
+            const formattedDate = new Date(fullApt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+            const formattedTime = fullApt.time.substring(0, 5);
+
+            const clientMessage = await generateWhatsAppMessage('immediate_confirmation', {
+                clientName: fullApt.client_name,
+                services: servicesNames,
+                date: formattedDate,
+                time: formattedTime,
+                proName: fullApt.professionals?.name || "um de nossos profissionais",
+                shopName: fullApt.shops?.name
+            }, fullApt.shop_id, 'client');
+            if (clientMessage) {
+                const clientOk = await sendWhatsApp(fullApt.client_phone, clientMessage, fullApt.shops?.whatsapp_instance);
+                if (clientOk) await supabaseAdmin.from('appointments').update({ confirmation_sent: true }).eq('id', appointmentId);
+            }
+
+            if (fullApt.professionals?.phone) {
+                const proMessage = await generateWhatsAppMessage('immediate_confirmation', {
+                    clientName: fullApt.client_name,
+                    services: servicesNames,
+                    date: formattedDate,
+                    time: formattedTime,
+                    proName: fullApt.professionals.name,
+                    shopName: fullApt.shops?.name
+                }, fullApt.shop_id, 'professional');
+                if (proMessage) {
+                    await sendWhatsApp(fullApt.professionals.phone, proMessage, fullApt.shops?.whatsapp_instance);
+                }
+            }
+
+            return res.json({ success: true });
+        } catch (err: any) {
+            console.error('[Notify Confirmation Client] Erro:', err.message);
+            return res.status(500).json({ error: err.message });
+        }
     });
 
     app.post('/api/notify/login-link', async (req, res) => {

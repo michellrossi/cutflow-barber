@@ -984,15 +984,17 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const shopId = ensureShopId();
             const cleanClientName = sanitize(apt.clientName);
             const cleanClientPhone = sanitize(apt.clientPhone);
+            // "Sem preferência" normalmente chega como string vazia → backend espera null
+            const professionalId = apt.professionalId ? apt.professionalId : null;
 
-            console.log('addAppointment: Iniciando reserva...', { professionalId: apt.professionalId, date: apt.date, time: apt.time });
+            console.log('addAppointment: Iniciando reserva...', { professionalId, date: apt.date, time: apt.time });
 
             const { error } = await supabase.rpc('book_appointment', {
                 p_shop_id: shopId,
                 p_client_name: cleanClientName,
                 p_client_phone: cleanClientPhone,
                 p_service_ids: apt.serviceIds,
-                p_professional_id: apt.professionalId,
+                p_professional_id: professionalId,
                 p_date: apt.date,
                 p_time: apt.time,
                 p_total_value: apt.totalValue,
@@ -1024,6 +1026,21 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 .limit(1)
                 .single();
 
+            // Disparar confirmação via backend (autenticado)
+            if (latestApt?.id) {
+                const { data: { session: s } } = await supabase.auth.getSession();
+                if (s?.access_token) {
+                    fetch('/api/notify/confirmation-client', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${s.access_token}`,
+                        },
+                        body: JSON.stringify({ appointmentId: latestApt.id }),
+                    }).catch(() => { /* best-effort */ });
+                }
+            }
+
             return { success: true, data: latestApt };
         } catch (e: any) {
             console.error('addAppointment: Exceção capturada:', e.message);
@@ -1036,13 +1053,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const shopId = ensureShopId();
             const cleanClientName = sanitize(apt.clientName);
             const cleanClientPhone = sanitize(apt.clientPhone);
+            const professionalId = apt.professionalId ? apt.professionalId : null;
 
             const { data, error } = await supabase.from('appointments').insert({
                 shop_id: shopId,
                 client_name: cleanClientName,
                 client_phone: cleanClientPhone,
                 service_ids: apt.serviceIds,
-                professional_id: apt.professionalId,
+                professional_id: professionalId,
                 date: apt.date,
                 time: apt.time,
                 total_value: apt.totalValue,
@@ -1062,6 +1080,19 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Adicionar no topo da lista (assumindo ordenação por data, mas para feedback imediato o topo é bom)
             // Em um reload real, a ordenação será corrigida pelo banco.
             setState(prev => ({ ...prev, appointments: [newApt, ...prev.appointments] }));
+
+            // Disparar confirmação via backend (autenticado)
+            const { data: { session: s } } = await supabase.auth.getSession();
+            if (s?.access_token) {
+                fetch('/api/notify/confirmation-client', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${s.access_token}`,
+                    },
+                    body: JSON.stringify({ appointmentId: data.id }),
+                }).catch(() => { /* best-effort */ });
+            }
 
             return { success: true };
         } catch (e: any) {
@@ -1968,14 +1999,34 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const addAppointmentProducts = async (appointmentId: string, products: { productId: string, quantity: number, unitPrice: number }[]): MutationResult => {
         try {
-            const { error } = await supabase.from('appointment_products').insert(
-                products.map(p => ({
-                    appointment_id: appointmentId,
-                    product_id: p.productId,
-                    quantity: p.quantity,
-                    unit_price: p.unitPrice
-                }))
-            );
+            // Garante que não existam linhas duplicadas para o mesmo produto no mesmo agendamento.
+            // Duplicatas aqui causam baixa em dobro no trigger `trg_stock_on_completion`.
+            const grouped = new Map<string, { productId: string; quantity: number; unitPrice: number }>();
+            for (const p of products) {
+                if (!p?.productId) continue;
+                const qty = Number(p.quantity) || 0;
+                if (qty <= 0) continue;
+                const price = Number(p.unitPrice) || 0;
+                const existing = grouped.get(p.productId);
+                if (existing) {
+                    existing.quantity += qty;
+                    // Mantém o último preço informado (ou poderia fazer média ponderada)
+                    existing.unitPrice = price;
+                } else {
+                    grouped.set(p.productId, { productId: p.productId, quantity: qty, unitPrice: price });
+                }
+            }
+
+            const rows = Array.from(grouped.values()).map(p => ({
+                appointment_id: appointmentId,
+                product_id: p.productId,
+                quantity: p.quantity,
+                unit_price: p.unitPrice,
+            }));
+
+            if (rows.length === 0) return { success: true };
+
+            const { error } = await supabase.from('appointment_products').insert(rows);
             if (error) throw error;
             return { success: true };
         } catch (e: any) {
