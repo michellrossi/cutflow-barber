@@ -36,7 +36,7 @@ export interface ShopRow {
 }
 
 /** Row from `settings` */
-export interface SettingsRow {
+interface SettingsRow {
     id?: string;
     shop_id: string;
     name?: string | null;
@@ -73,10 +73,9 @@ export interface SettingsRow {
     address?: string | null;
     phone?: string | null;
     business_hours?: ShopSettings['businessHours'] | null;
-    automation_triggers?: AutomationTrigger[] | null;
 }
 
-export interface AutomationTriggerRow {
+interface AutomationTriggerRow {
     id: string;
     shop_id: string;
     name: string;
@@ -86,7 +85,7 @@ export interface AutomationTriggerRow {
     active: boolean;
 }
 
-export interface ClientRow {
+interface ClientRow {
     id: string;
     shop_id: string;
     name: string;
@@ -111,7 +110,7 @@ export interface ClientRow {
     created_at: string;
 }
 
-export interface ServiceRow {
+interface ServiceRow {
     id: string;
     shop_id: string;
     name: string;
@@ -122,7 +121,7 @@ export interface ServiceRow {
     image_url?: string | null;
 }
 
-export interface ProfessionalRow {
+interface ProfessionalRow {
     id: string;
     shop_id: string;
     name: string;
@@ -136,7 +135,7 @@ export interface ProfessionalRow {
     color?: string | null;
 }
 
-export interface CouponRow {
+interface CouponRow {
     id: string;
     shop_id: string;
     code: string;
@@ -148,7 +147,7 @@ export interface CouponRow {
     expires_at?: string | null;
 }
 
-export interface AppointmentRow {
+interface AppointmentRow {
     id: string;
     shop_id: string;
     client_id?: string | null;
@@ -166,7 +165,7 @@ export interface AppointmentRow {
     payment_method?: Appointment['paymentMethod'] | null;
 }
 
-export interface BlockedSlotRow {
+interface BlockedSlotRow {
     id: string;
     shop_id: string;
     professional_id: string;
@@ -176,7 +175,7 @@ export interface BlockedSlotRow {
     reason?: string | null;
 }
 
-export interface MessageTemplateRow {
+interface MessageTemplateRow {
     id: string;
     shop_id: string;
     title: string;
@@ -188,13 +187,13 @@ export interface MessageTemplateRow {
     category?: string | null;
 }
 
-export interface MessageCategoryRow {
+interface MessageCategoryRow {
     id: string;
     shop_id: string;
     name: string;
 }
 
-export interface SubscriptionPlanRow {
+interface SubscriptionPlanRow {
     id: string;
     shop_id: string;
     name: string;
@@ -205,7 +204,7 @@ export interface SubscriptionPlanRow {
     created_at: string;
 }
 
-export interface ClientSubscriptionRow {
+interface ClientSubscriptionRow {
     id: string;
     shop_id: string;
     client_id: string;
@@ -243,7 +242,7 @@ export interface GoalRow {
     created_at: string;
 }
 
-export interface CashSessionRow {
+interface CashSessionRow {
     id: string;
     shop_id: string;
     status: CashSession['status'];
@@ -254,7 +253,7 @@ export interface CashSessionRow {
     opened_by?: string | null;
 }
 
-export interface CashFlowEntryRow {
+interface CashFlowEntryRow {
     id: string;
     shop_id: string;
     session_id: string;
@@ -319,7 +318,6 @@ export function mapSettings(data: SettingsRow): ShopSettings {
         address: data.address || '',
         phone: data.phone || '',
         businessHours: data.business_hours ?? undefined,
-        automationTriggers: data.automation_triggers || [],
     };
 }
 

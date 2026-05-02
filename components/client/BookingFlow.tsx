@@ -16,7 +16,7 @@ import {
     Twitter, Phone, Award, Users, ShieldCheck, Loader2, Menu, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatCurrencyBRL } from '../../store';
+import { formatCurrencyBRL } from '../../store/helpers';
 
 type Step = 'home' | 'services' | 'professional' | 'datetime' | 'summary' | 'success' | 'login' | 'profile';
 

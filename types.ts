@@ -150,7 +150,6 @@ export interface ShopSettings {
   address?: string;
   phone?: string;
   businessHours?: Record<string, { active: boolean; start: string; end: string }>;
-  automationTriggers?: AutomationTrigger[];
   // Campos legados/compat (algumas telas ainda usam)
   slug?: string;
   email?: string;
