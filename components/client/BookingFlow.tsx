@@ -122,12 +122,73 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         setLoading(true);
         setError(null);
 
+        let finalProId = selectedProId;
+
+        // Auto-atribuir profissional se "Sem preferência"
+        if (!finalProId) {
+            const timeToMins = (t: string) => {
+                const [h, m] = t.split(':').map(Number);
+                return h * 60 + m;
+            };
+            const getDayN = (d: string) => {
+                const date = new Date(d + 'T12:00:00');
+                const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                return days[date.getDay()];
+            };
+
+            const dayName = getDayN(selectedDate);
+            const targetTime = timeToMins(selectedTime);
+            const serviceEndTime = targetTime + totalDuration;
+
+            for (const pro of professionals) {
+                const schedule = pro.workSchedule ? (pro.workSchedule as any)[dayName] : null;
+                if (!schedule || !schedule.active) continue;
+
+                const workStart = timeToMins(schedule.start);
+                const workEnd = timeToMins(schedule.end);
+                const lunchStart = timeToMins(schedule.lunchStart);
+                const lunchEnd = timeToMins(schedule.lunchEnd);
+
+                if (targetTime < workStart || serviceEndTime > workEnd) continue;
+                if (targetTime < lunchEnd && serviceEndTime > lunchStart) continue;
+
+                // Check blocks
+                const proBlocks = blockedSlots.filter(b => b.professionalId === pro.id && b.date === selectedDate);
+                let isBlocked = false;
+                for (const block of proBlocks) {
+                    if ((targetTime >= timeToMins(block.startTime) && targetTime < timeToMins(block.endTime)) || 
+                        (serviceEndTime > timeToMins(block.startTime) && serviceEndTime <= timeToMins(block.endTime)) ||
+                        (targetTime <= timeToMins(block.startTime) && serviceEndTime >= timeToMins(block.endTime))) {
+                        isBlocked = true; break;
+                    }
+                }
+                if (isBlocked) continue;
+
+                // Check appointments
+                const proAppts = appointments.filter(a => a.professionalId === pro.id && a.date === selectedDate && a.status !== 'cancelled' && a.status !== 'noshow');
+                let hasConflict = false;
+                for (const apt of proAppts) {
+                    const aptStart = timeToMins(apt.time);
+                    const aptDuration = services.filter(s => apt.serviceIds.includes(s.id)).reduce((acc, s) => acc + s.duration, 0) || 45;
+                    const aptEnd = aptStart + aptDuration;
+                    if (targetTime < aptEnd && serviceEndTime > aptStart) {
+                        hasConflict = true; break;
+                    }
+                }
+
+                if (!hasConflict) {
+                    finalProId = pro.id;
+                    break;
+                }
+            }
+        }
+
         const appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'> = {
             clientName: customerInfo.name,
             clientPhone: customerInfo.phone,
             clientBirthDate: customerInfo.birthDate,
             serviceIds: selectedServiceIds,
-            professionalId: selectedProId!,
+            professionalId: finalProId || '', // Passa o ID ou string vazia se falhar
             date: selectedDate,
             time: selectedTime,
             totalValue: total,

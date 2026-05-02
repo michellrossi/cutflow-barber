@@ -426,9 +426,16 @@ BEGIN
             GROUP BY product_id
         ) sub
         WHERE p.id = sub.product_id;
-
-
-
+    ELSIF (TG_OP = 'UPDATE' AND OLD.status = 'completed' AND NEW.status != 'completed') THEN
+        UPDATE public.products p
+        SET current_stock = p.current_stock + sub.total_qty
+        FROM (
+            SELECT product_id, SUM(quantity) as total_qty
+            FROM public.appointment_products
+            WHERE appointment_id = OLD.id
+            GROUP BY product_id
+        ) sub
+        WHERE p.id = sub.product_id;
     END IF;
     RETURN NEW;
 END;

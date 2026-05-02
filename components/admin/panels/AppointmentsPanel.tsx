@@ -814,9 +814,13 @@ export const AppointmentsPanel: React.FC = () => {
                                                 <select
                                                     value={apt.status}
                                                     onChange={(e) => {
-                                                        updateAppointmentStatus(apt.id, e.target.value);
-                                                        if (e.target.value === 'completed' && !apt.paymentMethod) {
-                                                            updateAppointmentPaymentMethod(apt.id, 'pix');
+                                                        const newStatus = e.target.value;
+                                                        if (newStatus === 'completed') {
+                                                            setCompletionTarget(apt);
+                                                            setSelectedProductsForCompletion([]);
+                                                            setIsCompletionModalOpen(true);
+                                                        } else {
+                                                            updateAppointmentStatus(apt.id, newStatus);
                                                         }
                                                     }}
                                                     className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded-lg p-1.5 focus:outline-none focus:border-orange-500"
