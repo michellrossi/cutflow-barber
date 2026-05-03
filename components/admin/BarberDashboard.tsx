@@ -52,7 +52,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
-    const { appointments, professionals, session, updateAppointmentStatus, updateAppointmentPaymentMethod, updateAppointmentTotalValue, settings, updateProfessional, blockedSlots, addBlockedSlot, removeBlockedSlot, refresh, products, addAppointmentProducts, cashSessions, addCashMovement, clientSubscriptions, subscriptionPlans } = useShop();
+    const { appointments, professionals, session, updateAppointmentStatus, updateAppointmentPaymentMethod, updateAppointmentTotalValue, settings, updateProfessional, blockedSlots, addBlockedSlot, removeBlockedSlot, refresh, products, addAppointmentProducts, cashSessions, addCashMovement, clientSubscriptions, subscriptionPlans, processLoyalty, clients } = useShop();
     const { showToast } = useToast();
 
     // 1. Identificar qual profissional é o usuário logado
@@ -220,6 +220,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
             }
 
             await updateAppointmentStatus(completionTarget.id, 'completed');
+            await processLoyalty(completionTarget, settings);
             await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
 
             if (method === 'cash') {

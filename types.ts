@@ -282,26 +282,25 @@ export interface CashFlowEntry {
 
 export interface ShopState {
   shop: Shop | null;
-  services: Service[];
-  professionals: Professional[];
-  coupons: Coupon[];
+  services?: Service[];
+  professionals?: Professional[];
+  coupons?: Coupon[];
   appointments: Appointment[];
-  clients: Client[]; // Nova lista de clientes
-  subscriptionPlans: SubscriptionPlan[]; // [NOVO] Planos de Assinatura
-  clientSubscriptions: ClientSubscription[]; // [NOVO] Assinaturas de Clientes
-  messageTemplates: MessageTemplate[]; // [NOVO] Modelos de Mensagem
-  messageCategories: MessageCategory[]; // [NOVO] Categorias de Mensagem
-  products: Product[]; // [NOVO] Gestão de Estoque
-  goals: Goal[]; // [NOVO] Gestão de Metas
-  myShops: Shop[]; // [NOVO] Multi-unidades para o dono
-  cashSessions: CashSession[]; // [NOVO] Sessões de Caixa
-  cashFlowEntries: CashFlowEntry[]; // [NOVO] Movimentações do Caixa
-  blockedSlots: BlockedSlot[];
+  clients?: Client[];
+  subscriptionPlans?: SubscriptionPlan[];
+  clientSubscriptions?: ClientSubscription[];
+  messageTemplates?: MessageTemplate[];
+  messageCategories?: MessageCategory[];
+  products?: Product[];
+  goals?: Goal[];
+  myShops: Shop[];
+  cashSessions?: CashSession[];
+  cashFlowEntries?: CashFlowEntry[];
+  blockedSlots?: BlockedSlot[];
   settings: ShopSettings;
-  // [NOVO] Estado derivado do trial
   trialStatus: 'active' | 'expired' | 'paid';
   daysRemaining: number;
   theme: 'dark' | 'light';
-  automationTriggers: AutomationTrigger[];
+  automationTriggers?: AutomationTrigger[];
   botPausedCount: number;
 }

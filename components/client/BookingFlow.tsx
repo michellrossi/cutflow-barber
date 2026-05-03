@@ -181,6 +181,10 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                     break;
                 }
             }
+        if (!finalProId) {
+            setError('Nenhum profissional disponível para este horário. Por favor, escolha outro horário ou profissional.');
+            setLoading(false);
+            return;
         }
 
         const appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'> = {
@@ -188,7 +192,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
             clientPhone: customerInfo.phone,
             clientBirthDate: customerInfo.birthDate,
             serviceIds: selectedServiceIds,
-            professionalId: finalProId || '', // Passa o ID ou string vazia se falhar
+            professionalId: finalProId, 
             date: selectedDate,
             time: selectedTime,
             totalValue: total,

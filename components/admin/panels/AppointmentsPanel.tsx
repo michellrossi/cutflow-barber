@@ -21,7 +21,8 @@ export const AppointmentsPanel: React.FC = () => {
         clientSubscriptions,
         subscriptionPlans,
         cashSessions,
-        addCashMovement
+        addCashMovement,
+        processLoyalty
     } = useShop();
     const { showToast } = useToast();
 

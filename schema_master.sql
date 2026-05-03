@@ -312,8 +312,8 @@ ON public.clients (public.birth_date_mmdd(birth_date));
 -- ── Agendamento Seguro (RPC com limite diário + anti-conflito) ──────────────────
 CREATE OR REPLACE FUNCTION public.book_appointment(
     p_shop_id UUID, p_client_name TEXT, p_client_phone TEXT,
-    p_service_ids TEXT[], p_professional_id UUID, p_date TEXT,
-    p_time TEXT, p_total_value NUMERIC, p_coupon_code TEXT DEFAULT NULL
+    p_service_ids TEXT[], p_date TEXT, p_time TEXT, p_total_value NUMERIC,
+    p_professional_id UUID DEFAULT NULL, p_coupon_code TEXT DEFAULT NULL
 ) RETURNS JSON AS $$
 DECLARE
     v_appointment_id UUID;
