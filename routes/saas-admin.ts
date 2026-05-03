@@ -1,0 +1,11 @@
+import { Router } from 'express';
+import * as saasController from '../controllers/saasController';
+
+const router = Router();
+
+router.get('/stats', saasController.getStats);
+router.get('/shops', saasController.getShops);
+router.get('/shops/:id', saasController.getShopById);
+router.post('/shops/:id/status', saasController.updateShopStatus);
+
+export default router;
