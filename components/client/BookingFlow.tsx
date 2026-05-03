@@ -181,6 +181,8 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                     break;
                 }
             }
+        }
+
         if (!finalProId) {
             setError('Nenhum profissional disponível para este horário. Por favor, escolha outro horário ou profissional.');
             setLoading(false);
