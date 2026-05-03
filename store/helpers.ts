@@ -54,8 +54,6 @@ export const INITIAL_STATE: ShopState = {
     subscriptionPlans: [],
     clientSubscriptions: [],
     blockedSlots: [],
-    currentClient: null,
-    clientSession: null,
     trialStatus: 'active',
     daysRemaining: 14,
     theme: 'light',

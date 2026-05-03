@@ -44,7 +44,7 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
   const loadInitialData = async () => {
     try {
       const [sessionsRes, couponsRes] = await Promise.all([
-        supabase.from('cash_sessions').select('*').eq('shop_id', shopId).eq('status', 'open').order('opened_at', { ascending: false }).limit(1),
+        supabase.from('cash_sessions').select('*').eq('shop_id', shopId).order('opened_at', { ascending: false }).limit(20),
         supabase.from('coupons').select('*').eq('shop_id', shopId)
       ]);
 
@@ -52,13 +52,17 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
       setCashSessions(mappedSessions);
       setCoupons((couponsRes.data || []).map(mapCoupon));
 
-      if (mappedSessions.length > 0) {
+      // Carrega movimentações da sessão ATIVA (se houver)
+      const activeSession = mappedSessions.find(s => s.status === 'open');
+      if (activeSession) {
         const { data: movements } = await supabase
           .from('cash_flow_entries')
           .select('*')
-          .eq('session_id', mappedSessions[0].id)
+          .eq('session_id', activeSession.id)
           .order('created_at', { ascending: false });
         if (movements) setCashFlowEntries(movements.map(mapCashFlowEntry));
+      } else {
+        setCashFlowEntries([]);
       }
     } catch (e) {
       console.error('Error loading financial data:', e);

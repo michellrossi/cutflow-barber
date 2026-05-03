@@ -73,28 +73,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [loading, setLoading] = useState(true);
     const [userRole, setUserRole] = useState<'owner' | 'barber' | null>(null);
 
-    // Load client session and theme from storage on init
+    // Força modo claro em todas as inicializações
     useEffect(() => {
-        const savedClient = sessionStorage.getItem('currentClient');
-        const savedSession = sessionStorage.getItem('clientSession');
-
-        // Força modo claro em todas as inicializações
         setState(prev => ({ ...prev, theme: 'light' }));
         document.documentElement.classList.remove('dark');
         document.documentElement.classList.add('light');
         localStorage.setItem('theme', 'light');
-
-        if (savedClient && savedSession) {
-            try {
-                setState(prev => ({
-                    ...prev,
-                    currentClient: JSON.parse(savedClient),
-                    clientSession: JSON.parse(savedSession)
-                }));
-            } catch (e) {
-                console.error("Erro ao carregar sessão do cliente:", e);
-            }
-        }
     }, []);
 
     // --- Helper to reload ONLY appointments (Lighter than fetchData) ---
@@ -727,10 +711,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const wasNotCompleted = appointment ? (appointment.status !== 'completed') : true;
 
             if (isActivatingStatus && wasNotCompleted && appointment) {
-                await processLoyalty(appointment, client);
-
                 if (status === 'completed' && appointment.usedSubscriptionId) {
-                    // Update subscription directly via Supabase to avoid circular dependency
+                    // Update subscription directly via Supabase
                     const { data: subData } = await supabase.from('client_subscriptions').select('services_used_this_month').eq('id', appointment.usedSubscriptionId).single();
                     if (subData) {
                         await supabase.from('client_subscriptions').update({
@@ -746,104 +728,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const processLoyalty = async (appointment: Appointment, preloadedClient?: Client) => {
-        const shopId = appointment.shopId;
-        const settings = state.settings;
-
-        if (!settings.loyaltyEnabled) {
-            console.log("[Loyalty] Fidelidade desativada nas configurações. Ignorando.");
-            return;
-        }
-
-        // Tenta usar o cliente pré-carregado ou buscar no banco (Lazy Load)
-        let client = preloadedClient;
-
-        if (!client) {
-            console.log("[Loyalty] Cliente não enviado, buscando no DB...", { phone: appointment.clientPhone });
-            const { data: dbClient } = await supabase.from('clients')
-                .select('*')
-                .eq('shop_id', shopId)
-                .eq('phone', appointment.clientPhone)
-                .maybeSingle();
-
-            if (dbClient) client = mapClient(dbClient);
-        }
-
-        if (!client) {
-            console.warn("[Loyalty] Cliente não encontrado no DB para:", appointment.clientPhone);
-            return;
-        }
-
-        console.log(`[Loyalty] Processando visita de ${client.name} | Modo: ${settings.loyaltyMode}`);
-
-        // Incrementa contador localmente no banco
-        let updatedPoints = client.loyaltyPoints || 0;
-        let updatedCardCount = client.loyaltyCardCount || 0;
-        let rewardTriggered = false;
-
-        if (settings.loyaltyMode === 'points') {
-            const pointsEarned = Math.floor(appointment.totalValue * (settings.loyaltyPointsRatio || 1));
-            updatedPoints += pointsEarned;
-            console.log(`[Loyalty] +${pointsEarned} pts → total: ${updatedPoints} / meta: ${settings.loyaltyPointsGoal}`);
-            if (updatedPoints >= (settings.loyaltyPointsGoal || 1000)) {
-                rewardTriggered = true;
-            }
-        } else {
-            // Modo cartão: conta visitas
-            updatedCardCount += 1;
-            console.log(`[Loyalty] Visita ${updatedCardCount} / meta: ${settings.loyaltyCardGoal}`);
-            if (updatedCardCount >= (settings.loyaltyCardGoal || 10)) {
-                rewardTriggered = true;
-            }
-        }
-
-        // Atualiza o banco com o novo contador
-        const updatePayload: any = {
-            total_spent: (client.totalSpent || 0) + appointment.totalValue
-        };
-
-        updatePayload.loyalty_points = updatedPoints;
-        updatePayload.loyalty_card_count = updatedCardCount;
-
-        const { error: updErr } = await supabase.from('clients').update(updatePayload).eq('id', client.id);
-        if (updErr) {
-            console.error("[Loyalty] Erro ao atualizar contador de visitas:", updErr);
-            return;
-        }
-
-        // Se atingiu a meta → chama endpoint do servidor para gerar cupom + enviar WhatsApp
-        if (rewardTriggered) {
-            console.log(`[Loyalty] 🏆 Meta atingida! Gerando recompensa para ${client.name}...`);
-            await generateLoyaltyReward(client, shopId);
-        }
-
-    };
-
-    const generateLoyaltyReward = async (client: Client, shopId: string) => {
-        try {
-            // Chama o endpoint do servidor que:
-            // 1. Usa RPC atômica para gerar cupom e zerar contadores
-            // 2. Dispara WhatsApp ao cliente com o código do cupom
-            const response = await fetch('/api/loyalty/reward', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ clientId: client.id, shopId })
-            });
-            const result = await response.json();
-            if (result.success) {
-                console.log(`[Loyalty] ✅ Recompensa entregue! Cupom: ${result.couponCode} | WhatsApp: ${result.whatsappSent ? 'Enviado' : 'Falhou'}`);
-                // Recarrega cupons para exibir o novo na aba Cupons
-                const { data: couponsData } = await supabase.from('coupons').select('*').eq('shop_id', shopId);
-                if (couponsData) {
-                    setState(prev => ({ ...prev, coupons: couponsData.map(mapCoupon) }));
-                }
-            } else {
-                console.error(`[Loyalty] ❌ Falha ao gerar recompensa:`, result.error);
-            }
-        } catch (e: any) {
-            console.error("[Loyalty] Erro ao chamar endpoint de recompensa:", e.message);
-        }
-    };
 
     const updateAppointmentTotalValue = async (id: string, newTotal: number): MutationResult => {
         try {
@@ -905,7 +789,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const updateSettings = async (updated: any): MutationResult => {
+    const updateSettings = async (updated: Partial<ShopSettings>): MutationResult => {
         try {
             const shopId = ensureShopId();
 
@@ -986,89 +870,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
 
-    const requestClientLogin = async (phone: string, name?: string, birthDate?: string, justCheck?: boolean) => {
-        try {
-            const shopId = state.shop?.id;
-            if (!shopId) throw new Error("Loja não identificada");
-
-            const cleanPhone = sanitize(phone).replace(/\D/g, '');
-
-            let { data: client } = await supabase.from('clients').select('*').eq('shop_id', shopId).eq('phone', cleanPhone).maybeSingle();
-
-            if (!client) {
-                if (justCheck) {
-                    return { success: true, needsRegistration: true };
-                }
-                const { data: newClient, error: createError } = await supabase.from('clients').insert({
-                    shop_id: shopId,
-                    name: name || 'Cliente',
-                    phone: cleanPhone,
-                    birth_date: birthDate || null
-                }).select().single();
-                if (createError) throw createError;
-                client = newClient;
-            }
-
-            const token = crypto.randomUUID();
-            const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
-
-            console.log("[Auth] Gerando token para cliente:", { clientId: client.id, token, expiresAt });
-
-            const { error: tokenError } = await supabase.rpc('create_client_token', {
-                p_client_id: client.id,
-                p_token: token,
-                p_expires_at: expiresAt.toISOString()
-            });
-
-            if (tokenError) {
-                console.error("[Auth] Erro ao inserir token no Supabase via RPC:", tokenError);
-                throw tokenError;
-            }
-
-            const loginUrl = `${window.location.origin}/acesso/${token}`;
-
-            fetch('/api/notify/login-link', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone: cleanPhone, url: loginUrl, shopId })
-            }).catch(err => console.error("[Auth] Erro ao disparar WhatsApp de login:", err));
-
-            return { success: true, url: loginUrl };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const validateClientToken = async (token: string) => {
-        try {
-            console.log("[Auth] Validando token via RPC:", token);
-            const { data: tokenData, error: tokenError } = await supabase.rpc('validate_client_token', { p_token: token });
-
-            if (tokenError || !tokenData) {
-                console.error("[Auth] Erro na validação do token:", tokenError || "Token não encontrado ou expirado");
-                throw new Error("Token inválido ou expirado");
-            }
-
-            console.log("[Auth] Token válido e deletado! Cliente identificado:", tokenData);
-            const client = mapClient(tokenData);
-            const shopSlug = tokenData.shops?.slug;
-
-            const clientSession = { clientId: client.id, token: token };
-
-            sessionStorage.setItem('currentClient', JSON.stringify(client));
-            sessionStorage.setItem('clientSession', JSON.stringify(clientSession));
-
-            setState(prev => ({
-                ...prev,
-                currentClient: client,
-                clientSession: clientSession
-            }));
-
-            return { success: true, slug: shopSlug };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
 
     const getWhatsAppQRCode = async () => {
         try {
@@ -1119,11 +920,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
 
-    const logoutClient = () => {
-        sessionStorage.removeItem('currentClient');
-        sessionStorage.removeItem('clientSession');
-        setState(prev => ({ ...prev, currentClient: null, clientSession: null }));
-    };
 
     const switchShop = async (shopId: string) => {
         setLoading(true);

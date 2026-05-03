@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Client, SubscriptionPlan, ClientSubscription } from '../../types';
+import { Client, SubscriptionPlan, ClientSubscription, Appointment, ShopSettings } from '../../types';
 import { MutationResult } from '../types';
 import { supabase } from '../../supabaseClient';
 import { 
@@ -37,7 +37,7 @@ interface ClientContextType {
   logoutClient: () => void;
 
   // Loyalty Actions
-  processLoyalty: (appointment: any, settings: any) => Promise<void>;
+  processLoyalty: (appointment: Appointment, settings: ShopSettings) => Promise<void>;
   generateLoyaltyReward: (client: Client, sid: string) => Promise<void>;
 }
 
@@ -338,7 +338,7 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
 
   // ── Loyalty Actions ──────────────────────────────────────────────────────────
 
-  const processLoyalty = async (appointment: any, settings: any) => {
+  const processLoyalty = async (appointment: Appointment, settings: ShopSettings) => {
       const sid = ensureShopId();
       if (!settings.loyaltyEnabled) return;
 

@@ -298,12 +298,6 @@ export interface ShopState {
   cashFlowEntries: CashFlowEntry[]; // [NOVO] Movimentações do Caixa
   blockedSlots: BlockedSlot[];
   settings: ShopSettings;
-  // [NOVO] Estado do Cliente Logado
-  currentClient: Client | null;
-  clientSession: {
-    clientId: string;
-    token: string;
-  } | null;
   // [NOVO] Estado derivado do trial
   trialStatus: 'active' | 'expired' | 'paid';
   daysRemaining: number;

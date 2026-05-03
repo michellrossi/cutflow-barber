@@ -30,6 +30,8 @@ export function useShop() {
     ...automation, 
     ...catalog, 
     ...clients,
+    currentClient: clients.currentClient,
+    clientSession: clients.clientSession,
     // Forçar fallbacks de array para evitar erros de runtime (l.filter is not a function)
     appointments: shop.appointments || [],
     professionals: catalog.professionals || [],

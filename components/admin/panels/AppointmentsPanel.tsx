@@ -1017,6 +1017,7 @@ export const AppointmentsPanel: React.FC = () => {
                                             // 2. Atualizar agendamento
                                             const client = clients.find(c => c.id === completionTarget.clientId || c.phone === completionTarget.clientPhone);
                                             await updateAppointmentStatus(completionTarget.id, 'completed', client);
+                                            await processLoyalty(completionTarget, settings);
                                             await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
 
                                             // 3. Registrar no Caixa (Dinheiro) se aberto

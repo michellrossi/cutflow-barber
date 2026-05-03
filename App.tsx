@@ -284,7 +284,7 @@ const AppRoutes = () => {
 
 const CombinedProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { shop } = useShopBase();
-  const shopId = shop?.id || '';
+  const shopId = React.useMemo(() => shop?.id || '', [shop?.id]);
   
   return (
     <InventoryProvider shopId={shopId}>
