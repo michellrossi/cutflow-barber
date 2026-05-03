@@ -65,17 +65,6 @@ interface ShopContextType extends ShopState {
     updateClient: (id: string, client: Partial<Client>) => MutationResult;
     removeClient: (id: string) => MutationResult;
 
-    addMessageTemplate: (template: Omit<MessageTemplate, 'id' | 'shopId'>) => MutationResult;
-    updateMessageTemplate: (id: string, template: Partial<MessageTemplate>) => MutationResult;
-    removeMessageTemplate: (id: string) => MutationResult;
-
-    addAutomationTrigger: (trigger: Omit<AutomationTrigger, 'id' | 'shopId'>) => MutationResult;
-    updateAutomationTrigger: (id: string, trigger: Partial<AutomationTrigger>) => MutationResult;
-    removeAutomationTrigger: (id: string) => MutationResult;
-
-    addMessageCategory: (name: string) => MutationResult;
-    removeMessageCategory: (id: string) => MutationResult;
-
     // Subscription Actions
     addSubscriptionPlan: (plan: Omit<SubscriptionPlan, 'id' | 'shopId' | 'createdAt'>) => MutationResult;
     updateSubscriptionPlan: (id: string, plan: Partial<SubscriptionPlan>) => MutationResult;
@@ -255,17 +244,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Executa queries de configurações e dados estáticos em paralelo
             // LAZY LOAD: clients NÃO está aqui — é carregado sob demanda pela aba Clientes
-            const [settingsRes, servicesRes, prosRes, blocksRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, sessionsRes] = await Promise.all([
+            const [settingsRes, servicesRes, prosRes, blocksRes, plansRes, subsRes] = await Promise.all([
                 supabase.from('settings').select('*').eq('shop_id', shopId).single(),
                 supabase.from('services').select('*').eq('shop_id', shopId),
                 supabase.from('professionals').select('*').eq('shop_id', shopId),
                 supabase.from('blocked_slots').select('*').eq('shop_id', shopId),
-                supabase.from('message_templates').select('*').eq('shop_id', shopId),
-                supabase.from('message_categories').select('*').eq('shop_id', shopId),
                 supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
-                supabase.from('client_subscriptions').select('*').eq('shop_id', shopId),
-                supabase.from('automation_triggers').select('*').eq('shop_id', shopId),
-                supabase.from('whatsapp_chat_sessions').select('id', { count: 'exact', head: true }).eq('shop_id', shopId).eq('bot_paused', true)
+                supabase.from('client_subscriptions').select('*').eq('shop_id', shopId)
             ]);
 
             // Agendamentos: janela de 90 dias para cobrir dashboard + relatórios + metas
@@ -286,13 +271,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (appts) appointmentsData = appts.map(mapAppointment);
 
             const mappedProfessionals = (prosRes.data || []).map((p: any, i: number) => mapProfessional(p, i));
-            // Clientes: array vazio no boot — carregados lazy na aba Clientes
             const mappedClients: ReturnType<typeof mapClient>[] = [];
             const mappedPlans = (plansRes.data || []).map(mapSubscriptionPlan);
             const mappedSubs = (subsRes.data || []).map(mapClientSubscription);
-            const mappedCategories = (categoriesRes.data || []).map(mapMessageCategory);
-
-            let mappedTriggers = (triggersRes.data || []).map(mapAutomationTrigger);
 
             // --- LÓGICA DE ROLES ---
             if (currentSession?.user) {
@@ -333,13 +314,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 clients: mappedClients,
                 subscriptionPlans: mappedPlans,
                 clientSubscriptions: mappedSubs,
-                messageTemplates: (templatesRes.data || []).map(mapMessageTemplate),
-                messageCategories: mappedCategories,
                 blockedSlots: (blocksRes.data || []).map(mapBlockedSlot),
-                automationTriggers: mappedTriggers,
                 trialStatus: trialInfo.status,
                 daysRemaining: trialInfo.days,
-                botPausedCount: sessionsRes.count || 0
+                botPausedCount: 0
             }));
 
         } catch (error) {
@@ -1218,129 +1196,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const addMessageTemplate = async (template: Omit<MessageTemplate, 'id' | 'shopId'>): MutationResult => {
-        if (!state.shop) return { success: false, error: 'Shop not found' };
-
-        const triggerId = template.triggerId && template.triggerId !== "" ? template.triggerId : null;
-
-        const { data, error } = await supabase.from('message_templates').insert({
-            shop_id: state.shop.id,
-            title: template.title,
-            content: template.content,
-            trigger_id: triggerId,
-            trigger: template.triggerId || 'custom', // Campo legado obrigatório
-            active: template.active,
-            target: template.target,
-            category: template.category
-        }).select().single();
-
-        if (error) return { success: false, error: error.message };
-        setState(prev => ({ ...prev, messageTemplates: [...prev.messageTemplates, mapMessageTemplate(data)] }));
-        return { success: true, data: mapMessageTemplate(data) };
-    };
-
-    const updateMessageTemplate = async (id: string, template: Partial<MessageTemplate>): MutationResult => {
-        const shopId = ensureShopId();
-        const updateData: any = {};
-
-        if (template.title !== undefined) updateData.title = template.title;
-        if (template.content !== undefined) updateData.content = template.content;
-        if (template.active !== undefined) updateData.active = template.active;
-        if (template.target !== undefined) updateData.target = template.target;
-        if (template.category !== undefined) updateData.category = template.category;
-        if (template.delayValue !== undefined) updateData.delay_value = template.delayValue;
-        if (template.delayUnit !== undefined) updateData.delay_unit = template.delayUnit;
-
-        if (template.triggerId !== undefined) {
-            const triggerId = template.triggerId && template.triggerId !== "" ? template.triggerId : null;
-            updateData.trigger_id = triggerId;
-            updateData.trigger = template.triggerId || 'custom';
-        }
-
-        const { error } = await supabase.from('message_templates').update(updateData).eq('id', id).eq('shop_id', shopId);
-        if (error) return { success: false, error: error.message };
-        setState(prev => ({
-            ...prev,
-            messageTemplates: prev.messageTemplates.map(t => t.id === id ? { ...t, ...template } : t)
-        }));
-        return { success: true };
-    };
-
-    const removeMessageTemplate = async (id: string): MutationResult => {
-        const shopId = ensureShopId();
-        const { error } = await supabase.from('message_templates').delete().eq('id', id).eq('shop_id', shopId);
-        if (error) return { success: false, error: error.message };
-        setState(prev => ({ ...prev, messageTemplates: prev.messageTemplates.filter(t => t.id !== id) }));
-        return { success: true };
-    };
-
-    const addAutomationTrigger = async (trigger: Omit<AutomationTrigger, 'id' | 'shopId'>): MutationResult => {
-        if (!state.shop) return { success: false, error: 'Shop not found' };
-        const { data, error } = await supabase.from('automation_triggers').insert({
-            shop_id: state.shop.id,
-            name: trigger.name,
-            value: trigger.value,
-            unit: trigger.unit,
-            period: trigger.period,
-            active: trigger.active
-        }).select().single();
-
-        if (error) return { success: false, error: error.message };
-        setState(prev => ({ ...prev, automationTriggers: [...prev.automationTriggers, mapAutomationTrigger(data)] }));
-        return { success: true, data: mapAutomationTrigger(data) };
-    };
-
-    const updateAutomationTrigger = async (id: string, trigger: Partial<AutomationTrigger>): MutationResult => {
-        const { error } = await supabase.from('automation_triggers').update(trigger).eq('id', id);
-        if (error) return { success: false, error: error.message };
-        setState(prev => ({
-            ...prev,
-            automationTriggers: prev.automationTriggers.map(t => t.id === id ? { ...t, ...trigger } : t)
-        }));
-        return { success: true };
-    };
-
-    const removeAutomationTrigger = async (id: string): MutationResult => {
-        const shopId = ensureShopId();
-        const { error } = await supabase.from('automation_triggers').delete().eq('id', id).eq('shop_id', shopId);
-        if (error) return { success: false, error: error.message };
-        setState(prev => ({ ...prev, automationTriggers: prev.automationTriggers.filter(t => t.id !== id) }));
-        return { success: true };
-    };
-
-    const addMessageCategory = async (name: string): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { data, error } = await supabase.from('message_categories').insert({
-                shop_id: shopId,
-                name: sanitize(name)
-            }).select().single();
-
-            if (error) throw error;
-
-            const newCategory = mapMessageCategory(data);
-            setState(prev => ({ ...prev, messageCategories: [...prev.messageCategories, newCategory] }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const removeMessageCategory = async (id: string): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { error } = await supabase.from('message_categories').delete().eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            setState(prev => ({
-                ...prev,
-                messageCategories: prev.messageCategories.filter(c => c.id !== id)
-            }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
 
     const addSubscriptionPlan = async (plan: Omit<SubscriptionPlan, 'id' | 'shopId' | 'createdAt'>): MutationResult => {
         try {
@@ -1764,11 +1619,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             updateAppointmentPaymentMethod,
             updateAppointmentTotalValue,
             addClient, updateClient, removeClient,
-            addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
-            addAutomationTrigger,
-            updateAutomationTrigger,
-            removeAutomationTrigger,
-            addMessageCategory, removeMessageCategory,
             addSubscriptionPlan, updateSubscriptionPlan, removeSubscriptionPlan,
             addClientSubscription, updateClientSubscription, removeClientSubscription,
             addBlockedSlot, removeBlockedSlot,
