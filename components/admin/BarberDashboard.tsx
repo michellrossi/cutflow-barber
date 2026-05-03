@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useShop } from '../../store';
-import { Calendar, Clock, LogOut, CheckCircle, XCircle, AlertCircle, Settings, X, Loader2, Trash2, Plus, RefreshCw, Wallet, TrendingUp, BarChart3, ChevronLeft, ChevronRight, Filter, Sun, Moon } from 'lucide-react';
+import { Calendar, Clock, LogOut, CheckCircle, XCircle, AlertCircle, AlertTriangle, Settings, X, Loader2, Trash2, Plus, RefreshCw, Wallet, TrendingUp, BarChart3, ChevronLeft, ChevronRight, Filter, Sun, Moon } from 'lucide-react';
 import { useToast } from '../ui/ToastContext';
 import { WorkSchedule, DaySchedule, Professional } from '../../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell, ReferenceLine } from 'recharts';

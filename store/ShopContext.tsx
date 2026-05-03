@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger, Product, Goal, CashSession, CashFlowEntry } from './types';
-import { supabase } from './supabaseClient';
+import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger, Product, Goal, CashSession, CashFlowEntry } from '../types';
+import { supabase } from '../supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import {
     mapShop, mapSettings, mapAutomationTrigger, mapClient,
@@ -11,12 +11,12 @@ import {
     type ShopRow,
     type GoalRow,
     type ProductRow,
-} from './store/mappers';
+} from './mappers';
 
 import {
     sanitize, formatCurrencyBRL, calculateTrialStatus,
     DEFAULT_SCHEDULE, PROFESSIONAL_COLORS, INITIAL_STATE,
-} from './store/helpers';
+} from './helpers';
 
 // Compat export (alguns clients importam direto de `store.tsx`)
 export { formatCurrencyBRL };

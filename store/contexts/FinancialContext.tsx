@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { CashSession, CashFlowEntry, Coupon, MutationResult } from '../../types';
+import { CashSession, CashFlowEntry, Coupon } from '../../types';
+import { MutationResult } from '../types';
 import { supabase } from '../../supabaseClient';
 import { mapCashSession, mapCashFlowEntry, mapCoupon, mapService } from '../mappers';
 import { INITIAL_STATE } from '../helpers';
@@ -145,12 +146,11 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
       const { data, error } = await supabase.from('coupons').insert({
         shop_id: sid,
         code: coupon.code.toUpperCase(),
-        discount_type: coupon.discountType,
-        discount_value: coupon.discountValue,
-        min_purchase: coupon.minPurchase,
-        expires_at: coupon.expiresAt,
+        type: coupon.type,
+        value: coupon.value,
         active: coupon.active,
-        usage_limit: coupon.usageLimit
+        max_uses: coupon.maxUses,
+        expires_at: coupon.expiresAt
       }).select().single();
 
       if (error) throw error;
@@ -167,12 +167,11 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
       const sid = ensureShopId();
       const { data, error } = await supabase.from('coupons').update({
         code: coupon.code?.toUpperCase(),
-        discount_type: coupon.discountType,
-        discount_value: coupon.discountValue,
-        min_purchase: coupon.minPurchase,
-        expires_at: coupon.expiresAt,
+        type: coupon.type,
+        value: coupon.value,
         active: coupon.active,
-        usage_limit: coupon.usageLimit
+        max_uses: coupon.maxUses,
+        expires_at: coupon.expiresAt
       }).eq('id', id).eq('shop_id', sid).select().single();
 
       if (error) throw error;
