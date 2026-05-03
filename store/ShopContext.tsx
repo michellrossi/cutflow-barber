@@ -43,23 +43,13 @@ interface ShopContextType extends ShopState {
     refresh: () => void;
 
     // Actions - Now returning MutationResult
-    addService: (service: Omit<Service, 'id' | 'shopId'>) => MutationResult;
-    updateService: (id: string, service: Partial<Service>) => MutationResult;
-    removeService: (id: string) => MutationResult;
-
-    addProfessional: (professional: Omit<Professional, 'id' | 'shopId'>) => MutationResult;
-    updateProfessional: (id: string, professional: Partial<Professional>) => MutationResult;
-    removeProfessional: (id: string) => MutationResult;
-
+    // Appointment Actions
     updateAppointmentPaymentMethod: (id: string, paymentMethod: string, usedSubscriptionId?: string) => MutationResult;
     updateAppointmentTotalValue: (id: string, newTotal: number) => MutationResult;
 
     addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
     createManualAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
     updateAppointmentStatus: (id: string, status: string) => MutationResult;
-
-    addBlockedSlot: (block: Omit<BlockedSlot, 'id' | 'shopId'>) => MutationResult;
-    removeBlockedSlot: (id: string) => MutationResult;
 
     addClient: (client: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
     updateClient: (id: string, client: Partial<Client>) => MutationResult;
@@ -244,11 +234,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Executa queries de configurações e dados estáticos em paralelo
             // LAZY LOAD: clients NÃO está aqui — é carregado sob demanda pela aba Clientes
-            const [settingsRes, servicesRes, prosRes, blocksRes, plansRes, subsRes] = await Promise.all([
+            const [settingsRes, plansRes, subsRes] = await Promise.all([
                 supabase.from('settings').select('*').eq('shop_id', shopId).single(),
-                supabase.from('services').select('*').eq('shop_id', shopId),
-                supabase.from('professionals').select('*').eq('shop_id', shopId),
-                supabase.from('blocked_slots').select('*').eq('shop_id', shopId),
                 supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
                 supabase.from('client_subscriptions').select('*').eq('shop_id', shopId)
             ]);
@@ -270,7 +257,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             if (appts) appointmentsData = appts.map(mapAppointment);
 
-            const mappedProfessionals = (prosRes.data || []).map((p: any, i: number) => mapProfessional(p, i));
             const mappedClients: ReturnType<typeof mapClient>[] = [];
             const mappedPlans = (plansRes.data || []).map(mapSubscriptionPlan);
             const mappedSubs = (subsRes.data || []).map(mapClientSubscription);
@@ -282,13 +268,17 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 if (effectiveShopData?.ownerId === currentSession.user.id) {
                     setUserRole('owner');
                 } else {
-                    const isBarber = mappedProfessionals.find(p => p.email === currentSession.user.email);
-                    if (isBarber) {
+                    const { data: proRecord } = await supabase
+                        .from('professionals')
+                        .select('id, user_id')
+                        .eq('shop_id', shopId)
+                        .eq('email', currentSession.user.email)
+                        .maybeSingle();
+
+                    if (proRecord) {
                         setUserRole('barber');
-                        // Ensure User ID is linked if it wasn't already (Self-healing)
-                        if (!isBarber.userId) {
-                            await supabase.from('professionals').update({ user_id: currentSession.user.id }).eq('id', isBarber.id);
-                            isBarber.userId = currentSession.user.id;
+                        if (!proRecord.user_id) {
+                            await supabase.from('professionals').update({ user_id: currentSession.user.id }).eq('id', proRecord.id);
                         }
                     } else {
                         setUserRole(null);
@@ -308,13 +298,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 ...prev,
                 shop: currentShopData || prev.shop,
                 settings: settingsRes.data ? mapSettings(settingsRes.data) : { ...INITIAL_STATE.settings, shopId: shopId },
-                services: (servicesRes.data || []).map(mapService),
-                professionals: mappedProfessionals,
+                services: [],
+                professionals: [],
                 appointments: appointmentsData,
                 clients: mappedClients,
                 subscriptionPlans: mappedPlans,
                 clientSubscriptions: mappedSubs,
-                blockedSlots: (blocksRes.data || []).map(mapBlockedSlot),
+                blockedSlots: [],
                 trialStatus: trialInfo.status,
                 daysRemaining: trialInfo.days,
                 botPausedCount: 0
@@ -642,144 +632,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     // --- OPTIMIZED ACTIONS (LOCAL STATE UPDATES) ---
 
-    const addService = async (service: Omit<Service, 'id' | 'shopId'>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { data, error } = await supabase.from('services').insert({
-                shop_id: shopId,
-                name: sanitize(service.name),
-                description: sanitize(service.description),
-                price: service.price,
-                duration: service.duration,
-                category: sanitize(service.category),
-                image_url: service.imageUrl
-            }).select().single();
-
-            if (error) throw error;
-
-            // Optimistic Update
-            const newService = mapService(data);
-            setState(prev => ({ ...prev, services: [...prev.services, newService] }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const updateService = async (id: string, updated: Partial<Service>): MutationResult => {
-        try {
-            const shopId = ensureShopId(); // Just for validation
-            const payload: any = {};
-            if (updated.name) payload.name = sanitize(updated.name);
-            if (updated.description) payload.description = sanitize(updated.description);
-            if (updated.price !== undefined) payload.price = updated.price;
-            if (updated.duration !== undefined) payload.duration = updated.duration;
-            if (updated.category) payload.category = sanitize(updated.category);
-            if (updated.imageUrl !== undefined) payload.image_url = updated.imageUrl;
-
-            const { data, error } = await supabase.from('services').update(payload).eq('id', id).select().single();
-            if (error) throw error;
-
-            // Optimistic Update
-            const updatedService = mapService(data);
-            setState(prev => ({
-                ...prev,
-                services: prev.services.map(s => s.id === id ? updatedService : s)
-            }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const removeService = async (id: string): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { error } = await supabase.from('services').delete().eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            // Optimistic Update
-            setState(prev => ({ ...prev, services: prev.services.filter(s => s.id !== id) }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const addProfessional = async (pro: Omit<Professional, 'id' | 'shopId'>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { data, error } = await supabase.from('professionals').insert({
-                shop_id: shopId,
-                name: sanitize(pro.name),
-                role: sanitize(pro.role),
-                photo_url: pro.photoUrl,
-                work_schedule: pro.workSchedule || DEFAULT_SCHEDULE,
-                email: pro.email ? sanitize(pro.email) : null,
-                phone: pro.phone ? sanitize(pro.phone) : null,
-                commission_percentage: pro.commissionPercentage ?? 50,
-                color: pro.color || PROFESSIONAL_COLORS[state.professionals.length % PROFESSIONAL_COLORS.length]
-            }).select().single();
-
-            if (error) throw error;
-
-            // Optimistic Update
-            const newPro = mapProfessional(data, state.professionals.length);
-            setState(prev => ({ ...prev, professionals: [...prev.professionals, newPro] }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const updateProfessional = async (id: string, updated: Partial<Professional>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const payload: any = {};
-            if (updated.name) payload.name = sanitize(updated.name);
-            if (updated.role) payload.role = sanitize(updated.role);
-            if (updated.photoUrl) payload.photo_url = updated.photoUrl;
-            if (updated.workSchedule) payload.work_schedule = updated.workSchedule;
-            if (updated.email !== undefined) payload.email = updated.email ? sanitize(updated.email) : null;
-            if (updated.phone !== undefined) payload.phone = updated.phone ? sanitize(updated.phone) : null;
-            if (updated.commissionPercentage !== undefined) payload.commission_percentage = updated.commissionPercentage;
-            if (updated.color) payload.color = sanitize(updated.color);
-
-            const { data, error } = await supabase.from('professionals').update(payload).eq('id', id).select().single();
-            if (error) throw error;
-
-            // Optimistic Update
-            const currentIndex = state.professionals.findIndex(p => p.id === id);
-            const updatedPro = mapProfessional(data, currentIndex !== -1 ? currentIndex : 0);
-            setState(prev => ({
-                ...prev,
-                professionals: prev.professionals.map(p => p.id === id ? updatedPro : p)
-            }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const removeProfessional = async (id: string): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { error } = await supabase.from('professionals').delete().eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            // Optimistic Update
-            setState(prev => ({ ...prev, professionals: prev.professionals.filter(p => p.id !== id) }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
 
 
     const addAppointment = async (apt: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>): MutationResult => {
@@ -1611,17 +1463,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             addAdditionalUnit,
             deleteCurrentShop,
             resetPassword,
-            addService, updateService, removeService,
-            addProfessional, updateProfessional, removeProfessional,
+            addClient, updateClient, removeClient,
             addAppointment,
             createManualAppointment,
             updateAppointmentStatus,
             updateAppointmentPaymentMethod,
             updateAppointmentTotalValue,
-            addClient, updateClient, removeClient,
             addSubscriptionPlan, updateSubscriptionPlan, removeSubscriptionPlan,
             addClientSubscription, updateClientSubscription, removeClientSubscription,
-            addBlockedSlot, removeBlockedSlot,
             updateSettings,
             getWhatsAppQRCode,
             getWhatsAppStatus,
