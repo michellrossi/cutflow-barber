@@ -104,20 +104,23 @@ export const ReportsProductsPanel: React.FC<Props> = ({ dateRange }) => {
       } else if (dateRange === 'Semestre') start.setMonth(start.getMonth() - 6);
       else if (dateRange === 'Todo o período') start = new Date(2000, 0, 1);
       const data = await fetchFinancialReport(start.toISOString().split('T')[0], end.toISOString().split('T')[0]);
-      setApptData(data);
+      setApptData(data?.appointments || []);
     };
     load();
   }, [dateRange, fetchFinancialReport]);
 
   // ── Derivações ──────────────────────────────────────────────────────────────
-  const completedAppts = useMemo(() => apptData.filter(a => a.status === 'completed'), [apptData]);
+  const apptsList = Array.isArray(apptData) ? apptData : [];
+  const productsList = Array.isArray(products) ? products : [];
+
+  const completedAppts = useMemo(() => apptsList.filter(a => a.status === 'completed'), [apptsList]);
 
   // appointment_products aggregation (usa products embutidos nos appointments)
   // Como a store carrega appointments sem products embutidos, vamos aproximar
   // usando os produtos e seus dados de estoque
 
-  const valorEstoque  = useMemo(() => products.reduce((s, p) => s + p.costPrice  * p.currentStock, 0), [products]);
-  const fatPotencial  = useMemo(() => products.reduce((s, p) => s + p.salePrice  * p.currentStock, 0), [products]);
+  const valorEstoque  = useMemo(() => productsList.reduce((s, p) => s + p.costPrice  * p.currentStock, 0), [productsList]);
+  const fatPotencial  = useMemo(() => productsList.reduce((s, p) => s + p.salePrice  * p.currentStock, 0), [productsList]);
   const lucroEstimado = useMemo(() => fatPotencial - valorEstoque, [fatPotencial, valorEstoque]);
 
   // Faturamento realizado de produtos: sum(ap.quantity * ap.unit_price)
@@ -131,37 +134,37 @@ export const ReportsProductsPanel: React.FC<Props> = ({ dateRange }) => {
 
   // Margem média ponderada dos produtos
   const margemMedia = useMemo(() => {
-    const valid = products.filter(p => p.salePrice > 0);
+    const valid = productsList.filter(p => p.salePrice > 0);
     if (valid.length === 0) return 0;
     return valid.reduce((s, p) => s + ((p.salePrice - p.costPrice) / p.salePrice) * 100, 0) / valid.length;
-  }, [products]);
+  }, [productsList]);
 
   // ── Alertas de estoque ──────────────────────────────────────────────────────
   const criticos = useMemo(() =>
-    products.filter(p => p.currentStock <= p.minStock)
+    productsList.filter(p => p.currentStock <= p.minStock)
       .sort((a, b) => a.currentStock - b.currentStock),
-    [products]);
+    [productsList]);
 
   // ── Produtos sem giro (estoque alto, 0 vendas na simulação) ─────────────────
   const semGiro = useMemo(() =>
-    products
+    productsList
       .filter(p => p.currentStock > p.minStock)
       .sort((a, b) => b.currentStock - a.currentStock)
       .slice(0, 8),
-    [products]);
+    [productsList]);
 
   // ── Ranking de produtos por estoque vendável (faturamento potencial) ─────────
   const rankingPotencial = useMemo(() =>
-    [...products]
+    [...productsList]
       .map(p => ({ label: p.name, value: p.salePrice * p.currentStock, sub: `${p.currentStock} un. × ${fmt(p.salePrice)}` }))
       .filter(p => p.value > 0)
       .sort((a, b) => b.value - a.value)
       .slice(0, 8),
-    [products]);
+    [productsList]);
 
   // ── Ranking mais rentáveis (maior margem %) ─────────────────────────────────
   const rankingMargem = useMemo(() =>
-    [...products]
+    [...productsList]
       .filter(p => p.salePrice > 0)
       .map(p => {
         const margem = ((p.salePrice - p.costPrice) / p.salePrice) * 100;
@@ -169,7 +172,7 @@ export const ReportsProductsPanel: React.FC<Props> = ({ dateRange }) => {
       })
       .sort((a, b) => b.value - a.value)
       .slice(0, 8),
-    [products]);
+    [productsList]);
 
   // ── Curva ABC ───────────────────────────────────────────────────────────────
   const abcData = useMemo(() => {

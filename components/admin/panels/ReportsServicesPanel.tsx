@@ -32,13 +32,16 @@ export const ReportsServicesPanel: React.FC<ReportsServicesPanelProps> = ({ date
             else startDate = new Date(0);
 
             const data = await fetchFinancialReport(startDate.toISOString().split('T')[0], now.toISOString().split('T')[0]);
-            setFilteredAppointments(data);
+            setFilteredAppointments(data?.appointments || []);
         };
         loadData();
     }, [dateRange, fetchFinancialReport]);
 
-    const serviceStats = services.map(service => {
-        const appts = filteredAppointments.filter(a => a.serviceIds.includes(service.id) && a.status === 'completed');
+    const servicesList = Array.isArray(services) ? services : [];
+    const appointmentsList = Array.isArray(filteredAppointments) ? filteredAppointments : [];
+
+    const serviceStats = servicesList.map(service => {
+        const appts = appointmentsList.filter(a => Array.isArray(a.serviceIds) && a.serviceIds.includes(service.id) && a.status === 'completed');
         const totalRevenue = appts.reduce((acc, a) => acc + (service.price || 0), 0);
         return {
             name: service.name,
@@ -50,7 +53,9 @@ export const ReportsServicesPanel: React.FC<ReportsServicesPanelProps> = ({ date
     const monthlyServices = React.useMemo(() => {
         const dataMap: Record<string, { total: number, label: string }> = {};
 
-        filteredAppointments.forEach(apt => {
+        const apptsList = Array.isArray(filteredAppointments) ? filteredAppointments : [];
+
+        apptsList.forEach(apt => {
             if (apt.status !== 'completed') return;
             const date = new Date(apt.date + 'T12:00:00');
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;

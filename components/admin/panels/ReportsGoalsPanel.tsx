@@ -125,19 +125,20 @@ const StatusChip: React.FC<{ pct: number }> = ({ pct }) => {
 
 // ── Main Panel ────────────────────────────────────────────────────────────────
 export const ReportsGoalsPanel: React.FC<Props> = ({ dateRange }) => {
-  const { goals, professionals, appointments } = useShop();
-  const today = localDate(new Date());
+  const appointmentsList = Array.isArray(appointments) ? appointments : [];
+  const professionalsList = Array.isArray(professionals) ? professionals : [];
+  const goalsList = Array.isArray(goals) ? goals : [];
 
   // Filtra apenas metas mensais ativas para o painel de metas
   const activeGoals = useMemo(() =>
-    (goals || []).filter(g => g.endDate >= today && g.startDate <= today),
-    [goals, today]);
+    goalsList.filter(g => g.endDate >= today && g.startDate <= today),
+    [goalsList, today]);
 
   const fatGoal  = useMemo(() => activeGoals.find(g => g.category === 'faturamento' && !g.professionalId) ?? null, [activeGoals]);
   const atdGoal  = useMemo(() => activeGoals.find(g => g.category === 'atendimentos' && !g.professionalId) ?? null, [activeGoals]);
   const prodGoal = useMemo(() => activeGoals.find(g => g.category === 'venda_produtos' && !g.professionalId) ?? null, [activeGoals]);
 
-  const completedAppts = useMemo(() => appointments.filter(a => a.status === 'completed'), [appointments]);
+  const completedAppts = useMemo(() => appointmentsList.filter(a => a.status === 'completed'), [appointmentsList]);
 
   // ── Ritmo (velocidade diária) ────────────────────────────────────────────────
   const goalRhythm = useMemo(() => {
@@ -154,14 +155,14 @@ export const ReportsGoalsPanel: React.FC<Props> = ({ dateRange }) => {
   const barbeiroPct = useMemo(() => {
     const byPro = new Map<string, { name: string; pct: number; current: number; target: number }>();
     activeGoals.filter(g => g.professionalId && g.category === 'faturamento').forEach(g => {
-      const pro = professionals.find(p => p.id === g.professionalId);
+      const pro = professionalsList.find(p => p.id === g.professionalId);
       if (!pro) return;
       const pct = g.targetValue > 0 ? (g.currentValue / g.targetValue) * 100 : 0;
       const existing = byPro.get(g.professionalId!);
       if (!existing || pct > existing.pct) byPro.set(g.professionalId!, { name: pro.name, pct, current: g.currentValue, target: g.targetValue });
     });
     return [...byPro.values()].sort((a, b) => b.pct - a.pct);
-  }, [activeGoals, professionals]);
+  }, [activeGoals, professionalsList]);
 
   // ── Quebra por categoria ──────────────────────────────────────────────────────
   const catBreakdown = useMemo(() => {

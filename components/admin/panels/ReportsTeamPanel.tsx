@@ -37,7 +37,7 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
             else startDate = new Date(0);
 
             const data = await fetchFinancialReport(startDate.toISOString().split('T')[0], now.toISOString().split('T')[0]);
-            setFilteredAppointments(data);
+            setFilteredAppointments(data?.appointments || []);
         };
         loadData();
     }, [dateRange, fetchFinancialReport]);
@@ -68,7 +68,7 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
                                 Todos
                             </span>
                         </button>
-                        {professionals.map(pro => (
+                        {Array.isArray(professionals) && professionals.map(pro => (
                             <button
                                 key={pro.id}
                                 onClick={() => setSelectedProId(pro.id)}
@@ -93,28 +93,34 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
             {selectedProId ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {(() => {
+                        const appointmentsList = Array.isArray(filteredAppointments) ? filteredAppointments : [];
+                        const professionalsList = Array.isArray(professionals) ? professionals : [];
+                        const servicesList = Array.isArray(services) ? services : [];
+
                         const isAll = selectedProId === 'all';
                         const proAppointments = isAll 
-                            ? filteredAppointments.filter(a => a.status === 'completed')
-                            : filteredAppointments.filter(a => a.professionalId === selectedProId && a.status === 'completed');
+                            ? appointmentsList.filter(a => a.status === 'completed')
+                            : appointmentsList.filter(a => a.professionalId === selectedProId && a.status === 'completed');
                         
                         const totalServices = proAppointments.length;
                         const totalRevenue = proAppointments.reduce((acc, a) => acc + a.totalValue, 0);
                         
                         // Cálculo de comissão apenas se um profissional específico for selecionado
-                        const pro = isAll ? null : professionals.find(p => p.id === selectedProId);
+                        const pro = isAll ? null : professionalsList.find(p => p.id === selectedProId);
                         const totalCommission = isAll 
                             ? 0 
                             : (totalRevenue * (pro?.commissionPercentage || 50)) / 100;
 
                         const serviceBreakdown: { [key: string]: number } = {};
                         proAppointments.forEach(appt => {
-                            appt.serviceIds.forEach(sId => {
-                                const service = services.find(s => s.id === sId);
-                                if (service) {
-                                    serviceBreakdown[service.name] = (serviceBreakdown[service.name] || 0) + 1;
-                                }
-                            });
+                            if (Array.isArray(appt.serviceIds)) {
+                                appt.serviceIds.forEach(sId => {
+                                    const service = servicesList.find(s => s.id === sId);
+                                    if (service) {
+                                        serviceBreakdown[service.name] = (serviceBreakdown[service.name] || 0) + 1;
+                                    }
+                                });
+                            }
                         });
 
                         return (
@@ -172,8 +178,8 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
                                         </div>
                                         <div className="text-3xl font-black text-slate-900">
                                             {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
-                                                professionals.reduce((acc, pro) => {
-                                                    const proRevenue = filteredAppointments
+                                                professionalsList.reduce((acc, pro) => {
+                                                    const proRevenue = appointmentsList
                                                         .filter(a => a.professionalId === pro.id && a.status === 'completed')
                                                         .reduce((acc, a) => acc + a.totalValue, 0);
                                                     return acc + (proRevenue * (pro.commissionPercentage || 50)) / 100;
@@ -243,8 +249,8 @@ export const ReportsTeamPanel: React.FC<ReportsTeamPanelProps> = ({ dateRange })
                                         </h3>
                                         <div className="flex flex-col divide-y divide-slate-100">
                                             {(() => {
-                                                const sorted = professionals.map(pro => {
-                                                    const proAppts = filteredAppointments.filter(a => a.professionalId === pro.id && a.status === 'completed');
+                                                const sorted = professionalsList.map(pro => {
+                                                    const proAppts = appointmentsList.filter(a => a.professionalId === pro.id && a.status === 'completed');
                                                     const proRevenue = proAppts.reduce((acc, a) => acc + a.totalValue, 0);
                                                     return { ...pro, revenue: proRevenue, visits: proAppts.length };
                                                 }).sort((a, b) => b.revenue - a.revenue).slice(0, 5);
