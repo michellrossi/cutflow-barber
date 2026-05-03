@@ -49,7 +49,7 @@ interface ShopContextType extends ShopState {
 
     addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
     createManualAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
-    updateAppointmentStatus: (id: string, status: string) => MutationResult;
+    updateAppointmentStatus: (id: string, status: string, client?: Client) => MutationResult;
 
     updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
 
@@ -120,18 +120,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const reloadClients = async (shopId: string) => {
-        const { data: clients } = await supabase
-            .from('clients')
-            .select('*')
-            .eq('shop_id', shopId)
-            .order('name', { ascending: true });
-
-        if (clients) {
-            const mapped = clients.map(mapClient);
-            setState(prev => ({ ...prev, clients: mapped }));
-        }
-    };
 
     const ensureClientExists = async (shopId: string, name: string, phone: string, birthDate?: string) => {
         const { data: existing } = await supabase
@@ -148,7 +136,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 phone: phone,
                 birth_date: birthDate
             });
-            await reloadClients(shopId);
         }
     };
 
@@ -389,26 +376,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             )
             .subscribe();
 
-        // 5. Listen for Client Changes
-        const clientsChannel = supabase.channel('clients_sync')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'clients',
-                    filter: `shop_id=eq.${state.shop.id}`
-                },
-                () => {
-                    reloadClients(state.shop!.id);
-                }
-            )
-            .subscribe();
 
         return () => {
             supabase.removeChannel(shopChannel);
             supabase.removeChannel(appointmentsChannel);
-            supabase.removeChannel(clientsChannel);
         }
     }, [state.shop?.id]);
 
@@ -730,7 +701,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const updateAppointmentStatus = async (id: string, status: string): MutationResult => {
+    const updateAppointmentStatus = async (id: string, status: string, client?: Client): MutationResult => {
         try {
             const shopId = ensureShopId();
             const appointment = state.appointments.find(a => a.id === id);
@@ -756,7 +727,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const wasNotCompleted = appointment ? (appointment.status !== 'completed') : true;
 
             if (isActivatingStatus && wasNotCompleted && appointment) {
-                await processLoyalty(appointment);
+                await processLoyalty(appointment, client);
 
                 if (status === 'completed' && appointment.usedSubscriptionId) {
                     // Update subscription directly via Supabase to avoid circular dependency
@@ -775,7 +746,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const processLoyalty = async (appointment: Appointment) => {
+    const processLoyalty = async (appointment: Appointment, preloadedClient?: Client) => {
         const shopId = appointment.shopId;
         const settings = state.settings;
 
@@ -784,11 +755,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             return;
         }
 
-        // Tenta achar no state, se não achar (Lazy Load), busca direto no DB
-        let client = state.clients.find(c => (appointment.clientId && c.id === appointment.clientId) || c.phone === appointment.clientPhone);
+        // Tenta usar o cliente pré-carregado ou buscar no banco (Lazy Load)
+        let client = preloadedClient;
 
         if (!client) {
-            console.log("[Loyalty] Cliente não no state (Lazy Load), buscando no DB...", { phone: appointment.clientPhone });
+            console.log("[Loyalty] Cliente não enviado, buscando no DB...", { phone: appointment.clientPhone });
             const { data: dbClient } = await supabase.from('clients')
                 .select('*')
                 .eq('shop_id', shopId)
@@ -846,10 +817,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             await generateLoyaltyReward(client, shopId);
         }
 
-        // Recarrega clientes para refletir a atualização na UI
-        if (state.clients.length > 0) {
-            await reloadClients(shopId);
-        }
     };
 
     const generateLoyaltyReward = async (client: Client, shopId: string) => {

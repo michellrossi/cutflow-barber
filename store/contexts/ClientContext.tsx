@@ -22,8 +22,7 @@ interface ClientContextType {
   reloadClients: (sid: string) => Promise<void>;
   ensureClientExists: (sid: string, name: string, phone: string, birthDate?: string) => Promise<string>;
   
-  // Client Auth
-  requestClientLogin: (phone: string, name?: string, birthDate?: string, justCheck?: boolean) => Promise<{ success: boolean; url?: string; error?: string; needsRegistration?: boolean }>;
+  // Subscriptions
   addSubscriptionPlan: (plan: Omit<SubscriptionPlan, 'id' | 'shopId' | 'createdAt'>) => MutationResult<SubscriptionPlan>;
   updateSubscriptionPlan: (id: string, plan: Partial<SubscriptionPlan>) => MutationResult<SubscriptionPlan>;
   removeSubscriptionPlan: (id: string) => MutationResult;
@@ -82,6 +81,25 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
       setCurrentClient(null);
       setClientSession(null);
     }
+  }, [shopId]);
+
+  // Sincronização em Tempo Real para Clientes
+  useEffect(() => {
+    if (!shopId) return;
+    const ch = supabase.channel(`clients_${shopId}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'clients',
+        filter: `shop_id=eq.${shopId}` 
+      }, () => { 
+        reloadClients(shopId); 
+      })
+      .subscribe();
+    
+    return () => { 
+      supabase.removeChannel(ch); 
+    };
   }, [shopId]);
 
   const ensureShopId = () => {

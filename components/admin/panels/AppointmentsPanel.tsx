@@ -693,7 +693,8 @@ export const AppointmentsPanel: React.FC = () => {
                                                                     setSelectedProductsForCompletion([]);
                                                                     setIsCompletionModalOpen(true);
                                                                 } else {
-                                                                    updateAppointmentStatus(apt.id, newStatus);
+                                                                    const client = clients.find(c => c.id === apt.clientId || c.phone === apt.clientPhone);
+                                                                    updateAppointmentStatus(apt.id, newStatus, client);
                                                                 }
                                                             }}
                                                             className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100 transition-colors"
@@ -821,7 +822,8 @@ export const AppointmentsPanel: React.FC = () => {
                                                             setSelectedProductsForCompletion([]);
                                                             setIsCompletionModalOpen(true);
                                                         } else {
-                                                            updateAppointmentStatus(apt.id, newStatus);
+                                                            const client = clients.find(c => c.id === apt.clientId || c.phone === apt.clientPhone);
+                                                            updateAppointmentStatus(apt.id, newStatus, client);
                                                         }
                                                     }}
                                                     className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded-lg p-1.5 focus:outline-none focus:border-orange-500"
@@ -1013,7 +1015,8 @@ export const AppointmentsPanel: React.FC = () => {
                                             }
 
                                             // 2. Atualizar agendamento
-                                            await updateAppointmentStatus(completionTarget.id, 'completed');
+                                            const client = clients.find(c => c.id === completionTarget.clientId || c.phone === completionTarget.clientPhone);
+                                            await updateAppointmentStatus(completionTarget.id, 'completed', client);
                                             await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
 
                                             // 3. Registrar no Caixa (Dinheiro) se aberto
