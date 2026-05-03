@@ -1023,10 +1023,25 @@ export const FinancialPanel: React.FC = () => {
 
   const handleExport = () => {
     try {
+      const todayStr = today();
+      const monthStart = thisMonthStart();
+      const now = new Date();
+      const wStart = new Date();
+      wStart.setDate(now.getDate() - now.getDay());
+      wStart.setHours(0, 0, 0, 0);
+
+      const inRange = (dateStr: string) => {
+        if (period === 'today') return dateStr === todayStr;
+        if (period === 'week') return new Date(dateStr + 'T12:00:00') >= wStart;
+        if (period === 'month') return dateStr >= monthStart;
+        return true; 
+      };
+
       let csvContent = "data:text/csv;charset=utf-8,";
-      if (activeTab === 'billing' || activeTab === 'reports') {
+      if (activeTab === 'billing' || activeTab === 'reports' || activeTab === 'commissions') {
           csvContent += "Data;Cliente;Profissional;Valor;Pagamento;Status\n";
-          appointments.forEach(a => {
+          const filtered = appointments.filter(a => inRange(a.date));
+          filtered.forEach(a => {
               csvContent += `${a.date};${a.clientName};${professionals.find(p => p.id === a.professionalId)?.name || '---'};${a.totalValue};${a.paymentMethod};${a.status}\n`;
           });
       } else {
@@ -1038,7 +1053,7 @@ export const FinancialPanel: React.FC = () => {
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `cutflow_financeiro_${activeTab}.csv`);
+      link.setAttribute("download", `cutflow_financeiro_${activeTab}_${period}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

@@ -54,31 +54,6 @@ export const InventoryPanel: React.FC = () => {
   const [selectedCat, setSelectedCat] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Sales data state
-  const [productSales, setProductSales] = useState<Record<string, number>>({});
-  
-  // Fetch sales
-  React.useEffect(() => {
-    if (products.length === 0) return;
-    const fetchSales = async () => {
-      const { supabase } = await import('../../../supabaseClient');
-      if (!settings?.shopId) return;
-      const { data } = await supabase
-        .from('appointment_products')
-        .select('product_id, quantity, appointments!inner(shop_id)')
-        .eq('appointments.shop_id', settings.shopId);
-      if (data) {
-        const salesStats: Record<string, number> = {};
-        data.forEach(item => {
-          if (!salesStats[item.product_id]) salesStats[item.product_id] = 0;
-          salesStats[item.product_id] += item.quantity;
-        });
-        setProductSales(salesStats);
-      }
-    };
-    fetchSales();
-  }, [products]);
-
   // --- CATALOGO PRE-DEFINIDO (Baseado no pedido do usuário) ---
   const PRODUCT_CATEGORIES = [
     'Cuidados com o Cabelo',
