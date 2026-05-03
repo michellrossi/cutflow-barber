@@ -90,18 +90,6 @@ interface ShopContextType extends ShopState {
 
     updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
 
-    // Product Actions
-    addProduct: (product: Omit<Product, 'id' | 'shopId' | 'createdAt'>) => MutationResult;
-    updateProduct: (id: string, product: Partial<Product>) => MutationResult;
-    removeProduct: (id: string) => MutationResult;
-    restockProduct: (productId: string, addedQuantity: number, newUnitCost: number) => MutationResult;
-    addAppointmentProducts: (appointmentId: string, products: { productId: string, quantity: number, unitPrice: number }[]) => MutationResult;
-
-    // Goal Actions
-    upsertGoal: (goal: Partial<Goal> & { name: string; category: string; targetValue: number; period: string; startDate: string; endDate: string }) => MutationResult;
-    removeGoal: (id: string) => MutationResult;
-    calculateGoalProgress: (goal: Goal) => { percentage: number; remaining: number; status: 'critical' | 'warning' | 'good' };
-
     // Cash Control Actions
     openCashSession: (openingBalance: number) => MutationResult;
     closeCashSession: (closingBalance: number) => MutationResult;
@@ -276,7 +264,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Executa queries de configurações e dados estáticos em paralelo
             // LAZY LOAD: clients NÃO está aqui — é carregado sob demanda pela aba Clientes
-            const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, productsRes, goalsRes, cashSessionsRes, sessionsRes] = await Promise.all([
+            const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, cashSessionsRes, sessionsRes] = await Promise.all([
                 supabase.from('settings').select('*').eq('shop_id', shopId).single(),
                 supabase.from('services').select('*').eq('shop_id', shopId),
                 supabase.from('professionals').select('*').eq('shop_id', shopId),
@@ -287,8 +275,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
                 supabase.from('client_subscriptions').select('*').eq('shop_id', shopId),
                 supabase.from('automation_triggers').select('*').eq('shop_id', shopId),
-                supabase.from('products').select('*').eq('shop_id', shopId),
-                supabase.from('goals').select('*').eq('shop_id', shopId),
                 supabase.from('cash_sessions').select('*').eq('shop_id', shopId).eq('status', 'open').order('opened_at', { ascending: false }).limit(1),
                 supabase.from('whatsapp_chat_sessions').select('id', { count: 'exact', head: true }).eq('shop_id', shopId).eq('bot_paused', true)
             ]);
@@ -370,8 +356,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 messageCategories: mappedCategories,
                 blockedSlots: (blocksRes.data || []).map(mapBlockedSlot),
                 automationTriggers: mappedTriggers,
-                products: (productsRes.data || []).map(mapProduct),
-                goals: (goalsRes.data || []).map(mapGoal),
                 cashSessions: mappedCashSessions,
                 cashFlowEntries: mappedCashFlowEntries,
                 trialStatus: trialInfo.status,
@@ -483,76 +467,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             )
             .subscribe();
 
-        // 3. Listen for Goal Changes
-        const goalsChannel = supabase.channel('goals_sync')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'goals',
-                    filter: `shop_id=eq.${state.shop.id}`
-                },
-                (payload) => {
-                    // Ignora eventos sem 'new' (ex: DELETE)
-                    if (!payload.new || !(payload.new as any).id) {
-                        if (payload.eventType === 'DELETE') {
-                            setState(prev => ({
-                                ...prev,
-                                goals: prev.goals.filter(g => g.id !== payload.old?.id)
-                            }));
-                        }
-                        return;
-                    }
-                    const updatedGoal = mapGoal(payload.new as GoalRow);
-                    setState(prev => {
-                        // INSERT ou UPDATE: upsert para evitar duplicação
-                        // (upsertGoal() já adiciona ao state antes do Realtime chegar)
-                        const alreadyExists = prev.goals.some(g => g.id === updatedGoal.id);
-                        if (alreadyExists) {
-                            // Sempre atualiza com o dado mais recente (ex: current_value do trigger)
-                            return { ...prev, goals: prev.goals.map(g => g.id === updatedGoal.id ? updatedGoal : g) };
-                        }
-                        // Só adiciona se não existe (ex: inserção feita por outro dispositivo)
-                        if (payload.eventType === 'INSERT') {
-                            return { ...prev, goals: [...prev.goals, updatedGoal] };
-                        }
-                        return prev;
-                    });
-                }
-            )
-            .subscribe();
-
-        // 4. Listen for Product/Inventory Changes
-        const productsChannel = supabase.channel('products_sync')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'products',
-                    filter: `shop_id=eq.${state.shop.id}`
-                },
-                (payload) => {
-                    const updatedProduct = mapProduct(payload.new as ProductRow);
-                    setState(prev => {
-                        if (payload.eventType === 'INSERT') {
-                            const exists = prev.products.some(p => p.id === updatedProduct.id);
-                            if (exists) return prev;
-                            return { ...prev, products: [...prev.products, updatedProduct] };
-                        }
-                        if (payload.eventType === 'UPDATE') {
-                            return { ...prev, products: prev.products.map(p => p.id === updatedProduct.id ? updatedProduct : p) };
-                        }
-                        if (payload.eventType === 'DELETE') {
-                            return { ...prev, products: prev.products.filter(p => p.id !== (payload.old as any)?.id) };
-                        }
-                        return prev;
-                    });
-                }
-            )
-            .subscribe();
-
         // 5. Listen for Client Changes
         const clientsChannel = supabase.channel('clients_sync')
             .on(
@@ -572,8 +486,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return () => {
             supabase.removeChannel(shopChannel);
             supabase.removeChannel(appointmentsChannel);
-            supabase.removeChannel(goalsChannel);
-            supabase.removeChannel(productsChannel);
             supabase.removeChannel(clientsChannel);
         }
     }, [state.shop?.id]);
@@ -1908,168 +1820,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const addProduct = async (product: Omit<Product, 'id' | 'shopId' | 'createdAt'>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { data, error } = await supabase.from('products').insert({
-                shop_id: shopId,
-                name: product.name,
-                category: product.category,
-                cost_price: product.costPrice,
-                sale_price: product.salePrice,
-                current_stock: product.currentStock,
-                initial_stock: product.initialStock || product.currentStock,
-                min_stock: product.minStock
-            }).select().single();
-
-            if (error) throw error;
-
-            const newProduct = mapProduct(data);
-            setState(prev => ({ ...prev, products: [...prev.products, newProduct] }));
-            return { success: true, data: newProduct };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const updateProduct = async (id: string, product: Partial<Product>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const payload: any = {};
-            if (product.name) payload.name = product.name;
-            if (product.category) payload.category = product.category;
-            if (product.costPrice !== undefined) payload.cost_price = product.costPrice;
-            if (product.salePrice !== undefined) payload.sale_price = product.salePrice;
-            if (product.currentStock !== undefined) payload.current_stock = product.currentStock;
-            if (product.initialStock !== undefined) payload.initial_stock = product.initialStock;
-            if (product.minStock !== undefined) payload.min_stock = product.minStock;
-
-            const { data, error } = await supabase.from('products').update(payload).eq('id', id).eq('shop_id', shopId).select().single();
-            if (error) throw error;
-
-            const updated = mapProduct(data);
-            setState(prev => ({
-                ...prev,
-                products: prev.products.map(p => p.id === id ? updated : p)
-            }));
-            return { success: true, data: updated };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const removeProduct = async (id: string): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { error } = await supabase.from('products').delete().eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            setState(prev => ({
-                ...prev,
-                products: prev.products.filter(p => p.id !== id)
-            }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const restockProduct = async (productId: string, addedQuantity: number, newUnitCost: number): MutationResult => {
-        try {
-            // 1. Busca o estado atual no DB
-            const { data: p, error: fetchErr } = await supabase
-                .from('products')
-                .select('current_stock, initial_stock, cost_price')
-                .eq('id', productId)
-                .single();
-
-            if (fetchErr) throw fetchErr;
-
-            const currentStock = Number(p.current_stock) || 0;
-            const currentCost = Number(p.cost_price) || 0;
-
-            // 2. Calcula o Preço Médio Ponderado
-            const newTotalStock = currentStock + addedQuantity;
-            let newAverageCost = currentCost;
-
-            if (newTotalStock > 0) {
-                const totalCurrentValue = currentStock * currentCost;
-                const totalNewValue = addedQuantity * newUnitCost;
-                newAverageCost = (totalCurrentValue + totalNewValue) / newTotalStock;
-            }
-
-            newAverageCost = Math.round(newAverageCost * 100) / 100;
-
-            // 3. Atualiza o DB
-            const { error: updateErr } = await supabase
-                .from('products')
-                .update({
-                    current_stock: newTotalStock,
-                    initial_stock: (Number(p.initial_stock) || 0) + addedQuantity,
-                    cost_price: newAverageCost
-                })
-                .eq('id', productId);
-
-            if (updateErr) throw updateErr;
-
-            // 4. Atualiza o State local
-            setState(prev => ({
-                ...prev,
-                products: prev.products.map(prod =>
-                    prod.id === productId
-                        ? { ...prod, currentStock: newTotalStock, initialStock: prod.initialStock + addedQuantity, costPrice: newAverageCost }
-                        : prod
-                )
-            }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const addAppointmentProducts = async (appointmentId: string, products: { productId: string, quantity: number, unitPrice: number }[]): MutationResult => {
-        try {
-            // Garante que não existam linhas duplicadas para o mesmo produto no mesmo agendamento.
-            // Duplicatas aqui causam baixa em dobro no trigger `trg_stock_on_completion`.
-            const grouped = new Map<string, { productId: string; quantity: number; unitPrice: number }>();
-            for (const p of products) {
-                if (!p?.productId) continue;
-                const qty = Number(p.quantity) || 0;
-                if (qty <= 0) continue;
-                const price = Number(p.unitPrice) || 0;
-                const existing = grouped.get(p.productId);
-                if (existing) {
-                    existing.quantity += qty;
-                    // Mantém o último preço informado (ou poderia fazer média ponderada)
-                    existing.unitPrice = price;
-                } else {
-                    grouped.set(p.productId, { productId: p.productId, quantity: qty, unitPrice: price });
-                }
-            }
-
-            const rows = Array.from(grouped.values()).map(p => ({
-                appointment_id: appointmentId,
-                product_id: p.productId,
-                quantity: p.quantity,
-                unit_price: p.unitPrice,
-            }));
-
-            if (rows.length === 0) return { success: true };
-
-            // Limpa produtos existentes para este agendamento antes de inserir os novos.
-            // Isso evita duplicatas caso o usuário tente finalizar o mesmo agendamento múltiplas vezes
-            // (ex: após um erro ou recarregamento).
-            await supabase.from('appointment_products').delete().eq('appointment_id', appointmentId);
-
-            const { error } = await supabase.from('appointment_products').insert(rows);
-            if (error) throw error;
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
     const openCashSession = async (openingBalance: number): MutationResult => {
         try {
             const shopId = ensureShopId();
@@ -2154,83 +1904,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const upsertGoal = async (goal: Partial<Goal> & { name: string; category: string; targetValue: number; period: string; startDate: string; endDate: string }): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const payload = {
-                shop_id: shopId,
-                professional_id: goal.professionalId || null,
-                name: goal.name,
-                category: goal.category,
-                target_value: goal.targetValue,
-                period: goal.period,
-                start_date: goal.startDate,
-                end_date: goal.endDate
-            };
-
-            let updatedGoal: Goal;
-
-            if (goal.id) {
-                // UPDATE: re-fetch normalmente
-                const { data, error } = await supabase
-                    .from('goals').update(payload)
-                    .eq('id', goal.id).eq('shop_id', shopId)
-                    .select().single();
-                if (error) throw error;
-                updatedGoal = mapGoal(data);
-            } else {
-                // INSERT: após inserção, faz re-fetch para obter current_value
-                // calculado pelo trigger trg_sync_goal_initial (roda na mesma tx)
-                const { data: inserted, error: insertError } = await supabase
-                    .from('goals').insert(payload).select('id').single();
-                if (insertError) throw insertError;
-
-                const { data: fresh, error: fetchError } = await supabase
-                    .from('goals').select('*').eq('id', inserted.id).single();
-                if (fetchError) throw fetchError;
-                updatedGoal = mapGoal(fresh);
-            }
-
-            setState(prev => ({
-                ...prev,
-                goals: goal.id
-                    ? prev.goals.map(g => g.id === goal.id ? updatedGoal : g)
-                    : [...prev.goals, updatedGoal]
-            }));
-            return { success: true, data: updatedGoal };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-
-    const removeGoal = async (id: string): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { error } = await supabase.from('goals').delete().eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            setState(prev => ({
-                ...prev,
-                goals: prev.goals.filter(g => g.id !== id)
-            }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const calculateGoalProgress = (goal: Goal) => {
-        const percentage = goal.targetValue > 0 ? (goal.currentValue / goal.targetValue) * 100 : 0;
-        const remaining = Math.max(goal.targetValue - goal.currentValue, 0);
-
-        let status: 'critical' | 'warning' | 'good' = 'critical';
-        if (percentage >= 70) status = 'good';
-        else if (percentage >= 30) status = 'warning';
-
-        return { percentage: Math.min(percentage, 100), remaining, status };
-    };
-
     const logoutClient = () => {
         sessionStorage.removeItem('currentClient');
         sessionStorage.removeItem('clientSession');
@@ -2290,9 +1963,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             addClientSubscription, updateClientSubscription, removeClientSubscription,
             addBlockedSlot, removeBlockedSlot,
             updateSettings,
-            addProduct, updateProduct, removeProduct, restockProduct, addAppointmentProducts,
             openCashSession, closeCashSession, addCashMovement,
-            upsertGoal, removeGoal, calculateGoalProgress,
             getWhatsAppQRCode,
             getWhatsAppStatus,
             disconnectWhatsApp,

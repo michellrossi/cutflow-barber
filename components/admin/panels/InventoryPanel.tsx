@@ -348,7 +348,7 @@ export const InventoryPanel: React.FC = () => {
             setEditingId(null); 
             setIsCustom(false);
             setSelectedCat('');
-            setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', minStock: '2' }); 
+            setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', initialStock: '', minStock: '2' }); 
           }}
           className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-lg hover:bg-orange-700 whitespace-nowrap"
         >
@@ -601,7 +601,7 @@ export const InventoryPanel: React.FC = () => {
             setEditingId(null); 
             setIsCustom(false);
             setSelectedCat('');
-            setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', minStock: '2' }); 
+            setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', initialStock: '', minStock: '2' }); 
           }}
           className="bg-slate-50 rounded-lg border-2 border-dashed border-slate-200 p-4 flex flex-col items-center justify-center gap-3 hover:border-slate-300 hover:bg-slate-100 transition-all min-h-[200px] group"
         >

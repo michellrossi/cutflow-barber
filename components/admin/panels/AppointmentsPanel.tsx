@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useShop } from '../../../store';
-import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader2, List, Calendar as CalendarIcon, Phone, MessageCircle } from 'lucide-react';
+import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader2, List, Calendar as CalendarIcon, Phone, MessageCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 import { WeeklyCalendar } from './WeeklyCalendar';
 import { formatMessage, getWhatsAppLink } from '../../../utils/messageFormatter';

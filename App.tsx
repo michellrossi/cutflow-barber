@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useParams, Navigate, useSearchParams } from 'react-router-dom';
-import { ShopProvider, useShop } from './store';
+import { ShopProvider, useShop, InventoryProvider } from './store';
+import { useShop as useShopBase } from './store/ShopContext'; // Import direto para evitar erro de contexto no wrapper
 import { ToastProvider } from './components/ui/ToastContext';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { BarberDashboard } from './components/admin/BarberDashboard';
@@ -281,6 +282,17 @@ const AppRoutes = () => {
     );
 }
 
+const CombinedProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { shop } = useShopBase();
+  const shopId = shop?.id || '';
+  
+  return (
+    <InventoryProvider shopId={shopId}>
+      {children}
+    </InventoryProvider>
+  );
+};
+
 function App() {
   // Forçar HTTPS em produção
   useEffect(() => {
@@ -296,9 +308,11 @@ function App() {
   return (
     <ToastProvider>
         <ShopProvider>
-            <BrowserRouter>
-                <AppRoutes />
-            </BrowserRouter>
+            <CombinedProviders>
+                <BrowserRouter>
+                    <AppRoutes />
+                </BrowserRouter>
+            </CombinedProviders>
         </ShopProvider>
     </ToastProvider>
   );
