@@ -11,6 +11,7 @@ import {
     type ShopRow,
     type GoalRow,
     type ProductRow,
+    type SettingsRow,
 } from './mappers';
 
 import {
@@ -22,7 +23,7 @@ import {
 export { formatCurrencyBRL };
 
 // Standard response type for mutations
-type MutationResult<T = any> = Promise<{ success: boolean; data?: T; error?: string }>;
+type MutationResult<T = unknown> = Promise<{ success: boolean; data?: T; error?: string }>;
 
 interface ShopContextType extends ShopState {
     session: Session | null;
@@ -30,8 +31,8 @@ interface ShopContextType extends ShopState {
     userRole: 'owner' | 'barber' | null;
 
     // Auth Actions
-    login: (email: string, password: string) => Promise<{ error: any }>;
-    signup: (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team', fullName: string, phone: string) => Promise<{ error: any }>;
+    login: (email: string, password: string) => Promise<{ error: Error | null }>;
+    signup: (email: string, password: string, shopName: string, slug: string, intent: 'create_shop' | 'join_team', fullName: string, phone: string) => Promise<{ error: Error | null }>;
     logout: () => void;
     resetPassword: (email: string) => Promise<{ success: boolean, error?: string }>;
 
@@ -62,7 +63,7 @@ interface ShopContextType extends ShopState {
     // reloadClients moved to ClientContext
 
     // [NOVO] SAAS ADMIN
-    fetchGlobalShops: () => Promise<{ success: boolean; data?: any[]; error?: string }>;
+    fetchGlobalShops: () => Promise<{ success: boolean; data?: Shop[]; error?: string }>;
 }
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -279,10 +280,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const result = await res.json();
 
             if (!res.ok) throw new Error(result.error);
-            return { success: true, data: result.shops };
-        } catch (error: any) {
+            return { success: true, data: result.shops.map(mapShop) };
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Erro ao carregar lojas';
             console.error("Error fetching global shops:", error);
-            return { success: false, error: error.message };
+            return { success: false, error: message };
         }
     };
 
@@ -308,8 +310,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Ocorreu um erro inesperado';
+            return { success: false, error: message };
         }
     };
 
@@ -527,8 +530,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setSession(authData.session);
             await fetchData(shopData.id);
             return { error: null };
-        } catch (e: any) {
-            return { error: e };
+        } catch (e: unknown) {
+            return { error: e as Error };
         }
     };
 
@@ -627,9 +630,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             return { success: true, data: latestApt };
-        } catch (e: any) {
-            console.error('addAppointment: Exceção capturada:', e.message);
-            return { success: false, error: e.message };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Erro ao agendar';
+            console.error('addAppointment: Exceção capturada:', message);
+            return { success: false, error: message };
         }
     };
 
@@ -680,8 +684,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Ocorreu um erro inesperado';
+            return { success: false, error: message };
         }
     };
 
@@ -694,7 +699,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             setState(prev => ({
                 ...prev,
                 appointments: prev.appointments.map(a =>
-                    a.id === id ? { ...a, status: status as any } : a
+                    a.id === id ? { ...a, status: status as Appointment['status'] } : a
                 )
             }));
 
@@ -723,8 +728,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Ocorreu um erro inesperado';
+            return { success: false, error: message };
         }
     };
 
@@ -751,8 +757,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Ocorreu um erro inesperado';
+            return { success: false, error: message };
         }
     };
 
@@ -766,7 +773,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 appointments: prev.appointments.map(a =>
                     a.id === id ? {
                         ...a,
-                        paymentMethod: paymentMethod as any,
+                        paymentMethod: paymentMethod as Appointment['paymentMethod'],
                         usedSubscriptionId: usedSubscriptionId || a.usedSubscriptionId
                     } : a
                 )
@@ -784,8 +791,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Ocorreu um erro inesperado';
+            return { success: false, error: message };
         }
     };
 
@@ -795,7 +803,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // 1. Update Shop Table (Name and Slug)
             if (updated.name || updated.slug) {
-                const shopPayload: any = {};
+                const shopPayload: Partial<ShopRow> = {};
                 if (updated.name) shopPayload.name = sanitize(updated.name);
                 if (updated.slug) shopPayload.slug = sanitize(updated.slug).toLowerCase().replace(/\s+/g, '-');
                 const { error: shopErr } = await supabase.from('shops').update(shopPayload).eq('id', shopId);
@@ -805,7 +813,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // 2. Update Settings Table
             const { data: current } = await supabase.from('settings').select('id').eq('shop_id', shopId).single();
 
-            const payload: any = {};
+            const payload: Partial<SettingsRow> = {};
             if (updated.name) payload.name = sanitize(updated.name);
             if (updated.logoUrl !== undefined) payload.logo_url = updated.logoUrl;
             if (updated.primaryColor) payload.primary_color = sanitize(updated.primaryColor);
@@ -864,8 +872,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }));
 
             return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Ocorreu um erro inesperado';
+            return { success: false, error: message };
         }
     };
 
@@ -882,8 +891,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const data = await response.json();
             if (data.error) throw new Error(data.error);
             return { qrcode: data.qrcode, connected: data.connected };
-        } catch (e: any) {
-            return { error: e.message };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Erro ao obter QR Code';
+            return { error: message };
         }
     };
 
@@ -898,8 +908,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const data = await response.json();
             if (data.error) throw new Error(data.error);
             return { connected: Boolean(data.connected) };
-        } catch (e: any) {
-            return { connected: false, error: e.message };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Erro ao obter status';
+            return { connected: false, error: message };
         }
     };
 
@@ -914,8 +925,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const data = await response.json();
             if (data.error) throw new Error(data.error);
             return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Ocorreu um erro inesperado';
+            return { success: false, error: message };
         }
     };
 
@@ -937,8 +949,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const shopData = await initNewShop(session.user.id, shopName, slug, phone);
             await fetchData(shopData.id);
             return { success: true, data: shopData };
-        } catch (e: any) {
-            return { success: false, error: e.message };
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Ocorreu um erro inesperado';
+            return { success: false, error: message };
         }
     };
 

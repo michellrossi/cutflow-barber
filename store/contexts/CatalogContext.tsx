@@ -2,7 +2,10 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Service, Professional, BlockedSlot } from '../../types';
 import { MutationResult } from '../types';
 import { supabase } from '../../supabaseClient';
-import { mapService, mapProfessional, mapBlockedSlot } from '../mappers';
+import { 
+    mapService, mapProfessional, mapBlockedSlot,
+    type ServiceRow, type ProfessionalRow, type BlockedSlotRow
+} from '../mappers';
 
 interface CatalogContextType {
   services: Service[];
@@ -80,8 +83,9 @@ export const CatalogProvider: React.FC<{ shopId: string; children: ReactNode }> 
       const newS = mapService(data);
       setServices(prev => [...prev, newS].sort((a, b) => a.name.localeCompare(b.name)));
       return { success: true, data: newS };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao adicionar serviço';
+      return { success: false, error: message };
     }
   };
 
@@ -100,8 +104,9 @@ export const CatalogProvider: React.FC<{ shopId: string; children: ReactNode }> 
       const updated = mapService(data);
       setServices(prev => prev.map(s => s.id === id ? updated : s).sort((a, b) => a.name.localeCompare(b.name)));
       return { success: true, data: updated };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao atualizar serviço';
+      return { success: false, error: message };
     }
   };
 
@@ -112,8 +117,9 @@ export const CatalogProvider: React.FC<{ shopId: string; children: ReactNode }> 
       if (error) throw error;
       setServices(prev => prev.filter(s => s.id !== id));
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao remover serviço';
+      return { success: false, error: message };
     }
   };
 
@@ -138,26 +144,21 @@ export const CatalogProvider: React.FC<{ shopId: string; children: ReactNode }> 
       const newP = mapProfessional(data, professionals.length);
       setProfessionals(prev => [...prev, newP]);
       return { success: true, data: newP };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao adicionar profissional';
+      return { success: false, error: message };
     }
   };
 
   const updateProfessional = async (id: string, professional: Partial<Professional>): MutationResult<Professional> => {
     try {
       const sid = ensureShopId();
-      const payload: any = { ...professional };
-      if (payload.photoUrl) {
-          payload.photo_url = payload.photoUrl;
-          delete payload.photoUrl;
+      const payload: Partial<ProfessionalRow> = { ...professional } as any; // Cast temporário para resolver mismatch de campos virtuais vs DB
+      if (payload.photo_url) {
+          payload.photo_url = professional.photoUrl;
       }
-      if (payload.commissionPercentage !== undefined) {
-          payload.commission_percentage = payload.commissionPercentage;
-          delete payload.commissionPercentage;
-      }
-      if (payload.workSchedule) {
-          payload.work_schedule = payload.workSchedule;
-          delete payload.workSchedule;
+      if (payload.work_schedule) {
+          payload.work_schedule = professional.workSchedule;
       }
 
       const { data, error } = await supabase.from('professionals').update(payload).eq('id', id).eq('shop_id', sid).select().single();
@@ -166,8 +167,9 @@ export const CatalogProvider: React.FC<{ shopId: string; children: ReactNode }> 
       const updated = mapProfessional(data, professionals.findIndex(p => p.id === id));
       setProfessionals(prev => prev.map(p => p.id === id ? updated : p));
       return { success: true, data: updated };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao atualizar profissional';
+      return { success: false, error: message };
     }
   };
 
@@ -178,8 +180,9 @@ export const CatalogProvider: React.FC<{ shopId: string; children: ReactNode }> 
       if (error) throw error;
       setProfessionals(prev => prev.filter(p => p.id !== id));
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao remover profissional';
+      return { success: false, error: message };
     }
   };
 
@@ -201,8 +204,9 @@ export const CatalogProvider: React.FC<{ shopId: string; children: ReactNode }> 
       const newB = mapBlockedSlot(data);
       setBlockedSlots(prev => [...prev, newB]);
       return { success: true, data: newB };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao bloquear horário';
+      return { success: false, error: message };
     }
   };
 
@@ -213,8 +217,9 @@ export const CatalogProvider: React.FC<{ shopId: string; children: ReactNode }> 
       if (error) throw error;
       setBlockedSlots(prev => prev.filter(b => b.id !== id));
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao remover bloqueio';
+      return { success: false, error: message };
     }
   };
 

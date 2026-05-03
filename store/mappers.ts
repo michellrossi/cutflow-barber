@@ -36,7 +36,7 @@ export interface ShopRow {
 }
 
 /** Row from `settings` */
-interface SettingsRow {
+export interface SettingsRow {
     id?: string;
     shop_id: string;
     name?: string | null;
@@ -110,7 +110,7 @@ export interface ClientRow {
     created_at: string;
 }
 
-interface ServiceRow {
+export interface ServiceRow {
     id: string;
     shop_id: string;
     name: string;
@@ -121,7 +121,7 @@ interface ServiceRow {
     image_url?: string | null;
 }
 
-interface ProfessionalRow {
+export interface ProfessionalRow {
     id: string;
     shop_id: string;
     name: string;
@@ -135,7 +135,7 @@ interface ProfessionalRow {
     color?: string | null;
 }
 
-interface CouponRow {
+export interface CouponRow {
     id: string;
     shop_id: string;
     code: string;
@@ -147,7 +147,7 @@ interface CouponRow {
     expires_at?: string | null;
 }
 
-interface AppointmentRow {
+export interface AppointmentRow {
     id: string;
     shop_id: string;
     client_id?: string | null;
@@ -166,7 +166,7 @@ interface AppointmentRow {
     stock_deducted?: boolean | null;
 }
 
-interface BlockedSlotRow {
+export interface BlockedSlotRow {
     id: string;
     shop_id: string;
     professional_id: string;
@@ -176,7 +176,7 @@ interface BlockedSlotRow {
     reason?: string | null;
 }
 
-interface MessageTemplateRow {
+export interface MessageTemplateRow {
     id: string;
     shop_id: string;
     title: string;
@@ -188,7 +188,7 @@ interface MessageTemplateRow {
     category?: string | null;
 }
 
-interface MessageCategoryRow {
+export interface MessageCategoryRow {
     id: string;
     shop_id: string;
     name: string;
@@ -244,7 +244,7 @@ export interface GoalRow {
     created_at: string;
 }
 
-interface CashSessionRow {
+export interface CashSessionRow {
     id: string;
     shop_id: string;
     status: CashSession['status'];
@@ -255,7 +255,7 @@ interface CashSessionRow {
     opened_by?: string | null;
 }
 
-interface CashFlowEntryRow {
+export interface CashFlowEntryRow {
     id: string;
     shop_id: string;
     session_id: string;

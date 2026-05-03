@@ -13,7 +13,7 @@ interface ClientContextType {
   subscriptionPlans: SubscriptionPlan[];
   clientSubscriptions: ClientSubscription[];
   currentClient: Client | null;
-  clientSession: any | null;
+  clientSession: { token: string } | null;
   
   // Client CRUD
   addClient: (client: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => MutationResult<Client>;
@@ -48,7 +48,7 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([]);
   const [clientSubscriptions, setClientSubscriptions] = useState<ClientSubscription[]>([]);
   const [currentClient, setCurrentClient] = useState<Client | null>(null);
-  const [clientSession, setClientSession] = useState<any | null>(null);
+  const [clientSession, setClientSession] = useState<{ token: string } | null>(null);
 
   const loadData = async () => {
     if (!shopId) return;
@@ -124,15 +124,16 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
       const newC = mapClient(data);
       setClients(prev => [...prev, newC]);
       return { success: true, data: newC };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao adicionar cliente';
+      return { success: false, error: message };
     }
   };
 
   const updateClient = async (id: string, client: Partial<Client>): MutationResult<Client> => {
     try {
       const sid = ensureShopId();
-      const payload: any = {};
+      const payload: Partial<ClientRow> = {};
       if (client.name) payload.name = sanitize(client.name);
       if (client.phone) payload.phone = sanitize(client.phone);
       if (client.birthDate !== undefined) payload.birth_date = client.birthDate;
@@ -146,8 +147,9 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
       const updated = mapClient(data);
       setClients(prev => prev.map(c => c.id === id ? updated : c));
       return { success: true, data: updated };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao atualizar cliente';
+      return { success: false, error: message };
     }
   };
 
@@ -158,8 +160,9 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
       if (error) throw error;
       setClients(prev => prev.filter(c => c.id !== id));
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao remover cliente';
+      return { success: false, error: message };
     }
   };
 
@@ -202,15 +205,16 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
       const newPlan = mapSubscriptionPlan(data);
       setSubscriptionPlans(prev => [...prev, newPlan]);
       return { success: true, data: newPlan };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao adicionar plano';
+      return { success: false, error: message };
     }
   };
 
   const updateSubscriptionPlan = async (id: string, plan: Partial<SubscriptionPlan>): MutationResult<SubscriptionPlan> => {
     try {
       const sid = ensureShopId();
-      const payload: any = {};
+      const payload: Partial<SubscriptionPlanRow> = {};
       if (plan.name) payload.name = sanitize(plan.name);
       if (plan.description !== undefined) payload.description = plan.description ? sanitize(plan.description) : null;
       if (plan.price !== undefined) payload.price = plan.price;
@@ -223,8 +227,9 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
       const updated = mapSubscriptionPlan(data);
       setSubscriptionPlans(prev => prev.map(p => p.id === id ? updated : p));
       return { success: true, data: updated };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao atualizar plano';
+      return { success: false, error: message };
     }
   };
 
@@ -235,8 +240,9 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
       if (error) throw error;
       setSubscriptionPlans(prev => prev.filter(p => p.id !== id));
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao remover plano';
+      return { success: false, error: message };
     }
   };
 
@@ -257,15 +263,16 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
       const newSub = mapClientSubscription(data);
       setClientSubscriptions(prev => [...prev, newSub]);
       return { success: true, data: newSub };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao adicionar assinatura';
+      return { success: false, error: message };
     }
   };
 
   const updateClientSubscription = async (id: string, sub: Partial<ClientSubscription>): MutationResult<ClientSubscription> => {
     try {
       const sid = ensureShopId();
-      const payload: any = {};
+      const payload: Partial<ClientSubscriptionRow> = {};
       if (sub.status) payload.status = sub.status;
       if (sub.nextBillingDate) payload.next_billing_date = sub.nextBillingDate;
       if (sub.servicesUsedThisMonth !== undefined) payload.services_used_this_month = sub.servicesUsedThisMonth;
@@ -276,8 +283,9 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
       const updated = mapClientSubscription(data);
       setClientSubscriptions(prev => prev.map(s => s.id === id ? updated : s));
       return { success: true, data: updated };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao atualizar assinatura';
+      return { success: false, error: message };
     }
   };
 
@@ -288,8 +296,9 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
       if (error) throw error;
       setClientSubscriptions(prev => prev.filter(s => s.id !== id));
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao remover assinatura';
+      return { success: false, error: message };
     }
   };
 
@@ -304,8 +313,9 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
             body: JSON.stringify({ shopId: sid, phone, name, birthDate, justCheck }),
         });
         return await response.json();
-    } catch (e: any) {
-        return { success: false, error: e.message };
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Erro ao solicitar login';
+        return { success: false, error: message };
     }
   };
 
@@ -324,8 +334,9 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
             sessionStorage.setItem('clientSession', JSON.stringify(result.session));
         }
         return result;
-    } catch (e: any) {
-        return { success: false, error: e.message };
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Erro ao validar token';
+        return { success: false, error: message };
     }
   };
 
@@ -363,7 +374,7 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
           if (updatedCardCount >= (settings.loyaltyCardGoal || 10)) rewardTriggered = true;
       }
 
-      const updatePayload: any = {
+      const updatePayload: Partial<ClientRow> = {
           total_spent: (client.totalSpent || 0) + appointment.totalValue,
           loyalty_points: updatedPoints,
           loyalty_card_count: updatedCardCount

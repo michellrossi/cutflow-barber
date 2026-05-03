@@ -86,8 +86,9 @@ export const AutomationProvider: React.FC<{ shopId: string; children: ReactNode 
       const newT = mapMessageTemplate(data);
       setMessageTemplates(prev => [...prev, newT]);
       return { success: true, data: newT };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação de automação';
+      return { success: false, error: message };
     }
   };
 
@@ -107,8 +108,9 @@ export const AutomationProvider: React.FC<{ shopId: string; children: ReactNode 
       const updated = mapMessageTemplate(data);
       setMessageTemplates(prev => prev.map(t => t.id === id ? updated : t));
       return { success: true, data: updated };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação de automação';
+      return { success: false, error: message };
     }
   };
 
@@ -119,8 +121,9 @@ export const AutomationProvider: React.FC<{ shopId: string; children: ReactNode 
       if (error) throw error;
       setMessageTemplates(prev => prev.filter(t => t.id !== id));
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação de automação';
+      return { success: false, error: message };
     }
   };
 
@@ -142,8 +145,9 @@ export const AutomationProvider: React.FC<{ shopId: string; children: ReactNode 
       const newTrig = mapAutomationTrigger(data);
       setAutomationTriggers(prev => [...prev, newTrig]);
       return { success: true, data: newTrig };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação de automação';
+      return { success: false, error: message };
     }
   };
 
@@ -162,8 +166,9 @@ export const AutomationProvider: React.FC<{ shopId: string; children: ReactNode 
       const updated = mapAutomationTrigger(data);
       setAutomationTriggers(prev => prev.map(t => t.id === id ? updated : t));
       return { success: true, data: updated };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação de automação';
+      return { success: false, error: message };
     }
   };
 
@@ -174,8 +179,9 @@ export const AutomationProvider: React.FC<{ shopId: string; children: ReactNode 
       if (error) throw error;
       setAutomationTriggers(prev => prev.filter(t => t.id !== id));
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação de automação';
+      return { success: false, error: message };
     }
   };
 
@@ -193,8 +199,9 @@ export const AutomationProvider: React.FC<{ shopId: string; children: ReactNode 
       const newCat = mapMessageCategory(data);
       setMessageCategories(prev => [...prev, newCat]);
       return { success: true, data: newCat };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação de automação';
+      return { success: false, error: message };
     }
   };
 
@@ -205,8 +212,9 @@ export const AutomationProvider: React.FC<{ shopId: string; children: ReactNode 
       if (error) throw error;
       setMessageCategories(prev => prev.filter(c => c.id !== id));
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação de automação';
+      return { success: false, error: message };
     }
   };
 

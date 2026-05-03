@@ -21,7 +21,7 @@ interface FinancialContextType {
   removeCoupon: (id: string) => MutationResult;
   
   // Reports
-  fetchFinancialReport: (startDate: string, endDate: string) => Promise<any>;
+  fetchFinancialReport: (startDate: string, endDate: string) => Promise<{ appointments: Appointment[], movements: CashFlowEntry[] }>;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -91,8 +91,9 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
       setCashSessions([session]);
       setCashFlowEntries([]);
       return { success: true, data: session };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação financeira';
+      return { success: false, error: message };
     }
   };
 
@@ -113,8 +114,9 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
       setCashSessions([]);
       setCashFlowEntries([]);
       return { success: true, data: session };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação financeira';
+      return { success: false, error: message };
     }
   };
 
@@ -137,8 +139,9 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
       const newEntry = mapCashFlowEntry(data);
       setCashFlowEntries(prev => [newEntry, ...prev]);
       return { success: true, data: newEntry };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação financeira';
+      return { success: false, error: message };
     }
   };
 
@@ -161,8 +164,9 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
       const newCoupon = mapCoupon(data);
       setCoupons(prev => [...prev, newCoupon]);
       return { success: true, data: newCoupon };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação financeira';
+      return { success: false, error: message };
     }
   };
 
@@ -182,8 +186,9 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
       const updated = mapCoupon(data);
       setCoupons(prev => prev.map(c => c.id === id ? updated : c));
       return { success: true, data: updated };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação financeira';
+      return { success: false, error: message };
     }
   };
 
@@ -194,8 +199,9 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
       if (error) throw error;
       setCoupons(prev => prev.filter(c => c.id !== id));
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro na operação financeira';
+      return { success: false, error: message };
     }
   };
 

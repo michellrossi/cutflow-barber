@@ -49,7 +49,7 @@ export const InventoryProvider: React.FC<{ shopId: string; children: ReactNode }
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products', filter: `shop_id=eq.${shopId}` },
         (payload) => {
           if (payload.eventType === 'DELETE') {
-              setProducts(prev => prev.filter(p => p.id !== (payload.old as any).id));
+              setProducts(prev => prev.filter(p => p.id !== (payload.old as { id: string }).id));
           } else if (payload.eventType === 'INSERT') {
               setProducts(prev => [...prev, mapProduct(payload.new as ProductRow)].sort((a, b) => a.name.localeCompare(b.name)));
           } else if (payload.eventType === 'UPDATE') {
@@ -59,7 +59,7 @@ export const InventoryProvider: React.FC<{ shopId: string; children: ReactNode }
       .on('postgres_changes', { event: '*', schema: 'public', table: 'goals', filter: `shop_id=eq.${shopId}` },
         (payload) => {
           if (payload.eventType === 'DELETE') {
-            setGoals(prev => prev.filter(g => g.id !== (payload.old as any).id));
+            setGoals(prev => prev.filter(g => g.id !== (payload.old as { id: string }).id));
           } else {
             const updated = mapGoal(payload.new as GoalRow);
             setGoals(prev => {
@@ -91,15 +91,16 @@ export const InventoryProvider: React.FC<{ shopId: string; children: ReactNode }
         const newProduct = mapProduct(data);
         setProducts(prev => [...prev, newProduct].sort((a, b) => a.name.localeCompare(b.name)));
         return { success: true, data: newProduct };
-    } catch (e: any) {
-        return { success: false, error: e.message };
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Erro na operação de inventário';
+        return { success: false, error: message };
     }
   };
 
   const updateProduct = async (id: string, product: Partial<Product>): MutationResult => {
     try {
         if (!shopId) throw new Error("Loja não identificada");
-        const payload: any = {};
+        const payload: Partial<ProductRow> = {};
         if (product.name) payload.name = product.name;
         if (product.category) payload.category = product.category;
         if (product.costPrice !== undefined) payload.cost_price = product.costPrice;
@@ -114,8 +115,9 @@ export const InventoryProvider: React.FC<{ shopId: string; children: ReactNode }
         const updated = mapProduct(data);
         setProducts(prev => prev.map(p => p.id === id ? updated : p));
         return { success: true, data: updated };
-    } catch (e: any) {
-        return { success: false, error: e.message };
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Erro na operação de inventário';
+        return { success: false, error: message };
     }
   };
 
@@ -126,8 +128,9 @@ export const InventoryProvider: React.FC<{ shopId: string; children: ReactNode }
         if (error) throw error;
         setProducts(prev => prev.filter(p => p.id !== id));
         return { success: true };
-    } catch (e: any) {
-        return { success: false, error: e.message };
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Erro na operação de inventário';
+        return { success: false, error: message };
     }
   };
 
@@ -174,8 +177,9 @@ export const InventoryProvider: React.FC<{ shopId: string; children: ReactNode }
         ));
 
         return { success: true };
-    } catch (e: any) {
-        return { success: false, error: e.message };
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Erro na operação de inventário';
+        return { success: false, error: message };
     }
   };
 
@@ -209,8 +213,9 @@ export const InventoryProvider: React.FC<{ shopId: string; children: ReactNode }
         const { error } = await supabase.from('appointment_products').insert(rows);
         if (error) throw error;
         return { success: true };
-    } catch (e: any) {
-        return { success: false, error: e.message };
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Erro na operação de inventário';
+        return { success: false, error: message };
     }
   };
 
@@ -253,8 +258,9 @@ export const InventoryProvider: React.FC<{ shopId: string; children: ReactNode }
             return exists ? prev.map(g => g.id === updatedGoal.id ? updatedGoal : g) : [...prev, updatedGoal];
         });
         return { success: true, data: updatedGoal };
-    } catch (e: any) {
-        return { success: false, error: e.message };
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Erro na operação de inventário';
+        return { success: false, error: message };
     }
   };
 
@@ -265,8 +271,9 @@ export const InventoryProvider: React.FC<{ shopId: string; children: ReactNode }
         if (error) throw error;
         setGoals(prev => prev.filter(g => g.id !== id));
         return { success: true };
-    } catch (e: any) {
-        return { success: false, error: e.message };
+    } catch (e: unknown) {
+        const message = e instanceof Error ? e.message : 'Erro na operação de inventário';
+        return { success: false, error: message };
     }
   };
 
