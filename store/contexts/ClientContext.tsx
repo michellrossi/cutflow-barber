@@ -22,12 +22,8 @@ interface ClientContextType {
   reloadClients: (sid: string) => Promise<void>;
   ensureClientExists: (sid: string, name: string, phone: string, birthDate?: string) => Promise<string>;
   
-  // WhatsApp Actions
-  getWhatsAppQRCode: () => Promise<{ qrcode?: string; connected?: boolean; error?: string }>;
-  getWhatsAppStatus: () => Promise<{ connected: boolean; error?: string }>;
-  disconnectWhatsApp: () => Promise<{ success: boolean; error?: string }>;
-
-  // Subscription CRUD
+  // Client Auth
+  requestClientLogin: (phone: string, name?: string, birthDate?: string, justCheck?: boolean) => Promise<{ success: boolean; url?: string; error?: string; needsRegistration?: boolean }>;
   addSubscriptionPlan: (plan: Omit<SubscriptionPlan, 'id' | 'shopId' | 'createdAt'>) => MutationResult<SubscriptionPlan>;
   updateSubscriptionPlan: (id: string, plan: Partial<SubscriptionPlan>) => MutationResult<SubscriptionPlan>;
   removeSubscriptionPlan: (id: string) => MutationResult;
@@ -169,11 +165,6 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
     if (error) throw error;
     return created.id;
   };
-
-  // ── WhatsApp Actions ────────────────────────────────────────────────────────
-  const getWhatsAppQRCode = async () => ({ connected: false, error: "Not implemented" });
-  const getWhatsAppStatus = async () => ({ connected: false });
-  const disconnectWhatsApp = async () => ({ success: false, error: "Not implemented" });
 
   // ── Subscription CRUD ────────────────────────────────────────────────────────
 
@@ -391,8 +382,7 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
       addSubscriptionPlan, updateSubscriptionPlan, removeSubscriptionPlan,
       addClientSubscription, updateClientSubscription, removeClientSubscription,
       requestClientLogin, validateClientToken, logoutClient,
-      processLoyalty, generateLoyaltyReward,
-      getWhatsAppQRCode, getWhatsAppStatus, disconnectWhatsApp
+      processLoyalty, generateLoyaltyReward
     }}>
       {children}
     </ClientContext.Provider>
