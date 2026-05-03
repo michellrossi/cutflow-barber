@@ -85,7 +85,7 @@ interface AutomationTriggerRow {
     active: boolean;
 }
 
-interface ClientRow {
+export interface ClientRow {
     id: string;
     shop_id: string;
     name: string;
@@ -194,7 +194,7 @@ interface MessageCategoryRow {
     name: string;
 }
 
-interface SubscriptionPlanRow {
+export interface SubscriptionPlanRow {
     id: string;
     shop_id: string;
     name: string;
@@ -205,7 +205,7 @@ interface SubscriptionPlanRow {
     created_at: string;
 }
 
-interface ClientSubscriptionRow {
+export interface ClientSubscriptionRow {
     id: string;
     shop_id: string;
     client_id: string;

@@ -51,19 +51,6 @@ interface ShopContextType extends ShopState {
     createManualAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
     updateAppointmentStatus: (id: string, status: string) => MutationResult;
 
-    addClient: (client: Omit<Client, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
-    updateClient: (id: string, client: Partial<Client>) => MutationResult;
-    removeClient: (id: string) => MutationResult;
-
-    // Subscription Actions
-    addSubscriptionPlan: (plan: Omit<SubscriptionPlan, 'id' | 'shopId' | 'createdAt'>) => MutationResult;
-    updateSubscriptionPlan: (id: string, plan: Partial<SubscriptionPlan>) => MutationResult;
-    removeSubscriptionPlan: (id: string) => MutationResult;
-
-    addClientSubscription: (sub: Omit<ClientSubscription, 'id' | 'shopId' | 'createdAt'>) => MutationResult;
-    updateClientSubscription: (id: string, sub: Partial<ClientSubscription>) => MutationResult;
-    removeClientSubscription: (id: string) => MutationResult;
-
     updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
 
     // WhatsApp Actions
@@ -71,15 +58,8 @@ interface ShopContextType extends ShopState {
     getWhatsAppStatus: () => Promise<{ connected: boolean; error?: string }>;
     disconnectWhatsApp: () => Promise<{ success: boolean; error?: string }>;
 
-    // Client Auth
-    requestClientLogin: (phone: string, name?: string, birthDate?: string, justCheck?: boolean) => Promise<{ success: boolean; url?: string; error?: string; needsRegistration?: boolean }>;
-    validateClientToken: (token: string) => Promise<{ success: boolean; error?: string }>;
-    logoutClient: () => void;
-
-    // Removed fetchFinancialReport (moved to FinancialContext)
-    // Removed toggleTheme
     formatCurrencyBRL: (value: number) => string;
-    reloadClients: (shopId: string) => Promise<void>;
+    // reloadClients moved to ClientContext
 
     // [NOVO] SAAS ADMIN
     fetchGlobalShops: () => Promise<{ success: boolean; data?: any[]; error?: string }>;
@@ -234,10 +214,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Executa queries de configurações e dados estáticos em paralelo
             // LAZY LOAD: clients NÃO está aqui — é carregado sob demanda pela aba Clientes
-            const [settingsRes, plansRes, subsRes] = await Promise.all([
-                supabase.from('settings').select('*').eq('shop_id', shopId).single(),
-                supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
-                supabase.from('client_subscriptions').select('*').eq('shop_id', shopId)
+            const [settingsRes] = await Promise.all([
+                supabase.from('settings').select('*').eq('shop_id', shopId).single()
             ]);
 
             // Agendamentos: janela de 90 dias para cobrir dashboard + relatórios + metas
@@ -257,9 +235,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             if (appts) appointmentsData = appts.map(mapAppointment);
 
-            const mappedClients: ReturnType<typeof mapClient>[] = [];
-            const mappedPlans = (plansRes.data || []).map(mapSubscriptionPlan);
-            const mappedSubs = (subsRes.data || []).map(mapClientSubscription);
 
             // --- LÓGICA DE ROLES ---
             if (currentSession?.user) {
@@ -301,9 +276,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 services: [],
                 professionals: [],
                 appointments: appointmentsData,
-                clients: mappedClients,
-                subscriptionPlans: mappedPlans,
-                clientSubscriptions: mappedSubs,
+                clients: [],
+                subscriptionPlans: [],
+                clientSubscriptions: [],
                 blockedSlots: [],
                 trialStatus: trialInfo.status,
                 daysRemaining: trialInfo.days,
@@ -784,11 +759,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 await processLoyalty(appointment);
 
                 if (status === 'completed' && appointment.usedSubscriptionId) {
-                    const sub = state.clientSubscriptions.find(s => s.id === appointment.usedSubscriptionId);
-                    if (sub) {
-                        await updateClientSubscription(sub.id, {
-                            servicesUsedThisMonth: (sub.servicesUsedThisMonth || 0) + 1
-                        });
+                    // Update subscription directly via Supabase to avoid circular dependency
+                    const { data: subData } = await supabase.from('client_subscriptions').select('services_used_this_month').eq('id', appointment.usedSubscriptionId).single();
+                    if (subData) {
+                        await supabase.from('client_subscriptions').update({
+                            services_used_this_month: (subData.services_used_this_month || 0) + 1
+                        }).eq('id', appointment.usedSubscriptionId);
                     }
                 }
             }
@@ -955,252 +931,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 await reloadAppointments(shopId);
                 throw error;
             }
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const addClient = async (client: Omit<Client, 'id' | 'createdAt' | 'shopId'>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { data, error } = await supabase.from('clients').insert({
-                shop_id: shopId,
-                name: sanitize(client.name),
-                last_name: client.lastName ? sanitize(client.lastName) : null,
-                phone: sanitize(client.phone),
-                email: client.email ? sanitize(client.email) : null,
-                avatar_url: client.avatarUrl,
-                notes: client.notes ? sanitize(client.notes) : null,
-                birth_date: client.birthDate,
-                cpf: client.cpf ? sanitize(client.cpf) : null,
-                gender: client.gender,
-                cep: client.cep ? sanitize(client.cep) : null,
-                street: client.street ? sanitize(client.street) : null,
-                number: client.number ? sanitize(client.number) : null,
-                complement: client.complement ? sanitize(client.complement) : null,
-                neighborhood: client.neighborhood ? sanitize(client.neighborhood) : null,
-                city: client.city ? sanitize(client.city) : null,
-                state: client.state ? sanitize(client.state) : null
-            }).select().single();
-
-            if (error) throw error;
-
-            const newClient = mapClient(data);
-            setState(prev => ({
-                ...prev,
-                clients: [...prev.clients, newClient]
-            }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const updateClient = async (id: string, client: Partial<Client>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const updateData: any = {};
-            if (client.name !== undefined) updateData.name = sanitize(client.name);
-            if (client.lastName !== undefined) updateData.last_name = client.lastName ? sanitize(client.lastName) : null;
-            if (client.phone !== undefined) updateData.phone = sanitize(client.phone);
-            if (client.email !== undefined) updateData.email = client.email ? sanitize(client.email) : null;
-            if (client.avatarUrl !== undefined) updateData.avatar_url = client.avatarUrl;
-            if (client.notes !== undefined) updateData.notes = client.notes ? sanitize(client.notes) : null;
-            if (client.birthDate !== undefined) updateData.birth_date = client.birthDate;
-            if (client.cpf !== undefined) updateData.cpf = client.cpf ? sanitize(client.cpf) : null;
-            if (client.gender !== undefined) updateData.gender = client.gender;
-            if (client.cep !== undefined) updateData.cep = client.cep ? sanitize(client.cep) : null;
-            if (client.street !== undefined) updateData.street = client.street ? sanitize(client.street) : null;
-            if (client.number !== undefined) updateData.number = client.number ? sanitize(client.number) : null;
-            if (client.complement !== undefined) updateData.complement = client.complement ? sanitize(client.complement) : null;
-            if (client.neighborhood !== undefined) updateData.neighborhood = client.neighborhood ? sanitize(client.neighborhood) : null;
-            if (client.city !== undefined) updateData.city = client.city ? sanitize(client.city) : null;
-            if (client.state !== undefined) updateData.state = client.state ? sanitize(client.state) : null;
-
-            const { error } = await supabase.from('clients').update(updateData).eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            setState(prev => ({
-                ...prev,
-                clients: prev.clients.map(c => c.id === id ? { ...c, ...client } : c)
-            }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const removeClient = async (id: string): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { error } = await supabase.from('clients').delete().eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            setState(prev => ({
-                ...prev,
-                clients: prev.clients.filter(c => c.id !== id)
-            }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-
-    const addSubscriptionPlan = async (plan: Omit<SubscriptionPlan, 'id' | 'shopId' | 'createdAt'>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { data, error } = await supabase.from('subscription_plans').insert({
-                shop_id: shopId,
-                name: sanitize(plan.name),
-                description: plan.description ? sanitize(plan.description) : null,
-                price: plan.price,
-                services_per_month: plan.servicesPerMonth,
-                active: plan.active
-            }).select().single();
-
-            if (error) throw error;
-
-            const newPlan = mapSubscriptionPlan(data);
-            setState(prev => ({ ...prev, subscriptionPlans: [...prev.subscriptionPlans, newPlan] }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const updateSubscriptionPlan = async (id: string, plan: Partial<SubscriptionPlan>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const updateData: any = {};
-            if (plan.name !== undefined) updateData.name = sanitize(plan.name);
-            if (plan.description !== undefined) updateData.description = plan.description ? sanitize(plan.description) : null;
-            if (plan.price !== undefined) updateData.price = plan.price;
-            if (plan.servicesPerMonth !== undefined) updateData.services_per_month = plan.servicesPerMonth;
-            if (plan.active !== undefined) updateData.active = plan.active;
-
-            const { error } = await supabase.from('subscription_plans').update(updateData).eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            setState(prev => ({
-                ...prev,
-                subscriptionPlans: prev.subscriptionPlans.map(p => p.id === id ? { ...p, ...plan } : p)
-            }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const removeSubscriptionPlan = async (id: string): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { error } = await supabase.from('subscription_plans').delete().eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            setState(prev => ({
-                ...prev,
-                subscriptionPlans: prev.subscriptionPlans.filter(p => p.id !== id)
-            }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const addClientSubscription = async (sub: Omit<ClientSubscription, 'id' | 'shopId' | 'createdAt'>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { data, error } = await supabase.from('client_subscriptions').insert({
-                shop_id: shopId,
-                client_id: sub.clientId,
-                plan_id: sub.planId,
-                status: sub.status,
-                start_date: sub.startDate,
-                next_billing_date: sub.nextBillingDate,
-                services_used_this_month: sub.servicesUsedThisMonth
-            }).select().single();
-
-            if (error) throw error;
-
-            const newSub = mapClientSubscription(data);
-            setState(prev => ({ ...prev, clientSubscriptions: [...prev.clientSubscriptions, newSub] }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const updateClientSubscription = async (id: string, sub: Partial<ClientSubscription>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const updateData: any = {};
-            if (sub.status !== undefined) updateData.status = sub.status;
-            if (sub.startDate !== undefined) updateData.start_date = sub.startDate;
-            if (sub.nextBillingDate !== undefined) updateData.next_billing_date = sub.nextBillingDate;
-            if (sub.servicesUsedThisMonth !== undefined) updateData.services_used_this_month = sub.servicesUsedThisMonth;
-
-            const { error } = await supabase.from('client_subscriptions').update(updateData).eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            setState(prev => ({
-                ...prev,
-                clientSubscriptions: prev.clientSubscriptions.map(s => s.id === id ? { ...s, ...sub } : s)
-            }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const removeClientSubscription = async (id: string): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { error } = await supabase.from('client_subscriptions').delete().eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            setState(prev => ({
-                ...prev,
-                clientSubscriptions: prev.clientSubscriptions.filter(s => s.id !== id)
-            }));
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const addBlockedSlot = async (block: Omit<BlockedSlot, 'id' | 'shopId'>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { data, error } = await supabase.from('blocked_slots').insert({
-                shop_id: shopId,
-                professional_id: block.professionalId,
-                date: block.date,
-                start_time: block.startTime,
-                end_time: block.endTime,
-                reason: sanitize(block.reason || '')
-            }).select().single();
-
-            if (error) throw error;
-
-            const newBlock = mapBlockedSlot(data);
-            setState(prev => ({ ...prev, blockedSlots: [...prev.blockedSlots, newBlock] }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const removeBlockedSlot = async (id: string): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { error } = await supabase.from('blocked_slots').delete().eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            setState(prev => ({ ...prev, blockedSlots: prev.blockedSlots.filter(b => b.id !== id) }));
 
             return { success: true };
         } catch (e: any) {
@@ -1463,22 +1193,15 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             addAdditionalUnit,
             deleteCurrentShop,
             resetPassword,
-            addClient, updateClient, removeClient,
             addAppointment,
             createManualAppointment,
             updateAppointmentStatus,
             updateAppointmentPaymentMethod,
             updateAppointmentTotalValue,
-            addSubscriptionPlan, updateSubscriptionPlan, removeSubscriptionPlan,
-            addClientSubscription, updateClientSubscription, removeClientSubscription,
             updateSettings,
             getWhatsAppQRCode,
             getWhatsAppStatus,
             disconnectWhatsApp,
-            requestClientLogin,
-            validateClientToken,
-            logoutClient,
-            reloadClients,
             formatCurrencyBRL,
             fetchGlobalShops,
             refresh: () => fetchData(state.shop?.id)
