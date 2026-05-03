@@ -1918,6 +1918,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 cost_price: product.costPrice,
                 sale_price: product.salePrice,
                 current_stock: product.currentStock,
+                initial_stock: product.initialStock || product.currentStock,
                 min_stock: product.minStock
             }).select().single();
 
@@ -1940,6 +1941,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (product.costPrice !== undefined) payload.cost_price = product.costPrice;
             if (product.salePrice !== undefined) payload.sale_price = product.salePrice;
             if (product.currentStock !== undefined) payload.current_stock = product.currentStock;
+            if (product.initialStock !== undefined) payload.initial_stock = product.initialStock;
             if (product.minStock !== undefined) payload.min_stock = product.minStock;
 
             const { data, error } = await supabase.from('products').update(payload).eq('id', id).eq('shop_id', shopId).select().single();
@@ -1977,7 +1979,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // 1. Busca o estado atual no DB
             const { data: p, error: fetchErr } = await supabase
                 .from('products')
-                .select('current_stock, cost_price')
+                .select('current_stock, initial_stock, cost_price')
                 .eq('id', productId)
                 .single();
 
@@ -2003,6 +2005,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 .from('products')
                 .update({
                     current_stock: newTotalStock,
+                    initial_stock: (Number(p.initial_stock) || 0) + addedQuantity,
                     cost_price: newAverageCost
                 })
                 .eq('id', productId);
@@ -2014,7 +2017,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 ...prev,
                 products: prev.products.map(prod =>
                     prod.id === productId
-                        ? { ...prod, currentStock: newTotalStock, costPrice: newAverageCost }
+                        ? { ...prod, currentStock: newTotalStock, initialStock: prod.initialStock + addedQuantity, costPrice: newAverageCost }
                         : prod
                 )
             }));

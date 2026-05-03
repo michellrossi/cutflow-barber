@@ -231,8 +231,9 @@ export interface Product {
   costPrice: number;
   salePrice: number;
   currentStock: number;
+  initialStock: number;
   minStock: number;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface AppointmentProduct {

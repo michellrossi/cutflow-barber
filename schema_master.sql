@@ -230,6 +230,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     cost_price NUMERIC(10,2) DEFAULT 0,
     sale_price NUMERIC(10,2) DEFAULT 0,
     current_stock INTEGER DEFAULT 0,
+    initial_stock INTEGER DEFAULT 0,
     min_stock INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL
 );
@@ -701,8 +702,11 @@ END $$;
 
 -- ==============================================================================
 -- SEÇÃO 6: POLÍTICAS DE SEGURANÇA (RLS)
--- FIX CRÍTICO: products agora filtra por plano ativo e usa VIEW pública segura
--- ==============================================================================
+-- Garantir que a coluna initial_stock exista
+ALTER TABLE public.products ADD COLUMN IF NOT EXISTS initial_stock INTEGER DEFAULT 0;
+UPDATE public.products SET initial_stock = current_stock WHERE initial_stock = 0;
+
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 
 ALTER TABLE public.shops ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.services ENABLE ROW LEVEL SECURITY;

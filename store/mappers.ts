@@ -225,6 +225,7 @@ export interface ProductRow {
     cost_price?: number | string | null;
     sale_price?: number | string | null;
     current_stock?: number | string | null;
+    initial_stock?: number | string | null;
     min_stock?: number | string | null;
     created_at: string;
 }
@@ -496,6 +497,7 @@ export function mapProduct(data: ProductRow): Product {
         costPrice: Number(data.cost_price || 0),
         salePrice: Number(data.sale_price || 0),
         currentStock: Number(data.current_stock || 0),
+        initialStock: Number(data.initial_stock || 0),
         minStock: Number(data.min_stock || 0),
         createdAt: data.created_at,
     };

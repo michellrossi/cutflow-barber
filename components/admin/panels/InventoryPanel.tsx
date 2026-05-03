@@ -47,6 +47,7 @@ export const InventoryPanel: React.FC = () => {
     costPrice: '',
     salePrice: '',
     currentStock: '',
+    initialStock: '',
     minStock: '2'
   });
 
@@ -168,6 +169,7 @@ export const InventoryPanel: React.FC = () => {
       costPrice: product.costPrice.toString(),
       salePrice: product.salePrice.toString(),
       currentStock: product.currentStock.toString(),
+      initialStock: product.initialStock.toString(),
       minStock: product.minStock.toString()
     });
     setIsFormOpen(true);
@@ -183,6 +185,7 @@ export const InventoryPanel: React.FC = () => {
       costPrice: Math.round(Number(formData.costPrice) * 100) / 100,
       salePrice: Math.round(Number(formData.salePrice) * 100) / 100,
       currentStock: Number(formData.currentStock),
+      initialStock: Number(formData.initialStock || formData.currentStock),
       minStock: Number(formData.minStock)
     };
 
@@ -200,7 +203,7 @@ export const InventoryPanel: React.FC = () => {
       setEditingId(null);
       setIsCustom(false);
       setSelectedCat('');
-      setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', minStock: '2' });
+      setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', initialStock: '', minStock: '2' });
     } else {
       showToast(result.error || 'Erro ao salvar.', 'error');
     }
@@ -454,6 +457,12 @@ export const InventoryPanel: React.FC = () => {
                       <input required type="number" value={formData.currentStock} onChange={e => setFormData({...formData, currentStock: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="0" />
                     </div>
                     <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+                        {editingId ? `Estoque Inicial (Original)` : 'Estoque Inicial'}
+                      </label>
+                      <input required type="number" value={formData.initialStock} onChange={e => setFormData({...formData, initialStock: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="0" />
+                    </div>
+                    <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Estoque Mínimo (Alerta)</label>
                       <input required type="number" value={formData.minStock} onChange={e => setFormData({...formData, minStock: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="2" />
                     </div>
@@ -549,7 +558,7 @@ export const InventoryPanel: React.FC = () => {
                 </div>
                 <div className="flex justify-between mt-2 pt-2 border-t border-slate-50">
                   <span className="text-[9px] font-bold text-slate-400 uppercase">Est. Inicial</span>
-                  <span className="text-[10px] font-black text-slate-900">{product.currentStock}</span> 
+                  <span className="text-[10px] font-black text-slate-900">{product.initialStock}</span> 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[9px] font-bold text-slate-400 uppercase">Est. Atual</span>
