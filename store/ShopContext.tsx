@@ -51,15 +51,12 @@ interface ShopContextType extends ShopState {
     updateProfessional: (id: string, professional: Partial<Professional>) => MutationResult;
     removeProfessional: (id: string) => MutationResult;
 
-    addCoupon: (coupon: Omit<Coupon, 'id' | 'usageCount' | 'shopId'>) => MutationResult;
-    updateCoupon: (id: string, coupon: Partial<Coupon>) => MutationResult;
-    removeCoupon: (id: string) => MutationResult;
+    updateAppointmentPaymentMethod: (id: string, paymentMethod: string, usedSubscriptionId?: string) => MutationResult;
+    updateAppointmentTotalValue: (id: string, newTotal: number) => MutationResult;
 
     addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
     createManualAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
     updateAppointmentStatus: (id: string, status: string) => MutationResult;
-    updateAppointmentPaymentMethod: (id: string, paymentMethod: string, usedSubscriptionId?: string) => MutationResult;
-    updateAppointmentTotalValue: (id: string, newTotal: number) => MutationResult;
 
     addBlockedSlot: (block: Omit<BlockedSlot, 'id' | 'shopId'>) => MutationResult;
     removeBlockedSlot: (id: string) => MutationResult;
@@ -90,11 +87,6 @@ interface ShopContextType extends ShopState {
 
     updateSettings: (settings: Partial<ShopSettings>) => MutationResult;
 
-    // Cash Control Actions
-    openCashSession: (openingBalance: number) => MutationResult;
-    closeCashSession: (closingBalance: number) => MutationResult;
-    addCashMovement: (entry: Omit<CashFlowEntry, 'id' | 'shopId' | 'sessionId' | 'createdAt'>) => MutationResult;
-
     // WhatsApp Actions
     getWhatsAppQRCode: () => Promise<{ qrcode?: string; connected?: boolean; error?: string }>;
     getWhatsAppStatus: () => Promise<{ connected: boolean; error?: string }>;
@@ -105,8 +97,7 @@ interface ShopContextType extends ShopState {
     validateClientToken: (token: string) => Promise<{ success: boolean; error?: string }>;
     logoutClient: () => void;
 
-    // New Report Method
-    fetchFinancialReport: (startDate: string, endDate: string) => Promise<Appointment[]>;
+    // Removed fetchFinancialReport (moved to FinancialContext)
     // Removed toggleTheme
     formatCurrencyBRL: (value: number) => string;
     reloadClients: (shopId: string) => Promise<void>;
@@ -264,18 +255,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             // Executa queries de configurações e dados estáticos em paralelo
             // LAZY LOAD: clients NÃO está aqui — é carregado sob demanda pela aba Clientes
-            const [settingsRes, servicesRes, prosRes, couponsRes, blocksRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, cashSessionsRes, sessionsRes] = await Promise.all([
+            const [settingsRes, servicesRes, prosRes, blocksRes, templatesRes, categoriesRes, plansRes, subsRes, triggersRes, sessionsRes] = await Promise.all([
                 supabase.from('settings').select('*').eq('shop_id', shopId).single(),
                 supabase.from('services').select('*').eq('shop_id', shopId),
                 supabase.from('professionals').select('*').eq('shop_id', shopId),
-                supabase.from('coupons').select('*').eq('shop_id', shopId),
                 supabase.from('blocked_slots').select('*').eq('shop_id', shopId),
                 supabase.from('message_templates').select('*').eq('shop_id', shopId),
                 supabase.from('message_categories').select('*').eq('shop_id', shopId),
                 supabase.from('subscription_plans').select('*').eq('shop_id', shopId),
                 supabase.from('client_subscriptions').select('*').eq('shop_id', shopId),
                 supabase.from('automation_triggers').select('*').eq('shop_id', shopId),
-                supabase.from('cash_sessions').select('*').eq('shop_id', shopId).eq('status', 'open').order('opened_at', { ascending: false }).limit(1),
                 supabase.from('whatsapp_chat_sessions').select('id', { count: 'exact', head: true }).eq('shop_id', shopId).eq('bot_paused', true)
             ]);
 
@@ -304,13 +293,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const mappedCategories = (categoriesRes.data || []).map(mapMessageCategory);
 
             let mappedTriggers = (triggersRes.data || []).map(mapAutomationTrigger);
-            let mappedCashSessions = (cashSessionsRes.data || []).map(mapCashSession);
-            let mappedCashFlowEntries: CashFlowEntry[] = [];
-
-            if (mappedCashSessions.length > 0) {
-                const { data: movements } = await supabase.from('cash_flow_entries').select('*').eq('session_id', mappedCashSessions[0].id).order('created_at', { ascending: false });
-                if (movements) mappedCashFlowEntries = movements.map(mapCashFlowEntry);
-            }
 
             // --- LÓGICA DE ROLES ---
             if (currentSession?.user) {
@@ -347,7 +329,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 settings: settingsRes.data ? mapSettings(settingsRes.data) : { ...INITIAL_STATE.settings, shopId: shopId },
                 services: (servicesRes.data || []).map(mapService),
                 professionals: mappedProfessionals,
-                coupons: (couponsRes.data || []).map(mapCoupon),
                 appointments: appointmentsData,
                 clients: mappedClients,
                 subscriptionPlans: mappedPlans,
@@ -356,8 +337,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 messageCategories: mappedCategories,
                 blockedSlots: (blocksRes.data || []).map(mapBlockedSlot),
                 automationTriggers: mappedTriggers,
-                cashSessions: mappedCashSessions,
-                cashFlowEntries: mappedCashFlowEntries,
                 trialStatus: trialInfo.status,
                 daysRemaining: trialInfo.days,
                 botPausedCount: sessionsRes.count || 0
@@ -824,73 +803,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const addCoupon = async (coupon: Omit<Coupon, 'id' | 'usageCount' | 'shopId'>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { data, error } = await supabase.from('coupons').insert({
-                shop_id: shopId,
-                code: sanitize(coupon.code).toUpperCase(),
-                type: coupon.type,
-                value: coupon.value,
-                usage_count: 0,
-                active: coupon.active,
-                max_uses: coupon.maxUses,
-                expires_at: coupon.expiresAt
-            }).select().single();
-
-            if (error) throw error;
-
-            // Optimistic Update
-            const newCoupon = mapCoupon(data);
-            setState(prev => ({ ...prev, coupons: [...prev.coupons, newCoupon] }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const updateCoupon = async (id: string, updated: Partial<Coupon>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const payload: any = {};
-            if (updated.code) payload.code = sanitize(updated.code).toUpperCase();
-            if (updated.type) payload.type = updated.type;
-            if (updated.value) payload.value = updated.value;
-            if (updated.active !== undefined) payload.active = updated.active;
-            if (updated.maxUses !== undefined) payload.max_uses = updated.maxUses;
-            if (updated.expiresAt !== undefined) payload.expires_at = updated.expiresAt;
-
-            const { data, error } = await supabase.from('coupons').update(payload).eq('id', id).select().single();
-            if (error) throw error;
-
-            // Optimistic Update
-            const updatedCoupon = mapCoupon(data);
-            setState(prev => ({
-                ...prev,
-                coupons: prev.coupons.map(c => c.id === id ? updatedCoupon : c)
-            }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const removeCoupon = async (id: string): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const { error } = await supabase.from('coupons').delete().eq('id', id).eq('shop_id', shopId);
-            if (error) throw error;
-
-            // Optimistic Update
-            setState(prev => ({ ...prev, coupons: prev.coupons.filter(c => c.id !== id) }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
 
     const addAppointment = async (apt: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>): MutationResult => {
         try {
@@ -1669,24 +1581,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const fetchFinancialReport = async (startDate: string, endDate: string): Promise<Appointment[]> => {
-        try {
-            const shopId = ensureShopId();
-            const { data, error } = await supabase
-                .from('appointments')
-                .select('*')
-                .eq('shop_id', shopId)
-                .gte('date', startDate)
-                .lte('date', endDate)
-                .order('date', { ascending: true });
-
-            if (error) throw error;
-            return data.map(mapAppointment);
-        } catch (e) {
-            console.error(e);
-            return [];
-        }
-    };
 
     const requestClientLogin = async (phone: string, name?: string, birthDate?: string, justCheck?: boolean) => {
         try {
@@ -1820,89 +1714,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const openCashSession = async (openingBalance: number): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            if (state.cashSessions.some(s => s.status === 'open')) {
-                throw new Error('Já existe um caixa aberto para esta loja no momento.');
-            }
-
-            const { data: userData } = await supabase.auth.getUser();
-
-            const { data, error } = await supabase.from('cash_sessions').insert([{
-                shop_id: shopId,
-                status: 'open',
-                opening_balance: Math.round(openingBalance * 100) / 100,
-                opened_by: userData?.user?.id
-            }]).select().single();
-
-            if (error) throw error;
-
-            const session = mapCashSession(data);
-            setState(prev => ({
-                ...prev,
-                cashSessions: [session, ...prev.cashSessions],
-                cashFlowEntries: [] // limpa movimentações antigas do state local
-            }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const closeCashSession = async (closingBalance: number): MutationResult => {
-        try {
-            const openSession = state.cashSessions.find(s => s.status === 'open');
-            if (!openSession) throw new Error('Não há caixa aberto no momento.');
-
-            const { error } = await supabase.from('cash_sessions').update({
-                status: 'closed',
-                closing_balance: Math.round(closingBalance * 100) / 100,
-                closed_at: new Date().toISOString()
-            }).eq('id', openSession.id);
-
-            if (error) throw error;
-
-            setState(prev => ({
-                ...prev,
-                cashSessions: prev.cashSessions.map(s => s.id === openSession.id ? { ...s, status: 'closed', closingBalance, closedAt: new Date().toISOString() } : s)
-            }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
-
-    const addCashMovement = async (entry: Omit<CashFlowEntry, 'id' | 'shopId' | 'sessionId' | 'createdAt'>): MutationResult => {
-        try {
-            const shopId = ensureShopId();
-            const openSession = state.cashSessions.find(s => s.status === 'open');
-            if (!openSession) throw new Error('Não há caixa aberto no momento.');
-
-            const { data, error } = await supabase.from('cash_flow_entries').insert([{
-                shop_id: shopId,
-                session_id: openSession.id,
-                type: entry.type,
-                category: entry.category,
-                amount: Math.round(entry.amount * 100) / 100,
-                description: entry.description
-            }]).select().single();
-
-            if (error) throw error;
-
-            const newEntry = mapCashFlowEntry(data);
-            setState(prev => ({
-                ...prev,
-                cashFlowEntries: [newEntry, ...prev.cashFlowEntries]
-            }));
-
-            return { success: true };
-        } catch (e: any) {
-            return { success: false, error: e.message };
-        }
-    };
 
     const logoutClient = () => {
         sessionStorage.removeItem('currentClient');
@@ -1947,7 +1758,6 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             resetPassword,
             addService, updateService, removeService,
             addProfessional, updateProfessional, removeProfessional,
-            addCoupon, updateCoupon, removeCoupon,
             addAppointment,
             createManualAppointment,
             updateAppointmentStatus,
@@ -1963,11 +1773,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             addClientSubscription, updateClientSubscription, removeClientSubscription,
             addBlockedSlot, removeBlockedSlot,
             updateSettings,
-            openCashSession, closeCashSession, addCashMovement,
             getWhatsAppQRCode,
             getWhatsAppStatus,
             disconnectWhatsApp,
-            fetchFinancialReport,
             requestClientLogin,
             validateClientToken,
             logoutClient,
