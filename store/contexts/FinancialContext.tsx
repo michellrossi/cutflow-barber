@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { CashSession, CashFlowEntry, Coupon } from '../../types';
 import { MutationResult } from '../types';
 import { supabase } from '../../supabaseClient';
-import { mapCashSession, mapCashFlowEntry, mapCoupon, mapService } from '../mappers';
+import { mapCashSession, mapCashFlowEntry, mapCoupon, mapService, mapAppointment } from '../mappers';
 import { INITIAL_STATE } from '../helpers';
 
 interface FinancialContextType {
@@ -200,21 +200,25 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
   const fetchFinancialReport = async (startDate: string, endDate: string) => {
     try {
       const sid = ensureShopId();
-      const { data: appointments } = await supabase
-        .from('appointments')
-        .select('total_value, status, date, payment_method, professional_id')
-        .eq('shop_id', sid)
-        .gte('date', startDate)
-        .lte('date', endDate);
+      const [appointmentsRes, movementsRes] = await Promise.all([
+        supabase
+          .from('appointments')
+          .select('*')
+          .eq('shop_id', sid)
+          .gte('date', startDate)
+          .lte('date', endDate),
+        supabase
+          .from('cash_flow_entries')
+          .select('*')
+          .eq('shop_id', sid)
+          .gte('created_at', startDate)
+          .lte('created_at', endDate)
+      ]);
 
-      const { data: movements } = await supabase
-        .from('cash_flow_entries')
-        .select('amount, type, category, created_at')
-        .eq('shop_id', sid)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate);
-
-      return { appointments, movements };
+      return { 
+        appointments: (appointmentsRes.data || []).map(mapAppointment), 
+        movements: (movementsRes.data || []).map(mapCashFlowEntry) 
+      };
     } catch (e) {
       console.error('Error fetching financial report:', e);
       return { appointments: [], movements: [] };
