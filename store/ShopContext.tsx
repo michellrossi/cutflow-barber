@@ -690,7 +690,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
-    const updateAppointmentStatus = async (id: string, status: string, client?: Client): MutationResult => {
+    const updateAppointmentStatus = async (id: string, status: Appointment['status'], client?: Client): MutationResult => {
         try {
             const shopId = ensureShopId();
             const appointment = state.appointments.find(a => a.id === id);

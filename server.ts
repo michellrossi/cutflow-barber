@@ -970,6 +970,21 @@ async function runCronLogic() {
     const thirtyThreeDaysAgoStr = now.subtract(33, 'day').format('YYYY-MM-DD');
 
     const maxRetries = 3;
+    const serviceCache = new Map<string, Map<string, string>>(); // shopId -> (serviceId -> name)
+
+    const getServicesNamesForApt = async (shopId: string, serviceIds: string[]) => {
+        if (!serviceIds || serviceIds.length === 0) return "serviços";
+        
+        if (!serviceCache.has(shopId)) {
+            const { data } = await supabaseAdmin.from('services').select('id, name').eq('shop_id', shopId);
+            const map = new Map<string, string>();
+            data?.forEach(s => map.set(s.id, s.name));
+            serviceCache.set(shopId, map);
+        }
+        
+        const shopMap = serviceCache.get(shopId)!;
+        return serviceIds.map(id => shopMap.get(id) || "serviço").join(', ');
+    };
 
     // FIX 4: Cache de instâncias migrado para o banco de dados (Supabase)
     // Permite escalabilidade horizontal (Railway) sem perda de coerência do TTL
@@ -1026,6 +1041,7 @@ async function runCronLogic() {
         .in('status', ['confirmed', 'scheduled'])
         .eq('reminder_24h_sent', false)
         .lte('send_attempts_24h', maxRetries - 1)
+        .gte('date', todayStr)
         .lte('date', tomorrowStr);
     if (apts24h) {
         for (const apt of apts24h) {
@@ -1038,8 +1054,7 @@ async function runCronLogic() {
             const diffHours = aptDateTime.diff(now, 'hour', true);
             // Janela de precisão de 24h (entre 23h e 25h de antecedência)
             if (diffHours <= 25 && diffHours >= 23) {
-                const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
-                const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
+                const servicesNames = await getServicesNamesForApt(apt.shop_id, apt.service_ids || []);
                 const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
                 const formattedTime = apt.time.substring(0, 5);
                 const msg = await generateWhatsAppMessage('appointment_reminder_24h', {
@@ -1081,8 +1096,7 @@ async function runCronLogic() {
             const diffMinutes = aptDateTime.diff(now, 'minute', true);
             // Janela de precisão de 1h (entre 50 e 70 minutos de antecedência)
             if (diffMinutes <= 70 && diffMinutes >= 50) {
-                const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
-                const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
+                const servicesNames = await getServicesNamesForApt(apt.shop_id, apt.service_ids || []);
                 const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
                 const formattedTime = apt.time.substring(0, 5);
                 const msg = await generateWhatsAppMessage('appointment_reminder_1h', {
@@ -1121,8 +1135,7 @@ async function runCronLogic() {
                 continue;
             }
             if (!(await isInstanceConnected(apt.shop_id, apt.shops.whatsapp_instance))) continue;
-            const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
-            const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
+            const servicesNames = await getServicesNamesForApt(apt.shop_id, apt.service_ids || []);
             const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
             const formattedTime = apt.time.substring(0, 5);
 
@@ -1163,8 +1176,7 @@ async function runCronLogic() {
             const aptDateTime = dayjs.tz(`${apt.date}T${apt.time}`, 'America/Sao_Paulo');
             const diffMinutes = now.diff(aptDateTime, 'minute', true);
             if (diffMinutes >= 120 && diffMinutes < 1440) {
-                const { data: servicesData } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
-                const servicesNames = servicesData?.map((s: any) => s.name).join(', ') || "serviços";
+                const servicesNames = await getServicesNamesForApt(apt.shop_id, apt.service_ids || []);
                 const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
                 const formattedTime = apt.time.substring(0, 5);
                 const msg = await generateWhatsAppMessage('post_sale', {
@@ -1297,6 +1309,10 @@ async function runCronLogic() {
         } else {
             console.log(`[Cron] Sessões de chatbot expiradas removidas: ${count ?? 0}`);
         }
+
+        // Limpa eventos de webhook antigos (> 30 dias)
+        const thirtyDaysAgoIso = now.subtract(30, 'day').toISOString();
+        await supabaseAdmin.from('webhook_events').delete().lt('created_at', thirtyDaysAgoIso);
     }
 
     // 7. Relatório Semanal Proativo (Segunda às 7h)
@@ -2102,7 +2118,17 @@ async function startServer() {
     });
 
     app.post('/api/asaas/webhook', async (req, res) => {
-        if (req.headers['asaas-access-token'] !== process.env.ASAAS_WEBHOOK_TOKEN) return res.status(401).json({ error: 'Unauthorized' });
+        const receivedToken = req.headers['asaas-access-token'];
+        const expectedToken = process.env.ASAAS_WEBHOOK_TOKEN;
+
+        if (!receivedToken || !expectedToken) return res.status(401).json({ error: 'Unauthorized' });
+
+        const receivedBuffer = Buffer.from(receivedToken as string);
+        const expectedBuffer = Buffer.from(expectedToken);
+
+        if (receivedBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(receivedBuffer, expectedBuffer)) {
+            return res.status(401).json({ error: 'Unauthorized' });
+        }
 
         const event = req.body.event;
         const payment = req.body.payment;

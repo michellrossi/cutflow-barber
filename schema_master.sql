@@ -121,6 +121,13 @@ CREATE INDEX IF NOT EXISTS idx_appointments_nps
     ON public.appointments (shop_id, nps_score)
     WHERE nps_score IS NOT NULL;
 
+-- Índices de performance para CRON e Relatórios (Evita Seq Scan)
+CREATE INDEX IF NOT EXISTS idx_appointments_reminder_24h ON public.appointments (reminder_24h_sent, date);
+CREATE INDEX IF NOT EXISTS idx_appointments_reminder_1h ON public.appointments (reminder_1h_sent, date);
+CREATE INDEX IF NOT EXISTS idx_appointments_post_sale ON public.appointments (post_sale_sent, date);
+CREATE INDEX IF NOT EXISTS idx_appointments_reminder_30d ON public.appointments (reminder_30d_sent, date);
+CREATE INDEX IF NOT EXISTS idx_appointments_shop_date ON public.appointments (shop_id, date);
+
 
 -- ==============================================================================
 -- SEÇÃO 2: CRIAÇÃO DE NOVAS TABELAS
@@ -936,3 +943,6 @@ CREATE TABLE IF NOT EXISTS public.webhook_events (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
+
+-- Índice para busca de idempotência e limpeza
+CREATE INDEX IF NOT EXISTS idx_webhook_events_created_at ON public.webhook_events (created_at);
