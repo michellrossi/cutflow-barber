@@ -561,8 +561,12 @@ export const InventoryPanel: React.FC = () => {
                   <span className="text-[10px] font-black text-slate-900">{product.initialStock}</span> 
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Vendidos</span>
+                  <span className="text-[10px] font-black text-orange-600">{Math.max(0, product.initialStock - product.currentStock)}</span> 
+                </div>
+                <div className="flex justify-between">
                   <span className="text-[9px] font-bold text-slate-400 uppercase">Est. Atual</span>
-                  <span className={`text-[10px] font-black ${product.currentStock <= product.minStock ? 'text-orange-500' : 'text-slate-900'}`}>
+                  <span className={`text-[10px] font-black ${product.currentStock <= product.minStock ? 'text-red-500' : 'text-emerald-600'}`}>
                     {product.currentStock}
                   </span>
                 </div>

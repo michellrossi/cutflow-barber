@@ -1030,23 +1030,29 @@ export const FinancialPanel: React.FC = () => {
       wStart.setDate(now.getDate() - now.getDay());
       wStart.setHours(0, 0, 0, 0);
 
-      const inRange = (dateStr: string) => {
+      const inRangeDate = (dateStr: string) => {
         if (period === 'today') return dateStr === todayStr;
         if (period === 'week') return new Date(dateStr + 'T12:00:00') >= wStart;
         if (period === 'month') return dateStr >= monthStart;
         return true; 
       };
 
+      const inRangeDateTime = (isoStr: string) => {
+        const dateStr = isoStr.split('T')[0];
+        return inRangeDate(dateStr);
+      };
+
       let csvContent = "data:text/csv;charset=utf-8,";
       if (activeTab === 'billing' || activeTab === 'reports' || activeTab === 'commissions') {
           csvContent += "Data;Cliente;Profissional;Valor;Pagamento;Status\n";
-          const filtered = appointments.filter(a => inRange(a.date));
+          const filtered = appointments.filter(a => inRangeDate(a.date));
           filtered.forEach(a => {
               csvContent += `${a.date};${a.clientName};${professionals.find(p => p.id === a.professionalId)?.name || '---'};${a.totalValue};${a.paymentMethod};${a.status}\n`;
           });
       } else {
           csvContent += "Data;Tipo;Categoria;Valor;Descricao\n";
-          cashFlowEntries.forEach(e => {
+          const filtered = cashFlowEntries.filter(e => inRangeDateTime(e.createdAt));
+          filtered.forEach(e => {
               csvContent += `${new Date(e.createdAt).toLocaleDateString('pt-BR')};${e.type};${e.category};${e.amount};${e.description}\n`;
           });
       }

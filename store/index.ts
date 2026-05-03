@@ -22,5 +22,29 @@ export function useShop() {
   const automation = useAutomation();
   const catalog = useCatalog();
   const clients = useClients();
-  return { ...shop, ...inventory, ...financial, ...automation, ...catalog, ...clients };
+
+  return { 
+    ...shop, 
+    ...inventory, 
+    ...financial, 
+    ...automation, 
+    ...catalog, 
+    ...clients,
+    // Forçar fallbacks de array para evitar erros de runtime (l.filter is not a function)
+    appointments: shop.appointments || [],
+    professionals: catalog.professionals || [],
+    services: catalog.services || [],
+    products: inventory.products || [],
+    clients: clients.clients || [],
+    goals: inventory.goals || [],
+    cashSessions: financial.cashSessions || [],
+    cashFlowEntries: financial.cashFlowEntries || [],
+    coupons: financial.coupons || [],
+    messageTemplates: automation.messageTemplates || [],
+    messageCategories: automation.messageCategories || [],
+    automationTriggers: automation.automationTriggers || [],
+    blockedSlots: catalog.blockedSlots || [],
+    subscriptionPlans: clients.subscriptionPlans || [],
+    clientSubscriptions: clients.clientSubscriptions || []
+  };
 }
