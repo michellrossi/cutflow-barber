@@ -326,13 +326,14 @@ DECLARE
     v_appointment_id UUID;
     v_daily_count INTEGER;
 BEGIN
+    -- Verifica limite diário (Usa SECURITY DEFINER para garantir acesso à tabela)
     SELECT COUNT(*) INTO v_daily_count FROM public.appointments
     WHERE shop_id = p_shop_id
     AND client_phone = p_client_phone
-    AND DATE(created_at) = CURRENT_DATE;
+    AND created_at >= CURRENT_DATE;
 
-    IF v_daily_count >= 3 THEN
-        RAISE EXCEPTION 'Limite diário atingido para este número.';
+    IF v_daily_count >= 5 THEN
+        RETURN json_build_object('status', 'error', 'message', 'Limite diário de agendamentos atingido.');
     END IF;
 
     BEGIN
@@ -345,11 +346,16 @@ BEGIN
         ) RETURNING id INTO v_appointment_id;
 
         RETURN json_build_object('id', v_appointment_id, 'status', 'success');
-    EXCEPTION WHEN unique_violation THEN
-        RETURN json_build_object('status', 'conflict', 'message', 'Horário já reservado');
+    EXCEPTION 
+        WHEN unique_violation THEN
+            RETURN json_build_object('status', 'conflict', 'message', 'Este horário já foi reservado.');
+        WHEN OTHERS THEN
+            RETURN json_build_object('status', 'error', 'message', SQLERRM);
     END;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.book_appointment TO anon, authenticated, service_role;
 
 -- ── Trigger: Atualizar Total Gasto pelo Cliente ────────────────────────────────
 CREATE OR REPLACE FUNCTION update_client_total_spent()

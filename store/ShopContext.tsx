@@ -590,7 +590,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             });
 
             if (error) {
-                console.error('addAppointment: Erro no RPC book_appointment:', error);
+                console.error('addAppointment: Erro no RPC book_appointment:', {
+                    message: error.message,
+                    details: error.details,
+                    hint: error.hint,
+                    code: error.code
+                });
                 throw error;
             }
 
