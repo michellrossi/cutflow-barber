@@ -24,14 +24,30 @@ export const requestClientLogin = async (req: Request, res: Response) => {
         }
 
         const token = jwt.sign({ clientId: client.id, shopId, phone: cleanPhone }, JWT_SECRET, { expiresIn: '15m' });
-        const { data: shop } = await supabaseAdmin.from('shops').select('name, slug, whatsapp_instance').eq('id', shopId).single();
+        const { data: shop, error: shopError } = await supabaseAdmin.from('shops').select('name, slug, whatsapp_instance').eq('id', shopId).single();
         
+        if (shopError || !shop) {
+            console.error('[Auth] Erro ao buscar dados da loja:', shopError);
+            return res.status(404).json({ error: 'Dados da loja não encontrados' });
+        }
+
+        if (!shop.slug) {
+            return res.status(400).json({ error: 'Loja sem identificador (slug) configurado' });
+        }
+
         const clientAppUrl = process.env.CLIENT_APP_URL || 'https://agendar.insightbarber.com.br';
-        const loginUrl = `${clientAppUrl}/${shop?.slug}?token=${token}`;
-        const msg = `Olá ${client.name}!\nAcesse sua conta na ${shop?.name} clicando no link abaixo:\n\n${loginUrl}\n\nEste link expira em 15 minutos. 🔐💈`;
+        const loginUrl = `${clientAppUrl}/${shop.slug}?token=${token}`;
+        const msg = `Olá ${client.name}!\nAcesse sua conta na ${shop.name} clicando no link abaixo:\n\n${loginUrl}\n\nEste link expira em 15 minutos. 🔐💈`;
         
-        const ok = await sendWhatsApp(cleanPhone, msg, shop?.whatsapp_instance);
-        res.json({ success: ok });
+        console.log(`[Auth] Enviando link de login para ${cleanPhone} (Loja: ${shop.name})`);
+        const ok = await sendWhatsApp(cleanPhone, msg, shop.whatsapp_instance);
+        
+        if (ok) {
+            res.json({ success: true });
+        } else {
+            console.error('[Auth] Falha ao enviar WhatsApp via Evolution API');
+            res.status(500).json({ error: 'Falha ao enviar mensagem de WhatsApp. Verifique a conexão.' });
+        }
     } catch (e: any) {
         console.error('[Auth] Error in requestClientLogin:', e);
         res.status(500).json({ error: e.message });
