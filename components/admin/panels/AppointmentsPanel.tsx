@@ -26,7 +26,7 @@ export const AppointmentsPanel: React.FC = () => {
     } = useShop();
     const { showToast } = useToast();
 
-    const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+    const [viewMode, setViewMode] = useState<'calendar' | 'list'>('list');
 
     // Filtros de Status e Busca
     const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -458,16 +458,16 @@ export const AppointmentsPanel: React.FC = () => {
                 const ModeToggle = (
                     <div className="bg-white p-1 rounded-lg border border-slate-200 flex items-center flex-nowrap gap-1 shadow-sm w-max overflow-x-auto no-scrollbar shrink-0">
                         <button
-                            onClick={() => setViewMode('calendar')}
-                            className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${viewMode === 'calendar' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
-                        >
-                            <CalendarIcon size={16} /> Agenda
-                        </button>
-                        <button
                             onClick={() => setViewMode('list')}
                             className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
                         >
                             <List size={16} /> Lista
+                        </button>
+                        <button
+                            onClick={() => setViewMode('calendar')}
+                            className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${viewMode === 'calendar' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
+                        >
+                            <CalendarIcon size={16} /> Agenda
                         </button>
                     </div>
                 );
