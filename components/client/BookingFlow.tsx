@@ -189,7 +189,8 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
             return;
         }
 
-        const appointment: Omit<Appointment, 'id' | 'createdAt' | 'shopId'> = {
+        const appointment: any = {
+            clientId: currentClient?.id,
             clientName: customerInfo.name,
             clientPhone: customerInfo.phone,
             clientBirthDate: customerInfo.birthDate,

@@ -577,7 +577,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             console.log('addAppointment: Iniciando reserva...', { professionalId, date: apt.date, time: apt.time });
 
-            const { error } = await supabase.rpc('book_appointment', {
+            const { data, error } = await supabase.rpc('book_appointment', {
                 p_shop_id: shopId,
                 p_client_name: cleanClientName,
                 p_client_phone: cleanClientPhone,
@@ -586,17 +586,18 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 p_date: apt.date,
                 p_time: apt.time,
                 p_total_value: apt.totalValue,
-                p_coupon_code: apt.couponCode ? sanitize(apt.couponCode) : null
+                p_coupon_code: apt.couponCode ? sanitize(apt.couponCode) : null,
+                p_client_id: (apt as any).clientId || null
             });
 
             if (error) {
-                console.error('addAppointment: Erro no RPC book_appointment:', {
-                    message: error.message,
-                    details: error.details,
-                    hint: error.hint,
-                    code: error.code
-                });
-                throw error;
+                console.error('addAppointment: Erro CRÍTICO no RPC:', JSON.stringify(error, null, 2));
+                return { success: false, error: error.message };
+            }
+
+            if (data && data.status === 'error') {
+                console.error('addAppointment: Erro retornado pelo Banco:', data.message);
+                return { success: false, error: data.message };
             }
 
             console.log('addAppointment: Reserva concluída com sucesso no backend.');
