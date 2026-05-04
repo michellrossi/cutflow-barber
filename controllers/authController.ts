@@ -31,12 +31,8 @@ export const requestClientLogin = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Dados da loja não encontrados' });
         }
 
-        if (!shop.slug) {
-            return res.status(400).json({ error: 'Loja sem identificador (slug) configurado' });
-        }
-
-        const clientAppUrl = process.env.CLIENT_APP_URL || 'https://agendar.insightbarber.com.br';
-        const loginUrl = `${clientAppUrl}/${shop.slug}?token=${token}`;
+        const serverUrl = process.env.SERVER_URL || 'https://www.insightbarber.com.br';
+        const loginUrl = `${serverUrl}/acesso/${token}`;
         const msg = `Olá ${client.name}!\nAcesse sua conta na ${shop.name} clicando no link abaixo:\n\n${loginUrl}\n\nEste link expira em 15 minutos. 🔐💈`;
         
         console.log(`[Auth] Enviando link de login para ${cleanPhone} (Loja: ${shop.name})`);
@@ -63,8 +59,10 @@ export const validateClientToken = async (req: Request, res: Response) => {
         
         const { data: client } = await supabaseAdmin.from('clients').select('*').eq('id', decoded.clientId).single();
         if (!client) return res.status(404).json({ error: 'Cliente não encontrado' });
+
+        const { data: shop } = await supabaseAdmin.from('shops').select('slug').eq('id', decoded.shopId).single();
         
-        res.json({ success: true, client, session: { token } });
+        res.json({ success: true, client, slug: shop?.slug, session: { token } });
     } catch (e: any) {
         res.status(401).json({ error: 'Token inválido ou expirado' });
     }
