@@ -317,6 +317,10 @@ ON public.clients (public.birth_date_mmdd(birth_date));
 -- ==============================================================================
 
 -- ── Agendamento Seguro (RPC com limite diário + anti-conflito) ──────────────────
+-- ── RPC: Agendamento de Clientes (Atômico com suporte a cliente logado) ──────
+DROP FUNCTION IF EXISTS public.book_appointment(uuid, text, text, text[], text, text, numeric, uuid, text);
+DROP FUNCTION IF EXISTS public.book_appointment(uuid, text, text, text[], text, text, numeric, uuid, text, uuid);
+
 CREATE OR REPLACE FUNCTION public.book_appointment(
     p_shop_id UUID, p_client_name TEXT, p_client_phone TEXT,
     p_service_ids TEXT[], p_date TEXT, p_time TEXT, p_total_value NUMERIC,
@@ -982,7 +986,7 @@ CREATE TABLE IF NOT EXISTS public.automated_messages_log (
     status TEXT DEFAULT 'sent'
 );
 ALTER TABLE public.automated_messages_log ENABLE ROW LEVEL SECURITY;
-
+DROP POLICY IF EXISTS "Dono_Ve_Proprios_Logs" ON public.automated_messages_log;
 CREATE POLICY "Dono_Ve_Proprios_Logs" ON public.automated_messages_log 
 FOR SELECT USING (EXISTS (SELECT 1 FROM public.shops WHERE id = automated_messages_log.shop_id AND owner_id = auth.uid()));
 
