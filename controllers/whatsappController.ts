@@ -15,7 +15,12 @@ export const getQRCode = async (req: Request, res: Response) => {
             headers: { 'apikey': process.env.WHATSAPP_API_KEY || '' }
         });
         const data = await response.json();
-        res.json(data);
+        
+        // Normaliza a resposta da Evolution API v2
+        const qrcode = data.base64 || data.qrcode?.base64 || data.instance?.qrcode?.base64;
+        const connected = data.instance?.state === 'open' || data.status === 'open';
+        
+        res.json({ qrcode, connected, ...data });
     } catch (e: unknown) {
         const error = e as Error;
         res.status(500).json({ error: error.message });
@@ -34,7 +39,9 @@ export const getStatus = async (req: Request, res: Response) => {
             headers: { 'apikey': process.env.WHATSAPP_API_KEY || '' }
         });
         const data = await response.json();
-        res.json(data);
+        
+        const connected = data.instance?.state === 'open' || data.state === 'open';
+        res.json({ connected, ...data });
     } catch (e: unknown) {
         const error = e as Error;
         res.status(500).json({ error: error.message });
