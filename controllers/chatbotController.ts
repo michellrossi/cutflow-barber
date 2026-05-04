@@ -8,6 +8,24 @@ import { sendWhatsApp, detectsHandoff } from '../lib/helpers';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+interface ChatSessionContext {
+    nps_pending?: boolean;
+    nps_appointment_id?: string;
+}
+
+interface BookArgs {
+    service_ids: string[];
+    professional_id: string;
+    date: string;
+    time: string;
+    total_value?: number;
+}
+
+interface AvailabilityArgs {
+    professional_id: string;
+    date: string;
+}
+
 export async function handleChatbotAI(shopId: string, remoteJid: string, clientName: string, message: string, instance: string) {
     console.log(`[Chatbot] Processando para ${clientName} (${remoteJid}) na loja ${shopId}`);
 
@@ -20,8 +38,8 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
             .eq('remote_jid', remoteJid)
             .maybeSingle();
 
-        const ctx = npsSession?.context as any;
-        if (ctx?.nps_pending) {
+        const ctx = npsSession?.context as ChatSessionContext;
+        if (ctx?.nps_pending && ctx.nps_appointment_id) {
             const score = parseInt(message.trim(), 10);
             if (score >= 1 && score <= 5) {
                 await supabaseAdmin.from('appointments').update({ nps_score: score }).eq('id', ctx.nps_appointment_id);
@@ -48,7 +66,9 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
                 const ownerMsg = `🔔 *Atendimento Humano Solicitado*\n\nCliente: *${clientName}*\nNúmero: *${remoteJid.split('@')[0]}*\nÚltima mensagem: "${message}"\n\nAcesse o WhatsApp para retomar o atendimento.`;
                 await sendWhatsApp(ownerSettings.phone, ownerMsg, shop?.whatsapp_instance || instance);
             }
-        } catch (e) {}
+        } catch (e: unknown) {
+            console.error('[Chatbot] Erro no handoff:', e);
+        }
         return;
     }
 
@@ -92,7 +112,7 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
     const businessHoursText = settings?.business_hours ? Object.entries(settings.business_hours).map(([day, h]: [string, any]) => `- ${daysMap[day] || day}: ${h.active ? `${h.start} às ${h.end}` : 'FECHADO'}`).join('\n') : '(não configurado)';
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-    const tools: any = [{
+    const tools = [{
         functionDeclarations: [
             { name: "list_services", description: "Retorna a lista de serviços" },
             { name: "list_professionals", description: "Retorna a lista de barbeiros" },
@@ -103,12 +123,12 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
 
     const systemInstruction = `Você é o assistente virtual da barbearia "${shop?.name}". Hoje é: ${dayjs().tz('America/Sao_Paulo').format('dddd, DD/MM/YYYY')}\n\nPROFISSIONAIS:\n${professionalsText}\n\nSERVIÇOS:\n${servicesText}\n\nHORÁRIOS:\n${businessHoursText}`;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite", tools, systemInstruction });
-    const chat = model.startChat({ history: (session.messages || []).slice(-20).map((m: any) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })) });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite", tools, systemInstruction });
+    const chat = model.startChat({ history: (session.messages || []).slice(-20).map((m: { role: string; content: string }) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })) });
 
     const MAX_RETRIES = 3;
     const RETRY_DELAYS_MS = [1000, 3000, 7000];
-    let reply = '', lastError: any = null;
+    let reply = '', lastError: unknown = null;
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
@@ -119,12 +139,15 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
             while (call && call.length > 0) {
                 const toolResults: any[] = [];
                 for (const fn of call) {
-                    let data: any;
+                    let data: unknown;
                     if (fn.name === "list_services") data = services;
                     else if (fn.name === "list_professionals") data = professionals;
-                    else if (fn.name === "check_availability") data = await getAvailableSlotsForAI(shopId, (fn.args as any).professional_id, (fn.args as any).date);
+                    else if (fn.name === "check_availability") {
+                        const args = fn.args as unknown as AvailabilityArgs;
+                        data = await getAvailableSlotsForAI(shopId, args.professional_id, args.date);
+                    }
                     else if (fn.name === "book_appointment") {
-                        const args = fn.args as any;
+                        const args = fn.args as unknown as BookArgs;
                         const phone = remoteJid.split('@')[0];
                         let { data: client } = await supabaseAdmin.from('clients').select('id').eq('shop_id', shopId).eq('phone', phone).maybeSingle();
                         if (!client) {
@@ -148,7 +171,7 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
             reply = response.text();
             lastError = null;
             break;
-        } catch (error: any) {
+        } catch (error: unknown) {
             lastError = error;
             if (attempt < MAX_RETRIES - 1) await new Promise(r => setTimeout(r, RETRY_DELAYS_MS[attempt]));
         }
@@ -176,14 +199,18 @@ async function getAvailableSlotsForAI(shopId: string, proId: string, date: strin
     const { data: appointments } = await supabaseAdmin.from('appointments').select('time').eq('professional_id', proId).eq('date', date).not('status', 'eq', 'cancelled');
     const { data: blocks } = await supabaseAdmin.from('blocked_slots').select('start_time, end_time').eq('professional_id', proId).eq('date', date);
     
-    const slots = [];
+    const slots: string[] = [];
     let current = dayjs(`${date}T${hours.start}`);
     const end = dayjs(`${date}T${hours.end}`);
 
     while (current.isBefore(end)) {
         const timeStr = current.format('HH:mm');
         const isOccupied = appointments?.some(a => a.time.substring(0, 5) === timeStr);
-        const isBlocked = blocks?.some(b => timeStr >= b.start_time.substring(0, 5) && timeStr < b.end_time.substring(0, 5));
+        const isBlocked = blocks?.some(b => {
+            const start = b.start_time.substring(0, 5);
+            const endT = b.end_time.substring(0, 5);
+            return timeStr >= start && timeStr < endT;
+        });
         if (!isOccupied && !isBlocked) slots.push(timeStr);
         current = current.add(30, 'minute');
     }

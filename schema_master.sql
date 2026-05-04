@@ -938,11 +938,29 @@ ALTER TABLE public.instance_status_cache ENABLE ROW LEVEL SECURITY;
 -- 2. Tabela de eventos para garantir idempotência em Webhooks (ex: Asaas)
 CREATE TABLE IF NOT EXISTS public.webhook_events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    event_id TEXT UNIQUE NOT NULL,
-    source TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    event_type TEXT NOT NULL,
+    external_id TEXT UNIQUE NOT NULL,
+    payload JSONB NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
 );
 ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
 
 -- Índice para busca de idempotência e limpeza
 CREATE INDEX IF NOT EXISTS idx_webhook_events_created_at ON public.webhook_events (created_at);
+
+-- Função para estatísticas consolidadas do SaaS (evita full table scan)
+CREATE OR REPLACE FUNCTION get_saas_stats()
+RETURNS JSON AS $$
+DECLARE
+    result JSON;
+BEGIN
+    SELECT json_build_object(
+        'totalShops', (SELECT count(*) FROM shops),
+        'activeShops', (SELECT count(*) FROM shops WHERE plan = 'active'),
+        'totalRevenue', (SELECT COALESCE(sum(total_value), 0) FROM appointments WHERE status = 'completed'),
+        'totalAppointments', (SELECT count(*) FROM appointments)
+    ) INTO result;
+    RETURN result;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

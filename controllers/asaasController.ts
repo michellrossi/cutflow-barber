@@ -3,15 +3,25 @@ import { supabaseAdmin } from '../lib/supabase';
 import { createAsaasCustomer, createAsaasSubscription, createAsaasPayment, getAsaasPixQrCode } from '../utils/asaas.js';
 import crypto from 'crypto';
 
-export const createCustomer = async (req: Request, res: Response) => {
+interface AuthenticatedRequest extends Request {
+    user?: {
+        id: string;
+        email?: string;
+    };
+}
+
+export const createCustomer = async (req: AuthenticatedRequest, res: Response) => {
     try {
         const { name, phone, email, cpfCnpj } = req.body;
-        const user = (req as any).user;
+        const user = req.user;
+        if (!user) return res.status(401).json({ error: 'User not authenticated' });
+        
         const customer = await createAsaasCustomer({ name, phone, email, cpfCnpj });
         await supabaseAdmin.from('shops').update({ asaas_customer_id: customer.id }).eq('owner_id', user.id);
         res.json(customer);
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
+    } catch (e: unknown) {
+        const error = e as Error;
+        res.status(500).json({ error: error.message });
     }
 };
 
@@ -20,8 +30,9 @@ export const createSubscription = async (req: Request, res: Response) => {
         const { customerId, value, cycle, description } = req.body;
         const sub = await createAsaasSubscription({ customerId, value, cycle, description });
         res.json(sub);
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
+    } catch (e: unknown) {
+        const error = e as Error;
+        res.status(500).json({ error: error.message });
     }
 };
 
@@ -34,8 +45,9 @@ export const checkout = async (req: Request, res: Response) => {
             return res.json({ payment, qrCode });
         }
         res.json(payment);
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
+    } catch (e: unknown) {
+        const error = e as Error;
+        res.status(500).json({ error: error.message });
     }
 };
 

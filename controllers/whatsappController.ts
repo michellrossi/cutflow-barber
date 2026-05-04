@@ -11,8 +11,9 @@ export const getQRCode = async (req: Request, res: Response) => {
         });
         const data = await response.json();
         res.json(data);
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
+    } catch (e: unknown) {
+        const error = e as Error;
+        res.status(500).json({ error: error.message });
     }
 };
 
@@ -24,8 +25,9 @@ export const getStatus = async (req: Request, res: Response) => {
         });
         const data = await response.json();
         res.json(data);
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
+    } catch (e: unknown) {
+        const error = e as Error;
+        res.status(500).json({ error: error.message });
     }
 };
 
@@ -38,10 +40,31 @@ export const disconnect = async (req: Request, res: Response) => {
         });
         const data = await response.json();
         res.json(data);
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
+    } catch (e: unknown) {
+        const error = e as Error;
+        res.status(500).json({ error: error.message });
     }
 };
+
+interface EvolutionWebhookBody {
+    event: string;
+    instance: string;
+    data: {
+        message: {
+            fromMe: boolean;
+            key: {
+                remoteJid: string;
+            };
+            message?: {
+                conversation?: string;
+                extendedTextMessage?: {
+                    text: string;
+                };
+            };
+        };
+        pushName?: string;
+    };
+}
 
 export const handleWebhook = async (req: Request, res: Response) => {
     const secret = req.headers['x-evolution-webhook-secret'];
@@ -49,14 +72,13 @@ export const handleWebhook = async (req: Request, res: Response) => {
         return res.status(401).send('Unauthorized');
     }
 
-    const { event, data } = req.body;
+    const { event, data, instance } = req.body as EvolutionWebhookBody;
     if (event === 'MESSAGES_UPSERT') {
         const message = data.message;
         if (!message || message.fromMe) return res.status(200).send('OK');
 
         const remoteJid = message.key.remoteJid;
         const content = message.message?.conversation || message.message?.extendedTextMessage?.text;
-        const instance = req.body.instance;
 
         if (!content || isRateLimited(remoteJid)) return res.status(200).send('OK');
 

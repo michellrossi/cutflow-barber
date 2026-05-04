@@ -1,23 +1,27 @@
 import { Request, Response } from 'express';
 import { supabaseAdmin } from '../lib/supabase';
+import crypto from 'crypto';
 
 const validateAdminKey = (req: Request) => {
-    return req.headers['x-saas-admin-key'] === process.env.SAAS_ADMIN_KEY;
+    const receivedKey = req.headers['x-saas-admin-key'];
+    const expectedKey = process.env.SAAS_ADMIN_KEY;
+
+    if (!receivedKey || !expectedKey) return false;
+
+    const receivedBuffer = Buffer.from(receivedKey as string);
+    const expectedBuffer = Buffer.from(expectedKey);
+
+    if (receivedBuffer.length !== expectedBuffer.length) return false;
+
+    return crypto.timingSafeEqual(receivedBuffer, expectedBuffer);
 };
 
 export const getStats = async (req: Request, res: Response) => {
     if (!validateAdminKey(req)) return res.status(401).json({ error: 'Unauthorized' });
     try {
-        const { data: shops } = await supabaseAdmin.from('shops').select('id, plan, plan_tier, created_at');
-        const { data: appointments } = await supabaseAdmin.from('appointments').select('id, total_value, status, created_at');
-        
-        const stats = {
-            totalShops: shops?.length || 0,
-            activeShops: shops?.filter(s => s.plan === 'active').length || 0,
-            totalRevenue: appointments?.filter(a => a.status === 'completed').reduce((acc, a) => acc + (a.total_value || 0), 0) || 0,
-            totalAppointments: appointments?.length || 0
-        };
-        res.json(stats);
+        const { data, error } = await supabaseAdmin.rpc('get_saas_stats');
+        if (error) throw error;
+        res.json(data);
     } catch (e: any) {
         res.status(500).json({ error: e.message });
     }

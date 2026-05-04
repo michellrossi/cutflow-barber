@@ -8,6 +8,36 @@ import { isInstanceConnected, generateWhatsAppMessage, sendWhatsApp } from '../l
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
+interface ShopMetrics {
+    name: string;
+    instance: string;
+    connected: boolean;
+    currentWeek: AppointmentData[];
+    prevWeek: AppointmentData[];
+}
+
+interface AppointmentData {
+    id: string;
+    shop_id: string;
+    total_value: number;
+    date: string;
+    status: string;
+    service_ids: string[];
+    shops: {
+        id: string;
+        name: string;
+        whatsapp_instance: string;
+        whatsapp_connected: boolean;
+    };
+}
+
+interface BirthdayClient {
+    id: string;
+    name: string;
+    phone: string;
+    shop_id: string;
+}
+
 export async function runCronLogic() {
     console.log("[Cron] Iniciando verificação de lembretes (Timezone SP - GMT-3)...");
     const now = dayjs().tz('America/Sao_Paulo');
@@ -53,7 +83,6 @@ export async function runCronLogic() {
             if (!(await isInstanceConnected(apt.shop_id, shop.whatsapp_instance))) continue;
             const aptDateTime = dayjs.tz(`${apt.date}T${apt.time}`, 'America/Sao_Paulo');
             const diffHours = aptDateTime.diff(now, 'hour', true);
-            // Janela de precisão de 24h (entre 23h e 25h de antecedência)
             if (diffHours <= 25 && diffHours >= 23) {
                 const servicesNames = await getServicesNamesForApt(apt.shop_id, apt.service_ids || []);
                 const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
@@ -96,7 +125,6 @@ export async function runCronLogic() {
             if (!(await isInstanceConnected(apt.shop_id, shop.whatsapp_instance))) continue;
             const aptDateTime = dayjs.tz(`${apt.date}T${apt.time}`, 'America/Sao_Paulo');
             const diffMinutes = aptDateTime.diff(now, 'minute', true);
-            // Janela de precisão de 1h (entre 50 e 70 minutos de antecedência)
             if (diffMinutes <= 70 && diffMinutes >= 50) {
                 const servicesNames = await getServicesNamesForApt(apt.shop_id, apt.service_ids || []);
                 const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
@@ -256,14 +284,18 @@ export async function runCronLogic() {
     const currentHourSP = now.hour();
     if (currentHourSP >= 9) {
         const { data: bdayClients, error: bdayError } = await supabaseAdmin.rpc('get_birthday_clients_today');
-        if (bdayClients && bdayClients.length > 0) {
-            const shopIds = [...new Set(bdayClients.map((c: any) => c.shop_id))];
+        if (bdayError) console.error('[Cron] Erro bday RPC:', bdayError.message);
+        
+        if (bdayClients && (bdayClients as BirthdayClient[]).length > 0) {
+            const clients = bdayClients as BirthdayClient[];
+            const shopIds = [...new Set(clients.map(c => c.shop_id))];
             const { data: shopList } = await supabaseAdmin
                 .from('shops')
                 .select('id, name, whatsapp_instance, whatsapp_connected')
                 .in('id', shopIds);
+            
             const shopMap = new Map((shopList || []).map((s: any) => [s.id, s]));
-            for (const client of bdayClients) {
+            for (const client of clients) {
                 const shop = shopMap.get(client.shop_id);
                 if (!shop?.whatsapp_connected) continue;
                 if (!(await isInstanceConnected(client.shop_id, shop.whatsapp_instance))) continue;
@@ -281,15 +313,12 @@ export async function runCronLogic() {
 
     // 7. Limpeza Semanal e Relatórios (Segunda)
     if (now.day() === 1) {
-        // Limpeza de sessões inativas
         const sevenDaysAgo = now.subtract(7, 'day').toISOString();
         await supabaseAdmin.from('whatsapp_chat_sessions').delete().lt('last_message_at', sevenDaysAgo);
         
-        // Limpa eventos de webhook antigos (> 30 dias)
         const thirtyDaysAgoIso = now.subtract(30, 'day').toISOString();
         await supabaseAdmin.from('webhook_events').delete().lt('created_at', thirtyDaysAgoIso);
 
-        // Relatório Semanal Proativo (7h)
         if (now.hour() === 7 && now.minute() < 11) {
             const sevenDaysAgo = now.subtract(7, 'day').format('YYYY-MM-DD');
             const fourteenDaysAgo = now.subtract(14, 'day').format('YYYY-MM-DD');
@@ -299,9 +328,11 @@ export async function runCronLogic() {
                 .gte('date', fourteenDaysAgo)
                 .lte('date', todayStr);
             
-            if (allApts && allApts.length > 0) {
-                const shopsData = new Map<string, any>();
-                allApts.forEach(apt => {
+            if (allApts && (allApts as unknown as AppointmentData[]).length > 0) {
+                const appointments = allApts as unknown as AppointmentData[];
+                const shopsData = new Map<string, ShopMetrics>();
+                
+                appointments.forEach(apt => {
                     if (!shopsData.has(apt.shop_id)) {
                         const shopRow = Array.isArray(apt.shops) ? apt.shops[0] : apt.shops;
                         shopsData.set(apt.shop_id, {
@@ -312,7 +343,7 @@ export async function runCronLogic() {
                             prevWeek: []
                         });
                     }
-                    const shop = shopsData.get(apt.shop_id);
+                    const shop = shopsData.get(apt.shop_id)!;
                     if (apt.date >= sevenDaysAgo) shop.currentWeek.push(apt);
                     else shop.prevWeek.push(apt);
                 });
@@ -322,16 +353,17 @@ export async function runCronLogic() {
                     const { data: sets } = await supabaseAdmin.from('settings').select('phone').eq('shop_id', sId).single();
                     if (!sets?.phone) continue;
 
-                    const curRev = data.currentWeek.filter((a: any) => a.status === 'completed').reduce((sum: number, a: any) => sum + (a.total_value || 0), 0);
-                    const preRev = data.prevWeek.filter((a: any) => a.status === 'completed').reduce((sum: number, a: any) => sum + (a.total_value || 0), 0);
+                    const curRev = data.currentWeek.filter(a => a.status === 'completed').reduce((sum, a) => sum + (a.total_value || 0), 0);
+                    const preRev = data.prevWeek.filter(a => a.status === 'completed').reduce((sum, a) => sum + (a.total_value || 0), 0);
                     const curCount = data.currentWeek.length;
                     const preCount = data.prevWeek.length;
 
                     const svcCounts: Record<string, number> = {};
-                    data.currentWeek.forEach((a: any) => a.service_ids?.forEach((id: string) => svcCounts[id] = (svcCounts[id] || 0) + 1));
+                    data.currentWeek.forEach(a => a.service_ids?.forEach(id => svcCounts[id] = (svcCounts[id] || 0) + 1));
                     const topSvcIds = Object.entries(svcCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
+                    
                     const { data: svcsNames } = topSvcIds.length ? await supabaseAdmin.from('services').select('name').in('id', topSvcIds) : { data: [] };
-                    const topSvcStr = svcsNames?.map(s => s.name).join(', ') || 'N/A';
+                    const topSvcStr = (svcsNames as { name: string }[] | null)?.map(s => s.name).join(', ') || 'N/A';
 
                     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
                     const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
