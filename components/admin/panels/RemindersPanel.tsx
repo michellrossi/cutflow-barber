@@ -1031,10 +1031,20 @@ const MessageLogPanel: React.FC = () => {
             .select('*')
             .eq('shop_id', shop.id)
             .order('sent_at', { ascending: false })
-            .limit(50);
+            .limit(100); // Aumentado para 100 para ter mais histórico
         
         if (!error && data) {
-            setLogs(data);
+            // Remove duplicatas que tenham o mesmo Telefone, Tipo e Data/Hora (mesmo se IDs forem diferentes)
+            const seen = new Set();
+            const uniqueLogs = data.filter(item => {
+                const timestamp = new Date(item.sent_at).getTime();
+                // Criamos uma chave baseada em Telefone + Gatilho + Hora (arredondada para segundos)
+                const key = `${item.client_phone}-${item.trigger_type}-${Math.floor(timestamp / 1000)}`;
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+            });
+            setLogs(uniqueLogs);
         }
         setLoading(false);
     };

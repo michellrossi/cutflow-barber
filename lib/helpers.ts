@@ -166,6 +166,22 @@ export async function sendWhatsApp(phone: string, message: string, instanceName?
 
 export async function logAutomatedMessage(shopId: string, clientName: string, clientPhone: string, triggerType: string, status: 'sent' | 'failed' = 'sent') {
     try {
+        // [PROTEÇÃO] Evita log duplicado se ocorrer em menos de 10 segundos (clique duplo ou retry)
+        const tenSecondsAgo = new Date(Date.now() - 10000).toISOString();
+        const { data: existing } = await supabaseAdmin
+            .from('automated_messages_log')
+            .select('id')
+            .eq('shop_id', shopId)
+            .eq('client_phone', clientPhone)
+            .eq('trigger_type', triggerType)
+            .gte('sent_at', tenSecondsAgo)
+            .maybeSingle();
+
+        if (existing) {
+            console.log("[Log] Mensagem já registrada recentemente, pulando duplicata.");
+            return;
+        }
+
         await supabaseAdmin.from('automated_messages_log').insert({
             shop_id: shopId,
             client_name: clientName,
