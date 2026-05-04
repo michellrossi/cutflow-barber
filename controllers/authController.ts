@@ -43,7 +43,7 @@ export const requestClientLogin = async (req: Request, res: Response) => {
         const ok = await sendWhatsApp(cleanPhone, msg, shop.whatsapp_instance);
         
         if (ok) {
-            res.json({ success: true });
+            res.json({ success: true, url: loginUrl });
         } else {
             console.error('[Auth] Falha ao enviar WhatsApp via Evolution API');
             res.status(500).json({ error: 'Falha ao enviar mensagem de WhatsApp. Verifique a conexão.' });
