@@ -885,7 +885,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const shopId = ensureShopId();
             const response = await fetch('/api/whatsapp/qrcode', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
                 body: JSON.stringify({ shopId })
             });
             const data = await response.json();
@@ -902,7 +905,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const shopId = ensureShopId();
             const response = await fetch('/api/whatsapp/status', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
                 body: JSON.stringify({ shopId })
             });
             const data = await response.json();
@@ -919,7 +925,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const shopId = ensureShopId();
             const response = await fetch('/api/whatsapp/disconnect', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token}`
+                },
                 body: JSON.stringify({ shopId })
             });
             const data = await response.json();

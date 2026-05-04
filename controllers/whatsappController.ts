@@ -5,7 +5,12 @@ import { isRateLimited } from '../lib/helpers';
 
 export const getQRCode = async (req: Request, res: Response) => {
     try {
-        const { instanceName } = req.body;
+        const { shopId } = req.body;
+        const { data: shop } = await supabaseAdmin.from('shops').select('whatsapp_instance').eq('id', shopId).single();
+        const instanceName = shop?.whatsapp_instance;
+        
+        if (!instanceName) return res.status(404).json({ error: 'Instância não encontrada para esta loja' });
+
         const response = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connect/${instanceName}`, {
             headers: { 'apikey': process.env.WHATSAPP_API_KEY || '' }
         });
@@ -19,7 +24,12 @@ export const getQRCode = async (req: Request, res: Response) => {
 
 export const getStatus = async (req: Request, res: Response) => {
     try {
-        const { instanceName } = req.body;
+        const { shopId } = req.body;
+        const { data: shop } = await supabaseAdmin.from('shops').select('whatsapp_instance').eq('id', shopId).single();
+        const instanceName = shop?.whatsapp_instance;
+
+        if (!instanceName) return res.status(404).json({ error: 'Instância não encontrada' });
+
         const response = await fetch(`${process.env.WHATSAPP_API_URL}/instance/connectionState/${instanceName}`, {
             headers: { 'apikey': process.env.WHATSAPP_API_KEY || '' }
         });
@@ -33,7 +43,12 @@ export const getStatus = async (req: Request, res: Response) => {
 
 export const disconnect = async (req: Request, res: Response) => {
     try {
-        const { instanceName } = req.body;
+        const { shopId } = req.body;
+        const { data: shop } = await supabaseAdmin.from('shops').select('whatsapp_instance').eq('id', shopId).single();
+        const instanceName = shop?.whatsapp_instance;
+
+        if (!instanceName) return res.status(404).json({ error: 'Instância não encontrada' });
+
         const response = await fetch(`${process.env.WHATSAPP_API_URL}/instance/logout/${instanceName}`, {
             method: 'DELETE',
             headers: { 'apikey': process.env.WHATSAPP_API_KEY || '' }
