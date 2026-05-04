@@ -22,6 +22,11 @@ import whatsappRouter from './routes/whatsapp';
 import saasRouter from './routes/saas-admin';
 import cronRouter from './routes/cron';
 import notifyRouter from './routes/notify';
+import authRouter from './routes/auth';
+import loyaltyRouter from './routes/loyalty';
+import aiRouter from './routes/ai';
+import insightsRouter from './routes/insights';
+import { authenticate, requirePlan } from './middlewares/auth';
 
 // Controllers (apenas para o node-cron interno)
 import { runCronLogic } from './controllers/cronController';
@@ -75,6 +80,10 @@ async function startServer() {
     app.use('/api/saas', saasRouter);
     app.use('/api/cron', cronRouter);
     app.use('/api/notify', notifyLimiter, notifyRouter);
+    app.use('/api/auth', authRouter); // Público
+    app.use('/api/loyalty', authenticate, loyaltyRouter);
+    app.use('/api/ai', authenticate, requirePlan('profissional'), aiRouter);
+    app.use('/api/admin', authenticate, requirePlan('profissional'), insightsRouter);
 
     // Configuração de Ambiente (Vite vs Produção)
     if (process.env.NODE_ENV === 'production') {

@@ -1,12 +1,21 @@
-import { Router } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { runCronLogic } from '../controllers/cronController';
 import * as notifyController from '../controllers/notifyController';
 import { authenticate } from '../middlewares/auth';
 
 const router = Router();
 
+const cronGuard = (req: Request, res: Response, next: NextFunction) => {
+    const secret = req.headers['x-cron-secret'];
+    if (secret !== process.env.CRON_SECRET) {
+        console.warn('[Cron] Tentativa de acesso não autorizado ao trigger.');
+        return res.status(401).end();
+    }
+    next();
+};
+
 // Endpoint que geralmente é chamado por um cron job externo (ex: EasyCron, GitHub Actions)
-router.get('/cron', async (req, res) => {
+router.get('/cron', cronGuard, async (req, res) => {
     try {
         console.log('[API] Trigger manual do Cron via /api/notify/cron');
         await runCronLogic();
@@ -17,6 +26,8 @@ router.get('/cron', async (req, res) => {
 });
 
 router.post('/confirmation-client', authenticate, notifyController.sendConfirmationClient);
+// Rota PÚBLICA — chamada pelo BookingFlow do cliente (sem autenticação)
+router.post('/confirmation', notifyController.sendConfirmationClient);
 router.post('/test', authenticate, notifyController.testTemplate);
 
 export default router;
