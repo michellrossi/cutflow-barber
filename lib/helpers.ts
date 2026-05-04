@@ -164,6 +164,20 @@ export async function sendWhatsApp(phone: string, message: string, instanceName?
     }
 }
 
+export async function logAutomatedMessage(shopId: string, clientName: string, clientPhone: string, triggerType: string, status: 'sent' | 'failed' = 'sent') {
+    try {
+        await supabaseAdmin.from('automated_messages_log').insert({
+            shop_id: shopId,
+            client_name: clientName,
+            client_phone: clientPhone,
+            trigger_type: triggerType,
+            status: status
+        });
+    } catch (error) {
+        console.error("Erro ao registrar log de mensagem:", error);
+    }
+}
+
 export const isInstanceConnected = async (shopId: string, instanceName: string): Promise<boolean> => {
     if (!instanceName) return false;
     const now = Date.now();

@@ -3,7 +3,7 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { isInstanceConnected, generateWhatsAppMessage, sendWhatsApp } from '../lib/helpers';
+import { isInstanceConnected, generateWhatsAppMessage, sendWhatsApp, logAutomatedMessage } from '../lib/helpers';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -99,9 +99,11 @@ export async function runCronLogic() {
                 const ok = await sendWhatsApp(apt.client_phone, msg, shop.whatsapp_instance);
                 if (ok) {
                     await supabaseAdmin.from('appointments').update({ reminder_24h_sent: true }).eq('id', apt.id);
+                    await logAutomatedMessage(apt.shop_id, apt.client_name, apt.client_phone, 'Lembrete 24h', 'sent');
                 } else {
                     const attempts = (apt.send_attempts_24h || 0) + 1;
                     await supabaseAdmin.from('appointments').update({ send_attempts_24h: attempts }).eq('id', apt.id);
+                    await logAutomatedMessage(apt.shop_id, apt.client_name, apt.client_phone, 'Lembrete 24h', 'failed');
                 }
             }
         }
@@ -141,9 +143,11 @@ export async function runCronLogic() {
                 const ok = await sendWhatsApp(apt.client_phone, msg, shop.whatsapp_instance);
                 if (ok) {
                     await supabaseAdmin.from('appointments').update({ reminder_1h_sent: true }).eq('id', apt.id);
+                    await logAutomatedMessage(apt.shop_id, apt.client_name, apt.client_phone, 'Lembrete 1h', 'sent');
                 } else {
                     const attempts = (apt.send_attempts_1h || 0) + 1;
                     await supabaseAdmin.from('appointments').update({ send_attempts_1h: attempts }).eq('id', apt.id);
+                    await logAutomatedMessage(apt.shop_id, apt.client_name, apt.client_phone, 'Lembrete 1h', 'failed');
                 }
             }
         }
@@ -182,9 +186,11 @@ export async function runCronLogic() {
             const ok = await sendWhatsApp(apt.client_phone, msg, shop.whatsapp_instance);
             if (ok) {
                 await supabaseAdmin.from('appointments').update({ rescheduling_sent: true }).eq('id', apt.id);
+                await logAutomatedMessage(apt.shop_id, apt.client_name, apt.client_phone, 'Reagendamento', 'sent');
             } else {
                 const attempts = (apt.send_attempts_reschedule || 0) + 1;
                 await supabaseAdmin.from('appointments').update({ send_attempts_reschedule: attempts }).eq('id', apt.id);
+                await logAutomatedMessage(apt.shop_id, apt.client_name, apt.client_phone, 'Reagendamento', 'failed');
             }
         }
     }
@@ -223,6 +229,7 @@ export async function runCronLogic() {
                 const ok = await sendWhatsApp(apt.client_phone, msg, shop.whatsapp_instance);
                 if (ok) {
                     await supabaseAdmin.from('appointments').update({ post_sale_sent: true }).eq('id', apt.id);
+                    await logAutomatedMessage(apt.shop_id, apt.client_name, apt.client_phone, 'Pós-venda', 'sent');
 
                     const npsMsg =
                         `⭐ Muito obrigado pelo seu feedback, ${apt.client_name || 'cliente'}!\n\n` +
@@ -245,6 +252,7 @@ export async function runCronLogic() {
                 } else {
                     const attempts = (apt.send_attempts_postsale || 0) + 1;
                     await supabaseAdmin.from('appointments').update({ send_attempts_postsale: attempts }).eq('id', apt.id);
+                    await logAutomatedMessage(apt.shop_id, apt.client_name, apt.client_phone, 'Pós-venda', 'failed');
                 }
             }
         }
@@ -273,9 +281,11 @@ export async function runCronLogic() {
             const ok = await sendWhatsApp(apt.client_phone, msg, shop.whatsapp_instance);
             if (ok) {
                 await supabaseAdmin.from('appointments').update({ reminder_30d_sent: true }).eq('id', apt.id);
+                await logAutomatedMessage(apt.shop_id, apt.client_name, apt.client_phone, 'Retenção 30 dias', 'sent');
             } else {
                 const attempts = (apt.send_attempts_30d || 0) + 1;
                 await supabaseAdmin.from('appointments').update({ send_attempts_30d: attempts }).eq('id', apt.id);
+                await logAutomatedMessage(apt.shop_id, apt.client_name, apt.client_phone, 'Retenção 30 dias', 'failed');
             }
         }
     }
@@ -304,8 +314,12 @@ export async function runCronLogic() {
                     clientName: client.name,
                     shopName: shop.name
                 }, client.shop_id);
-                if (msg && await sendWhatsApp(client.phone, msg, shop.whatsapp_instance)) {
+                const sentOk = await sendWhatsApp(client.phone, msg, shop.whatsapp_instance);
+                if (msg && sentOk) {
                     await supabaseAdmin.from('clients').update({ birthday_last_sent_year: now.year() }).eq('id', client.id);
+                    await logAutomatedMessage(client.shop_id, client.name, client.phone, 'Aniversário', 'sent');
+                } else if (msg) {
+                    await logAutomatedMessage(client.shop_id, client.name, client.phone, 'Aniversário', 'failed');
                 }
             }
         }

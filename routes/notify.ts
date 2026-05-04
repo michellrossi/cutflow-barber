@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { runCronLogic } from '../controllers/cronController';
+import * as notifyController from '../controllers/notifyController';
+import { authenticate } from '../middlewares/auth';
 
 const router = Router();
 
@@ -13,5 +15,8 @@ router.get('/cron', async (req, res) => {
         res.status(500).json({ error: e.message });
     }
 });
+
+router.post('/confirmation-client', authenticate, notifyController.sendConfirmationClient);
+router.post('/test', authenticate, notifyController.testTemplate);
 
 export default router;

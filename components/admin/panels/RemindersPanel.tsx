@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useShop } from '../../../store';
 import { supabase } from '../../../supabaseClient';
-import { MessageSquare, Plus, Save, Trash2, Bell, Clock, CheckCircle, RefreshCw, Eye, Copy, Info, Sparkles, Users, UserCheck, Tags, Smile, Smartphone, Loader2, UserMinus } from 'lucide-react';
+import { MessageSquare, Plus, Save, Trash2, Bell, Clock, CheckCircle, RefreshCw, Eye, Copy, Info, Sparkles, Users, UserCheck, Tags, Smile, Smartphone, Loader2, UserMinus, History, AlertCircle } from 'lucide-react';
 import { MessageTemplate, MessageCategory } from '../../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
@@ -322,6 +322,16 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
                     Preferências
                 </button>
                 <button
+                    onClick={() => setActiveTab('logs')}
+                    className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all ${activeTab === 'logs'
+                            ? 'bg-white text-orange-600 shadow-sm'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
+                >
+                    <History size={18} />
+                    Gestão de Mensagens
+                </button>
+                <button
                     onClick={() => setActiveTab('chatbot')}
                     className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all relative ${activeTab === 'chatbot'
                             ? 'bg-white text-orange-600 shadow-sm'
@@ -506,6 +516,8 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
                 </div>
             ) : activeTab === 'chatbot' ? (
                 <ChatbotSessionsPanel />
+            ) : activeTab === 'logs' ? (
+                <MessageLogPanel />
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredTemplates.map((template) => (
@@ -1002,6 +1014,107 @@ const NotificationToggle: React.FC<{ title: string, desc: string, active: boolea
             >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${active ? 'translate-x-6' : 'translate-x-1'}`} />
             </button>
+        </div>
+    );
+};
+
+const MessageLogPanel: React.FC = () => {
+    const { shop } = useShop();
+    const [logs, setLogs] = useState<any[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    const fetchLogs = async () => {
+        if (!shop?.id) return;
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('automated_messages_log')
+            .select('*')
+            .eq('shop_id', shop.id)
+            .order('sent_at', { ascending: false })
+            .limit(50);
+        
+        if (!error && data) {
+            setLogs(data);
+        }
+        setLoading(false);
+    };
+
+    useEffect(() => {
+        fetchLogs();
+    }, [shop?.id]);
+
+    return (
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div>
+                    <h2 className="text-lg font-bold text-slate-900">Histórico de Mensagens</h2>
+                    <p className="text-sm text-slate-500">Acompanhe as mensagens automáticas enviadas pelo sistema.</p>
+                </div>
+                <button 
+                    onClick={fetchLogs}
+                    className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition-all"
+                    title="Atualizar"
+                >
+                    <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+                </button>
+            </div>
+
+            <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                    <thead className="bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-[0.1em]">
+                        <tr>
+                            <th className="px-8 py-4">Data/Hora</th>
+                            <th className="px-8 py-4">Cliente</th>
+                            <th className="px-8 py-4">Gatilho</th>
+                            <th className="px-8 py-4">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {loading ? (
+                            <tr>
+                                <td colSpan={4} className="px-8 py-12 text-center text-slate-400">
+                                    <Loader2 className="animate-spin mx-auto mb-2" />
+                                    Carregando histórico...
+                                </td>
+                            </tr>
+                        ) : logs.length === 0 ? (
+                            <tr>
+                                <td colSpan={4} className="px-8 py-12 text-center text-slate-400">
+                                    Nenhuma mensagem registrada ainda.
+                                </td>
+                            </tr>
+                        ) : (
+                            logs.map((log) => (
+                                <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
+                                    <td className="px-8 py-5 text-sm text-slate-600">
+                                        {new Date(log.sent_at).toLocaleString('pt-BR')}
+                                    </td>
+                                    <td className="px-8 py-5">
+                                        <div className="font-bold text-slate-700">{log.client_name}</div>
+                                        <div className="text-xs text-slate-400">{log.client_phone}</div>
+                                    </td>
+                                    <td className="px-8 py-5">
+                                        <span className="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                            {log.trigger_type}
+                                        </span>
+                                    </td>
+                                    <td className="px-8 py-5">
+                                        {log.status === 'sent' ? (
+                                            <span className="flex items-center gap-1.5 text-green-600 text-xs font-bold">
+                                                <CheckCircle size={14} /> Enviada
+                                            </span>
+                                        ) : (
+                                            <span className="flex items-center gap-1.5 text-red-600 text-xs font-bold">
+                                                <AlertCircle size={14} /> Falhou
+                                            </span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
         </div>
     );
 };

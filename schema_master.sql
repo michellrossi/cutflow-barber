@@ -964,3 +964,19 @@ BEGIN
     RETURN result;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 3. Tabela de logs de mensagens automatizadas
+CREATE TABLE IF NOT EXISTS public.automated_messages_log (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
+    client_name TEXT NOT NULL,
+    client_phone TEXT NOT NULL,
+    trigger_type TEXT NOT NULL,
+    sent_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL,
+    status TEXT DEFAULT 'sent'
+);
+ALTER TABLE public.automated_messages_log ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Dono_Ve_Proprios_Logs" ON public.automated_messages_log 
+FOR SELECT USING (EXISTS (SELECT 1 FROM public.shops WHERE id = automated_messages_log.shop_id AND owner_id = auth.uid()));
+
