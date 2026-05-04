@@ -32,6 +32,9 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [clientFilter, setClientFilter] = useState<string>('all');
   const [remindersSubTab, setRemindersSubTab] = useState<string>('clients');
+  const [reportsSubTab, setReportsSubTab] = useState<string>('finance');
+  const [inventoryFilter, setInventoryFilter] = useState<'all' | 'critical'>('all');
+  const [financialSubTab, setFinancialSubTab] = useState<string>('cash');
   const [teamSubTab, setTeamSubTab] = useState<TeamSubTab>('list');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarPinned, setIsSidebarPinned] = useState(true);
@@ -76,6 +79,20 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       if (filter && tab === 'reminders') {
           setRemindersSubTab(filter);
       }
+      if (tab === 'reports' && filter) {
+          setReportsSubTab(filter);
+      }
+      if (tab === 'inventory' && filter) {
+          setInventoryFilter(filter as any);
+      }
+      if (tab === 'financial' && filter) {
+          setFinancialSubTab(filter);
+      }
+      if (tab.startsWith('reports-')) {
+          setActiveTab('reports');
+          setReportsSubTab(tab.replace('reports-', ''));
+          return;
+      }
       if (tab !== 'settings') setIsSettingsOpen(false);
   };
 
@@ -101,16 +118,16 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'appointments': return <AppointmentsPanel />;
       case 'clients': return <ClientsPanel initialFilter={clientFilter as any} />;
       case 'loyalty': return <LoyaltyPanel />;
-      case 'reports': return <ReportsPanel />;
+      case 'reports': return <ReportsPanel initialTab={reportsSubTab as any} />;
       case 'settings': return <SettingsPanel />;
       case 'insight': return <InsightPanel />;
       case 'reminders': return <RemindersPanel initialTab={remindersSubTab} />;
       case 'subscriptions': return <SubscriptionsPanel />;
       case 'plan': return <PlanPanel onUpgrade={() => setIsPaymentModalOpen(true)} />;
       case 'profile': return <ProfilePanel />;
-      case 'inventory': return <InventoryPanel />;
+      case 'inventory': return <InventoryPanel initialFilter={inventoryFilter} />;
       case 'goals': return <GoalsPanel />;
-      case 'financial': return <FinancialPanel />;
+      case 'financial': return <FinancialPanel initialTab={financialSubTab as any} />;
       default: return <DashboardPanel onNavigate={handleTabChange} />;
     }
   };

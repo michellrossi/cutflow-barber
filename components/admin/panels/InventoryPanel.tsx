@@ -27,13 +27,14 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '../../ui/ToastContext';
 
-export const InventoryPanel: React.FC = () => {
+export const InventoryPanel: React.FC<{ initialFilter?: 'all' | 'critical' }> = ({ initialFilter }) => {
   const { products, addProduct, updateProduct, removeProduct, restockProduct, settings, formatCurrencyBRL } = useShop();
   const { showToast } = useToast();
   
   // UI State
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState('Todos');
+  const [stockFilter, setStockFilter] = useState<'all' | 'critical'>(initialFilter || 'all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -124,9 +125,10 @@ export const InventoryPanel: React.FC = () => {
     return (products || []).filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = activeCategoryFilter === 'Todos' || p.category === activeCategoryFilter;
-      return matchesSearch && matchesCategory;
+      const matchesStock = stockFilter === 'all' || p.currentStock <= p.minStock;
+      return matchesSearch && matchesCategory && matchesStock;
     });
-  }, [products, searchQuery, activeCategoryFilter]);
+  }, [products, searchQuery, activeCategoryFilter, stockFilter]);
 
   const handleCategorySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const cat = e.target.value;

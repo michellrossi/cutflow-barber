@@ -1,10 +1,15 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useShop } from '../../../store';
-import { Users, Scissors, Calendar, Clock, Phone, User, DollarSign, TrendingUp, Smartphone, CheckCircle, Share2 } from 'lucide-react';
+import { Users, Scissors, Calendar, Clock, Phone, User, DollarSign, TrendingUp, Smartphone, CheckCircle, Share2, Package, Star, Award } from 'lucide-react';
 import { motion } from 'framer-motion';
+import dayjs from 'dayjs';
 
 export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) => void }> = ({ onNavigate }) => {
-    const { appointments, clients, professionals, services, settings, getWhatsAppStatus, formatCurrencyBRL } = useShop();
+    const { 
+        appointments, clients, professionals, services, settings, 
+        products, cashSessions, cashFlowEntries,
+        getWhatsAppStatus, formatCurrencyBRL 
+    } = useShop();
     const [today, setToday] = useState<string>('');
     const [isMounted, setIsMounted] = useState(false);
     const [whatsappStatus, setWhatsappStatus] = useState<{ connected: boolean } | null>(null);
@@ -14,7 +19,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
 
     useEffect(() => {
         let isMountedComponent = true;
-        setToday(new Date().toISOString().split('T')[0]);
+        setToday(dayjs().format('YYYY-MM-DD'));
         setIsMounted(true);
 
         const fetchWaStatus = async () => {
@@ -32,7 +37,84 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
         };
     }, []);
 
-    // Stats calculations
+    // --- Novas Métricas ---
+
+    // 1. Serviço Mais Vendido (Semana)
+    const topService = useMemo(() => {
+        const sevenDaysAgo = dayjs().subtract(7, 'days').format('YYYY-MM-DD');
+        const recentAppts = appointments.filter(a => a.date >= sevenDaysAgo && a.status === 'completed');
+        const counts: Record<string, number> = {};
+        recentAppts.forEach(a => {
+            a.serviceIds.forEach(id => {
+                counts[id] = (counts[id] || 0) + 1;
+            });
+        });
+        const topId = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+        if (!topId) return null;
+        const service = services.find(s => s.id === topId);
+        return service ? { name: service.name, count: counts[topId] } : null;
+    }, [appointments, services]);
+
+    // 2. Estoque Crítico
+    const criticalStockCount = useMemo(() => {
+        return (products || []).filter(p => p.currentStock <= p.minStock).length;
+    }, [products]);
+
+    // 3. Saldo do Caixa Aberto
+    const cashBalance = useMemo(() => {
+        const openSession = (cashSessions || []).find(s => s.status === 'open');
+        if (!openSession) return null;
+        const entries = (cashFlowEntries || []).filter(e => e.sessionId === openSession.id);
+        return entries.reduce((acc, e) => e.type === 'input' ? acc + e.amount : acc - e.amount, openSession.openingBalance);
+    }, [cashSessions, cashFlowEntries]);
+
+    // 4. NPS da Semana
+    const npsStats = useMemo(() => {
+        const sevenDaysAgo = dayjs().subtract(7, 'days').format('YYYY-MM-DD');
+        const recentNps = appointments.filter(a => a.date >= sevenDaysAgo && (a.npsScore ?? 0) > 0);
+        if (recentNps.length === 0) return { avg: 0, count: 0 };
+        const sum = recentNps.reduce((acc, a) => acc + (a.npsScore || 0), 0);
+        return { avg: sum / recentNps.length, count: recentNps.length };
+    }, [appointments]);
+
+    // 5. Top Barbeiro do Mês
+    const topBarber = useMemo(() => {
+        const firstDayOfMonth = dayjs().startOf('month').format('YYYY-MM-DD');
+        const monthAppts = appointments.filter(a => a.date >= firstDayOfMonth && a.status === 'completed');
+        const stats: Record<string, { revenue: number, count: number }> = {};
+        monthAppts.forEach(a => {
+            if (!a.professionalId) return;
+            if (!stats[a.professionalId]) stats[a.professionalId] = { revenue: 0, count: 0 };
+            stats[a.professionalId].revenue += a.totalValue;
+            stats[a.professionalId].count += 1;
+        });
+        const topId = Object.entries(stats).sort((a, b) => b[1].revenue - a[1].revenue)[0]?.[0];
+        if (!topId) return null;
+        const pro = professionals.find(p => p.id === topId);
+        return pro ? { name: pro.name, ...stats[topId] } : null;
+    }, [appointments, professionals]);
+
+    // 6. Ticket Médio do Mês
+    const ticketStats = useMemo(() => {
+        const startOfMonth = dayjs().startOf('month');
+        const startOfLastMonth = dayjs().subtract(1, 'month').startOf('month');
+        const endOfLastMonth = dayjs().subtract(1, 'month').endOf('month');
+
+        const curMonthAppts = appointments.filter(a => a.date >= startOfMonth.format('YYYY-MM-DD') && a.status === 'completed');
+        const lastMonthAppts = appointments.filter(a => a.date >= startOfLastMonth.format('YYYY-MM-DD') && a.date <= endOfLastMonth.format('YYYY-MM-DD') && a.status === 'completed');
+
+        const curRevenue = curMonthAppts.reduce((acc, a) => acc + a.totalValue, 0);
+        const lastRevenue = lastMonthAppts.reduce((acc, a) => acc + a.totalValue, 0);
+
+        const curTicket = curMonthAppts.length > 0 ? curRevenue / curMonthAppts.length : 0;
+        const lastTicket = lastMonthAppts.length > 0 ? lastRevenue / lastMonthAppts.length : 0;
+
+        const delta = lastTicket > 0 ? ((curTicket - lastTicket) / lastTicket) * 100 : 0;
+
+        return { value: curTicket, delta };
+    }, [appointments]);
+
+    // --- Stats calculations legados ---
     const todayAppointments = useMemo(() => {
         if (!today) return [];
         return appointments.filter(apt => apt.date === today && apt.status !== 'cancelled');
@@ -40,7 +122,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
 
     const inactiveClientsCount = useMemo(() => {
         let count = 0;
-        const now = new Date().getTime();
+        const now = dayjs();
         
         clients.forEach(client => {
             const clientAppts = appointments.filter(a => 
@@ -49,10 +131,9 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
             ).filter(a => a.status === 'completed');
 
             if (clientAppts.length > 0) {
-                clientAppts.sort((a, b) => new Date(b.date + 'T' + b.time).getTime() - new Date(a.date + 'T' + a.time).getTime());
+                clientAppts.sort((a, b) => dayjs(b.date + 'T' + b.time).unix() - dayjs(a.date + 'T' + a.time).unix());
                 const lastCutDate = clientAppts[0].date;
-                const diff = now - new Date(lastCutDate).getTime();
-                const daysSinceLastCut = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const daysSinceLastCut = now.diff(dayjs(lastCutDate), 'day');
                 
                 if (daysSinceLastCut > 30) {
                     count++;
@@ -70,26 +151,18 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
     }, [clients, today]);
 
     const noShowRate = useMemo(() => {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        const startStr = thirtyDaysAgo.toISOString().split('T')[0];
-
-        const relevantAppts = appointments.filter(a => a.date >= startStr && a.status !== 'cancelled');
+        const thirtyDaysAgo = dayjs().subtract(30, 'days').format('YYYY-MM-DD');
+        const relevantAppts = appointments.filter(a => a.date >= thirtyDaysAgo && a.status !== 'cancelled');
         if (relevantAppts.length === 0) return 0;
-
         const noShows = relevantAppts.filter(a => a.status === 'noshow').length;
         return (noShows / relevantAppts.length) * 100;
     }, [appointments]);
 
     const revenueStats = useMemo(() => {
-        const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-        const startOfWeek = new Date(startOfToday);
-        startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
-
-        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const startOfYear = new Date(now.getFullYear(), 0, 1);
+        const startOfToday = dayjs().startOf('day');
+        const startOfWeek = dayjs().startOf('week');
+        const startOfMonth = dayjs().startOf('month');
+        const startOfYear = dayjs().startOf('year');
 
         let todayVal = 0;
         let weekVal = 0;
@@ -98,14 +171,13 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
 
         appointments.forEach(apt => {
             if (apt.status !== 'completed') return;
-
-            const aptDate = new Date(apt.date + 'T12:00:00');
+            const aptDate = dayjs(apt.date);
             const value = apt.totalValue;
 
-            if (aptDate >= startOfToday) todayVal += value;
-            if (aptDate >= startOfWeek) weekVal += value;
-            if (aptDate >= startOfMonth) monthVal += value;
-            if (aptDate >= startOfYear) yearVal += value;
+            if (aptDate.isSame(startOfToday, 'day') || aptDate.isAfter(startOfToday)) todayVal += value;
+            if (aptDate.isSame(startOfWeek, 'day') || aptDate.isAfter(startOfWeek)) weekVal += value;
+            if (aptDate.isSame(startOfMonth, 'day') || aptDate.isAfter(startOfMonth)) monthVal += value;
+            if (aptDate.isSame(startOfYear, 'day') || aptDate.isAfter(startOfYear)) yearVal += value;
         });
 
         return { today: todayVal, week: weekVal, month: monthVal, year: yearVal };
@@ -155,12 +227,11 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
             </div>
 
 
-            {/* Guia de Onboarding — só aparece enquanto houver pendências E nunca foi concluído */}
+            {/* Guia de Onboarding */}
             {(() => {
                 const allDone = services.length > 0 && professionals.length > 0
                     && whatsappStatus?.connected === true && appointments.length > 0;
                 
-                // Auto-dismiss: persiste e retira da tela quando tudo estiver completo
                 if (allDone && !onboardingDismissed) {
                     try { localStorage.setItem('cutflow_onboarding_done', 'true'); } catch {}
                     setOnboardingDismissed(true);
@@ -236,7 +307,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                 );
             })()}
 
-
+            {/* Grid 1: Operacional Crítico */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     icon={<Calendar size={18} />}
@@ -247,20 +318,56 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                     onClick={() => onNavigate('appointments')}
                 />
                 <StatCard
-                    icon={<Users size={18} />}
-                    colorClass="text-red-600 bg-red-50"
-                    label="Clientes Inativos"
-                    value={inactiveClientsCount.toString()}
-                    subtitle="Mais de 30 dias"
-                    onClick={() => onNavigate('clients', 'inactive')}
+                    icon={<Star size={18} />}
+                    colorClass="text-purple-600 bg-purple-50"
+                    label="Serviço Mais Vendido"
+                    value={topService?.name || '---'}
+                    subtitle={`${topService?.count || 0} na semana`}
+                    onClick={() => onNavigate('reports-services')}
                 />
                 <StatCard
-                    icon={<User size={18} />}
+                    icon={<Package size={18} />}
+                    colorClass="text-red-600 bg-red-50"
+                    label="Estoque Crítico"
+                    value={criticalStockCount.toString()}
+                    subtitle="Produtos abaixo do mín."
+                    onClick={() => onNavigate('inventory', 'critical')}
+                />
+                <StatCard
+                    icon={<DollarSign size={18} />}
+                    colorClass={`${(cashBalance || 0) > 0 ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-50'}`}
+                    label="Caixa Aberto"
+                    value={cashBalance !== null ? formatCurrencyBRL(cashBalance) : 'Fechado'}
+                    subtitle="Saldo atual em tempo real"
+                    onClick={() => onNavigate('financial', 'cash')}
+                />
+            </div>
+
+            {/* Grid 2: Qualidade e Time */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <StatCard
+                    icon={<Star size={18} />}
+                    colorClass="text-amber-500 bg-amber-50"
+                    label="NPS da Semana"
+                    value={npsStats.avg > 0 ? npsStats.avg.toFixed(1) : '---'}
+                    subtitle={`${npsStats.count} avaliações`}
+                    onClick={() => onNavigate('reports-team')}
+                />
+                <StatCard
+                    icon={<Award size={18} />}
                     colorClass="text-blue-600 bg-blue-50"
-                    label="Aniversariantes"
-                    value={birthdayClientsCount.toString()}
-                    subtitle="Comemorando hoje"
-                    onClick={() => onNavigate('clients', 'birthdays')}
+                    label="Top Barbeiro"
+                    value={topBarber?.name || '---'}
+                    subtitle={topBarber ? `${formatCurrencyBRL(topBarber.revenue)} (${topBarber.count} atend.)` : 'Mês atual'}
+                    onClick={() => onNavigate('reports-team')}
+                />
+                <StatCard
+                    icon={<TrendingUp size={18} />}
+                    colorClass="text-emerald-600 bg-emerald-50"
+                    label="Ticket Médio"
+                    value={formatCurrencyBRL(ticketStats.value)}
+                    subtitle={`${ticketStats.delta >= 0 ? '+' : ''}${ticketStats.delta.toFixed(1)}% vs mês ant.`}
+                    onClick={() => onNavigate('reports-finance')}
                 />
                 <StatCard
                     icon={<Scissors size={18} />}
@@ -272,6 +379,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                 />
             </div>
 
+            {/* Grid 3: Receita Legada */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatCard
                     icon={<DollarSign size={18} />}
@@ -279,7 +387,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                     label="Receita Hoje"
                     value={formatCurrencyBRL(revenueStats.today)}
                     subtitle="Faturamento do dia"
-                    onClick={() => onNavigate('finance')}
+                    onClick={() => onNavigate('financial', 'billing')}
                 />
                 <StatCard
                     icon={<TrendingUp size={18} />}
@@ -287,7 +395,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                     label="Receita da Semana"
                     value={formatCurrencyBRL(revenueStats.week)}
                     subtitle="Últimos 7 dias"
-                    onClick={() => onNavigate('finance')}
+                    onClick={() => onNavigate('financial', 'billing')}
                 />
                 <StatCard
                     icon={<DollarSign size={18} />}
@@ -295,15 +403,15 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
                     label="Receita do Mês"
                     value={formatCurrencyBRL(revenueStats.month)}
                     subtitle="Ciclo mensal atual"
-                    onClick={() => onNavigate('finance')}
+                    onClick={() => onNavigate('financial', 'billing')}
                 />
                 <StatCard
-                    icon={<TrendingUp size={18} />}
-                    colorClass="text-emerald-600 bg-emerald-50"
-                    label="Receita do Ano"
-                    value={formatCurrencyBRL(revenueStats.year)}
-                    subtitle="Acumulado anual"
-                    onClick={() => onNavigate('finance')}
+                    icon={<Users size={18} />}
+                    colorClass="text-red-600 bg-red-50"
+                    label="Clientes Inativos"
+                    value={inactiveClientsCount.toString()}
+                    subtitle="Mais de 30 dias"
+                    onClick={() => onNavigate('clients', 'inactive')}
                 />
             </div>
 

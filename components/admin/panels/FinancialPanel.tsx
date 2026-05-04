@@ -1013,8 +1013,8 @@ const ReportsTab: React.FC<{ period: string }> = ({ period }) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMPONENTE PRINCIPAL
 // ═══════════════════════════════════════════════════════════════════════════════
-export const FinancialPanel: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<FinancialTab>('cash');
+export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initialTab }) => {
+  const [activeTab, setActiveTab] = useState<FinancialTab>(initialTab || 'cash');
   const [period, setPeriod] = useState('month');
 
   const { cashSessions, refresh, appointments, professionals, cashFlowEntries } = useShop();

@@ -11,9 +11,9 @@ import { DateRangeFilter } from '../ui/DateRangeFilter';
 
 type ReportSubTab = 'finance' | 'clients' | 'team' | 'services' | 'products' | 'goals';
 
-export const ReportsPanel: React.FC = () => {
+export const ReportsPanel: React.FC<{ initialTab?: ReportSubTab }> = ({ initialTab }) => {
     const { appointments, clients, services, professionals } = useShop();
-    const [activeTab, setActiveTab] = useState<ReportSubTab>('finance');
+    const [activeTab, setActiveTab] = useState<ReportSubTab>(initialTab || 'finance');
     const [dateRange, setDateRange] = useState('30 dias');
 
     const handleExportConsolidated = () => {
