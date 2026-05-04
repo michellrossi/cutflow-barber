@@ -318,13 +318,31 @@ ON public.clients (public.birth_date_mmdd(birth_date));
 
 -- ── Agendamento Seguro (RPC com limite diário + anti-conflito) ──────────────────
 -- ── RPC: Agendamento de Clientes (Atômico com suporte a cliente logado) ──────
-DROP FUNCTION IF EXISTS public.book_appointment(uuid, text, text, text[], text, text, numeric, uuid, text);
-DROP FUNCTION IF EXISTS public.book_appointment(uuid, text, text, text[], text, text, numeric, uuid, text, uuid);
+-- Limpeza agressiva para evitar erro de função não única
+DO $$
+DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN (SELECT oid::regprocedure as func_spec
+              FROM pg_proc 
+              WHERE proname = 'book_appointment' 
+                AND pronamespace = 'public'::regnamespace) 
+    LOOP
+        EXECUTE 'DROP FUNCTION ' || r.func_spec || ' CASCADE';
+    END LOOP;
+END $$;
 
 CREATE OR REPLACE FUNCTION public.book_appointment(
-    p_shop_id UUID, p_client_name TEXT, p_client_phone TEXT,
-    p_service_ids TEXT[], p_date TEXT, p_time TEXT, p_total_value NUMERIC,
-    p_professional_id UUID DEFAULT NULL, p_coupon_code TEXT DEFAULT NULL
+    p_shop_id UUID, 
+    p_client_name TEXT, 
+    p_client_phone TEXT,
+    p_service_ids TEXT[], 
+    p_date TEXT, 
+    p_time TEXT, 
+    p_total_value NUMERIC,
+    p_professional_id UUID DEFAULT NULL, 
+    p_coupon_code TEXT DEFAULT NULL,
+    p_client_id UUID DEFAULT NULL
 ) RETURNS JSON AS $$
 DECLARE
     v_appointment_id UUID;
@@ -333,20 +351,38 @@ BEGIN
     -- Verifica limite diário (Usa SECURITY DEFINER para garantir acesso à tabela)
     SELECT COUNT(*) INTO v_daily_count FROM public.appointments
     WHERE shop_id = p_shop_id
-    AND client_phone = p_client_phone
+    AND (client_phone = p_client_phone OR (p_client_id IS NOT NULL AND client_id = p_client_id))
     AND created_at >= CURRENT_DATE;
 
-    IF v_daily_count >= 5 THEN
+    IF v_daily_count >= 10 THEN
         RETURN json_build_object('status', 'error', 'message', 'Limite diário de agendamentos atingido.');
     END IF;
 
     BEGIN
         INSERT INTO public.appointments (
-            shop_id, client_name, client_phone, service_ids,
-            professional_id, date, time, total_value, coupon_code, status
+            shop_id, 
+            client_id,
+            client_name, 
+            client_phone, 
+            service_ids,
+            professional_id, 
+            date, 
+            time, 
+            total_value, 
+            coupon_code, 
+            status
         ) VALUES (
-            p_shop_id, p_client_name, p_client_phone, p_service_ids,
-            p_professional_id, p_date, p_time, p_total_value, p_coupon_code, 'scheduled'
+            p_shop_id, 
+            p_client_id,
+            p_client_name, 
+            p_client_phone, 
+            p_service_ids,
+            p_professional_id, 
+            p_date, 
+            p_time, 
+            p_total_value, 
+            p_coupon_code, 
+            'scheduled'
         ) RETURNING id INTO v_appointment_id;
 
         RETURN json_build_object('id', v_appointment_id, 'status', 'success');
