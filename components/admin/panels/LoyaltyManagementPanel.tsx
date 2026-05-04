@@ -9,7 +9,7 @@ const WhatsappIcon = ({ size = 20, className = '' }) => (
 );
 
 export const LoyaltyManagementPanel: React.FC = () => {
-    const { shop, clients, settings, reloadClients } = useShop();
+    const { shop, clients, appointments, settings, reloadClients } = useShop();
     const [loading, setLoading] = React.useState(false);
 
     React.useEffect(() => {
@@ -41,6 +41,24 @@ export const LoyaltyManagementPanel: React.FC = () => {
         }
     };
 
+    const processedClients = React.useMemo(() => {
+        return clients.map(client => {
+            const clientAppts = appointments.filter(a => 
+                (a.clientId === client.id) || 
+                (!a.clientId && a.clientPhone === client.phone)
+            ).filter(a => a.status === 'completed');
+
+            // Ordenar por data desc
+            clientAppts.sort((a, b) => new Date(b.date + 'T' + b.time).getTime() - new Date(a.date + 'T' + a.time).getTime());
+
+            const lastAppt = clientAppts[0];
+            return {
+                ...client,
+                lastVisitDate: lastAppt ? lastAppt.date : null
+            };
+        });
+    }, [clients, appointments]);
+
     const openWhatsApp = (phone: string) => {
         const formattedPhone = phone.replace(/\D/g, '');
         window.open(`https://wa.me/${formattedPhone}`, '_blank');
@@ -60,7 +78,7 @@ export const LoyaltyManagementPanel: React.FC = () => {
                         <p className="text-sm font-medium">Nenhum cliente encontrado para esta unidade.</p>
                     </div>
                 ) : (
-                    clients.map(client => (
+                    processedClients.map(client => (
                         <div key={client.id} className="p-4 border border-slate-200 rounded-2xl flex items-center gap-4 hover:border-orange-200 transition-all group">
                             <div className="flex-1">
                                 <div className="flex items-center justify-between mb-2">
@@ -81,7 +99,7 @@ export const LoyaltyManagementPanel: React.FC = () => {
                                     ></div>
                                 </div>
                                 <div className="mt-2 text-[10px] text-slate-400 font-bold uppercase tracking-tight flex justify-between">
-                                    <span>Última visita: {client.createdAt ? new Date(client.createdAt).toLocaleDateString('pt-BR') : '—'}</span>
+                                    <span>Última visita: {client.lastVisitDate ? new Date(client.lastVisitDate + 'T12:00:00').toLocaleDateString('pt-BR') : '—'}</span>
                                     {isGoalReached(client) && <span className="text-emerald-500">🏆 PRÊMIO DISPONÍVEL</span>}
                                 </div>
                             </div>
