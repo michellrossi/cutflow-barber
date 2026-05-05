@@ -6,6 +6,8 @@ export { useFinancial, FinancialProvider } from './contexts/FinancialContext';
 export { useAutomation, AutomationProvider } from './contexts/AutomationContext';
 export { useCatalog, CatalogProvider } from './contexts/CatalogContext';
 export { useClients, ClientProvider } from './contexts/ClientContext';
+export { useAppointments, AppointmentProvider } from './contexts/AppointmentContext';
+export { useSettings, SettingsProvider } from './contexts/SettingsContext';
 
 import { useShop as useShopBase } from './ShopContext';
 import { useInventory } from './contexts/InventoryContext';
@@ -13,6 +15,8 @@ import { useFinancial } from './contexts/FinancialContext';
 import { useAutomation } from './contexts/AutomationContext';
 import { useCatalog } from './contexts/CatalogContext';
 import { useClients } from './contexts/ClientContext';
+import { useAppointments } from './contexts/AppointmentContext';
+import { useSettings } from './contexts/SettingsContext';
 
 // Hook combinado — substitui o useShop original para os componentes
 export function useShop() {
@@ -22,6 +26,8 @@ export function useShop() {
   const automation = useAutomation();
   const catalog = useCatalog();
   const clients = useClients();
+  const appointmentsCtx = useAppointments();
+  const settingsCtx = useSettings();
 
   return { 
     ...shop, 
@@ -30,10 +36,12 @@ export function useShop() {
     ...automation, 
     ...catalog, 
     ...clients,
+    ...appointmentsCtx,
+    ...settingsCtx,
     currentClient: clients.currentClient,
     clientSession: clients.clientSession,
-    // Forçar fallbacks de array para evitar erros de runtime (l.filter is not a function)
-    appointments: shop.appointments || [],
+    // Forçar fallbacks de array para evitar erros de runtime
+    appointments: appointmentsCtx.appointments || [],
     professionals: catalog.professionals || [],
     services: catalog.services || [],
     products: inventory.products || [],

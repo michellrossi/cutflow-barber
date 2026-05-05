@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useParams, Navigate, useSearchParams } from 'react-router-dom';
-import { ShopProvider, useShop, InventoryProvider, FinancialProvider, AutomationProvider, CatalogProvider, ClientProvider } from './store';
+import { ShopProvider, useShop, InventoryProvider, FinancialProvider, AutomationProvider, CatalogProvider, ClientProvider, AppointmentProvider, SettingsProvider } from './store';
 import { useShop as useShopBase } from './store/ShopContext'; // Import direto para evitar erro de contexto no wrapper
 import { ToastProvider } from './components/ui/ToastContext';
 import { AdminDashboard } from './components/admin/AdminDashboard';
@@ -292,7 +292,11 @@ const CombinedProviders: React.FC<{ children: React.ReactNode }> = ({ children }
         <AutomationProvider shopId={shopId}>
           <CatalogProvider shopId={shopId}>
             <ClientProvider shopId={shopId}>
-              {children}
+              <AppointmentProvider shopId={shopId}>
+                <SettingsProvider shopId={shopId}>
+                  {children}
+                </SettingsProvider>
+              </AppointmentProvider>
             </ClientProvider>
           </CatalogProvider>
         </AutomationProvider>
