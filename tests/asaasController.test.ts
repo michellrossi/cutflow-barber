@@ -1,0 +1,76 @@
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { mockSupabase, resetSupabaseMocks } from './mocks/supabase';
+import { handleWebhook } from '../controllers/asaasController';
+
+const makeReq = (body: object, token = 'valid-token') => ({
+  headers: { 'asaas-access-token': token },
+  body
+} as any);
+
+const makeRes = () => {
+  const res = { status: vi.fn().mockReturnThis(), json: vi.fn(), send: vi.fn() };
+  return res as any;
+};
+
+describe('asaasController.handleWebhook', () => {
+  beforeEach(() => {
+    resetSupabaseMocks();
+    process.env.ASAAS_WEBHOOK_TOKEN = 'valid-token';
+  });
+
+  it('rejeita token inválido com 401', async () => {
+    const req = makeReq({}, 'wrong-token');
+    const res = makeRes();
+    await handleWebhook(req, res);
+    expect(res.status).toHaveBeenCalledWith(401);
+  });
+
+  it('ignora evento duplicado (idempotência)', async () => {
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { id: 'exists' } });
+    const req = makeReq({ id: 'evt-123', event: 'PAYMENT_RECEIVED', payment: { customer: 'c1' } });
+    const res = makeRes();
+    await handleWebhook(req, res);
+    expect(res.send).toHaveBeenCalledWith('OK (duplicate)');
+    expect(mockSupabase.update).not.toHaveBeenCalled();
+  });
+
+  it('ativa plano ao receber PAYMENT_CONFIRMED', async () => {
+    // 1. Verifica idempotência (não existe)
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null });
+    // 2. Busca barbearia pelo customer ID
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { id: 'shop-1', name: 'Barbearia X' } });
+    
+    const req = makeReq({ 
+      id: 'evt-456', 
+      event: 'PAYMENT_CONFIRMED', 
+      payment: { customer: 'cus-1' } 
+    });
+    const res = makeRes();
+    
+    await handleWebhook(req, res);
+    
+    expect(mockSupabase.update).toHaveBeenCalledWith(
+      expect.objectContaining({ plan: 'active' })
+    );
+    expect(res.send).toHaveBeenCalledWith('OK');
+  });
+
+  it('suspende plano ao receber PAYMENT_OVERDUE', async () => {
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null }); // idempotencia
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { id: 'shop-1', name: 'Barbearia X' } }); // shop
+    
+    const req = makeReq({ 
+        id: 'evt-789', 
+        event: 'PAYMENT_OVERDUE', 
+        payment: { customer: 'cus-1' } 
+    });
+    const res = makeRes();
+
+    await handleWebhook(req, res);
+
+    expect(mockSupabase.update).toHaveBeenCalledWith(
+        expect.objectContaining({ plan: 'suspended' })
+    );
+    expect(res.send).toHaveBeenCalledWith('OK');
+  });
+});

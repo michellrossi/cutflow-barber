@@ -32,6 +32,17 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve('.'),
         }
+      },
+      test: {
+        globals: true,
+        environment: 'node',
+        include: ['tests/**/*.test.ts'],
+        coverage: {
+          provider: 'v8',
+          reporter: ['text', 'html'],
+          include: ['controllers/**', 'lib/**', 'middlewares/**'],
+          exclude: ['store/**', 'components/**']
+        }
       }
     };
 });
