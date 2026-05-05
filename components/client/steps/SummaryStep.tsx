@@ -20,6 +20,7 @@ interface SummaryStepProps {
     total: number;
     handleFinish: (e: React.MouseEvent) => void;
     setStep: (s: any) => void;
+    handleRemoveCoupon: () => void;
     loading: boolean;
     error: string | null;
 }
@@ -27,7 +28,7 @@ interface SummaryStepProps {
 export const SummaryStep: React.FC<SummaryStepProps> = ({ 
     customerInfo, setCustomerInfo, couponCode, setCouponCode, appliedCoupon, handleApplyCoupon, 
     settings, selectedServices, selectedProId, professionals, selectedDate, selectedTime, 
-    subtotal, discountAmount, total, handleFinish, setStep, loading, error
+    subtotal, discountAmount, total, handleFinish, setStep, handleRemoveCoupon, loading, error
 }) => (
     <div className="max-w-4xl mx-auto py-8 px-4">
             <button onClick={() => setStep('datetime')} className="flex items-center gap-2 mb-6 hover:opacity-80 transition-opacity" style={{ color: settings.textColor || '#94a3b8' }}><ArrowLeft size={16}/> Voltar</button>
@@ -100,14 +101,23 @@ export const SummaryStep: React.FC<SummaryStepProps> = ({
                             }}
                             placeholder="Digite o cupom" 
                         />
-                        <button 
-                            onClick={handleApplyCoupon}
-                            disabled={!!appliedCoupon || !couponCode}
-                            className="px-6 rounded-lg font-medium hover:opacity-90 disabled:opacity-50"
-                            style={{ backgroundColor: settings.accentColor || settings.primaryColor, color: settings.buttonTextColor || '#ffffff' }}
-                        >
-                            {appliedCoupon ? <Check size={20}/> : 'Aplicar'}
-                        </button>
+                        {appliedCoupon ? (
+                             <button 
+                                onClick={handleRemoveCoupon}
+                                className="px-6 rounded-lg font-medium bg-red-500/20 text-red-500 border border-red-500/30 hover:bg-red-500/30 transition-all"
+                            >
+                                Remover
+                            </button>
+                        ) : (
+                            <button 
+                                onClick={handleApplyCoupon}
+                                disabled={!couponCode}
+                                className="px-6 rounded-lg font-medium hover:opacity-90 disabled:opacity-50"
+                                style={{ backgroundColor: settings.accentColor || settings.primaryColor, color: settings.buttonTextColor || '#ffffff' }}
+                            >
+                                Aplicar
+                            </button>
+                        )}
                     </div>
                     {appliedCoupon && <p className="text-green-500 text-sm mt-2 flex items-center gap-1"><Check size={14}/> Cupom {appliedCoupon} aplicado!</p>}
                 </div>

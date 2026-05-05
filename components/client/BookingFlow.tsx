@@ -112,6 +112,12 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         }
     };
 
+    const handleRemoveCoupon = () => {
+        setAppliedCoupon(null);
+        setDiscountAmount(0);
+        setCouponCode('');
+    };
+
     const handleFinish = async (e: React.MouseEvent) => {
         e.preventDefault();
         if (!customerInfo.name || !customerInfo.phone || !customerInfo.birthDate) {
@@ -249,6 +255,9 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         setSelectedProId(null);
         setSelectedDate('');
         setSelectedTime('');
+        setCouponCode('');
+        setAppliedCoupon(null);
+        setDiscountAmount(0);
         setError(null);
     };
 
@@ -662,6 +671,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                                                 total={total}
                                                 handleFinish={handleFinish}
                                                 setStep={setStep}
+                                                handleRemoveCoupon={handleRemoveCoupon}
                                                 loading={loading}
                                                 error={error}
                                             />
