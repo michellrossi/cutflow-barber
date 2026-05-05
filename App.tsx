@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useParams, Navigate, useSearchParams } from 'react-router-dom';
-import { ShopProvider, useShop } from './store';
+import { ShopProvider, useShop, InventoryProvider, FinancialProvider, AutomationProvider, CatalogProvider, ClientProvider, AppointmentProvider, SettingsProvider } from './store';
+import { useShop as useShopBase } from './store/ShopContext'; // Import direto para evitar erro de contexto no wrapper
 import { ToastProvider } from './components/ui/ToastContext';
 import { AdminDashboard } from './components/admin/AdminDashboard';
 import { BarberDashboard } from './components/admin/BarberDashboard';
@@ -10,7 +11,84 @@ import { Signup } from './components/auth/Signup';
 import { Login } from './components/auth/Login';
 import { UpdatePassword } from './components/auth/UpdatePassword';
 import { ClientTokenValidation } from './components/client/ClientTokenValidation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShieldCheck, Eye, EyeOff, Lock } from 'lucide-react';
+import { AdminOwnerDashboard } from './components/admin/AdminOwnerDashboard';
+
+// ============================================================
+// GUARD DE ROTA: /saas-admin — Autenticação por JWT Admin
+// ============================================================
+const SaasAdminGuard: React.FC = () => {
+    const { session } = useShop();
+    const [loading, setLoading] = useState(true);
+    const [authenticated, setAuthenticated] = useState(false);
+    const [error, setError] = useState('');
+
+    useEffect(() => {
+        const verifyAdmin = async () => {
+            if (!session?.access_token) {
+                setError('Você precisa estar logado para acessar esta área.');
+                setLoading(false);
+                return;
+            }
+            try {
+                const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                    ? 'http://localhost:3000'
+                    : `https://${window.location.hostname}`;
+                
+                const res = await fetch(`${serverUrl}/api/saas/auth`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session.access_token}`
+                    }
+                });
+                
+                if (res.ok) {
+                    setAuthenticated(true);
+                } else {
+                    const data = await res.json();
+                    setError(data.error || 'Acesso negado. Apenas o administrador pode acessar este painel.');
+                }
+            } catch (err: any) {
+                setError('Erro ao validar credenciais.');
+            } finally {
+                setLoading(false);
+            }
+        };
+        verifyAdmin();
+    }, [session]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+                <div className="flex flex-col items-center animate-pulse">
+                    <Loader2 className="w-8 h-8 text-orange-500 animate-spin mb-4" />
+                    <span className="text-slate-400">Verificando credenciais de administrador...</span>
+                </div>
+            </div>
+        );
+    }
+
+    if (authenticated) return <AdminOwnerDashboard />;
+
+    return (
+        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+            <div className="w-full max-w-sm text-center">
+                <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center mb-4 mx-auto">
+                    <ShieldCheck className="text-red-500" size={32} />
+                </div>
+                <h1 className="text-2xl font-black text-white tracking-tight mb-2">Acesso Negado</h1>
+                <p className="text-slate-400 text-sm mb-6">{error}</p>
+                <button 
+                    onClick={() => window.location.href = '/login'}
+                    className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-xl transition-colors"
+                >
+                    Voltar para Login
+                </button>
+            </div>
+        </div>
+    );
+};
 
 // Wrapper para carregar dados da barbearia baseado na URL (Visão do Cliente)
 const BookingRoute = () => {
@@ -197,9 +275,35 @@ const AppRoutes = () => {
             
             {/* Catch all (404) -> Home */}
             <Route path="*" element={<Navigate to="/" replace />} />
+            
+            {/* [SEGURO] Painel do Administrador do SaaS — guard de senha */}
+            <Route path="/saas-admin" element={<SaasAdminGuard />} />
         </Routes>
     );
 }
+
+const CombinedProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { shop } = useShopBase();
+  const shopId = React.useMemo(() => shop?.id || '', [shop?.id]);
+  
+  return (
+    <InventoryProvider shopId={shopId}>
+      <FinancialProvider shopId={shopId}>
+        <AutomationProvider shopId={shopId}>
+          <CatalogProvider shopId={shopId}>
+            <ClientProvider shopId={shopId}>
+              <AppointmentProvider shopId={shopId}>
+                <SettingsProvider shopId={shopId}>
+                  {children}
+                </SettingsProvider>
+              </AppointmentProvider>
+            </ClientProvider>
+          </CatalogProvider>
+        </AutomationProvider>
+      </FinancialProvider>
+    </InventoryProvider>
+  );
+};
 
 function App() {
   // Forçar HTTPS em produção
@@ -216,9 +320,11 @@ function App() {
   return (
     <ToastProvider>
         <ShopProvider>
-            <BrowserRouter>
-                <AppRoutes />
-            </BrowserRouter>
+            <CombinedProviders>
+                <BrowserRouter>
+                    <AppRoutes />
+                </BrowserRouter>
+            </CombinedProviders>
         </ShopProvider>
     </ToastProvider>
   );

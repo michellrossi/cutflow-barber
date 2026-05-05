@@ -27,16 +27,20 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '../../ui/ToastContext';
 
-export const InventoryPanel: React.FC = () => {
-  const { products, addProduct, updateProduct, removeProduct, settings, formatCurrencyBRL } = useShop();
+export const InventoryPanel: React.FC<{ initialFilter?: 'all' | 'critical' }> = ({ initialFilter }) => {
+  const { products, addProduct, updateProduct, removeProduct, restockProduct, settings, formatCurrencyBRL } = useShop();
   const { showToast } = useToast();
   
   // UI State
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategoryFilter, setActiveCategoryFilter] = useState('Todos');
+  const [stockFilter, setStockFilter] = useState<'all' | 'critical'>(initialFilter || 'all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [restockId, setRestockId] = useState<string | null>(null);
+  
+  const [restockData, setRestockData] = useState({ quantity: '', unitCost: '' });
   
   const [formData, setFormData] = useState({
     name: '',
@@ -44,36 +48,13 @@ export const InventoryPanel: React.FC = () => {
     costPrice: '',
     salePrice: '',
     currentStock: '',
+    initialStock: '',
     minStock: '2'
   });
 
   const [isCustom, setIsCustom] = useState(false);
   const [selectedCat, setSelectedCat] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
-
-  // Sales data state
-  const [productSales, setProductSales] = useState<Record<string, number>>({});
-  
-  // Fetch sales
-  React.useEffect(() => {
-    if (products.length === 0) return;
-    const fetchSales = async () => {
-      const { supabase } = await import('../../../supabaseClient');
-      if (!settings?.shopId) return;
-      const { data } = await supabase
-        .from('appointment_products')
-        .select('product_id, quantity');
-      if (data) {
-        const salesStats: Record<string, number> = {};
-        data.forEach(item => {
-          if (!salesStats[item.product_id]) salesStats[item.product_id] = 0;
-          salesStats[item.product_id] += item.quantity;
-        });
-        setProductSales(salesStats);
-      }
-    };
-    fetchSales();
-  }, [products]);
 
   // --- CATALOGO PRE-DEFINIDO (Baseado no pedido do usuário) ---
   const PRODUCT_CATEGORIES = [
@@ -144,9 +125,10 @@ export const InventoryPanel: React.FC = () => {
     return (products || []).filter(p => {
       const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = activeCategoryFilter === 'Todos' || p.category === activeCategoryFilter;
-      return matchesSearch && matchesCategory;
+      const matchesStock = stockFilter === 'all' || p.currentStock <= p.minStock;
+      return matchesSearch && matchesCategory && matchesStock;
     });
-  }, [products, searchQuery, activeCategoryFilter]);
+  }, [products, searchQuery, activeCategoryFilter, stockFilter]);
 
   const handleCategorySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const cat = e.target.value;
@@ -189,6 +171,7 @@ export const InventoryPanel: React.FC = () => {
       costPrice: product.costPrice.toString(),
       salePrice: product.salePrice.toString(),
       currentStock: product.currentStock.toString(),
+      initialStock: product.initialStock.toString(),
       minStock: product.minStock.toString()
     });
     setIsFormOpen(true);
@@ -204,6 +187,7 @@ export const InventoryPanel: React.FC = () => {
       costPrice: Math.round(Number(formData.costPrice) * 100) / 100,
       salePrice: Math.round(Number(formData.salePrice) * 100) / 100,
       currentStock: Number(formData.currentStock),
+      initialStock: Number(formData.initialStock || formData.currentStock),
       minStock: Number(formData.minStock)
     };
 
@@ -221,7 +205,7 @@ export const InventoryPanel: React.FC = () => {
       setEditingId(null);
       setIsCustom(false);
       setSelectedCat('');
-      setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', minStock: '2' });
+      setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', initialStock: '', minStock: '2' });
     } else {
       showToast(result.error || 'Erro ao salvar.', 'error');
     }
@@ -239,6 +223,49 @@ export const InventoryPanel: React.FC = () => {
     }
   };
 
+  const handleRestockSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!restockId) return;
+    
+    setIsSaving(true);
+    const addedQuantity = Number(restockData.quantity);
+    const unitCost = Math.round(Number(restockData.unitCost) * 100) / 100;
+    
+    const { success, error } = await restockProduct(restockId, addedQuantity, unitCost);
+    setIsSaving(false);
+    
+    if (success) {
+        showToast('Estoque atualizado com sucesso!');
+        setRestockId(null);
+        setRestockData({ quantity: '', unitCost: '' });
+    } else {
+        showToast(error || 'Erro ao registrar entrada de estoque.', 'error');
+    }
+  };
+
+  // Encontra o produto sendo reposto para mostrar preview
+  const restockProductInstance = useMemo(() => {
+     return products.find(p => p.id === restockId);
+  }, [products, restockId]);
+
+  const restockPreview = useMemo(() => {
+     if (!restockProductInstance) return null;
+     const currentStock = restockProductInstance.currentStock;
+     const currentCost = restockProductInstance.costPrice;
+     const addQty = Number(restockData.quantity) || 0;
+     const addCost = Number(restockData.unitCost) || 0;
+     
+     const newStock = currentStock + addQty;
+     let newAvgCost = currentCost;
+     if (newStock > 0) {
+         newAvgCost = ((currentStock * currentCost) + (addQty * addCost)) / newStock;
+     }
+     return {
+         stock: newStock,
+         avgCost: newAvgCost
+     };
+  }, [restockProductInstance, restockData]);
+
   return (
     <div className="p-1 animate-fade-in">
       <ConfirmationModal 
@@ -250,6 +277,66 @@ export const InventoryPanel: React.FC = () => {
         confirmText="Remover"
         isDestructive
       />
+
+      {/* Restock Modal */}
+      <AnimatePresence>
+        {restockId && restockProductInstance && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in" onClick={(e) => e.target === e.currentTarget && setRestockId(null)}>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white p-8 rounded-2xl border border-slate-200 w-full max-w-lg shadow-2xl relative"
+            >
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h3 className="text-xl font-bold text-slate-900">Nova Entrada de Estoque</h3>
+                    <p className="text-sm font-medium text-slate-500 mt-1">{restockProductInstance.name}</p>
+                </div>
+                <button onClick={() => setRestockId(null)} className="text-slate-400 hover:text-slate-900 transition-colors"><X size={24}/></button>
+              </div>
+
+              <form onSubmit={handleRestockSubmit} className="space-y-6">
+                  <div className="grid grid-cols-2 gap-4">
+                      <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Qtd. Comprada</label>
+                          <input required type="number" min="1" value={restockData.quantity} onChange={e => setRestockData({...restockData, quantity: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="Ex: 5" />
+                      </div>
+                      <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Custo Unitário (R$)</label>
+                          <input required type="number" step="0.01" min="0" value={restockData.unitCost} onChange={e => setRestockData({...restockData, unitCost: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="Ex: 15.50" />
+                      </div>
+                  </div>
+
+                  {restockPreview && (
+                      <div className="bg-orange-50/50 border border-orange-100 rounded-xl p-4 flex justify-between items-center">
+                          <div>
+                              <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest mb-1">Preview após entrada</p>
+                              <div className="flex gap-4">
+                                  <div>
+                                      <p className="text-xs text-slate-500 font-medium">Novo Estoque:</p>
+                                      <p className="font-black text-slate-900">{restockPreview.stock} un</p>
+                                  </div>
+                                  <div>
+                                      <p className="text-xs text-slate-500 font-medium">Preço Médio:</p>
+                                      <p className="font-black text-slate-900">{formatCurrencyBRL(restockPreview.avgCost)}</p>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+
+                  <div className="flex gap-4 justify-end pt-2">
+                    <button type="button" onClick={() => setRestockId(null)} className="px-6 py-3 text-slate-500 font-bold hover:text-slate-900 transition-colors" disabled={isSaving}>Cancelar</button>
+                    <button type="submit" className="px-10 py-3 rounded-xl text-white font-bold flex items-center gap-2 shadow-lg hover:brightness-110 transition-all text-sm bg-orange-600" disabled={isSaving}>
+                      {isSaving ? <Loader2 size={20} className="animate-spin"/> : 'Confirmar Entrada'}
+                    </button>
+                  </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* 1. Cabeçalho e Descrição */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -263,7 +350,7 @@ export const InventoryPanel: React.FC = () => {
             setEditingId(null); 
             setIsCustom(false);
             setSelectedCat('');
-            setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', minStock: '2' }); 
+            setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', initialStock: '', minStock: '2' }); 
           }}
           className="bg-orange-600 text-white font-bold px-6 py-3 rounded-[2rem] flex items-center justify-center gap-2 transition-all shadow-lg hover:bg-orange-700 whitespace-nowrap"
         >
@@ -366,8 +453,16 @@ export const InventoryPanel: React.FC = () => {
                       <input required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Estoque Inicial</label>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+                        {editingId ? `Ajuste de Estoque (atual: ${products.find(p=>p.id===editingId)?.currentStock}un)` : 'Quantidade em Estoque'}
+                      </label>
                       <input required type="number" value={formData.currentStock} onChange={e => setFormData({...formData, currentStock: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="0" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">
+                        {editingId ? `Estoque Inicial (Original)` : 'Estoque Inicial'}
+                      </label>
+                      <input required type="number" value={formData.initialStock} onChange={e => setFormData({...formData, initialStock: e.target.value})} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-900 focus:outline-none focus:border-orange-500 font-bold" placeholder="0" />
                     </div>
                     <div>
                       <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Estoque Mínimo (Alerta)</label>
@@ -429,9 +524,9 @@ export const InventoryPanel: React.FC = () => {
           <div key={product.id} onClick={() => handleEdit(product)} className="bg-white rounded-lg border border-slate-200 flex flex-col overflow-hidden group hover:border-slate-300 transition-all shadow cursor-pointer">
             <div className="p-4 flex flex-col h-full relative">
                {/* Badge de Alerta de Estoque */}
-               {(() => {
-                 const current = product.currentStock - (productSales[product.id] || 0);
-                 if (current <= product.minStock) {
+                {(() => {
+                  const current = product.currentStock;
+                  if (current <= product.minStock) {
                    return (
                      <div className="absolute top-3 right-3 animate-pulse">
                         <AlertTriangle className={current <= 0 ? "text-red-500" : "text-amber-500"} size={16} />
@@ -465,28 +560,38 @@ export const InventoryPanel: React.FC = () => {
                 </div>
                 <div className="flex justify-between mt-2 pt-2 border-t border-slate-50">
                   <span className="text-[9px] font-bold text-slate-400 uppercase">Est. Inicial</span>
-                  <span className="text-[10px] font-black text-slate-900">{product.currentStock}</span> 
+                  <span className="text-[10px] font-black text-slate-900">{product.initialStock}</span> 
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase">Vendidos</span>
+                  <span className="text-[10px] font-black text-orange-600">{Math.max(0, product.initialStock - product.currentStock)}</span> 
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[9px] font-bold text-slate-400 uppercase">Est. Atual</span>
-                  <span className={`text-[10px] font-black ${(product.currentStock - (productSales[product.id] || 0)) <= product.minStock ? 'text-orange-500' : 'text-slate-900'}`}>
-                    {product.currentStock - (productSales[product.id] || 0)}
+                  <span className={`text-[10px] font-black ${product.currentStock <= product.minStock ? 'text-red-500' : 'text-emerald-600'}`}>
+                    {product.currentStock}
                   </span>
                 </div>
               </div>
 
               <div className="mt-auto space-y-2">
 
-                <div className="flex gap-1.5">
+                <div className="flex gap-1.5 flex-wrap">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setRestockId(product.id); }} 
+                    className="flex-1 py-1 px-2 bg-emerald-50 border border-emerald-200 rounded-lg text-emerald-700 hover:text-emerald-900 hover:bg-emerald-100 transition-all font-bold text-[10px] flex items-center justify-center gap-1 uppercase"
+                  >
+                     <Package size={11} /> Repor
+                  </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); handleEdit(product); }} 
-                    className="flex-1 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all font-bold text-xs flex items-center justify-center gap-1"
+                    className="flex-1 py-1 px-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all font-bold text-[10px] flex items-center justify-center gap-1 uppercase"
                   >
                     <Edit2 size={11} /> Editar
                   </button>
                   <button 
                     onClick={(e) => { e.stopPropagation(); setDeleteId(product.id); }} 
-                    className="px-2 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all"
+                    className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all flex items-center justify-center"
                   >
                     <Trash2 size={13}/>
                   </button>
@@ -502,7 +607,7 @@ export const InventoryPanel: React.FC = () => {
             setEditingId(null); 
             setIsCustom(false);
             setSelectedCat('');
-            setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', minStock: '2' }); 
+            setFormData({ name: '', category: 'Cuidados com o Cabelo', costPrice: '', salePrice: '', currentStock: '', initialStock: '', minStock: '2' }); 
           }}
           className="bg-slate-50 rounded-lg border-2 border-dashed border-slate-200 p-4 flex flex-col items-center justify-center gap-3 hover:border-slate-300 hover:bg-slate-100 transition-all min-h-[200px] group"
         >

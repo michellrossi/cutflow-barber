@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../store';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info, ShieldCheck, Pin, BarChart3, User, Package, Target, Plus } from 'lucide-react';
+import { Users, Scissors, Tag, Palette, CalendarCheck, LogOut, ExternalLink, Smartphone, DollarSign, AlertTriangle, Lock, Settings, UserCircle, Award, Sparkles, Moon, Sun, ChevronDown, ChevronUp, Store, Clock, MessageSquare, Bell, CreditCard, Shield, Globe, LayoutGrid, Info, ShieldCheck, Pin, BarChart3, User, Package, Target, Plus, TrendingUp } from 'lucide-react';
 import { DashboardPanel } from './panels/DashboardPanel';
 import { TeamPanel } from './panels/TeamPanel';
 import { ServicesPanel } from './panels/ServicesPanel';
 import { CouponsPanel } from './panels/CouponsPanel';
 import { AppointmentsPanel } from './panels/AppointmentsPanel';
-import { FinancePanel } from './panels/FinancePanel';
+
 import { ClientsPanel } from './panels/ClientsPanel';
 import { SettingsPanel } from './panels/SettingsPanel';
 import { LoyaltyPanel } from './panels/LoyaltyPanel';
@@ -17,20 +17,24 @@ import { RemindersPanel } from './panels/RemindersPanel';
 import { SubscriptionsPanel } from './panels/SubscriptionsPanel';
 import { InventoryPanel } from './panels/InventoryPanel';
 import { GoalsPanel } from './panels/GoalsPanel';
+import { FinancialPanel } from './panels/FinancialPanel';
 import { PaywallScreen } from '../billing/PaywallScreen';
 import { PaymentModal } from '../billing/PaymentModal';
 
 import { PlanPanel } from './panels/PlanPanel';
 import { ProfilePanel } from './panels/ProfilePanel';
 
-type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan' | 'reports' | 'profile' | 'inventory' | 'goals';
+type AdminTab = 'dashboard' | 'team' | 'services' | 'coupons' | 'appointments' | 'clients' | 'settings' | 'loyalty' | 'insight' | 'reminders' | 'subscriptions' | 'plan' | 'reports' | 'profile' | 'inventory' | 'goals' | 'financial';
 
-type TeamSubTab = 'list' | 'schedules' | 'blocks';
+type TeamSubTab = 'list' | 'schedules' | 'blocks' | 'report';
 
 export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () => void }> = ({ onLogout, onViewClient }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
   const [clientFilter, setClientFilter] = useState<string>('all');
   const [remindersSubTab, setRemindersSubTab] = useState<string>('clients');
+  const [reportsSubTab, setReportsSubTab] = useState<string>('finance');
+  const [inventoryFilter, setInventoryFilter] = useState<'all' | 'critical'>('all');
+  const [financialSubTab, setFinancialSubTab] = useState<string>('cash');
   const [teamSubTab, setTeamSubTab] = useState<TeamSubTab>('list');
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isSidebarPinned, setIsSidebarPinned] = useState(true);
@@ -50,7 +54,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     if (savedTab === 'settings') setIsSettingsOpen(true);
   }, []);
 
-  const { settings, trialStatus, daysRemaining, theme, toggleTheme, shop, myShops, switchShop, addAdditionalUnit, userRole, clients, reloadClients, botPausedCount } = useShop();
+  const { settings, trialStatus, daysRemaining, shop, myShops, switchShop, addAdditionalUnit, userRole, clients, reloadClients, botPausedCount } = useShop();
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isAddUnitOpen, setIsAddUnitOpen] = useState(false);
 
@@ -74,6 +78,20 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       }
       if (filter && tab === 'reminders') {
           setRemindersSubTab(filter);
+      }
+      if (tab === 'reports' && filter) {
+          setReportsSubTab(filter);
+      }
+      if (tab === 'inventory' && filter) {
+          setInventoryFilter(filter as any);
+      }
+      if (tab === 'financial' && filter) {
+          setFinancialSubTab(filter);
+      }
+      if (tab.startsWith('reports-')) {
+          setActiveTab('reports');
+          setReportsSubTab(tab.replace('reports-', ''));
+          return;
       }
       if (tab !== 'settings') setIsSettingsOpen(false);
   };
@@ -100,15 +118,16 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
       case 'appointments': return <AppointmentsPanel />;
       case 'clients': return <ClientsPanel initialFilter={clientFilter as any} />;
       case 'loyalty': return <LoyaltyPanel />;
-      case 'reports': return <ReportsPanel />;
+      case 'reports': return <ReportsPanel initialTab={reportsSubTab as any} />;
       case 'settings': return <SettingsPanel />;
       case 'insight': return <InsightPanel />;
       case 'reminders': return <RemindersPanel initialTab={remindersSubTab} />;
       case 'subscriptions': return <SubscriptionsPanel />;
       case 'plan': return <PlanPanel onUpgrade={() => setIsPaymentModalOpen(true)} />;
       case 'profile': return <ProfilePanel />;
-      case 'inventory': return <InventoryPanel />;
+      case 'inventory': return <InventoryPanel initialFilter={inventoryFilter} />;
       case 'goals': return <GoalsPanel />;
+      case 'financial': return <FinancialPanel initialTab={financialSubTab as any} />;
       default: return <DashboardPanel onNavigate={handleTabChange} />;
     }
   };
@@ -131,6 +150,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
           case 'profile': return 'Perfil';
           case 'inventory': return 'Produtos';
           case 'goals': return 'Gestão de Metas';
+          case 'financial': return 'Financeiro';
       }
   }
 
@@ -211,6 +231,8 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
   <SidebarItem icon={<BarChart3 size={18} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => handleTabChange('reports')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<Package size={18} />} label="Produtos" active={activeTab === 'inventory'} onClick={() => handleTabChange('inventory')} expanded={isSidebarExpanded} />
+  
+  <SidebarItem icon={<TrendingUp size={18} />} label="Financeiro" active={activeTab === 'financial'} onClick={() => handleTabChange('financial')} expanded={isSidebarExpanded} />
   
   <SidebarItem icon={<Target size={18} />} label="Metas" active={activeTab === 'goals'} onClick={() => handleTabChange('goals')} expanded={isSidebarExpanded} />
   
@@ -309,6 +331,7 @@ export const AdminDashboard: React.FC<{ onLogout: () => void, onViewClient: () =
     <MobileNavItem icon={<Award size={16} />} label="Fidelidade" active={activeTab === 'loyalty'} onClick={() => setActiveTab('loyalty')} />
     <MobileNavItem icon={<BarChart3 size={16} />} label="Relatórios" active={activeTab === 'reports'} onClick={() => setActiveTab('reports')} />
     <MobileNavItem icon={<Package size={16} />} label="Produtos" active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} />
+    <MobileNavItem icon={<DollarSign size={16} />} label="Caixa" active={activeTab === 'financial'} onClick={() => setActiveTab('financial')} />
     <MobileNavItem icon={<Target size={16} />} label="Metas" active={activeTab === 'goals'} onClick={() => setActiveTab('goals')} />
     <MobileNavItem icon={<MessageSquare size={16} />} label="Automação" active={activeTab === 'reminders'} onClick={() => setActiveTab('reminders')} />
     <MobileNavItem icon={<Sparkles size={16} />} label="IA" active={activeTab === 'insight'} onClick={() => setActiveTab('insight')} />

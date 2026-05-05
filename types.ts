@@ -4,14 +4,16 @@ export interface Shop {
   ownerId: string;
   name: string;
   slug: string;
-  // [NOVO] Campos de Trial e Plano
+  // Campos de Trial e Plano
   trialStartedAt?: string;
   trialEndsAt?: string;
   plan?: 'trial' | 'active' | 'suspended';
+  planTier?: 'essencial' | 'profissional' | 'premium';
   paymentConfirmedAt?: string;
-  // [NOVO] WhatsApp Multi-Instância
+  // WhatsApp Multi-Instância
   whatsappInstance?: string;
   whatsappConnected?: boolean;
+  monthly_price?: number;
 }
 
 export interface Client {
@@ -112,7 +114,9 @@ export interface Appointment {
   usedSubscriptionId?: string;
   createdAt: string;
   status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'noshow';
-  paymentMethod?: 'pix' | 'credit' | 'cash' | 'subscription';
+  paymentMethod?: 'pix' | 'credit' | 'debit' | 'cash' | 'subscription';
+  stockDeducted?: boolean;
+  npsScore?: number;
 }
 
 export interface ShopSettings {
@@ -132,6 +136,7 @@ export interface ShopSettings {
   borderColor?: string; // [NOVO] Cor de bordas
   inputBackgroundColor?: string; // [NOVO] Cor de fundo de inputs
   inputTextColor?: string; // [NOVO] Cor de texto de inputs
+  loyaltyEnabled?: boolean; // [NOVO] Controle de fidelidade
   loyaltyMode?: 'points' | 'card';
   loyaltyCardGoal?: number;
   loyaltyPointsRatio?: number;
@@ -147,7 +152,11 @@ export interface ShopSettings {
   address?: string;
   phone?: string;
   businessHours?: Record<string, { active: boolean; start: string; end: string }>;
-  automationTriggers?: AutomationTrigger[];
+  // Campos legados/compat (algumas telas ainda usam)
+  slug?: string;
+  email?: string;
+  about_us?: string;
+  twitter?: string;
 }
 
 export interface AutomationTrigger {
@@ -176,9 +185,14 @@ export interface MessageTemplate {
   title: string;
   content: string;
   triggerId: string;
+  /** Campo legado: algumas telas ainda leem `template.trigger` */
+  trigger?: string;
   active: boolean;
   target?: 'client' | 'professional';
   category?: string;
+  /** Campos opcionais (persistidos como snake_case no DB) */
+  delayValue?: number;
+  delayUnit?: 'minutes' | 'hours' | 'days';
 }
 
 export interface SubscriptionPlan {
@@ -218,8 +232,9 @@ export interface Product {
   costPrice: number;
   salePrice: number;
   currentStock: number;
+  initialStock: number;
   minStock: number;
-  createdAt: string;
+  createdAt?: string;
 }
 
 export interface AppointmentProduct {
@@ -238,38 +253,55 @@ export interface Goal {
   category: 'faturamento' | 'atendimentos' | 'venda_produtos';
   targetValue: number;
   currentValue: number;
-  period: 'diário' | 'semanal' | 'mensal';
+  period: 'diário' | 'semanal' | 'mensal' | 'anual';
   startDate: string;
   endDate: string;
   createdAt: string;
 }
 
+export interface CashSession {
+  id: string;
+  shopId: string;
+  status: 'open' | 'closed';
+  openingBalance: number;
+  closingBalance?: number;
+  openedAt: string;
+  closedAt?: string;
+  openedBy?: string;
+}
+
+export interface CashFlowEntry {
+  id: string;
+  shopId: string;
+  sessionId: string;
+  type: 'input' | 'output';
+  category: string;
+  amount: number;
+  description?: string;
+  createdAt: string;
+}
+
 export interface ShopState {
   shop: Shop | null;
-  services: Service[];
-  professionals: Professional[];
-  coupons: Coupon[];
+  services?: Service[];
+  professionals?: Professional[];
+  coupons?: Coupon[];
   appointments: Appointment[];
-  clients: Client[]; // Nova lista de clientes
-  subscriptionPlans: SubscriptionPlan[]; // [NOVO] Planos de Assinatura
-  clientSubscriptions: ClientSubscription[]; // [NOVO] Assinaturas de Clientes
-  messageTemplates: MessageTemplate[]; // [NOVO] Modelos de Mensagem
-  messageCategories: MessageCategory[]; // [NOVO] Categorias de Mensagem
-  products: Product[]; // [NOVO] Gestão de Estoque
-  goals: Goal[]; // [NOVO] Gestão de Metas
-  myShops: Shop[]; // [NOVO] Multi-unidades para o dono
-  blockedSlots: BlockedSlot[];
+  clients?: Client[];
+  subscriptionPlans?: SubscriptionPlan[];
+  clientSubscriptions?: ClientSubscription[];
+  messageTemplates?: MessageTemplate[];
+  messageCategories?: MessageCategory[];
+  products?: Product[];
+  goals?: Goal[];
+  myShops: Shop[];
+  cashSessions?: CashSession[];
+  cashFlowEntries?: CashFlowEntry[];
+  blockedSlots?: BlockedSlot[];
   settings: ShopSettings;
-  // [NOVO] Estado do Cliente Logado
-  currentClient: Client | null;
-  clientSession: {
-    clientId: string;
-    token: string;
-  } | null;
-  // [NOVO] Estado derivado do trial
   trialStatus: 'active' | 'expired' | 'paid';
   daysRemaining: number;
   theme: 'dark' | 'light';
-  automationTriggers: AutomationTrigger[];
+  automationTriggers?: AutomationTrigger[];
   botPausedCount: number;
 }

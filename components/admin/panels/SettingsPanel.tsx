@@ -490,6 +490,7 @@ const AutomationSettings: React.FC = () => {
     const checkStatus = async () => {
         const res = await getWhatsAppStatus();
         if (res.connected) {
+            setWsStatus('connected');
         } else {
             setWsStatus('disconnected');
         }
@@ -535,12 +536,12 @@ const AutomationSettings: React.FC = () => {
             </div>
 
             <div className="bg-slate-950 border border-slate-800 rounded-lg p-8 text-center">
-                {status === 'loading' ? (
+                {wsStatus === 'loading' ? (
                     <div className="flex flex-col items-center py-12">
                         <Loader2 size={48} className="text-green-500 animate-spin mb-4" />
                         <p className="text-slate-400">Verificando conexão...</p>
                     </div>
-                ) : status === 'connected' ? (
+                ) : wsStatus === 'connected' ? (
                     <div className="flex flex-col items-center py-12">
                         <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
                             <Smartphone size={40} className="text-green-500" />

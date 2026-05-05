@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useShop } from '../../../store';
-import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader2, List, Calendar as CalendarIcon, Phone, MessageCircle } from 'lucide-react';
+import { Search, Filter, Plus, X, Calendar, Clock, User, Scissors, Check, Loader2, List, Calendar as CalendarIcon, Phone, MessageCircle, AlertTriangle } from 'lucide-react';
 import { useToast } from '../../ui/ToastContext';
 import { WeeklyCalendar } from './WeeklyCalendar';
 import { formatMessage, getWhatsAppLink } from '../../../utils/messageFormatter';
@@ -13,16 +13,20 @@ export const AppointmentsPanel: React.FC = () => {
         services,
         updateAppointmentStatus,
         updateAppointmentPaymentMethod,
+        updateAppointmentTotalValue,
         createManualAppointment,
         settings,
         messageTemplates,
         clients,
         clientSubscriptions,
-        subscriptionPlans
+        subscriptionPlans,
+        cashSessions,
+        addCashMovement,
+        processLoyalty
     } = useShop();
     const { showToast } = useToast();
 
-    const [viewMode, setViewMode] = useState<'calendar' | 'list'>('calendar');
+    const [viewMode, setViewMode] = useState<'calendar' | 'list'>('list');
 
     // Filtros de Status e Busca
     const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -58,11 +62,34 @@ export const AppointmentsPanel: React.FC = () => {
         usedSubscriptionId: ''
     });
 
+    const [showClientSuggestions, setShowClientSuggestions] = useState(false);
+    const suggestionRef = useRef<HTMLDivElement>(null);
+
+    const filteredClientsForSuggestions = useMemo(() => {
+        if (!formData.clientName || formData.clientName.length < 2) return [];
+        return clients.filter(c => 
+            c.name.toLowerCase().includes(formData.clientName.toLowerCase()) ||
+            (c.lastName && c.lastName.toLowerCase().includes(formData.clientName.toLowerCase())) ||
+            c.phone.includes(formData.clientName)
+        ).slice(0, 6);
+    }, [formData.clientName, clients]);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (suggestionRef.current && !suggestionRef.current.contains(event.target as Node)) {
+                setShowClientSuggestions(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     // Modal de Conclusão (Venda de Produtos)
     const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
     const [completionTarget, setCompletionTarget] = useState<any>(null);
     const [selectedProductsForCompletion, setSelectedProductsForCompletion] = useState<{ productId: string, quantity: number, unitPrice: number }[]>([]);
     const { products, addAppointmentProducts } = useShop();
+    const [isFinishing, setIsFinishing] = useState(false);
 
     // --- Lógica de Filtros de Data ---
     const setPreset = (type: 'today' | 'tomorrow' | 'week' | 'month' | 'all') => {
@@ -175,6 +202,19 @@ export const AppointmentsPanel: React.FC = () => {
         if (success) {
             showToast('Agendamento registrado com sucesso!');
             setIsModalOpen(false);
+            // Auto registro no fluxo de caixa se concluído em dinheiro no momento da criação
+            if (formData.status === 'completed' && formData.paymentMethod === 'cash') {
+                const openSession = cashSessions.find(s => s.status === 'open');
+                if (openSession) {
+                    addCashMovement({ 
+                        type: 'input', 
+                        category: 'Venda / Serviço', 
+                        amount: calculateTotal(), 
+                        description: `Agendamento: ${formData.clientName}` 
+                    });
+                }
+            }
+
             setFormData({
                 clientName: '',
                 clientPhone: '',
@@ -183,7 +223,8 @@ export const AppointmentsPanel: React.FC = () => {
                 date: new Date().toISOString().split('T')[0],
                 time: '12:00',
                 status: 'confirmed',
-                paymentMethod: 'pix'
+                paymentMethod: 'pix',
+                usedSubscriptionId: ''
             });
         } else {
             showToast(error || 'Erro ao criar agendamento.', 'error');
@@ -248,9 +289,49 @@ export const AppointmentsPanel: React.FC = () => {
                         <form onSubmit={handleCreate} className="p-6 space-y-6">
                             {/* Cliente */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
+                                <div className="relative" ref={suggestionRef}>
                                     <label className="block text-sm text-slate-500 mb-1">Nome do Cliente</label>
-                                    <input required value={formData.clientName} onChange={e => setFormData({ ...formData, clientName: e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-orange-500" placeholder="Ex: João Silva" />
+                                    <div className="relative">
+                                        <input 
+                                            required 
+                                            value={formData.clientName} 
+                                            onChange={e => {
+                                                setFormData({ ...formData, clientName: e.target.value });
+                                                setShowClientSuggestions(true);
+                                            }} 
+                                            onFocus={() => setShowClientSuggestions(true)}
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-slate-900 focus:outline-none focus:border-orange-500" 
+                                            placeholder="Ex: João Silva" 
+                                            autoComplete="off"
+                                        />
+                                        {showClientSuggestions && filteredClientsForSuggestions.length > 0 && (
+                                            <div className="absolute z-[100] w-full bg-white border border-slate-200 rounded-xl mt-1 shadow-2xl overflow-hidden animate-fade-in border-t-4 border-t-orange-500">
+                                                <div className="p-2 bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Clientes Encontrados</div>
+                                                {filteredClientsForSuggestions.map(client => (
+                                                    <div 
+                                                        key={client.id}
+                                                        onClick={() => {
+                                                            setFormData({ 
+                                                                ...formData, 
+                                                                clientName: `${client.name} ${client.lastName || ''}`.trim(),
+                                                                clientPhone: client.phone 
+                                                            });
+                                                            setShowClientSuggestions(false);
+                                                        }}
+                                                        className="p-3 hover:bg-orange-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors group"
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <div>
+                                                                <div className="font-bold text-slate-900 group-hover:text-orange-600 transition-colors">{client.name} {client.lastName}</div>
+                                                                <div className="text-xs text-slate-500">{client.phone}</div>
+                                                            </div>
+                                                            <div className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-400 group-hover:bg-orange-100 group-hover:text-orange-500 transition-colors">Selecionar</div>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="block text-sm text-slate-500 mb-1">Telefone (Opcional)</label>
@@ -377,16 +458,16 @@ export const AppointmentsPanel: React.FC = () => {
                 const ModeToggle = (
                     <div className="bg-white p-1 rounded-lg border border-slate-200 flex items-center flex-nowrap gap-1 shadow-sm w-max overflow-x-auto no-scrollbar shrink-0">
                         <button
-                            onClick={() => setViewMode('calendar')}
-                            className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${viewMode === 'calendar' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
-                        >
-                            <CalendarIcon size={16} /> Agenda
-                        </button>
-                        <button
                             onClick={() => setViewMode('list')}
                             className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${viewMode === 'list' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
                         >
                             <List size={16} /> Lista
+                        </button>
+                        <button
+                            onClick={() => setViewMode('calendar')}
+                            className={`flex items-center justify-center gap-2 px-4 py-1.5 rounded-md text-sm font-medium transition-all whitespace-nowrap ${viewMode === 'calendar' ? 'bg-orange-500 text-white shadow-sm font-bold' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 bg-transparent'}`}
+                        >
+                            <CalendarIcon size={16} /> Agenda
                         </button>
                     </div>
                 );
@@ -567,7 +648,8 @@ export const AppointmentsPanel: React.FC = () => {
                                                             className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100 transition-colors"
                                                         >
                                                             <option value="pix">PIX</option>
-                                                            <option value="credit">Cartão</option>
+                                                            <option value="credit">Cartão de Crédito</option>
+                                                            <option value="debit">Cartão de Débito</option>
                                                             <option value="cash">Dinheiro</option>
                                                             {getClientActiveSubscription(apt.clientPhone, apt.clientName) && (
                                                                 <option value="subscription">Assinatura</option>
@@ -612,7 +694,8 @@ export const AppointmentsPanel: React.FC = () => {
                                                                     setSelectedProductsForCompletion([]);
                                                                     setIsCompletionModalOpen(true);
                                                                 } else {
-                                                                    updateAppointmentStatus(apt.id, newStatus);
+                                                                    const client = clients.find(c => c.id === apt.clientId || c.phone === apt.clientPhone);
+                                                                    updateAppointmentStatus(apt.id, newStatus, client);
                                                                 }
                                                             }}
                                                             className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100 transition-colors"
@@ -723,7 +806,8 @@ export const AppointmentsPanel: React.FC = () => {
                                                         className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded-lg p-1.5 focus:outline-none focus:border-orange-500"
                                                     >
                                                         <option value="pix">PIX</option>
-                                                        <option value="credit">Cartão</option>
+                                                        <option value="credit">Cartão de Crédito</option>
+                                                        <option value="debit">Cartão de Débito</option>
                                                         <option value="cash">Dinheiro</option>
                                                         {getClientActiveSubscription(apt.clientPhone, apt.clientName) && (
                                                             <option value="subscription">Assinatura</option>
@@ -733,9 +817,14 @@ export const AppointmentsPanel: React.FC = () => {
                                                 <select
                                                     value={apt.status}
                                                     onChange={(e) => {
-                                                        updateAppointmentStatus(apt.id, e.target.value);
-                                                        if (e.target.value === 'completed' && !apt.paymentMethod) {
-                                                            updateAppointmentPaymentMethod(apt.id, 'pix');
+                                                        const newStatus = e.target.value;
+                                                        if (newStatus === 'completed') {
+                                                            setCompletionTarget(apt);
+                                                            setSelectedProductsForCompletion([]);
+                                                            setIsCompletionModalOpen(true);
+                                                        } else {
+                                                            const client = clients.find(c => c.id === apt.clientId || c.phone === apt.clientPhone);
+                                                            updateAppointmentStatus(apt.id, newStatus, client);
                                                         }
                                                     }}
                                                     className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded-lg p-1.5 focus:outline-none focus:border-orange-500"
@@ -843,6 +932,14 @@ export const AppointmentsPanel: React.FC = () => {
                                 </div>
 
                                 <div className="h-px bg-slate-100" />
+                                {completionTarget.status === 'completed' && (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 animate-pulse">
+                                        <AlertTriangle className="text-amber-500 shrink-0 mt-0.5" size={18} />
+                                        <p className="text-xs font-bold text-amber-700 leading-relaxed">
+                                            Este atendimento já foi finalizado anteriormente. O estoque não será alterado novamente para evitar duplicidade.
+                                        </p>
+                                    </div>
+                                )}
 
                                 {/* Resumo de Valores */}
                                 <div className="space-y-2">
@@ -874,6 +971,7 @@ export const AppointmentsPanel: React.FC = () => {
                                     >
                                         <option value="pix">PIX</option>
                                         <option value="credit">Cartão de Crédito</option>
+                                        <option value="debit">Cartão de Débito</option>
                                         <option value="cash">Dinheiro</option>
                                         {getClientActiveSubscription(completionTarget.clientPhone, completionTarget.clientName) && (
                                             <option value="subscription">Assinatura</option>
@@ -891,28 +989,63 @@ export const AppointmentsPanel: React.FC = () => {
                                 </button>
                                 <button 
                                     onClick={async () => {
-                                        const method = (document.getElementById('completion-payment-method') as HTMLSelectElement).value;
-                                        let subId = undefined;
-                                        if (method === 'subscription') {
-                                            const sub = getClientActiveSubscription(completionTarget.clientPhone, completionTarget.clientName);
-                                            subId = sub?.id;
+                                        if (isFinishing) return;
+                                        setIsFinishing(true);
+                                        try {
+                                            const method = (document.getElementById('completion-payment-method') as HTMLSelectElement).value;
+                                            let subId = undefined;
+                                            if (method === 'subscription') {
+                                                const sub = getClientActiveSubscription(completionTarget.clientPhone, completionTarget.clientName);
+                                                subId = sub?.id;
+                                            }
+
+                                            // 1. Adicionar produtos se houver (deve vir ANTES do status 'completed' para o Trigger funcionar)
+                                            // Proteção: não adiciona se já foi finalizado (estoque já baixou)
+                                            const productsTotal = selectedProductsForCompletion.reduce((acc, sp) => acc + (sp.quantity * sp.unitPrice), 0);
+                                            const alreadyCompleted = completionTarget.status === 'completed';
+
+                                            if (selectedProductsForCompletion.length > 0 && !alreadyCompleted) {
+                                                await addAppointmentProducts(completionTarget.id, selectedProductsForCompletion);
+                                            }
+
+                                            // 1.5. Atualizar o totalValue do agendamento para incluir os produtos
+                                            // Isso é crucial para que Faturamento, Comissões e Relatórios reflitam o valor real
+                                            const finalTotal = completionTarget.totalValue + productsTotal;
+                                            if (productsTotal > 0) {
+                                                await updateAppointmentTotalValue(completionTarget.id, finalTotal);
+                                            }
+
+                                            // 2. Atualizar agendamento
+                                            const client = clients.find(c => c.id === completionTarget.clientId || c.phone === completionTarget.clientPhone);
+                                            await updateAppointmentStatus(completionTarget.id, 'completed', client);
+                                            await processLoyalty(completionTarget, settings);
+                                            await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
+
+                                            // 3. Registrar no Caixa (Dinheiro) se aberto
+                                            if (method === 'cash') {
+                                                const openSession = cashSessions.find(s => s.status === 'open');
+                                                if (openSession) {
+                                                    await addCashMovement({
+                                                        type: 'input',
+                                                        category: 'Venda / Serviço',
+                                                        amount: finalTotal,
+                                                        description: `Cliente: ${completionTarget.clientName}`
+                                                    });
+                                                }
+                                            }
+
+                                            showToast('Atendimento finalizado com sucesso!');
+                                            setIsCompletionModalOpen(false);
+                                        } catch (err) {
+                                            showToast('Erro ao finalizar atendimento.', 'error');
+                                        } finally {
+                                            setIsFinishing(false);
                                         }
-
-                                        // 1. Adicionar produtos se houver (deve vir ANTES do status 'completed' para o Trigger funcionar)
-                                        if (selectedProductsForCompletion.length > 0) {
-                                            await addAppointmentProducts(completionTarget.id, selectedProductsForCompletion);
-                                        }
-
-                                        // 2. Atualizar agendamento
-                                        await updateAppointmentStatus(completionTarget.id, 'completed');
-                                        await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
-
-                                        showToast('Atendimento finalizado com sucesso!');
-                                        setIsCompletionModalOpen(false);
                                     }}
-                                    className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20"
+                                    disabled={isFinishing}
+                                    className={`flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 ${isFinishing ? 'opacity-70 cursor-not-allowed' : ''}`}
                                 >
-                                    Finalizar e Salvar
+                                    {isFinishing ? <Loader2 className="animate-spin" size={18} /> : 'Finalizar e Salvar'}
                                 </button>
                             </div>
                         </motion.div>

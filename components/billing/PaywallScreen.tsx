@@ -23,24 +23,24 @@ export const PaywallScreen: React.FC = () => {
                     </div>
                 </div>
 
-                <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Seu período de teste encerrou</h1>
-                <p className="text-slate-600 text-lg mb-10 max-w-lg mx-auto">
+                <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">Seu período de teste encerrou</h1>
+                <p className="text-slate-400 text-lg mb-10 max-w-lg mx-auto">
                     Não perca o acesso à gestão da sua barbearia. Assine agora para continuar agendando e faturando.
                 </p>
 
                 <div className="bg-[#1e293b]/50 backdrop-blur-sm border border-[#334155] rounded-2xl p-8 mb-10 text-left">
-                    <h3 className="text-slate-900 font-bold mb-4">Escolha um plano com recursos como:</h3>
+                    <h3 className="text-white font-bold mb-4">Escolha um plano com recursos como:</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="flex items-center gap-3 text-slate-700">
+                        <div className="flex items-center gap-3 text-slate-300">
                             <CheckCircle size={18} className="text-green-500" /> Agendamentos Ilimitados
                         </div>
-                        <div className="flex items-center gap-3 text-slate-700">
+                        <div className="flex items-center gap-3 text-slate-300">
                             <CheckCircle size={18} className="text-green-500" /> Gestão de Equipe Completa
                         </div>
-                        <div className="flex items-center gap-3 text-slate-700">
+                        <div className="flex items-center gap-3 text-slate-300">
                             <CheckCircle size={18} className="text-green-500" /> Relatórios Financeiros
                         </div>
-                        <div className="flex items-center gap-3 text-slate-700">
+                        <div className="flex items-center gap-3 text-slate-300">
                             <CheckCircle size={18} className="text-green-500" /> Link Personalizado
                         </div>
                     </div>
@@ -63,7 +63,7 @@ export const PaywallScreen: React.FC = () => {
 
                 <button 
                     onClick={logout}
-                    className="mt-12 text-slate-500 hover:text-slate-900 flex items-center justify-center gap-2 text-sm mx-auto transition-colors"
+                    className="mt-12 text-slate-500 hover:text-white flex items-center justify-center gap-2 text-sm mx-auto transition-colors"
                 >
                     <LogOut size={16} /> Sair da conta
                 </button>

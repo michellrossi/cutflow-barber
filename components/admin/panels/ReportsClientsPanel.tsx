@@ -37,37 +37,46 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
             else startDate = new Date(0);
 
             const data = await fetchFinancialReport(startDate.toISOString().split('T')[0], now.toISOString().split('T')[0]);
-            setFilteredAppointments(data);
+            setFilteredAppointments(data?.appointments || []);
         };
         loadData();
     }, [dateRange, fetchFinancialReport]);
 
     const stats = useMemo(() => {
-        const activeSubscribers = clientSubscriptions.filter(sub => sub.status === 'active').length;
-        const totalClients = clients.length;
+        const apptsList = Array.isArray(appointments) ? appointments : [];
+        const clientsList = Array.isArray(clients) ? clients : [];
+        const filteredApptsList = Array.isArray(filteredAppointments) ? filteredAppointments : [];
+        const subsList = Array.isArray(clientSubscriptions) ? clientSubscriptions : [];
+
+        const activeSubscribers = subsList.filter(sub => sub.status === 'active').length;
+        const totalClients = clientsList.length;
         
         // CÁLCULO REAL DE CLIENTES INATIVOS
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        let inactiveClients = 0;
+        const now = new Date().getTime();
+        clientsList.forEach(client => {
+            const clientAppts = apptsList.filter(a => 
+                (a.clientId === client.id) || 
+                (!a.clientId && a.clientPhone === client.phone)
+            ).filter(a => a.status === 'completed');
 
-        const lastAppByClient: Record<string, Date> = {};
-        appointments.forEach(app => {
-            const clientId = app.clientId || app.clientPhone;
-            if (clientId && app.status === 'completed') {
-                const appDate = new Date(app.date + 'T12:00:00');
-                if (!lastAppByClient[clientId] || appDate > lastAppByClient[clientId]) {
-                    lastAppByClient[clientId] = appDate;
+            if (clientAppts.length > 0) {
+                clientAppts.sort((a, b) => new Date(b.date + 'T' + b.time).getTime() - new Date(a.date + 'T' + a.time).getTime());
+                const lastCutDate = clientAppts[0].date;
+                const diff = now - new Date(lastCutDate).getTime();
+                const daysSinceLastCut = Math.floor(diff / (1000 * 60 * 60 * 24));
+                
+                if (daysSinceLastCut > 30) {
+                    inactiveClients++;
                 }
             }
         });
 
-        const inactiveClients = Object.values(lastAppByClient).filter(lastDate => lastDate < thirtyDaysAgo).length;
-
         // NO-SHOW: calculado sobre agendamentos do período filtrado
-        const totalFinalized = filteredAppointments.filter(a =>
+        const totalFinalized = filteredApptsList.filter(a =>
             a.status === 'completed' || a.status === 'noshow'
         ).length;
-        const totalNoShows = filteredAppointments.filter(a => a.status === 'noshow').length;
+        const totalNoShows = filteredApptsList.filter(a => a.status === 'noshow').length;
         const noShowRate = totalFinalized > 0 ? (totalNoShows / totalFinalized) * 100 : 0;
 
         return {
@@ -77,8 +86,8 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
             noShowRate,
             totalNoShows,
             totalFinalized,
-            avgTicket: filteredAppointments.length > 0 
-                ? filteredAppointments.reduce((acc, a) => acc + a.totalValue, 0) / filteredAppointments.length 
+            avgTicket: filteredApptsList.length > 0 
+                ? filteredApptsList.reduce((acc, a) => acc + a.totalValue, 0) / filteredApptsList.length 
                 : 0
         };
     }, [clients, clientSubscriptions, filteredAppointments, appointments]);
@@ -89,9 +98,10 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
     // Dados Diários de Clientes Novos (Da Antiga Aba Financeiro)
     const combinedDailyData = useMemo(() => {
         const monthlyDataMap: Record<string, { novos: number, label: string }> = {};
+        const clientsList = Array.isArray(clients) ? clients : [];
 
         // Contar clientes novos (criados naquele dia)
-        clients.forEach(c => {
+        clientsList.forEach(c => {
             if (!c.createdAt) return;
             const dateStr = c.createdAt.split('T')[0];
             if (!monthlyDataMap[dateStr]) {
@@ -115,9 +125,11 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
     // Dados Dinâmicos para os gráficos
     const monthlyData = useMemo(() => {
         const dataMap: Record<string, { atendidos: Set<string>, receita: number, novos: number, label: string }> = {};
+        const filteredApptsList = Array.isArray(filteredAppointments) ? filteredAppointments : [];
+        const clientsList = Array.isArray(clients) ? clients : [];
 
         // 1. Receita e Atendidos por mês (usando filteredAppointments)
-        filteredAppointments.forEach(apt => {
+        filteredApptsList.forEach(apt => {
             if (apt.status !== 'completed') return;
             const date = new Date(apt.date + 'T12:00:00');
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -132,7 +144,7 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
         });
 
         // 2. Novos clientes (usando clients)
-        clients.forEach(c => {
+        clientsList.forEach(c => {
             if (!c.createdAt) return;
             const date = new Date(c.createdAt);
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -157,7 +169,9 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
     // Tendência mensal de no-shows
     const noShowMonthlyData = useMemo(() => {
         const dataMap: Record<string, { noshow: number; total: number; label: string }> = {};
-        filteredAppointments.forEach(apt => {
+        const filteredApptsList = Array.isArray(filteredAppointments) ? filteredAppointments : [];
+
+        filteredApptsList.forEach(apt => {
             if (apt.status !== 'completed' && apt.status !== 'noshow') return;
             const date = new Date(apt.date + 'T12:00:00');
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
@@ -358,7 +372,9 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                 </h3>
                 <div className="flex flex-col divide-y divide-slate-100">
                     {(() => {
-                        const topClients = [...clients].sort((a,b) => (b.totalSpent || 0) - (a.totalSpent || 0)).slice(0, 5);
+                        const clientsList = Array.isArray(clients) ? clients : [];
+                        const appointmentsList = Array.isArray(appointments) ? appointments : [];
+                        const topClients = [...clientsList].sort((a,b) => (b.totalSpent || 0) - (a.totalSpent || 0)).slice(0, 5);
                         const maxSpent = Math.max(...topClients.map(c => c.totalSpent || 0), 1); 
                         
                         return topClients.length === 0 ? (
@@ -372,7 +388,7 @@ export const ReportsClientsPanel: React.FC<ReportsClientsPanelProps> = ({ dateRa
                             const progressWidth = `${((client.totalSpent || 0) / maxSpent) * 100}%`;
                             
                             // Calcula as visitas com base em client.loyaltyCardCount, com fallback seguro para histórico
-                            const visitasCount = appointments.filter(a => (a.clientId === client.id || a.clientPhone === client.phone) && a.status === 'completed').length || client.loyaltyCardCount || 0;
+                            const visitasCount = appointmentsList.filter(a => (a.clientId === client.id || a.clientPhone === client.phone) && a.status === 'completed').length || client.loyaltyCardCount || 0;
 
                             return (
                                 <div key={index} className="py-4 flex items-center gap-4">

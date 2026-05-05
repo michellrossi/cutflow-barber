@@ -11,9 +11,9 @@ import { DateRangeFilter } from '../ui/DateRangeFilter';
 
 type ReportSubTab = 'finance' | 'clients' | 'team' | 'services' | 'products' | 'goals';
 
-export const ReportsPanel: React.FC = () => {
+export const ReportsPanel: React.FC<{ initialTab?: ReportSubTab }> = ({ initialTab }) => {
     const { appointments, clients, services, professionals } = useShop();
-    const [activeTab, setActiveTab] = useState<ReportSubTab>('finance');
+    const [activeTab, setActiveTab] = useState<ReportSubTab>(initialTab || 'finance');
     const [dateRange, setDateRange] = useState('30 dias');
 
     const handleExportConsolidated = () => {
@@ -33,8 +33,13 @@ export const ReportsPanel: React.FC = () => {
         const startStr = start.toISOString().split('T')[0];
         const endStr = end.toISOString().split('T')[0];
 
-        const filteredAppts = appointments.filter(a => a.date >= startStr && a.date <= endStr);
-        const filteredClients = clients.filter(c => {
+        const appointmentsList = Array.isArray(appointments) ? appointments : [];
+        const clientsList = Array.isArray(clients) ? clients : [];
+        const servicesList = Array.isArray(services) ? services : [];
+        const professionalsList = Array.isArray(professionals) ? professionals : [];
+
+        const filteredAppts = appointmentsList.filter(a => a.date >= startStr && a.date <= endStr);
+        const filteredClients = clientsList.filter(c => {
             const created = new Date(c.createdAt || '');
             return created >= start && created <= end;
         });
@@ -47,17 +52,19 @@ export const ReportsPanel: React.FC = () => {
         // Serviços mais realizados
         const serviceCounts: Record<string, number> = {};
         filteredAppts.forEach(a => {
-            a.serviceIds.forEach(sid => {
-                const sName = services.find(s => s.id === sid)?.name || 'Outro';
-                serviceCounts[sName] = (serviceCounts[sName] || 0) + 1;
-            });
+            if (Array.isArray(a.serviceIds)) {
+                a.serviceIds.forEach(sid => {
+                    const sName = servicesList.find(s => s.id === sid)?.name || 'Outro';
+                    serviceCounts[sName] = (serviceCounts[sName] || 0) + 1;
+                });
+            }
         });
         const topServices = Object.entries(serviceCounts).sort((a,b) => b[1] - a[1]).slice(0, 5).map(([n, c]) => `${n} (${c})`).join('; ');
 
         // Melhores Profissionais
         const proCounts: Record<string, number> = {};
         filteredAppts.filter(a => a.status === 'completed').forEach(a => {
-            const pName = professionals.find(p => p.id === a.professionalId)?.name || 'Outro';
+            const pName = professionalsList.find(p => p.id === a.professionalId)?.name || 'Outro';
             proCounts[pName] = (proCounts[pName] || 0) + a.totalValue;
         });
         const topPros = Object.entries(proCounts).sort((a,b) => b[1] - a[1]).slice(0, 5).map(([n, v]) => `${n} (R$ ${v.toFixed(2)})`).join('; ');
@@ -84,8 +91,8 @@ export const ReportsPanel: React.FC = () => {
                 a.date, 
                 a.time, 
                 a.clientName, 
-                a.serviceIds.map(sid => services.find(s => s.id === sid)?.name).join(' | '),
-                professionals.find(p => p.id === a.professionalId)?.name,
+                (Array.isArray(a.serviceIds) ? a.serviceIds : []).map(sid => servicesList.find(s => s.id === sid)?.name).filter(Boolean).join(' | '),
+                professionalsList.find(p => p.id === a.professionalId)?.name || '---',
                 a.totalValue,
                 a.status
             ])

@@ -32,13 +32,16 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
             else startDate = new Date(0);
 
             const data = await fetchFinancialReport(startDate.toISOString().split('T')[0], now.toISOString().split('T')[0]);
-            setFilteredAppointments(data);
+            setFilteredAppointments(data?.appointments || []);
         };
         loadData();
     }, [dateRange, fetchFinancialReport]);
 
     const stats = useMemo(() => {
-        const completed = filteredAppointments.filter(a => a.status === 'completed');
+        const appointmentsList = Array.isArray(filteredAppointments) ? filteredAppointments : [];
+        const completed = appointmentsList.filter(a => a.status === 'completed');
+        const professionalsList = Array.isArray(professionals) ? professionals : [];
+        const clientsList = Array.isArray(clients) ? clients : [];
         
         // CÁLCULO REAL BASEADO NOS PROFISSIONAIS
         let totalRevenue = 0;
@@ -48,7 +51,7 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
             totalRevenue += app.totalValue;
             
             if (app.professionalId) {
-                const pro = professionals.find(p => p.id === app.professionalId);
+                const pro = professionalsList.find(p => p.id === app.professionalId);
                 const rate = pro?.commissionPercentage ?? 50;
                 const commission = app.totalValue * (rate / 100);
                 totalCommissions += commission;
@@ -72,9 +75,11 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
         }));
 
         const paymentData = [
-            { name: 'Cartão', value: completed.filter(a => a.paymentMethod === 'credit').length, color: '#3b82f6' },
+            { name: 'Crédito', value: completed.filter(a => a.paymentMethod === 'credit').length, color: '#3b82f6' },
+            { name: 'Débito', value: completed.filter(a => a.paymentMethod === 'debit').length, color: '#6366f1' },
             { name: 'Dinheiro', value: completed.filter(a => a.paymentMethod === 'cash').length, color: '#eab308' },
             { name: 'Pix', value: completed.filter(a => a.paymentMethod === 'pix').length, color: '#22c55e' },
+            { name: 'Assinatura', value: completed.filter(a => a.paymentMethod === 'subscription').length, color: '#f97316' },
         ].filter(d => d.value > 0);
 
         // --- DADOS PARA O GRÁFICO DE OCUPAÇÃO ---
@@ -84,12 +89,9 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
         let totalDailyHours = 10;
         if (settings?.businessHours) {
             // Lógica simplificada: média de horas dos dias úteis
-            // Na implementação real baseada no Supabase, leremos do JSON
-            // ex: const schedule = settings.businessHours.monday;
-            // totalDailyHours = (schedule.end - schedule.start)
         }
         
-        const activeProfessionalsCount = professionals.length > 0 ? professionals.length : 1;
+        const activeProfessionalsCount = professionalsList.length > 0 ? professionalsList.length : 1;
         const totalAvailableHoursPerDay = totalDailyHours * activeProfessionalsCount;
 
         // --- CÁLCULO MENSAL CLIENTES NOVOS E OCUPAÇÃO ---
@@ -109,7 +111,7 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
         });
 
         // Contar clientes novos (criados naquele dia)
-        clients.forEach(c => {
+        clientsList.forEach(c => {
             if (!c.createdAt) return;
             const dateStr = c.createdAt.split('T')[0];
             if (!monthlyDataMap[dateStr]) {

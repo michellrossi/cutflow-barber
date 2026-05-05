@@ -27,6 +27,9 @@ interface Plan {
 
 export const PlanPanel: React.FC<{ onUpgrade?: () => void }> = ({ onUpgrade }) => {
   const { shop, trialStatus } = useShop();
+  const currentTier: string = (shop as any)?.planTier || 'essencial';
+  const PLAN_ORDER = ['essencial', 'profissional', 'premium'];
+  const currentTierIndex = PLAN_ORDER.indexOf(currentTier);
   const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState(0);
 
@@ -215,7 +218,9 @@ export const PlanPanel: React.FC<{ onUpgrade?: () => void }> = ({ onUpgrade }) =
             </div>
             <div>
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Plano Atual</p>
-              <p className="text-sm font-bold text-slate-900">Profissional {shop?.plan === 'trial' ? '(Trial)' : ''}</p>
+              <p className="text-sm font-bold text-slate-900 capitalize">
+                {currentTier.charAt(0).toUpperCase() + currentTier.slice(1)} {shop?.plan === 'trial' ? '(Trial)' : ''}
+              </p>
             </div>
           </div>
         </div>
@@ -242,8 +247,8 @@ export const PlanPanel: React.FC<{ onUpgrade?: () => void }> = ({ onUpgrade }) =
                 <div className={`p-3 rounded-lg bg-slate-50 border border-slate-100`}>
                   {plan.icon}
                 </div>
-                {plan.id === 'profissional' && (
-                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg uppercase">Ativo</span>
+                {plan.id === currentTier && (
+                  <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-lg uppercase">Plano Atual</span>
                 )}
               </div>
               <h2 className="text-xl font-bold text-slate-900 mb-1">{plan.name}</h2>
@@ -280,22 +285,29 @@ export const PlanPanel: React.FC<{ onUpgrade?: () => void }> = ({ onUpgrade }) =
             </div>
 
             <div className="p-8 pt-0 mt-auto">
-              <button
-                onClick={() => {
-                    if (plan.id !== 'profissional') {
-                        if (onUpgrade) onUpgrade();
-                    }
-                }}
-                className={`w-full py-4 rounded-lg font-bold text-sm transition-all duration-300 ${
-                  plan.id === 'profissional'
-                    ? 'bg-slate-100 text-slate-400 cursor-default border border-slate-200'
-                    : plan.popular
-                    ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-md'
-                    : 'bg-slate-800 text-white hover:bg-slate-700 shadow-md'
-                }`}
-              >
-                {plan.id === 'profissional' ? 'Plano Atual' : 'Fazer Upgrade'}
-              </button>
+              {plan.id === currentTier ? (
+                <div className="w-full py-4 rounded-lg font-bold text-sm text-center bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  ✅ Seu Plano Atual
+                </div>
+              ) : PLAN_ORDER.indexOf(plan.id) > currentTierIndex ? (
+                <button
+                  onClick={() => { if (onUpgrade) onUpgrade(); }}
+                  className={`w-full py-4 rounded-lg font-bold text-sm transition-all duration-300 ${
+                    plan.popular
+                      ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-md'
+                      : 'bg-slate-800 text-white hover:bg-slate-700 shadow-md'
+                  }`}
+                >
+                  ⬆️ Fazer Upgrade
+                </button>
+              ) : (
+                <button
+                  onClick={() => alert('Entre em contato com o suporte para fazer downgrade do seu plano.')}
+                  className="w-full py-4 rounded-lg font-bold text-sm bg-white border border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700 transition-all"
+                >
+                  ⬇️ Fazer Downgrade
+                </button>
+              )}
             </div>
           </motion.div>
         ))}
