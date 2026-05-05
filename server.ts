@@ -27,6 +27,7 @@ import loyaltyRouter from './routes/loyalty';
 import aiRouter from './routes/ai';
 import insightsRouter from './routes/insights';
 import { authenticate, requirePlan } from './middlewares/auth';
+import { requireAdmin } from './middlewares/requireAdmin';
 
 // Controllers (apenas para o node-cron interno)
 import { runCronLogic } from './controllers/cronController';
@@ -77,7 +78,7 @@ async function startServer() {
     // Registro das Rotas
     app.use('/api/asaas', asaasRouter);
     app.use('/api/whatsapp', whatsappRouter);
-    app.use('/api/saas', saasRouter);
+    app.use('/api/saas', requireAdmin, saasRouter);
     app.use('/api/cron', cronRouter);
     app.use('/api/notify', notifyLimiter, notifyRouter);
     app.use('/api/auth', authRouter); // Público

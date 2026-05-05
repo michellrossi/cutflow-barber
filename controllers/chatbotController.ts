@@ -24,6 +24,7 @@ interface BookArgs {
 interface AvailabilityArgs {
     professional_id: string;
     date: string;
+    service_ids?: string[];
 }
 
 export async function handleChatbotAI(shopId: string, remoteJid: string, clientName: string, message: string, instance: string) {
@@ -116,7 +117,7 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
         functionDeclarations: [
             { name: "list_services", description: "Retorna a lista de serviços" },
             { name: "list_professionals", description: "Retorna a lista de barbeiros" },
-            { name: "check_availability", description: "Verifica horários livres", parameters: { type: "OBJECT", properties: { professional_id: { type: "STRING" }, date: { type: "STRING" } }, required: ["professional_id", "date"] } },
+            { name: "check_availability", description: "Verifica horários livres", parameters: { type: "OBJECT", properties: { professional_id: { type: "STRING" }, date: { type: "STRING" }, service_ids: { type: "ARRAY", items: { type: "STRING" } } }, required: ["professional_id", "date"] } },
             { name: "book_appointment", description: "Efetiva o agendamento", parameters: { type: "OBJECT", properties: { service_ids: { type: "ARRAY", items: { type: "STRING" } }, professional_id: { type: "STRING" }, date: { type: "STRING" }, time: { type: "STRING" } }, required: ["service_ids", "professional_id", "date", "time"] } }
         ]
     }];
@@ -144,7 +145,7 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
                     else if (fn.name === "list_professionals") data = professionals;
                     else if (fn.name === "check_availability") {
                         const args = fn.args as unknown as AvailabilityArgs;
-                        data = await getAvailableSlotsForAI(shopId, args.professional_id, args.date);
+                        data = await getAvailableSlotsForAI(shopId, args.professional_id, args.date, args.service_ids);
                     }
                     else if (fn.name === "book_appointment") {
                         const args = fn.args as unknown as BookArgs;
@@ -187,7 +188,7 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
     await sendWhatsApp(remoteJid.split('@')[0], reply, instance);
 }
 
-async function getAvailableSlotsForAI(shopId: string, proId: string, date: string) {
+async function getAvailableSlotsForAI(shopId: string, proId: string, date: string, serviceIds?: string[]) {
     const { data: proValidation } = await supabaseAdmin.from('professionals').select('id').eq('id', proId).eq('shop_id', shopId).maybeSingle();
     if (!proValidation) return { error: "Profissional não encontrado." };
 
@@ -196,22 +197,64 @@ async function getAvailableSlotsForAI(shopId: string, proId: string, date: strin
     const hours = settings?.business_hours?.[dayOfWeek];
     if (!hours || !hours.active) return { error: "A barbearia não abre nesta data." };
 
-    const { data: appointments } = await supabaseAdmin.from('appointments').select('time').eq('professional_id', proId).eq('date', date).not('status', 'eq', 'cancelled');
+    // Calcula duração total
+    let totalDuration = 30; // padrão
+    if (serviceIds && serviceIds.length > 0) {
+        const { data: svcs } = await supabaseAdmin.from('services').select('duration').in('id', serviceIds);
+        totalDuration = svcs?.reduce((acc, s) => acc + (s.duration || 30), 0) || 30;
+    }
+
+    const { data: appointments } = await supabaseAdmin.from('appointments').select('time, service_ids').eq('professional_id', proId).eq('date', date).not('status', 'eq', 'cancelled');
     const { data: blocks } = await supabaseAdmin.from('blocked_slots').select('start_time, end_time').eq('professional_id', proId).eq('date', date);
     
+    // Cache de serviços para cálculo de fim de agendamentos existentes
+    const { data: allServices } = await supabaseAdmin.from('services').select('id, duration').eq('shop_id', shopId);
+    const serviceDurationMap = new Map(allServices?.map(s => [s.id, s.duration]) || []);
+
     const slots: string[] = [];
     let current = dayjs(`${date}T${hours.start}`);
-    const end = dayjs(`${date}T${hours.end}`);
+    const endLimit = dayjs(`${date}T${hours.end}`);
 
-    while (current.isBefore(end)) {
+    while (current.isBefore(endLimit)) {
         const timeStr = current.format('HH:mm');
-        const isOccupied = appointments?.some(a => a.time.substring(0, 5) === timeStr);
-        const isBlocked = blocks?.some(b => {
-            const start = b.start_time.substring(0, 5);
-            const endT = b.end_time.substring(0, 5);
-            return timeStr >= start && timeStr < endT;
-        });
-        if (!isOccupied && !isBlocked) slots.push(timeStr);
+        const slotEnd = current.add(totalDuration, 'minute');
+
+        // Se o serviço ultrapassa o horário de fechamento, não é válido
+        if (slotEnd.isAfter(endLimit)) {
+            current = current.add(30, 'minute');
+            continue;
+        }
+
+        // Verifica se o intervalo [current, slotEnd] está livre
+        let isFree = true;
+
+        // 1. Verifica conflito com agendamentos existentes
+        for (const apt of (appointments || [])) {
+            const aptStart = dayjs(`${date}T${apt.time.substring(0, 5)}`);
+            const aptDur = apt.service_ids?.reduce((acc: number, sid: string) => acc + (serviceDurationMap.get(sid) || 30), 0) || 30;
+            const aptEnd = aptStart.add(aptDur, 'minute');
+
+            // Sobreposição: (start1 < end2) && (end1 > start2)
+            if (current.isBefore(aptEnd) && slotEnd.isAfter(aptStart)) {
+                isFree = false;
+                break;
+            }
+        }
+
+        if (isFree) {
+            // 2. Verifica conflito com bloqueios
+            for (const block of (blocks || [])) {
+                const blockStart = dayjs(`${date}T${block.start_time.substring(0, 5)}`);
+                const blockEnd = dayjs(`${date}T${block.end_time.substring(0, 5)}`);
+
+                if (current.isBefore(blockEnd) && slotEnd.isAfter(blockStart)) {
+                    isFree = false;
+                    break;
+                }
+            }
+        }
+
+        if (isFree) slots.push(timeStr);
         current = current.add(30, 'minute');
     }
     return { available_slots: slots };

@@ -72,12 +72,22 @@ export const handleWebhook = async (req: Request, res: Response) => {
     if (existingEvent) return res.status(200).send('OK (duplicate)');
 
     if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
-        const { data: shop } = await supabaseAdmin.from('shops').select('id, name').eq('asaas_customer_id', payment.customer).single();
+        const { data: shop } = await supabaseAdmin.from('shops').select('id, name').eq('asaas_customer_id', payment.customer).maybeSingle();
         if (shop) {
             await supabaseAdmin.from('shops').update({ 
                 plan: 'active', 
                 payment_confirmed_at: new Date().toISOString() 
             }).eq('id', shop.id);
+            console.log(`[Asaas] Plano da barbearia ${shop.name} ATIVADO.`);
+        }
+    } else if (event === 'PAYMENT_OVERDUE' || event === 'SUBSCRIPTION_DELETED') {
+        const customerId = payment?.customer || req.body.subscription?.customer;
+        if (customerId) {
+            const { data: shop } = await supabaseAdmin.from('shops').select('id, name').eq('asaas_customer_id', customerId).maybeSingle();
+            if (shop) {
+                await supabaseAdmin.from('shops').update({ plan: 'suspended' }).eq('id', shop.id);
+                console.warn(`[Asaas] Plano da barbearia ${shop.name} SUSPENSO por inadimplência/cancelamento.`);
+            }
         }
     }
 

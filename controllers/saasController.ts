@@ -16,8 +16,14 @@ const validateAdminKey = (req: Request) => {
     return crypto.timingSafeEqual(receivedBuffer, expectedBuffer);
 };
 
+// Rota de autenticação para o SaasAdminGuard
+export const auth = async (req: Request, res: Response) => {
+    // Se chegou aqui, o middleware requireAdmin já validou a chave master.
+    // O SaasAdminGuard apenas precisa de um 200 OK para saber que a chave é válida.
+    res.json({ success: true, message: 'Autenticado com sucesso' });
+};
+
 export const getStats = async (req: Request, res: Response) => {
-    if (!validateAdminKey(req)) return res.status(401).json({ error: 'Unauthorized' });
     try {
         const { data, error } = await supabaseAdmin.rpc('get_saas_stats');
         if (error) throw error;
@@ -28,7 +34,6 @@ export const getStats = async (req: Request, res: Response) => {
 };
 
 export const getShops = async (req: Request, res: Response) => {
-    if (!validateAdminKey(req)) return res.status(401).json({ error: 'Unauthorized' });
     try {
         const { data } = await supabaseAdmin.from('shops').select('*').order('created_at', { ascending: false });
         res.json(data);
@@ -38,7 +43,6 @@ export const getShops = async (req: Request, res: Response) => {
 };
 
 export const getShopById = async (req: Request, res: Response) => {
-    if (!validateAdminKey(req)) return res.status(401).json({ error: 'Unauthorized' });
     try {
         const { data } = await supabaseAdmin.from('shops').select('*').eq('id', req.params.id).single();
         res.json(data);
@@ -48,7 +52,6 @@ export const getShopById = async (req: Request, res: Response) => {
 };
 
 export const updateShopStatus = async (req: Request, res: Response) => {
-    if (!validateAdminKey(req)) return res.status(401).json({ error: 'Unauthorized' });
     try {
         const { plan, plan_tier } = req.body;
         const { data } = await supabaseAdmin.from('shops').update({ plan, plan_tier }).eq('id', req.params.id).select();
