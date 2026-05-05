@@ -185,6 +185,26 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
     };
 
+    const loadShopBySlug = async (slug: string) => {
+        setLoading(true);
+        try {
+            const { data, error } = await supabase.from('shops').select('*').eq('slug', slug).maybeSingle();
+            if (error) throw error;
+            if (data) {
+                const shop = mapShop(data);
+                setState(prev => ({ ...prev, shop }));
+                await fetchData(shop.id);
+                return true;
+            }
+            return false;
+        } catch (error) {
+            console.error("Error loading shop by slug:", error);
+            return false;
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     const deleteCurrentShop = async (): MutationResult => {
         try {
