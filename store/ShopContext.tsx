@@ -97,40 +97,73 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setLoading(true);
 
         try {
-            let shopId = targetShopId;
-            let currentShopData: Shop | null = state.shop;
-
-            // Se um targetShopId foi passado, precisamos garantir que temos os dados dessa loja
-            if (targetShopId) {
-                const { data: targetShopData } = await supabase.from('shops').select('*').eq('id', targetShopId).single();
-                if (targetShopData) {
-                    shopId = targetShopId;
-                    currentShopData = mapShop(targetShopData);
-                }
+            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            if (!currentSession?.user) {
+                setUserRole(null);
+                setLoading(false);
+                return;
             }
 
-            // fetchData agora foca apenas no core (Sessão, Role, Shop e Trail)
-            const { data: { session: currentSession } } = await supabase.auth.getSession();
+            // 1. Buscar todas as lojas vinculadas ao usuário para o Seletor
+            // Lojas que ele é dono
+            const { data: ownedShops } = await supabase
+                .from('shops')
+                .select('*')
+                .eq('owner_id', currentSession.user.id);
 
+            // Lojas que ele é profissional
+            const { data: proShopsRecords } = await supabase
+                .from('professionals')
+                .select('shop_id, shops(*)')
+                .eq('email', currentSession.user.email);
 
-            // --- LÓGICA DE ROLES ---
-            if (currentSession?.user) {
-                const effectiveShopData = currentShopData || state.shop;
+            const proShops = proShopsRecords?.map(r => r.shops).filter(Boolean) || [];
+            
+            // Consolidar myShops (evitando duplicatas)
+            const allShopsMap = new Map();
+            ownedShops?.forEach(s => allShopsMap.set(s.id, mapShop(s)));
+            proShops.forEach((s: any) => {
+                if (!allShopsMap.has(s.id)) {
+                    allShopsMap.set(s.id, mapShop(s));
+                }
+            });
+            const myShopsList = Array.from(allShopsMap.values()) as Shop[];
 
-                if (effectiveShopData?.ownerId === currentSession.user.id) {
+            // 2. Determinar a loja atual
+            let currentShopData: Shop | null = null;
+            
+            if (targetShopId) {
+                currentShopData = myShopsList.find(s => s.id === targetShopId) || null;
+                if (!currentShopData) {
+                    const { data: directShop } = await supabase.from('shops').select('*').eq('id', targetShopId).single();
+                    if (directShop) currentShopData = mapShop(directShop);
+                }
+            } else if (state.shop) {
+                currentShopData = state.shop;
+            } else if (myShopsList.length > 0) {
+                // Tenta carregar a última loja usada do localStorage ou a primeira da lista
+                const lastShopId = localStorage.getItem('last_shop_id');
+                currentShopData = myShopsList.find(s => s.id === lastShopId) || myShopsList[0];
+            }
+
+            // 3. Determinar Role na loja atual
+            if (currentShopData) {
+                // Salva para a próxima vez
+                localStorage.setItem('last_shop_id', currentShopData.id);
+
+                if (currentShopData.ownerId === currentSession.user.id) {
                     setUserRole('owner');
                 } else {
-                    const { data: proRecord } = await supabase
-                        .from('professionals')
-                        .select('id, user_id')
-                        .eq('shop_id', shopId)
-                        .eq('email', currentSession.user.email)
-                        .maybeSingle();
-
-                    if (proRecord) {
+                    const isPro = proShopsRecords?.some(r => r.shop_id === currentShopData?.id);
+                    if (isPro) {
                         setUserRole('barber');
-                        if (!proRecord.user_id) {
-                            await supabase.from('professionals').update({ user_id: currentSession.user.id }).eq('id', proRecord.id);
+                        // Vincular user_id se não estiver vinculado
+                        const proRecord = proShopsRecords?.find(r => r.shop_id === currentShopData?.id);
+                        if (proRecord && !proRecord.user_id) {
+                             await supabase.from('professionals')
+                                .update({ user_id: currentSession.user.id })
+                                .eq('shop_id', currentShopData.id)
+                                .eq('email', currentSession.user.email);
                         }
                     } else {
                         setUserRole(null);
@@ -148,7 +181,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
             setState(prev => ({
                 ...prev,
-                shop: currentShopData || prev.shop,
+                shop: currentShopData,
+                myShops: myShopsList,
                 trialStatus: trialInfo.status,
                 daysRemaining: trialInfo.days,
                 botPausedCount: 0
@@ -264,26 +298,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             )
             .subscribe();
 
-        // 2. Listen for Appointment Changes (Sync Barber/Admin)
-        const appointmentsChannel = supabase.channel('appointments_sync')
-            .on(
-                'postgres_changes',
-                {
-                    event: '*', // Insert, Update, Delete
-                    schema: 'public',
-                    table: 'appointments',
-                    filter: `shop_id=eq.${state.shop.id}`
-                },
-                () => {
-                    reloadAppointments(state.shop!.id);
-                }
-            )
-            .subscribe();
-
-
         return () => {
             supabase.removeChannel(shopChannel);
-            supabase.removeChannel(appointmentsChannel);
         }
     }, [state.shop?.id]);
 
