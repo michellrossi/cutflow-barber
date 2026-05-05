@@ -102,20 +102,7 @@ async function startServer() {
     // Inicialização do Servidor
     app.listen(Number(PORT), '0.0.0.0', () => {
         console.log(`🚀 Servidor ativo na porta ${PORT}`);
-
-        // Agendamentos Internos (node-cron)
-        // 1. Lembretes e Notificações (a cada 10 min)
-        cron.schedule('*/10 * * * *', async () => {
-            try { await runCronLogic(); } catch (err: any) { console.error('[node-cron] Erro no cron logic:', err.message); }
-        });
-
-        // 2. Limpeza de Rate Limit (a cada hora)
-        cron.schedule('0 * * * *', async () => {
-            const oneHourAgo = dayjs().subtract(1, 'hour').toISOString();
-            await supabaseAdmin.from('whatsapp_chat_sessions').update({ message_count: 0 }).lt('last_message_at', oneHourAgo);
-        });
-
-        console.log('📅 Agendamentos internos (node-cron) iniciados.');
+        console.log('📅 Servidor pronto para receber triggers externos via /api/cron/run.');
     });
 }
 

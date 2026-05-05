@@ -3,14 +3,7 @@ import { supabaseAdmin } from '../lib/supabase';
 import { createAsaasCustomer, createAsaasSubscription, createAsaasPayment, getAsaasPixQrCode } from '../utils/asaas.js';
 import crypto from 'crypto';
 
-interface AuthenticatedRequest extends Request {
-    user?: {
-        id: string;
-        email?: string;
-    };
-}
-
-export const createCustomer = async (req: AuthenticatedRequest, res: Response) => {
+export const createCustomer = async (req: Request, res: Response) => {
     try {
         const { name, phone, email, cpfCnpj } = req.body;
         const user = req.user;
@@ -74,11 +67,19 @@ export const handleWebhook = async (req: Request, res: Response) => {
     if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
         const { data: shop } = await supabaseAdmin.from('shops').select('id, name').eq('asaas_customer_id', payment.customer).maybeSingle();
         if (shop) {
+            // Extrai o tier da descrição ou externalReference (ex: "Plano Profissional")
+            const description = (payment.description || '').toLowerCase();
+            let planTier = 'trial';
+            if (description.includes('premium')) planTier = 'premium';
+            else if (description.includes('profissional')) planTier = 'profissional';
+            else if (description.includes('basico')) planTier = 'basico';
+
             await supabaseAdmin.from('shops').update({ 
                 plan: 'active', 
+                plan_tier: planTier,
                 payment_confirmed_at: new Date().toISOString() 
             }).eq('id', shop.id);
-            console.log(`[Asaas] Plano da barbearia ${shop.name} ATIVADO.`);
+            console.log(`[Asaas] Plano ${planTier} da barbearia ${shop.name} ATIVADO.`);
         }
     } else if (event === 'PAYMENT_OVERDUE' || event === 'SUBSCRIPTION_DELETED') {
         const customerId = payment?.customer || req.body.subscription?.customer;

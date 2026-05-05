@@ -10,14 +10,14 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     if (error || !user) return res.status(401).json({ error: 'Invalid token' });
 
-    (req as any).user = user;
+    req.user = user;
     next();
 };
 
 export const requirePlan = (minTier: 'essencial' | 'profissional' | 'premium') => {
     return async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const user = (req as any).user;
+            const user = req.user;
             if (!user) return res.status(401).json({ error: 'Unauthorized' });
 
             const { data: shop } = await supabaseAdmin

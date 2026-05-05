@@ -90,7 +90,8 @@ interface EvolutionWebhookBody {
 
 export const handleWebhook = async (req: Request, res: Response) => {
     const secret = req.headers['x-evolution-webhook-secret'];
-    if (process.env.NODE_ENV === 'production' && secret !== process.env.EVOLUTION_WEBHOOK_SECRET) {
+    const expected = process.env.EVOLUTION_WEBHOOK_SECRET;
+    if (expected && secret !== expected) {
         return res.status(401).send('Unauthorized');
     }
 

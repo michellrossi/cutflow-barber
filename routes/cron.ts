@@ -5,7 +5,10 @@ const router = Router();
 
 const cronGuard = (req: Request, res: Response, next: NextFunction) => {
     const secret = req.headers['x-cron-secret'];
-    if (secret !== process.env.CRON_SECRET) return res.status(401).end();
+    const expected = process.env.CRON_SECRET;
+    if (!expected || secret !== expected) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
     next();
 };
 

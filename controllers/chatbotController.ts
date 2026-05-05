@@ -220,6 +220,7 @@ async function getAvailableSlotsForAI(shopId: string, proId: string, date: strin
         const slotEnd = current.add(totalDuration, 'minute');
 
         // Se o serviço ultrapassa o horário de fechamento, não é válido
+        // Usando a lógica sugerida: current + duration < end + 1min
         if (slotEnd.isAfter(endLimit)) {
             current = current.add(30, 'minute');
             continue;

@@ -362,10 +362,19 @@ export async function runCronLogic() {
                     else shop.prevWeek.push(apt);
                 });
 
+                // PONTO 7: Eliminar N+1 de settings
+                const allShopIds = Array.from(shopsData.keys());
+                const { data: allSettings } = await supabaseAdmin
+                    .from('settings')
+                    .select('shop_id, phone')
+                    .in('shop_id', allShopIds);
+                
+                const settingsMap = new Map(allSettings?.map(s => [s.shop_id, s.phone]) || []);
+
                 for (const [sId, data] of shopsData.entries()) {
                     if (!data.connected) continue;
-                    const { data: sets } = await supabaseAdmin.from('settings').select('phone').eq('shop_id', sId).single();
-                    if (!sets?.phone) continue;
+                    const phone = settingsMap.get(sId);
+                    if (!phone) continue;
 
                     const curRev = data.currentWeek.filter(a => a.status === 'completed').reduce((sum, a) => sum + (a.total_value || 0), 0);
                     const preRev = data.prevWeek.filter(a => a.status === 'completed').reduce((sum, a) => sum + (a.total_value || 0), 0);

@@ -7,9 +7,10 @@ const router = Router();
 
 const cronGuard = (req: Request, res: Response, next: NextFunction) => {
     const secret = req.headers['x-cron-secret'];
-    if (secret !== process.env.CRON_SECRET) {
+    const expected = process.env.CRON_SECRET;
+    if (!expected || secret !== expected) {
         console.warn('[Cron] Tentativa de acesso não autorizado ao trigger.');
-        return res.status(401).end();
+        return res.status(401).json({ error: 'Unauthorized' });
     }
     next();
 };
