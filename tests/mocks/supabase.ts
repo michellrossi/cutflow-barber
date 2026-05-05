@@ -26,19 +26,19 @@ export const mockSupabase = {
 // Helper para resetar e manter os retornos encadeáveis
 export const resetSupabaseMocks = () => {
   vi.clearAllMocks();
-  mockSupabase.from.mockReturnThis();
-  mockSupabase.select.mockReturnThis();
-  mockSupabase.insert.mockReturnThis();
-  mockSupabase.update.mockReturnThis();
-  mockSupabase.delete.mockReturnThis();
-  mockSupabase.eq.mockReturnThis();
-  mockSupabase.neq.mockReturnThis();
-  mockSupabase.gte.mockReturnThis();
-  mockSupabase.lte.mockReturnThis();
-  mockSupabase.in.mockReturnThis();
-  mockSupabase.not.mockReturnThis();
-  mockSupabase.limit.mockReturnThis();
-  mockSupabase.order.mockReturnThis();
+  
+  const chainableMethods = [
+    'from', 'select', 'insert', 'update', 'delete', 
+    'eq', 'neq', 'gte', 'lte', 'in', 'not', 'limit', 'order'
+  ];
+
+  chainableMethods.forEach(method => {
+    (mockSupabase as any)[method].mockReturnValue(mockSupabase);
+  });
+
+  mockSupabase.single.mockImplementation(() => Promise.resolve({ data: null, error: null }));
+  mockSupabase.maybeSingle.mockImplementation(() => Promise.resolve({ data: null, error: null }));
+  mockSupabase.rpc.mockImplementation(() => Promise.resolve({ data: null, error: null }));
 };
 
 // Mock do módulo para que qualquer import de ../lib/supabase receba o mock
