@@ -100,7 +100,7 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
       });
 
       if (error) return { success: false, error: error.message };
-      if (data?.status === 'error') return { success: false, error: data.message };
+      if (data?.status === 'error' || data?.status === 'conflict') return { success: false, error: data.message };
 
       await ensureClientExists(shopId, cleanClientName, cleanClientPhone, apt.clientBirthDate);
       await reloadAppointments(shopId);
