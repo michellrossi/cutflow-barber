@@ -178,14 +178,7 @@ ALTER TABLE public.message_templates
     ADD COLUMN IF NOT EXISTS delay_unit TEXT DEFAULT 'minutes';
 ALTER TABLE public.message_templates ALTER COLUMN trigger DROP NOT NULL;
 
--- TOKENS DE CLIENTES
-CREATE TABLE IF NOT EXISTS public.client_auth_tokens (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    client_id UUID REFERENCES public.clients(id) ON DELETE CASCADE,
-    token TEXT NOT NULL UNIQUE,
-    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL
-);
+
 
 -- SESSÕES DO WHATSAPP CHATBOT
 -- FIX (security_fixes): message_count e bot_paused consolidados aqui
@@ -511,45 +504,7 @@ CREATE TRIGGER trg_stock_on_completion
 BEFORE UPDATE ON public.appointments
 FOR EACH ROW EXECUTE FUNCTION public.handle_stock_on_completion();
 
--- ── RPC: Tokens de Autenticação de Clientes ───────────────────────────────────
-CREATE OR REPLACE FUNCTION public.create_client_token(p_client_id UUID, p_token TEXT, p_expires_at TIMESTAMPTZ)
-RETURNS VOID AS $$
-BEGIN
-    INSERT INTO public.client_auth_tokens (client_id, token, expires_at)
-    VALUES (p_client_id, p_token, p_expires_at);
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
 
-CREATE OR REPLACE FUNCTION public.validate_client_token(p_token TEXT)
-RETURNS JSON AS $$
-DECLARE
-    v_token_id UUID;
-    v_client_id UUID;
-    v_client_data JSON;
-BEGIN
-    SELECT id, client_id INTO v_token_id, v_client_id
-    FROM public.client_auth_tokens
-    WHERE token = p_token AND expires_at > NOW();
-
-    IF v_token_id IS NULL THEN
-        RAISE EXCEPTION 'Token inválido ou expirado';
-    END IF;
-
-    DELETE FROM public.client_auth_tokens WHERE id = v_token_id;
-
-    SELECT json_build_object(
-        'id', c.id, 'shop_id', c.shop_id, 'name', c.name, 'phone', c.phone,
-        'avatar_url', c.avatar_url, 'total_spent', c.total_spent, 'loyalty_points', c.loyalty_points,
-        'loyalty_card_count', c.loyalty_card_count, 'created_at', c.created_at,
-        'shops', json_build_object('slug', s.slug)
-    ) INTO v_client_data
-    FROM public.clients c
-    JOIN public.shops s ON s.id = c.shop_id
-    WHERE c.id = v_client_id;
-
-    RETURN v_client_data;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ── RPC: Recompensa de Fidelidade (Atômica — suporta modo card e points) ────
 -- Chamada pelo servidor quando um cliente atinge a meta de visitas ou pontos.
@@ -767,7 +722,7 @@ ALTER TABLE public.professionals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.clients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.message_templates ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.client_auth_tokens ENABLE ROW LEVEL SECURITY;
+
 ALTER TABLE public.message_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.automation_triggers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.whatsapp_chat_sessions ENABLE ROW LEVEL SECURITY;
@@ -827,9 +782,7 @@ CREATE POLICY "Publico_Ve_Gatilhos" ON public.automation_triggers FOR SELECT USI
 DROP POLICY IF EXISTS "Dono_Gere_Gatilhos" ON public.automation_triggers;
 CREATE POLICY "Dono_Gere_Gatilhos" ON public.automation_triggers FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = automation_triggers.shop_id AND owner_id = auth.uid()));
 
--- Tokens (Acesso bloqueado via API anon)
-DROP POLICY IF EXISTS "Server_Only_Tokens" ON public.client_auth_tokens;
-CREATE POLICY "Server_Only_Tokens" ON public.client_auth_tokens FOR ALL USING (false) WITH CHECK (false);
+
 
 -- Chat Sessions (IA e Donos)
 DROP POLICY IF EXISTS "Allow server-side access to chat sessions" ON public.whatsapp_chat_sessions;

@@ -6,7 +6,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import * as dotenv from 'dotenv';
 import dayjs from 'dayjs';
-import cron from 'node-cron';
 
 // Configuração de Timezone
 import utc from 'dayjs/plugin/utc.js';
@@ -29,8 +28,6 @@ import insightsRouter from './routes/insights';
 import { authenticate, requirePlan } from './middlewares/auth';
 import { requireAdmin } from './middlewares/requireAdmin';
 
-// Controllers (apenas para o node-cron interno)
-import { runCronLogic } from './controllers/cronController';
 import { supabaseAdmin } from './lib/supabase';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -81,7 +78,7 @@ async function startServer() {
     app.use('/api/saas', requireAdmin, saasRouter);
     app.use('/api/cron', cronRouter);
     app.use('/api/notify', notifyLimiter, notifyRouter);
-    app.use('/api/auth', authRouter); // Público
+    app.use('/api/auth', notifyLimiter, authRouter);
     app.use('/api/loyalty', authenticate, loyaltyRouter);
     app.use('/api/ai', authenticate, requirePlan('profissional'), aiRouter);
     app.use('/api/admin', authenticate, requirePlan('profissional'), insightsRouter);

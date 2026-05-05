@@ -6,7 +6,12 @@ export const generateReward = async (req: Request, res: Response) => {
         const { clientId, shopId } = req.body;
         if (!clientId || !shopId) return res.status(400).json({ error: 'ClientId e ShopId são obrigatórios' });
 
-        const { data: client } = await supabaseAdmin.from('clients').select('*').eq('id', clientId).single();
+        const { data: client } = await supabaseAdmin
+            .from('clients')
+            .select('*')
+            .eq('id', clientId)
+            .eq('shop_id', shopId)
+            .single();
         if (!client) return res.status(404).json({ error: 'Cliente não encontrado' });
 
         const { data: settings } = await supabaseAdmin.from('settings').select('*').eq('shop_id', shopId).single();
@@ -26,13 +31,15 @@ export const generateReward = async (req: Request, res: Response) => {
 
         const { error: couponError } = await supabaseAdmin.from('coupons').insert({
             shop_id: shopId,
+            client_id: clientId,
             code,
             type: 'fixed',
             value: settings.loyaltyRewardValue || 10,
             active: true,
             expires_at: expiresAt.toISOString(),
-            usage_limit: 1,
-            description: `Prêmio de Fidelidade - ${client.name}`
+            max_uses: 1,
+            usage_count: 0,
+            is_loyalty_reward: true
         });
 
         if (couponError) throw couponError;

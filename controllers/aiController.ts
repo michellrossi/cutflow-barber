@@ -27,12 +27,10 @@ export const generateTemplate = async (req: Request, res: Response) => {
 export const generateImage = async (req: Request, res: Response) => {
     try {
         const { prompt } = req.body;
-        // Atualmente o projeto usa placeholders ou geração via frontend para imagens.
-        // Implementamos um retorno de sucesso com um placeholder premium para não quebrar o fluxo.
-        res.json({ 
-            success: true, 
-            url: `https://images.unsplash.com/photo-1503951914875-452162b0f3f1?q=80&w=1000&auto=format&fit=crop` 
-        });
+        if (!prompt) return res.status(400).json({ error: 'Prompt é obrigatório' });
+        
+        const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true`;
+        res.json({ success: true, url });
     } catch (e: any) {
         res.status(500).json({ error: e.message });
     }
@@ -46,12 +44,15 @@ export const getInsights = async (req: Request, res: Response) => {
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
-        
+
+        const contextStr = JSON.stringify(context).slice(0, 12000);
+        const limitedHistory = (history || []).slice(-10);
+
         const systemInstruction = `Você é o "CutFlow Analytics AI", um consultor de inteligência de negócios especializado em barbearias.
         Analise os dados reais fornecidos abaixo e responda às perguntas do dono da barbearia de forma estratégica, objetiva e motivadora.
         
         DADOS DA BARBEARIA:
-        ${JSON.stringify(context, null, 2)}
+        ${contextStr}
         
         REGRAS:
         - Nunca invente dados. Use apenas o que foi fornecido no contexto.
@@ -59,7 +60,7 @@ export const getInsights = async (req: Request, res: Response) => {
         - Seja direto ao ponto.`;
         
         const chat = model.startChat({
-            history: (history || []).map((m: any) => ({
+            history: limitedHistory.map((m: any) => ({
                 role: m.role === 'assistant' ? 'model' : 'user',
                 parts: [{ text: m.content }]
             }))

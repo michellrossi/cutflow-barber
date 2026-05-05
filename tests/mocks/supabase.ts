@@ -36,12 +36,15 @@ export const resetSupabaseMocks = () => {
     (mockSupabase as any)[method].mockReturnValue(mockSupabase);
   });
 
+  // Para tornar o mockSupabase "awaitable" (thenable)
+  (mockSupabase as any).then = (resolve: any) => Promise.resolve({ data: null, error: null }).then(resolve);
+
   mockSupabase.single.mockImplementation(() => Promise.resolve({ data: null, error: null }));
   mockSupabase.maybeSingle.mockImplementation(() => Promise.resolve({ data: null, error: null }));
   mockSupabase.rpc.mockImplementation(() => Promise.resolve({ data: null, error: null }));
 };
 
-// Mock do módulo para que qualquer import de ../lib/supabase receba o mock
+// Mock do módulo
 vi.mock('../../lib/supabase', () => ({
   supabaseAdmin: mockSupabase
 }));
