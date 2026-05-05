@@ -3,15 +3,22 @@ import { supabaseAdmin } from '../lib/supabase';
 import { sendWhatsApp } from '../lib/helpers';
 import jwt from 'jsonwebtoken';
 
-if (!process.env.JWT_SECRET) {
-  throw new Error('FATAL: JWT_SECRET não configurado no .env');
-}
-const JWT_SECRET = process.env.JWT_SECRET;
+const getJwtSecret = () => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        console.error('FATAL: JWT_SECRET não configurado no .env');
+        return null;
+    }
+    return secret;
+};
 
 export const requestClientLogin = async (req: Request, res: Response) => {
     try {
         const { shopId, phone, name, birthDate, justCheck } = req.body;
         if (!shopId || !phone) return res.status(400).json({ error: 'ShopId e Telefone são obrigatórios' });
+
+        const secret = getJwtSecret();
+        if (!secret) return res.status(500).json({ error: 'Erro de configuração no servidor (JWT_SECRET)' });
 
         const cleanPhone = phone.replace(/\D/g, '');
         
@@ -26,7 +33,7 @@ export const requestClientLogin = async (req: Request, res: Response) => {
             client = newClient;
         }
 
-        const token = jwt.sign({ clientId: client.id, shopId, phone: cleanPhone }, JWT_SECRET, { expiresIn: '15m' });
+        const token = jwt.sign({ clientId: client.id, shopId, phone: cleanPhone }, secret, { expiresIn: '15m' });
         const { data: shop, error: shopError } = await supabaseAdmin.from('shops').select('name, slug, whatsapp_instance').eq('id', shopId).single();
         
         if (shopError || !shop) {
@@ -58,7 +65,10 @@ export const validateClientToken = async (req: Request, res: Response) => {
         const { token } = req.body;
         if (!token) return res.status(400).json({ error: 'Token é obrigatório' });
 
-        const decoded = jwt.verify(token, JWT_SECRET) as any;
+        const secret = getJwtSecret();
+        if (!secret) return res.status(500).json({ error: 'Erro de configuração no servidor (JWT_SECRET)' });
+
+        const decoded = jwt.verify(token, secret) as any;
         
         const { data: client } = await supabaseAdmin.from('clients').select('*').eq('id', decoded.clientId).single();
         if (!client) return res.status(404).json({ error: 'Cliente não encontrado' });

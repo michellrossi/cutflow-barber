@@ -12,6 +12,16 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ==============================================================================
+-- SEÇÃO 0: LIMPEZA DE SISTEMAS LEGADOS
+-- ==============================================================================
+DROP TABLE IF EXISTS public.client_auth_tokens CASCADE;
+DROP FUNCTION IF EXISTS public.create_client_token CASCADE;
+DROP FUNCTION IF EXISTS public.validate_client_token CASCADE;
+DROP FUNCTION IF EXISTS public.generate_client_otp CASCADE;
+DROP FUNCTION IF EXISTS public.validate_client_otp CASCADE;
+
+
+-- ==============================================================================
 -- SEÇÃO 1: ALTERAÇÕES EM TABELAS EXISTENTES
 -- ==============================================================================
 
@@ -94,7 +104,9 @@ ALTER TABLE public.clients
 ALTER TABLE public.coupons
     ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP WITH TIME ZONE,
     ADD COLUMN IF NOT EXISTS is_loyalty_reward BOOLEAN DEFAULT false,
-    ADD COLUMN IF NOT EXISTS client_id UUID REFERENCES public.clients(id) ON DELETE CASCADE;
+    ADD COLUMN IF NOT EXISTS client_id UUID REFERENCES public.clients(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS max_uses INTEGER DEFAULT 1,
+    ADD COLUMN IF NOT EXISTS usage_count INTEGER DEFAULT 0;
 
 -- APPOINTMENTS
 ALTER TABLE public.appointments

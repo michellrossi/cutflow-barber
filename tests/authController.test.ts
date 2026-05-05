@@ -16,11 +16,16 @@ describe('authController', () => {
     vi.resetModules();
   });
 
-  it('deve lançar erro se JWT_SECRET não estiver configurado', async () => {
+  it('deve retornar 500 se JWT_SECRET não estiver configurado ao tentar logar', async () => {
     delete process.env.JWT_SECRET;
-    
-    // Import dinâmico para forçar a execução da verificação de ambiente
-    await expect(import('../controllers/authController')).rejects.toThrow('FATAL: JWT_SECRET não configurado no .env');
+    const { requestClientLogin } = await import('../controllers/authController');
+    const req = { body: { shopId: 's1', phone: '123' } } as any;
+    const res = makeRes();
+
+    await requestClientLogin(req, res);
+
+    expect(res.status).toHaveBeenCalledWith(500);
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Erro de configuração no servidor (JWT_SECRET)' }));
   });
 
   it('validateClientToken deve retornar 401 para token expirado ou inválido', async () => {
