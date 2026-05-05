@@ -7,7 +7,7 @@ import { Plus, Edit2, Trash2, CalendarCheck, Loader2, X, Clock, Image as ImageIc
 import { useToast } from '../../ui/ToastContext';
 
 export const ServicesPanel: React.FC = () => {
-    const { services, addService, updateService, removeService, settings, formatCurrencyBRL } = useShop();
+    const { services, addService, updateService, removeService, settings, formatCurrencyBRL, session } = useShop();
     const { showToast } = useToast();
 
     const [activeCategory, setActiveCategory] = useState('Todos');
@@ -62,7 +62,10 @@ export const ServicesPanel: React.FC = () => {
         try {
             const response = await fetch('/api/ai/generate-image', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                },
                 body: JSON.stringify({ serviceName: formData.name })
             });
 
