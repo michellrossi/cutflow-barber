@@ -72,7 +72,7 @@ export async function generateWhatsAppMessage(triggerId: string, data: any, shop
         .eq('shop_id', shopId)
         .eq('target', target)
         .eq('active', true);
-    
+
     if (effectiveTriggerId.length > 30) {
         query = query.eq('trigger_id', effectiveTriggerId);
     } else {

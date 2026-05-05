@@ -2,19 +2,19 @@ import { Request, Response } from 'express';
 import { supabaseAdmin } from '../lib/supabase';
 import { generateWhatsAppMessage, sendWhatsApp, logAutomatedMessage } from '../lib/helpers';
 
-export const sendConfirmationClient = async (req: Request, res: Response) => {
+export const sendAppointmentConfirmation = async (req: Request, res: Response) => {
     try {
         const { appointmentId } = req.body;
         const { data: apt, error } = await supabaseAdmin
             .from('appointments')
-            .select('*, professionals(name), shops(id, name, whatsapp_instance, whatsapp_connected)')
+            .select('*, professionals(name, phone), shops(id, name, whatsapp_instance, whatsapp_connected)')
             .eq('id', appointmentId)
             .single();
 
-        if (error || !apt) return res.status(404).json({ error: 'Agendamento não encontrado' });
-
         const shop = Array.isArray(apt.shops) ? apt.shops[0] : apt.shops;
         if (!shop?.whatsapp_connected) return res.status(400).json({ error: 'WhatsApp da loja não conectado' });
+
+        const pro = Array.isArray(apt.professionals) ? apt.professionals[0] : apt.professionals;
 
         // Busca nomes dos serviços
         const { data: svcs } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
@@ -23,27 +23,43 @@ export const sendConfirmationClient = async (req: Request, res: Response) => {
         const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
         const formattedTime = apt.time.substring(0, 5);
 
-        const msg = await generateWhatsAppMessage('immediate_confirmation', {
+        const dataForMessage = {
             clientName: apt.client_name,
             services: servicesNames,
             date: formattedDate,
             time: formattedTime,
-            proName: apt.professionals?.name || "seu barbeiro",
+            proName: pro?.name || "seu barbeiro",
             shopName: shop.name
-        }, shop.id);
+        };
 
-        if (!msg) return res.status(400).json({ error: 'Template de confirmação não encontrado' });
-
-        const ok = await sendWhatsApp(apt.client_phone, msg, shop.whatsapp_instance);
-        
-        if (ok) {
-            await logAutomatedMessage(shop.id, apt.client_name, apt.client_phone, 'Confirmação Imediata', 'sent');
-            res.json({ success: true });
-        } else {
-            await logAutomatedMessage(shop.id, apt.client_name, apt.client_phone, 'Confirmação Imediata', 'failed');
-            res.status(500).json({ error: 'Falha ao enviar WhatsApp' });
+        // 1. Enviar para o Cliente
+        const msgClient = await generateWhatsAppMessage('immediate_confirmation', dataForMessage, shop.id, 'client');
+        let clientOk = false;
+        if (msgClient) {
+            clientOk = await sendWhatsApp(apt.client_phone, msgClient, shop.whatsapp_instance);
+            if (clientOk) {
+                await logAutomatedMessage(shop.id, apt.client_name, apt.client_phone, 'Confirmação Imediata (Cliente)', 'sent');
+            } else {
+                await logAutomatedMessage(shop.id, apt.client_name, apt.client_phone, 'Confirmação Imediata (Cliente)', 'failed');
+            }
         }
+
+        // 2. Enviar para o Profissional (se tiver telefone)
+        if (pro?.phone) {
+            const msgPro = await generateWhatsAppMessage('immediate_confirmation', dataForMessage, shop.id, 'professional');
+            if (msgPro) {
+                const proOk = await sendWhatsApp(pro.phone, msgPro, shop.whatsapp_instance);
+                if (proOk) {
+                    await logAutomatedMessage(shop.id, pro.name, pro.phone, 'Notificação Profissional', 'sent');
+                } else {
+                    await logAutomatedMessage(shop.id, pro.name, pro.phone, 'Notificação Profissional', 'failed');
+                }
+            }
+        }
+
+        res.json({ success: clientOk });
     } catch (e: any) {
+        console.error("Erro em sendAppointmentConfirmation:", e);
         res.status(500).json({ error: e.message });
     }
 };
