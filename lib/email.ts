@@ -1,12 +1,27 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resend: Resend | null = null;
+
+const getResendClient = () => {
+    if (!resend) {
+        const apiKey = process.env.RESEND_API_KEY;
+        if (!apiKey) {
+            console.warn('[Email] RESEND_API_KEY não configurada. E-mails não serão enviados.');
+            return null;
+        }
+        resend = new Resend(apiKey);
+    }
+    return resend;
+};
 
 export const sendWelcomeEmail = async (email: string, name: string) => {
     try {
+        const client = getResendClient();
+        if (!client) return false;
+
         const from = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
         
-        await resend.emails.send({
+        await client.emails.send({
             from,
             to: email,
             subject: 'Bem-vindo ao CutFlow! 💈',
