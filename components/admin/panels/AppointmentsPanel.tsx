@@ -22,7 +22,8 @@ export const AppointmentsPanel: React.FC = () => {
         subscriptionPlans,
         cashSessions,
         addCashMovement,
-        processLoyalty
+        processLoyalty,
+        blockedSlots
     } = useShop();
     const { showToast } = useToast();
 
@@ -185,11 +186,85 @@ export const AppointmentsPanel: React.FC = () => {
         }
 
         setIsSaving(true);
+
+        const timeToMins = (t: string) => {
+            const [h, m] = t.split(':').map(Number);
+            return h * 60 + m;
+        };
+
+        const totalDuration = formData.serviceIds.reduce((acc, id) => {
+            const s = services.find(srv => srv.id === id);
+            return acc + (s ? s.duration : 0);
+        }, 0);
+
+        const targetTime = timeToMins(formData.time);
+        const serviceEndTime = targetTime + totalDuration;
+        let finalProId = formData.professionalId;
+
+        // Auto-atribuir profissional se "Qualquer um" (vazio)
+        if (!finalProId) {
+            const getDayN = (d: string) => {
+                const date = new Date(d + 'T12:00:00');
+                const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                return days[date.getDay()];
+            };
+
+            const dayName = getDayN(formData.date);
+
+            for (const pro of professionals) {
+                const schedule = pro.workSchedule ? (pro.workSchedule as any)[dayName] : null;
+                if (!schedule || !schedule.active) continue;
+
+                const workStart = timeToMins(schedule.start);
+                const workEnd = timeToMins(schedule.end);
+                const lunchStart = timeToMins(schedule.lunchStart);
+                const lunchEnd = timeToMins(schedule.lunchEnd);
+
+                if (targetTime < workStart || serviceEndTime > workEnd) continue;
+                if (targetTime < lunchEnd && serviceEndTime > lunchStart) continue;
+
+                // Check blocks
+                const proBlocks = blockedSlots.filter(b => b.professionalId === pro.id && b.date === formData.date);
+                let isBlocked = false;
+                for (const block of proBlocks) {
+                    if ((targetTime >= timeToMins(block.startTime) && targetTime < timeToMins(block.endTime)) || 
+                        (serviceEndTime > timeToMins(block.startTime) && serviceEndTime <= timeToMins(block.endTime)) ||
+                        (targetTime <= timeToMins(block.startTime) && serviceEndTime >= timeToMins(block.endTime))) {
+                        isBlocked = true; break;
+                    }
+                }
+                if (isBlocked) continue;
+
+                // Check appointments
+                const proAppts = appointments.filter(a => a.professionalId === pro.id && a.date === formData.date && a.status !== 'cancelled' && a.status !== 'noshow');
+                let hasConflict = false;
+                for (const apt of proAppts) {
+                    const aptStart = timeToMins(apt.time);
+                    const aptDuration = services.filter(s => apt.serviceIds.includes(s.id)).reduce((acc, s) => acc + s.duration, 0) || 45;
+                    const aptEnd = aptStart + aptDuration;
+                    if (targetTime < aptEnd && serviceEndTime > aptStart) {
+                        hasConflict = true; break;
+                    }
+                }
+
+                if (!hasConflict) {
+                    finalProId = pro.id;
+                    break;
+                }
+            }
+        }
+
+        if (!finalProId) {
+            showToast('Nenhum profissional disponível para este horário.', 'error');
+            setIsSaving(false);
+            return;
+        }
+
         const { success, error } = await createManualAppointment({
             clientName: formData.clientName,
             clientPhone: formData.clientPhone || '(00) 00000-0000',
             serviceIds: formData.serviceIds,
-            professionalId: formData.professionalId || null,
+            professionalId: finalProId,
             date: formData.date,
             time: formData.time,
             totalValue: calculateTotal(),

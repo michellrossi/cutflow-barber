@@ -30,7 +30,7 @@ interface Message {
 }
 
 export const InsightPanel: React.FC = () => {
-    const { appointments, professionals, clients, services, settings, shop } = useShop();
+    const { appointments, professionals, clients, services, settings, shop, session } = useShop();
     const [messages, setMessages] = useState<Message[]>([
         { role: 'assistant', content: `Olá! Sou seu assistente de inteligência de negócios. Posso analisar os dados da sua barbearia (${settings.name}) e te dar insights sobre performance, finanças e clientes. O que gostaria de saber hoje?` }
     ]);
@@ -87,7 +87,10 @@ export const InsightPanel: React.FC = () => {
 
             const response = await fetch('/api/admin/insights', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                },
                 body: JSON.stringify({
                     prompt: input,
                     context: contextData,

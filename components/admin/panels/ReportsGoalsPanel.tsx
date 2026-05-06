@@ -125,6 +125,9 @@ const StatusChip: React.FC<{ pct: number }> = ({ pct }) => {
 
 // ── Main Panel ────────────────────────────────────────────────────────────────
 export const ReportsGoalsPanel: React.FC<Props> = ({ dateRange }) => {
+  const { appointments, professionals, goals } = useShop();
+  const today = new Date().toISOString().split('T')[0];
+
   const appointmentsList = Array.isArray(appointments) ? appointments : [];
   const professionalsList = Array.isArray(professionals) ? professionals : [];
   const goalsList = Array.isArray(goals) ? goals : [];

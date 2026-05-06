@@ -12,7 +12,7 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
         messageTemplates, addMessageTemplate, updateMessageTemplate, removeMessageTemplate,
         messageCategories, addMessageCategory, removeMessageCategory,
         automationTriggers, addAutomationTrigger, updateAutomationTrigger, removeAutomationTrigger,
-        settings, professionals, services, shop, botPausedCount,
+        settings, professionals, services, shop, botPausedCount, session,
         getWhatsAppQRCode, getWhatsAppStatus, disconnectWhatsApp
     } = useShop();
     const { showToast } = useToast();
@@ -185,7 +185,10 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
         try {
             const response = await fetch('/api/ai/generate-template', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                },
                 body: JSON.stringify({
                     trigger: triggerName,
                     shopName: settings.name || 'Nossa Barbearia',
@@ -221,7 +224,10 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
         try {
             const response = await fetch('/api/notify/test', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session?.access_token || ''}`
+                },
                 body: JSON.stringify({ phone: testPhone, templateId })
             });
             const data = await response.json();

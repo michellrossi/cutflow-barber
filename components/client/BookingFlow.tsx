@@ -112,6 +112,12 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         }
     };
 
+    const handleRemoveCoupon = () => {
+        setAppliedCoupon(null);
+        setDiscountAmount(0);
+        setCouponCode('');
+    };
+
     const handleFinish = async (e: React.MouseEvent) => {
         e.preventDefault();
         if (!customerInfo.name || !customerInfo.phone || !customerInfo.birthDate) {
@@ -122,14 +128,42 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         setLoading(true);
         setError(null);
 
+        const timeToMins = (t: string) => {
+            const [h, m] = t.split(':').map(Number);
+            return h * 60 + m;
+        };
+
+        const targetTime = timeToMins(selectedTime);
+        const serviceEndTime = targetTime + totalDuration;
+
+        // Verifica conflito do CLIENTE
+        const clientAppts = appointments.filter(a => 
+            (a.clientPhone === customerInfo.phone || (currentClient && a.clientId === currentClient.id)) && 
+            a.date === selectedDate && 
+            a.status !== 'cancelled' && 
+            a.status !== 'noshow'
+        );
+
+        let clientHasConflict = false;
+        for (const apt of clientAppts) {
+            const aptStart = timeToMins(apt.time);
+            const aptDuration = services.filter(s => apt.serviceIds.includes(s.id)).reduce((acc, s) => acc + s.duration, 0) || 45;
+            const aptEnd = aptStart + aptDuration;
+            if (targetTime < aptEnd && serviceEndTime > aptStart) {
+                clientHasConflict = true; break;
+            }
+        }
+
+        if (clientHasConflict) {
+            setError('Você já possui um agendamento neste horário.');
+            setLoading(false);
+            return;
+        }
+
         let finalProId = selectedProId;
 
         // Auto-atribuir profissional se "Sem preferência"
         if (!finalProId) {
-            const timeToMins = (t: string) => {
-                const [h, m] = t.split(':').map(Number);
-                return h * 60 + m;
-            };
             const getDayN = (d: string) => {
                 const date = new Date(d + 'T12:00:00');
                 const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
@@ -137,8 +171,6 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
             };
 
             const dayName = getDayN(selectedDate);
-            const targetTime = timeToMins(selectedTime);
-            const serviceEndTime = targetTime + totalDuration;
 
             for (const pro of professionals) {
                 const schedule = pro.workSchedule ? (pro.workSchedule as any)[dayName] : null;
@@ -206,13 +238,6 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         try {
             const result = await addAppointment(appointment);
             if (result.success) {
-                if (result.data?.id) {
-                    fetch('/api/notify/confirmation', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ appointmentId: result.data.id })
-                    }).catch(err => console.error("Erro ao disparar notificação:", err));
-                }
                 setStep('success');
             } else {
                 setError(result.error || 'Erro ao agendar.');
@@ -230,6 +255,9 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         setSelectedProId(null);
         setSelectedDate('');
         setSelectedTime('');
+        setCouponCode('');
+        setAppliedCoupon(null);
+        setDiscountAmount(0);
         setError(null);
     };
 
@@ -643,6 +671,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                                                 total={total}
                                                 handleFinish={handleFinish}
                                                 setStep={setStep}
+                                                handleRemoveCoupon={handleRemoveCoupon}
                                                 loading={loading}
                                                 error={error}
                                             />

@@ -26,9 +26,9 @@ router.get('/cron', cronGuard, async (req, res) => {
     }
 });
 
-router.post('/confirmation-client', authenticate, notifyController.sendConfirmationClient);
+router.post('/confirmation-client', authenticate, notifyController.sendAppointmentConfirmation);
 // Rota PÚBLICA — chamada pelo BookingFlow do cliente (sem autenticação)
-router.post('/confirmation', notifyController.sendConfirmationClient);
+router.post('/confirmation', notifyController.sendAppointmentConfirmation);
 router.post('/test', authenticate, notifyController.testTemplate);
 
 export default router;

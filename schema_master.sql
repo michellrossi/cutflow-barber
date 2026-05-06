@@ -353,7 +353,7 @@ DECLARE
     v_appointment_id UUID;
     v_daily_count INTEGER;
 BEGIN
-    -- Verifica limite diário (Usa SECURITY DEFINER para garantir acesso à tabela)
+    -- 1. Verifica limite diário
     SELECT COUNT(*) INTO v_daily_count FROM public.appointments
     WHERE shop_id = p_shop_id
     AND (client_phone = p_client_phone OR (p_client_id IS NOT NULL AND client_id = p_client_id))
@@ -361,6 +361,34 @@ BEGIN
 
     IF v_daily_count >= 10 THEN
         RETURN json_build_object('status', 'error', 'message', 'Limite diário de agendamentos atingido.');
+    END IF;
+
+    -- 2. Verifica conflito do CLIENTE (Não pode agendar 2 coisas no mesmo horário)
+    IF EXISTS (
+        SELECT 1 FROM public.appointments
+        WHERE shop_id = p_shop_id
+        AND (client_phone = p_client_phone OR (p_client_id IS NOT NULL AND client_id = p_client_id))
+        AND date = p_date
+        AND time = p_time
+        AND status NOT IN ('cancelled', 'noshow')
+    ) THEN
+        RETURN json_build_object('status', 'error', 'message', 'Você já possui um agendamento neste horário.');
+    END IF;
+
+    -- 3. Validação e Consumo de Cupom
+    IF p_coupon_code IS NOT NULL AND p_coupon_code <> '' THEN
+        UPDATE public.coupons 
+        SET usage_count = usage_count + 1
+        WHERE code = p_coupon_code 
+          AND shop_id = p_shop_id 
+          AND active = true 
+          AND (max_uses IS NULL OR usage_count < max_uses)
+          AND (expires_at IS NULL OR expires_at > NOW());
+
+        IF NOT FOUND THEN
+            -- Se não atualizou, é porque o cupom é inválido, expirado ou atingiu o limite
+            RETURN json_build_object('status', 'error', 'message', 'Cupom inválido, expirado ou limite de uso atingido.');
+        END IF;
     END IF;
 
     BEGIN
@@ -393,7 +421,8 @@ BEGIN
         RETURN json_build_object('id', v_appointment_id, 'status', 'success');
     EXCEPTION 
         WHEN unique_violation THEN
-            RETURN json_build_object('status', 'conflict', 'message', 'Este horário já foi reservado.');
+            -- Caso o profissional tenha sido reservado nesse meio tempo
+            RETURN json_build_object('status', 'conflict', 'message', 'Este horário já foi reservado para este profissional.');
         WHEN OTHERS THEN
             RETURN json_build_object('status', 'error', 'message', SQLERRM);
     END;
@@ -766,7 +795,12 @@ CREATE POLICY "Dono_Gere_Agendamentos" ON public.appointments FOR ALL USING (EXI
 DROP POLICY IF EXISTS "Criar Agendamento Paywall" ON public.appointments;
 CREATE POLICY "Criar Agendamento Paywall" ON public.appointments FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.shops WHERE id = appointments.shop_id AND plan IN ('active', 'trial')));
 DROP POLICY IF EXISTS "Publico_Le_Agendamentos" ON public.appointments;
-CREATE POLICY "Publico_Le_Agendamentos" ON public.appointments FOR SELECT USING (EXISTS (SELECT 1 FROM public.shops WHERE id = appointments.shop_id AND owner_id = auth.uid()) OR EXISTS (SELECT 1 FROM public.professionals WHERE user_id = auth.uid() AND shop_id = appointments.shop_id));
+CREATE POLICY "Publico_Le_Agendamentos" ON public.appointments FOR SELECT USING (
+    EXISTS (SELECT 1 FROM public.shops WHERE id = appointments.shop_id AND owner_id = auth.uid()) 
+    OR EXISTS (SELECT 1 FROM public.professionals WHERE user_id = auth.uid() AND shop_id = appointments.shop_id)
+    OR client_phone = current_setting('request.jwt.claims', true)::json->>'phone'
+    OR client_phone = current_setting('app.current_client_phone', true)
+);
 DROP POLICY IF EXISTS "Servidor_Atualiza_Flags" ON public.appointments;
 -- Nota: O servidor usa service_role, que ignora RLS. Donos já têm permissão via "Dono_Gere_Agendamentos".
 

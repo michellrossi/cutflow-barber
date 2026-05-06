@@ -100,7 +100,7 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
       });
 
       if (error) return { success: false, error: error.message };
-      if (data?.status === 'error') return { success: false, error: data.message };
+      if (data?.status === 'error' || data?.status === 'conflict') return { success: false, error: data.message };
 
       await ensureClientExists(shopId, cleanClientName, cleanClientPhone, apt.clientBirthDate);
       await reloadAppointments(shopId);
@@ -116,17 +116,13 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
         .single();
 
       if (latestApt?.id) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.access_token) {
-          fetch('/api/notify/confirmation-client', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.access_token}`,
-            },
-            body: JSON.stringify({ appointmentId: latestApt.id }),
-          }).catch(() => {});
-        }
+        fetch('/api/notify/confirmation', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ appointmentId: latestApt.id }),
+        }).catch(() => {});
       }
 
       return { success: true, data: latestApt };

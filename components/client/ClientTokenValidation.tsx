@@ -15,7 +15,7 @@ export const ClientTokenValidation: React.FC = () => {
     useEffect(() => {
         const validate = async () => {
             if (!token || validationStarted.current) return;
-            
+
             // Check if this token is already being validated in this session
             if (sessionStorage.getItem(`validating_${token}`)) {
                 console.log("[Auth] Token já está sendo validado ou já foi validado:", token);
@@ -24,10 +24,10 @@ export const ClientTokenValidation: React.FC = () => {
 
             validationStarted.current = true;
             sessionStorage.setItem(`validating_${token}`, 'true');
-            
+
             try {
                 const result = await (validateClientToken(token) as any);
-                
+
                 if (result.success) {
                     setStatus('success');
                     const slug = result.slug || shop?.slug;
@@ -62,7 +62,7 @@ export const ClientTokenValidation: React.FC = () => {
                 {status === 'loading' && (
                     <div className="space-y-4">
                         <Loader2 className="animate-spin text-orange-500 mx-auto" size={48} />
-                        <h2 className="text-xl font-bold text-white">Validando seu acesso...</h2>
+                        <h2 className="text-xl font-bold text-black">Validando seu acesso...</h2>
                         <p className="text-slate-400">Só um momento, estamos preparando seu perfil.</p>
                     </div>
                 )}
@@ -72,7 +72,7 @@ export const ClientTokenValidation: React.FC = () => {
                         <div className="w-16 h-16 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center mx-auto">
                             <CheckCircle2 size={32} />
                         </div>
-                        <h2 className="text-xl font-bold text-white">Acesso Concedido!</h2>
+                        <h2 className="text-xl font-bold text-black">Acesso Concedido!</h2>
                         <p className="text-slate-400">Bem-vindo de volta! Redirecionando...</p>
                     </div>
                 )}

@@ -47,9 +47,14 @@ export const SettingsProvider: React.FC<{ shopId: string; children: ReactNode }>
         ? 'http://localhost:3000'
         : `https://${window.location.hostname}`;
 
+      const { data: { session } } = await supabase.auth.getSession();
+
       const res = await fetch(`${serverUrl}/api/whatsapp/qrcode`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
         body: JSON.stringify({ shopId })
       });
       return await res.json();
@@ -64,9 +69,14 @@ export const SettingsProvider: React.FC<{ shopId: string; children: ReactNode }>
         ? 'http://localhost:3000'
         : `https://${window.location.hostname}`;
 
+      const { data: { session } } = await supabase.auth.getSession();
+
       const res = await fetch(`${serverUrl}/api/whatsapp/status`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
         body: JSON.stringify({ shopId })
       });
       return await res.json();
@@ -81,9 +91,14 @@ export const SettingsProvider: React.FC<{ shopId: string; children: ReactNode }>
         ? 'http://localhost:3000'
         : `https://${window.location.hostname}`;
 
+      const { data: { session } } = await supabase.auth.getSession();
+
       const res = await fetch(`${serverUrl}/api/whatsapp/disconnect`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`
+        },
         body: JSON.stringify({ shopId })
       });
       if (res.ok) return { success: true };
