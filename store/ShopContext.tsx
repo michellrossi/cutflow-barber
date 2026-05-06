@@ -3,7 +3,7 @@ import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, Sh
 import { supabase } from '../supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import {
-    mapShop, mapSettings, mapAutomationTrigger, mapClient,
+    mapShop, mapAutomationTrigger, mapClient,
     mapService, mapProfessional, mapCoupon, mapAppointment,
     mapBlockedSlot, mapMessageTemplate, mapMessageCategory,
     mapSubscriptionPlan, mapClientSubscription,
@@ -11,7 +11,6 @@ import {
     type ShopRow,
     type GoalRow,
     type ProductRow,
-    type SettingsRow,
 } from './mappers';
 
 import {
@@ -75,21 +74,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 
     const ensureClientExists = async (shopId: string, name: string, phone: string, birthDate?: string) => {
-        const { data: existing } = await supabase
-            .from('clients')
-            .select('id')
-            .eq('shop_id', shopId)
-            .eq('phone', phone)
-            .maybeSingle();
-
-        if (!existing) {
-            await supabase.from('clients').insert({
-                shop_id: shopId,
-                name: name,
-                phone: phone,
-                birth_date: birthDate
-            });
-        }
+        await supabase.from('clients').upsert({
+            shop_id: shopId,
+            name: name,
+            phone: phone,
+            birth_date: birthDate
+        }, { onConflict: 'shop_id,phone', ignoreDuplicates: true });
     };
 
     // --- Core Fetch Logic (Heavy - Use sparingly) ---
@@ -122,7 +112,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Consolidar myShops (evitando duplicatas)
             const allShopsMap = new Map();
             ownedShops?.forEach(s => allShopsMap.set(s.id, mapShop(s)));
-            proShops.forEach((s: any) => {
+            proShops.forEach((s: ShopRow) => {
                 if (!allShopsMap.has(s.id)) {
                     allShopsMap.set(s.id, mapShop(s));
                 }

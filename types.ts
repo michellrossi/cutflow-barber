@@ -298,7 +298,6 @@ export interface ShopState {
   cashSessions?: CashSession[];
   cashFlowEntries?: CashFlowEntry[];
   blockedSlots?: BlockedSlot[];
-  settings: ShopSettings;
   trialStatus: 'active' | 'expired' | 'paid';
   daysRemaining: number;
   theme: 'dark' | 'light';

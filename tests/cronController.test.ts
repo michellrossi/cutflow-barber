@@ -31,7 +31,6 @@ describe('cronController', () => {
         vi.useFakeTimers();
 
         // Setup padrão chainable
-
         mockSupabase.select.mockReturnThis();
         mockSupabase.delete.mockReturnThis();
         mockSupabase.lt.mockReturnThis();
@@ -43,7 +42,12 @@ describe('cronController', () => {
         mockSupabase.limit.mockReturnThis();
         mockSupabase.single.mockResolvedValue({ data: null, error: null });
         mockSupabase.maybeSingle.mockResolvedValue({ data: null, error: null });
-        (mockSupabase as any).then = (resolve: any) => resolve({ data: [], error: null });
+        
+        // Mock padrão para queries sem dados
+        mockSupabase.from.mockImplementation(() => ({
+            ...mockSupabase,
+            then: (resolve: any) => resolve({ data: [], error: null })
+        }));
     });
 
     afterEach(() => {
@@ -63,13 +67,6 @@ describe('cronController', () => {
             shops: { name: 'Shop 1', whatsapp_instance: 'inst1', whatsapp_connected: true }
         }];
         
-        let callCount = 0;
-        (mockSupabase as any).then = (resolve: any) => {
-            callCount++;
-            if (callCount >= 6) return resolve({ data: mockApts, error: null });
-            return resolve({ data: [], error: null });
-        };
-        
         mockSupabase.from.mockImplementation((table: string) => {
             if (table === 'settings') {
                 return { ...mockSupabase, then: (resolve: any) => resolve({ data: [{ shop_id: 'shop1', phone: '123' }], error: null }) };
@@ -77,7 +74,10 @@ describe('cronController', () => {
             if (table === 'services') {
                  return { ...mockSupabase, then: (resolve: any) => resolve({ data: [{ name: 'Corte' }], error: null }) };
             }
-            return mockSupabase;
+            if (table === 'appointments') {
+                return { ...mockSupabase, then: (resolve: any) => resolve({ data: mockApts, error: null }) };
+            }
+            return { ...mockSupabase, then: (resolve: any) => resolve({ data: [], error: null }) };
         });
 
         await expect(runCronLogic()).resolves.not.toThrow();
@@ -94,7 +94,12 @@ describe('cronController', () => {
             shops: { id: 'shop1', name: 'Shop 1', whatsapp_instance: 'inst1', whatsapp_connected: true }
         };
 
-        (mockSupabase as any).then = (resolve: any) => resolve({ data: [mockApt], error: null });
+        mockSupabase.from.mockImplementation((table: string) => {
+            if (table === 'appointments') {
+                return { ...mockSupabase, then: (resolve: any) => resolve({ data: [mockApt], error: null }) };
+            }
+            return { ...mockSupabase, then: (resolve: any) => resolve({ data: [], error: null }) };
+        });
 
         await runCronLogic();
         expect(mockSupabase.update).toHaveBeenCalled();
@@ -111,7 +116,12 @@ describe('cronController', () => {
             shops: { id: 'shop1', name: 'Shop 1', whatsapp_instance: 'inst1', whatsapp_connected: true }
         };
 
-        (mockSupabase as any).then = (resolve: any) => resolve({ data: [mockApt], error: null });
+        mockSupabase.from.mockImplementation((table: string) => {
+            if (table === 'appointments') {
+                return { ...mockSupabase, then: (resolve: any) => resolve({ data: [mockApt], error: null }) };
+            }
+            return { ...mockSupabase, then: (resolve: any) => resolve({ data: [], error: null }) };
+        });
 
         await runCronLogic();
         expect(mockSupabase.update).toHaveBeenCalled();
@@ -121,13 +131,16 @@ describe('cronController', () => {
         const mockNow = new Date('2026-05-04T10:00:00-03:00');
         vi.setSystemTime(mockNow);
 
-        mockSupabase.rpc.mockReturnThis();
-        (mockSupabase as any).then = (resolve: any) => resolve({ data: [{ id: 'c1', name: 'Bday', phone: '123', shop_id: 's1' }], error: null });
+        mockSupabase.rpc.mockImplementation(() => ({
+            ...mockSupabase,
+            then: (resolve: any) => resolve({ data: [{ id: 'c1', name: 'Bday', phone: '123', shop_id: 's1' }], error: null })
+        }));
+
         mockSupabase.from.mockImplementation((table: string) => {
             if (table === 'shops') {
                 return { ...mockSupabase, then: (resolve: any) => resolve({ data: [{ id: 's1', name: 'S1', whatsapp_instance: 'i1', whatsapp_connected: true }], error: null }) };
             }
-            return mockSupabase;
+            return { ...mockSupabase, then: (resolve: any) => resolve({ data: [], error: null }) };
         });
 
         await runCronLogic();

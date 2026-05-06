@@ -70,10 +70,18 @@ export const sendAppointmentConfirmation = async (req: Request, res: Response) =
 export const testTemplate = async (req: Request, res: Response) => {
     try {
         const { phone, templateId } = req.body;
+        const user = req.user;
+        if (!user) return res.status(401).json({ error: 'Não autorizado' });
+
         const { data: template, error } = await supabaseAdmin.from('message_templates').select('*').eq('id', templateId).single();
         if (error || !template) return res.status(404).json({ error: 'Template não encontrado' });
 
-        const { data: shop } = await supabaseAdmin.from('shops').select('name, whatsapp_instance').eq('id', template.shop_id).single();
+        // Verificação de permissão: o usuário deve ser o dono da loja do template
+        const { data: shop } = await supabaseAdmin.from('shops').select('name, owner_id, whatsapp_instance').eq('id', template.shop_id).single();
+        
+        if (!shop || shop.owner_id !== user.id) {
+            return res.status(403).json({ error: 'Sem permissão para testar este template.' });
+        }
 
         let content = template.content;
         content = content

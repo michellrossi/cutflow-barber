@@ -8,7 +8,7 @@ import { sanitize } from '../helpers';
 interface AppointmentContextType {
   appointments: Appointment[];
   reloadAppointments: (sid: string) => Promise<void>;
-  addAppointment: (apt: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult<any>;
+  addAppointment: (apt: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult<unknown>;
   createManualAppointment: (apt: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>) => MutationResult;
   updateAppointmentStatus: (id: string, status: Appointment['status'], client?: Client) => MutationResult;
   updateAppointmentTotalValue: (id: string, newTotal: number) => MutationResult;
@@ -62,24 +62,15 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
   }, [shopId]);
 
   const ensureClientExists = async (sid: string, name: string, phone: string, birthDate?: string) => {
-    const { data: existing } = await supabase
-      .from('clients')
-      .select('id')
-      .eq('shop_id', sid)
-      .eq('phone', phone)
-      .maybeSingle();
-
-    if (!existing) {
-      await supabase.from('clients').insert({
-        shop_id: sid,
-        name,
-        phone,
-        birth_date: birthDate
-      });
-    }
+    await supabase.from('clients').upsert({
+      shop_id: sid,
+      name,
+      phone,
+      birth_date: birthDate
+    }, { onConflict: 'shop_id,phone', ignoreDuplicates: true });
   };
 
-  const addAppointment = async (apt: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>): MutationResult<any> => {
+  const addAppointment = async (apt: Omit<Appointment, 'id' | 'createdAt' | 'shopId'>): MutationResult<unknown> => {
     try {
       if (!shopId) throw new Error("Loja não identificada.");
       const cleanClientName = sanitize(apt.clientName);
@@ -96,7 +87,7 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
         p_time: apt.time,
         p_total_value: apt.totalValue,
         p_coupon_code: apt.couponCode ? sanitize(apt.couponCode) : null,
-        p_client_id: (apt as any).clientId || null
+        p_client_id: (apt as unknown as any).clientId || null
       });
 
       if (error) return { success: false, error: error.message };
@@ -126,8 +117,9 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
       }
 
       return { success: true, data: latestApt };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao adicionar agendamento';
+      return { success: false, error: message };
     }
   };
 
@@ -170,8 +162,9 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
       }
 
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao criar agendamento manual';
+      return { success: false, error: message };
     }
   };
 
@@ -196,8 +189,9 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
       }
 
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao atualizar status';
+      return { success: false, error: message };
     }
   };
 
@@ -211,8 +205,9 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
         throw error;
       }
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao atualizar valor total';
+      return { success: false, error: message };
     }
   };
 
@@ -234,8 +229,9 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
         throw error;
       }
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao atualizar método de pagamento';
+      return { success: false, error: message };
     }
   };
 

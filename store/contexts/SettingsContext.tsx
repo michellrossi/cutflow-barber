@@ -3,7 +3,7 @@ import { ShopSettings } from '../../types';
 import { MutationResult } from '../types';
 import { supabase } from '../../supabaseClient';
 import { mapSettings } from '../mappers';
-import { INITIAL_STATE } from '../helpers';
+import { DEFAULT_SETTINGS } from '../helpers';
 
 interface SettingsContextType {
   settings: ShopSettings;
@@ -16,14 +16,14 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export const SettingsProvider: React.FC<{ shopId: string; children: ReactNode }> = ({ shopId, children }) => {
-  const [settings, setSettings] = useState<ShopSettings>(INITIAL_STATE.settings);
+  const [settings, setSettings] = useState<ShopSettings>(DEFAULT_SETTINGS);
 
   useEffect(() => {
     const loadSettings = async () => {
       if (!shopId) return;
       const { data } = await supabase.from('settings').select('*').eq('shop_id', shopId).single();
       if (data) setSettings(mapSettings(data));
-      else setSettings({ ...INITIAL_STATE.settings, shopId });
+      else setSettings({ ...DEFAULT_SETTINGS, shopId });
     };
 
     loadSettings();
@@ -36,8 +36,9 @@ export const SettingsProvider: React.FC<{ shopId: string; children: ReactNode }>
       const { error } = await supabase.from('settings').update(newSettings).eq('shop_id', shopId);
       if (error) throw error;
       return { success: true };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao atualizar configurações';
+      return { success: false, error: message };
     }
   };
 
@@ -58,8 +59,9 @@ export const SettingsProvider: React.FC<{ shopId: string; children: ReactNode }>
         body: JSON.stringify({ shopId })
       });
       return await res.json();
-    } catch (e: any) {
-      return { error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao gerar QR Code';
+      return { error: message };
     }
   };
 
@@ -80,8 +82,9 @@ export const SettingsProvider: React.FC<{ shopId: string; children: ReactNode }>
         body: JSON.stringify({ shopId })
       });
       return await res.json();
-    } catch (e: any) {
-      return { connected: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao verificar status';
+      return { connected: false, error: message };
     }
   };
 
@@ -104,8 +107,9 @@ export const SettingsProvider: React.FC<{ shopId: string; children: ReactNode }>
       if (res.ok) return { success: true };
       const data = await res.json();
       return { success: false, error: data.error };
-    } catch (e: any) {
-      return { success: false, error: e.message };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao desconectar';
+      return { success: false, error: message };
     }
   };
 
