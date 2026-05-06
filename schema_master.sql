@@ -804,6 +804,11 @@ CREATE POLICY "Publico_Le_Agendamentos" ON public.appointments FOR SELECT USING 
     OR client_phone = current_setting('app.current_client_phone', true)
 );
 DROP POLICY IF EXISTS "Servidor_Atualiza_Flags" ON public.appointments;
+DROP POLICY IF EXISTS "Cliente_Cancela_Proprio" ON public.appointments;
+CREATE POLICY "Cliente_Cancela_Proprio" ON public.appointments FOR UPDATE USING (
+    client_phone = current_setting('request.jwt.claims', true)::json->>'phone'
+    OR client_phone = current_setting('app.current_client_phone', true)
+);
 -- Nota: O servidor usa service_role, que ignora RLS. Donos já têm permissão via "Dono_Gere_Agendamentos".
 
 -- Clientes

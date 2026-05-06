@@ -194,7 +194,8 @@ export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void 
                                              apt.status === 'cancelled' ? 'Cancelado' :
                                              'Agendado'}
                                         </div>
-                                        {(apt.status === 'scheduled' || apt.status === 'confirmed') && (
+                                        {(apt.status === 'scheduled' || apt.status === 'confirmed') && 
+                                          new Date(apt.date + 'T' + apt.time) > new Date() && (
                                             <div className="mt-2">
                                                 <button 
                                                     onClick={() => handleCancelClick(apt.id)}
