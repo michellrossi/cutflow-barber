@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { supabaseAdmin } from '../lib/supabase';
 import { sendWhatsApp } from '../lib/helpers';
+import { sendWelcomeEmail } from '../lib/email';
 import jwt from 'jsonwebtoken';
 
 const getJwtSecret = () => {
@@ -79,5 +80,27 @@ export const validateClientToken = async (req: Request, res: Response) => {
         res.json({ success: true, client, slug: shop?.slug, session: { token } });
     } catch (e: unknown) {
         res.status(401).json({ error: 'Token inválido ou expirado' });
+    }
+};
+
+export const triggerWelcomeEmail = async (req: Request, res: Response) => {
+    try {
+        const { email, name, shopId } = req.body;
+        if (!email || !name || !shopId) return res.status(400).json({ error: 'Dados incompletos' });
+
+        // Verifica se já enviou via query rápida
+        const { data: shop } = await supabaseAdmin.from('shops').select('welcome_email_sent').eq('id', shopId).single();
+        if (shop?.welcome_email_sent) return res.json({ success: true, alreadySent: true });
+
+        const sent = await sendWelcomeEmail(email, name);
+        if (sent) {
+            await supabaseAdmin.from('shops').update({ welcome_email_sent: true }).eq('id', shopId);
+            res.json({ success: true });
+        } else {
+            res.status(500).json({ error: 'Falha ao enviar e-mail' });
+        }
+    } catch (e: unknown) {
+        const error = e instanceof Error ? e.message : 'Erro desconhecido';
+        res.status(500).json({ error });
     }
 };

@@ -33,7 +33,8 @@ ALTER TABLE public.shops
     ADD COLUMN IF NOT EXISTS whatsapp_connected BOOLEAN DEFAULT false,
     ADD COLUMN IF NOT EXISTS asaas_customer_id TEXT,
     ADD COLUMN IF NOT EXISTS monthly_price NUMERIC(10,2) DEFAULT 97.00,
-    ADD COLUMN IF NOT EXISTS payment_confirmed_at TIMESTAMPTZ;
+    ADD COLUMN IF NOT EXISTS payment_confirmed_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS welcome_email_sent BOOLEAN DEFAULT false;
 
 COMMENT ON COLUMN public.shops.monthly_price IS 'Valor mensal cobrado pelo plano SaaS';
 COMMENT ON COLUMN public.shops.payment_confirmed_at IS 'Data da última confirmação de pagamento via Asaas webhook';

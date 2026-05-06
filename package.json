@@ -36,6 +36,7 @@
     "react-dom": "^19.2.4",
     "react-router-dom": "6.22.3",
     "recharts": "^2.12.2",
+    "resend": "^6.12.2",
     "timezone": "^1.0.23",
     "tsx": "^4.21.0",
     "utc": "^0.1.0",

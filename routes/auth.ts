@@ -5,5 +5,6 @@ const router = Router();
 
 router.post('/client-request', authController.requestClientLogin);
 router.post('/client-validate', authController.validateClientToken);
+router.post('/welcome', authController.triggerWelcomeEmail);
 
 export default router;
