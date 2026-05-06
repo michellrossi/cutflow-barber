@@ -41,7 +41,13 @@ export default defineConfig(({ mode }) => {
           provider: 'v8',
           reporter: ['text', 'html'],
           include: ['controllers/**', 'lib/**', 'middlewares/**'],
-          exclude: ['store/**', 'components/**']
+          exclude: ['store/**', 'components/**'],
+          thresholds: {
+            lines: 70,
+            functions: 70,
+            branches: 70,
+            statements: 70
+          }
         }
       }
     };

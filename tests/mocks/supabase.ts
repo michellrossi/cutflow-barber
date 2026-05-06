@@ -10,13 +10,14 @@ export const mockSupabase = {
   neq: vi.fn().mockReturnThis(),
   gte: vi.fn().mockReturnThis(),
   lte: vi.fn().mockReturnThis(),
+  lt: vi.fn().mockReturnThis(),
   in: vi.fn().mockReturnThis(),
   not: vi.fn().mockReturnThis(),
   single: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
   maybeSingle: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
   limit: vi.fn().mockReturnThis(),
   order: vi.fn().mockReturnThis(),
-  rpc: vi.fn().mockImplementation(() => Promise.resolve({ data: null, error: null })),
+  rpc: vi.fn().mockReturnThis(),
   auth: { 
     getUser: vi.fn(),
     getSession: vi.fn().mockImplementation(() => Promise.resolve({ data: { session: null }, error: null }))
@@ -29,7 +30,7 @@ export const resetSupabaseMocks = () => {
   
   const chainableMethods = [
     'from', 'select', 'insert', 'update', 'delete', 
-    'eq', 'neq', 'gte', 'lte', 'in', 'not', 'limit', 'order'
+    'eq', 'neq', 'gte', 'lte', 'lt', 'in', 'not', 'limit', 'order', 'rpc'
   ];
 
   chainableMethods.forEach(method => {
@@ -41,7 +42,7 @@ export const resetSupabaseMocks = () => {
 
   mockSupabase.single.mockImplementation(() => Promise.resolve({ data: null, error: null }));
   mockSupabase.maybeSingle.mockImplementation(() => Promise.resolve({ data: null, error: null }));
-  mockSupabase.rpc.mockImplementation(() => Promise.resolve({ data: null, error: null }));
+
 };
 
 // Mock do módulo

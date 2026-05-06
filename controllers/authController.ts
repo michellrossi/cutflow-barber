@@ -54,9 +54,10 @@ export const requestClientLogin = async (req: Request, res: Response) => {
             console.error('[Auth] Falha ao enviar WhatsApp via Evolution API');
             res.status(500).json({ error: 'Falha ao enviar mensagem de WhatsApp. Verifique a conexão.' });
         }
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('[Auth] Error in requestClientLogin:', e);
-        res.status(500).json({ error: e.message });
+        const error = e instanceof Error ? e.message : 'Erro desconhecido';
+        res.status(500).json({ error });
     }
 };
 
@@ -76,7 +77,7 @@ export const validateClientToken = async (req: Request, res: Response) => {
         const { data: shop } = await supabaseAdmin.from('shops').select('slug').eq('id', decoded.shopId).single();
         
         res.json({ success: true, client, slug: shop?.slug, session: { token } });
-    } catch (e: any) {
+    } catch (e: unknown) {
         res.status(401).json({ error: 'Token inválido ou expirado' });
     }
 };

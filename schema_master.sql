@@ -768,8 +768,9 @@ ALTER TABLE public.message_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.automation_triggers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.whatsapp_chat_sessions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.goals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.appointment_products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.coupons ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.settings ENABLE ROW LEVEL SECURITY;
 
 -- Lojas
 DROP POLICY IF EXISTS "Visibilidade Publica Lojas" ON public.shops;
@@ -827,6 +828,24 @@ DROP POLICY IF EXISTS "Publico_Ve_Gatilhos" ON public.automation_triggers;
 CREATE POLICY "Publico_Ve_Gatilhos" ON public.automation_triggers FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Dono_Gere_Gatilhos" ON public.automation_triggers;
 CREATE POLICY "Dono_Gere_Gatilhos" ON public.automation_triggers FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = automation_triggers.shop_id AND owner_id = auth.uid()));
+
+-- Settings
+DROP POLICY IF EXISTS "Publico_Ve_Settings" ON public.settings;
+CREATE POLICY "Publico_Ve_Settings" ON public.settings FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Dono_Gere_Settings" ON public.settings;
+CREATE POLICY "Dono_Gere_Settings" ON public.settings FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = settings.shop_id AND owner_id = auth.uid()));
+
+-- Coupons
+DROP POLICY IF EXISTS "Dono_Gere_Cupons" ON public.coupons;
+CREATE POLICY "Dono_Gere_Cupons" ON public.coupons FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = coupons.shop_id AND owner_id = auth.uid()));
+DROP POLICY IF EXISTS "Publico_Le_Proprios_Cupons" ON public.coupons;
+CREATE POLICY "Publico_Le_Proprios_Cupons" ON public.coupons FOR SELECT USING (
+  client_id IN (
+    SELECT id FROM public.clients 
+    WHERE phone = current_setting('request.jwt.claims', true)::json->>'phone'
+       OR phone = current_setting('app.current_client_phone', true)
+  )
+);
 
 
 

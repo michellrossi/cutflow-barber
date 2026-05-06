@@ -72,7 +72,8 @@ export async function runCronLogic() {
         .eq('reminder_24h_sent', false)
         .lte('send_attempts_24h', maxRetries - 1)
         .gte('date', todayStr)
-        .lte('date', tomorrowStr);
+        .lte('date', tomorrowStr)
+        .limit(200);
     if (apts24h) {
         for (const apt of apts24h) {
             const shop = Array.isArray(apt.shops) ? apt.shops[0] : apt.shops;
@@ -116,7 +117,8 @@ export async function runCronLogic() {
         .in('status', ['confirmed', 'scheduled'])
         .eq('reminder_1h_sent', false)
         .lte('send_attempts_1h', maxRetries - 1)
-        .eq('date', todayStr);
+        .eq('date', todayStr)
+        .limit(200);
     if (apts1h) {
         for (const apt of apts1h) {
             const shop = Array.isArray(apt.shops) ? apt.shops[0] : apt.shops;
@@ -161,7 +163,8 @@ export async function runCronLogic() {
         .in('status', ['cancelled', 'noshow'])
         .eq('rescheduling_sent', false)
         .lte('send_attempts_reschedule', maxRetries - 1)
-        .gte('date', twoDaysAgoStr);
+        .gte('date', twoDaysAgoStr)
+        .limit(200);
     if (aptsReschedule) {
         for (const apt of aptsReschedule) {
             const shop = Array.isArray(apt.shops) ? apt.shops[0] : apt.shops;
@@ -202,7 +205,8 @@ export async function runCronLogic() {
         .eq('status', 'completed')
         .eq('post_sale_sent', false)
         .lte('send_attempts_postsale', maxRetries - 1)
-        .eq('date', todayStr);
+        .eq('date', todayStr)
+        .limit(200);
     if (aptsPostSale) {
         for (const apt of aptsPostSale) {
             const shop = Array.isArray(apt.shops) ? apt.shops[0] : apt.shops;
@@ -266,7 +270,8 @@ export async function runCronLogic() {
         .eq('reminder_30d_sent', false)
         .lte('send_attempts_30d', maxRetries - 1)
         .lte('date', thirtyDaysAgoStr)
-        .gte('date', thirtyThreeDaysAgoStr);
+        .gte('date', thirtyThreeDaysAgoStr)
+        .limit(200);
     if (apts30d) {
         for (const apt of apts30d) {
             const shop = Array.isArray(apt.shops) ? apt.shops[0] : apt.shops;
@@ -293,7 +298,7 @@ export async function runCronLogic() {
     // 6. Aniversariantes do Dia
     const currentHourSP = now.hour();
     if (currentHourSP >= 9) {
-        const { data: bdayClients, error: bdayError } = await supabaseAdmin.rpc('get_birthday_clients_today');
+        const { data: bdayClients, error: bdayError } = await supabaseAdmin.rpc('get_birthday_clients_today').limit(100);
         if (bdayError) console.error('[Cron] Erro bday RPC:', bdayError.message);
         
         if (bdayClients && (bdayClients as BirthdayClient[]).length > 0) {
@@ -340,7 +345,8 @@ export async function runCronLogic() {
                 .from('appointments')
                 .select(`id, shop_id, total_value, date, status, service_ids, shops (id, name, whatsapp_instance, whatsapp_connected)`)
                 .gte('date', fourteenDaysAgo)
-                .lte('date', todayStr);
+                .lte('date', todayStr)
+                .limit(2000); // Maior limite para o relatório semanal, mas ainda protegido
             
             if (allApts && (allApts as unknown as AppointmentData[]).length > 0) {
                 const appointments = allApts as unknown as AppointmentData[];
@@ -394,7 +400,7 @@ export async function runCronLogic() {
 
                     const result = await model.generateContent(prompt);
                     const fullMsg = `📊 *Resumo Semanal - CutFlow Insights*\n\n${result.response.text()}\n\n_Para ver detalhes, acesse seu painel administrativo._`;
-                    await sendWhatsApp(sets.phone, fullMsg, data.instance);
+                    await sendWhatsApp(phone, fullMsg, data.instance);
                 }
             }
         }

@@ -45,8 +45,9 @@ export const generateReward = async (req: Request, res: Response) => {
         if (couponError) throw couponError;
 
         res.json({ success: true, code });
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('[Loyalty] Error in generateReward:', e);
-        res.status(500).json({ error: e.message });
+        const error = e instanceof Error ? e.message : 'Erro desconhecido';
+        res.status(500).json({ error });
     }
 };

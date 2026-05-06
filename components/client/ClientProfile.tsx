@@ -1,10 +1,12 @@
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useShop } from '../../store';
-import { Award, Calendar, Clock, LogOut, Star, User, History, Tag, Smartphone, CheckCircle2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Award, Calendar, Clock, LogOut, Star, User, History, Tag, Smartphone, CheckCircle2, AlertCircle, ArrowLeft, X } from 'lucide-react';
+import { ConfirmationModal } from '../ui/ConfirmationModal';
 
 export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void }> = ({ onLogout, onBack }) => {
-    const { currentClient, appointments, services, settings, coupons, professionals } = useShop();
+    const { currentClient, appointments, services, settings, coupons, professionals, updateAppointmentStatus } = useShop();
+    const [cancelModal, setCancelModal] = useState<{ isOpen: boolean; aptId: string | null }>({ isOpen: false, aptId: null });
 
     const clientAppointments = useMemo(() => {
         if (!currentClient) return [];
@@ -34,6 +36,17 @@ export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void 
     };
 
     const progress = getLoyaltyProgress();
+    
+    const handleCancelClick = (aptId: string) => {
+        setCancelModal({ isOpen: true, aptId });
+    };
+
+    const handleConfirmCancel = async () => {
+        if (cancelModal.aptId) {
+            await updateAppointmentStatus(cancelModal.aptId, 'cancelled');
+            setCancelModal({ isOpen: false, aptId: null });
+        }
+    };
 
     return (
         <div className="max-w-2xl mx-auto space-y-8 pb-20 pt-6 px-4">
@@ -181,6 +194,17 @@ export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void 
                                              apt.status === 'cancelled' ? 'Cancelado' :
                                              'Agendado'}
                                         </div>
+                                        {(apt.status === 'scheduled' || apt.status === 'confirmed') && (
+                                            <div className="mt-2">
+                                                <button 
+                                                    onClick={() => handleCancelClick(apt.id)}
+                                                    className="text-[10px] font-bold uppercase text-red-400 hover:text-red-300 transition-colors flex items-center gap-1 ml-auto"
+                                                >
+                                                    <X size={10} />
+                                                    Cancelar
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             );
@@ -188,6 +212,16 @@ export const ClientProfile: React.FC<{ onLogout: () => void, onBack: () => void 
                     </div>
                 )}
             </div>
+
+            <ConfirmationModal 
+                isOpen={cancelModal.isOpen}
+                onClose={() => setCancelModal({ isOpen: false, aptId: null })}
+                onConfirm={handleConfirmCancel}
+                title="Cancelar Agendamento"
+                message="Tem certeza que deseja cancelar este agendamento? Esta ação não pode ser desfeita."
+                confirmText="Sim, Cancelar"
+                isDestructive={true}
+            />
         </div>
     );
 };

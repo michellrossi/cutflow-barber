@@ -10,6 +10,8 @@ export const sendAppointmentConfirmation = async (req: Request, res: Response) =
             .select('*, professionals(name, phone), shops(id, name, whatsapp_instance, whatsapp_connected)')
             .eq('id', appointmentId)
             .single();
+        
+        if (error || !apt) return res.status(404).json({ error: 'Agendamento não encontrado' });
 
         const shop = Array.isArray(apt.shops) ? apt.shops[0] : apt.shops;
         if (!shop?.whatsapp_connected) return res.status(400).json({ error: 'WhatsApp da loja não conectado' });
@@ -58,9 +60,10 @@ export const sendAppointmentConfirmation = async (req: Request, res: Response) =
         }
 
         res.json({ success: clientOk });
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error("Erro em sendAppointmentConfirmation:", e);
-        res.status(500).json({ error: e.message });
+        const error = e instanceof Error ? e.message : 'Erro desconhecido';
+        res.status(500).json({ error });
     }
 };
 
@@ -87,7 +90,8 @@ export const testTemplate = async (req: Request, res: Response) => {
         } else {
             res.status(500).json({ error: 'Falha ao enviar WhatsApp' });
         }
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
+    } catch (e: unknown) {
+        const error = e instanceof Error ? e.message : 'Erro desconhecido';
+        res.status(500).json({ error });
     }
 };

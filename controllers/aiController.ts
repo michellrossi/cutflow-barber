@@ -18,9 +18,10 @@ export const generateTemplate = async (req: Request, res: Response) => {
         
         const result = await model.generateContent(prompt);
         res.json({ success: true, text: result.response.text().trim() });
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('[AI] Error in generateTemplate:', e);
-        res.status(500).json({ error: e.message });
+        const error = e instanceof Error ? e.message : 'Erro desconhecido';
+        res.status(500).json({ error });
     }
 };
 
@@ -31,8 +32,9 @@ export const generateImage = async (req: Request, res: Response) => {
         
         const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true`;
         res.json({ success: true, url });
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
+    } catch (e: unknown) {
+        const error = e instanceof Error ? e.message : 'Erro desconhecido';
+        res.status(500).json({ error });
     }
 };
 
@@ -68,8 +70,9 @@ export const getInsights = async (req: Request, res: Response) => {
 
         const result = await chat.sendMessage(prompt);
         res.json({ success: true, answer: result.response.text().trim() });
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('[AI] Error in getInsights:', e);
-        res.status(500).json({ error: e.message });
+        const error = e instanceof Error ? e.message : 'Erro desconhecido';
+        res.status(500).json({ error });
     }
 };
