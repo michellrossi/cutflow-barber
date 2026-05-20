@@ -70,6 +70,12 @@ export const CatalogProvider: React.FC<{ shopId: string; children: ReactNode }> 
   const addService = async (service: Omit<Service, 'id' | 'shopId'>): MutationResult<Service> => {
     try {
       const sid = ensureShopId();
+
+      const isDuplicate = services.some(s => s.name.trim().toLowerCase() === service.name.trim().toLowerCase());
+      if (isDuplicate) {
+        return { success: false, error: 'Já existe um serviço cadastrado com este nome.' };
+      }
+
       const { data, error } = await supabase.from('services').insert({
         shop_id: sid,
         name: service.name,
@@ -93,6 +99,14 @@ export const CatalogProvider: React.FC<{ shopId: string; children: ReactNode }> 
   const updateService = async (id: string, service: Partial<Service>): MutationResult<Service> => {
     try {
       const sid = ensureShopId();
+
+      if (service.name) {
+        const isDuplicate = services.some(s => s.id !== id && s.name.trim().toLowerCase() === service.name!.trim().toLowerCase());
+        if (isDuplicate) {
+          return { success: false, error: 'Já existe um outro serviço cadastrado com este nome.' };
+        }
+      }
+
       const { data, error } = await supabase.from('services').update({
         name: service.name,
         duration: service.duration,

@@ -67,12 +67,12 @@ export const AppointmentsPanel: React.FC = () => {
     const suggestionRef = useRef<HTMLDivElement>(null);
 
     const filteredClientsForSuggestions = useMemo(() => {
-        if (!formData.clientName || formData.clientName.length < 2) return [];
+        if (!formData.clientName) return clients.slice(0, 10);
         return clients.filter(c => 
             c.name.toLowerCase().includes(formData.clientName.toLowerCase()) ||
             (c.lastName && c.lastName.toLowerCase().includes(formData.clientName.toLowerCase())) ||
             c.phone.includes(formData.clientName)
-        ).slice(0, 6);
+        ).slice(0, 10);
     }, [formData.clientName, clients]);
 
     useEffect(() => {
@@ -379,31 +379,41 @@ export const AppointmentsPanel: React.FC = () => {
                                             placeholder="Ex: João Silva" 
                                             autoComplete="off"
                                         />
-                                        {showClientSuggestions && filteredClientsForSuggestions.length > 0 && (
+                                        {showClientSuggestions && (
                                             <div className="absolute z-[100] w-full bg-white border border-slate-200 rounded-xl mt-1 shadow-2xl overflow-hidden animate-fade-in border-t-4 border-t-orange-500">
-                                                <div className="p-2 bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Clientes Encontrados</div>
-                                                {filteredClientsForSuggestions.map(client => (
-                                                    <div 
-                                                        key={client.id}
-                                                        onClick={() => {
-                                                            setFormData({ 
-                                                                ...formData, 
-                                                                clientName: `${client.name} ${client.lastName || ''}`.trim(),
-                                                                clientPhone: client.phone 
-                                                            });
-                                                            setShowClientSuggestions(false);
-                                                        }}
-                                                        className="p-3 hover:bg-orange-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors group"
-                                                    >
-                                                        <div className="flex items-center justify-between">
-                                                            <div>
-                                                                <div className="font-bold text-slate-900 group-hover:text-orange-600 transition-colors">{client.name} {client.lastName}</div>
-                                                                <div className="text-xs text-slate-500">{client.phone}</div>
+                                                <div className="p-2 bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                                    {filteredClientsForSuggestions.length > 0 ? 'Clientes Cadastrados' : 'Nenhum cliente encontrado'}
+                                                </div>
+                                                <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                                                    {filteredClientsForSuggestions.map(client => (
+                                                        <div 
+                                                            key={client.id}
+                                                            onClick={() => {
+                                                                setFormData({ 
+                                                                    ...formData, 
+                                                                    clientName: `${client.name} ${client.lastName || ''}`.trim(),
+                                                                    clientPhone: client.phone 
+                                                                });
+                                                                setShowClientSuggestions(false);
+                                                            }}
+                                                            className="p-3 hover:bg-orange-50 cursor-pointer border-b border-slate-50 last:border-0 transition-colors group"
+                                                        >
+                                                            <div className="flex items-center justify-between">
+                                                                <div>
+                                                                    <div className="font-bold text-slate-900 group-hover:text-orange-600 transition-colors">{client.name} {client.lastName}</div>
+                                                                    <div className="text-xs text-slate-500">{client.phone}</div>
+                                                                </div>
+                                                                <div className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-400 group-hover:bg-orange-100 group-hover:text-orange-500 transition-colors">Selecionar</div>
                                                             </div>
-                                                            <div className="text-[10px] bg-slate-100 px-2 py-0.5 rounded-full text-slate-400 group-hover:bg-orange-100 group-hover:text-orange-500 transition-colors">Selecionar</div>
                                                         </div>
+                                                    ))}
+                                                    <div 
+                                                        onClick={() => setShowClientSuggestions(false)}
+                                                        className="p-3 bg-slate-50 hover:bg-orange-100 cursor-pointer transition-colors flex items-center gap-2 text-orange-600 font-bold justify-center sticky bottom-0 border-t border-slate-200"
+                                                    >
+                                                        <Plus size={16} /> Novo Cliente (Digitar Manualmente)
                                                     </div>
-                                                ))}
+                                                </div>
                                             </div>
                                         )}
                                     </div>

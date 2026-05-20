@@ -4,6 +4,8 @@ import { sendWhatsApp } from '../lib/helpers';
 import { sendWelcomeEmail } from '../lib/email';
 import jwt from 'jsonwebtoken';
 
+import crypto from 'crypto';
+
 const getJwtSecret = () => {
     const secret = process.env.JWT_SECRET;
     if (!secret) {
@@ -11,6 +13,16 @@ const getJwtSecret = () => {
         return null;
     }
     return secret;
+};
+
+const generateShortCode = (length = 8): string => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    const bytes = crypto.randomBytes(length);
+    let result = '';
+    for (let i = 0; i < length; i++) {
+        result += chars[bytes[i] % chars.length];
+    }
+    return result;
 };
 
 export const requestClientLogin = async (req: Request, res: Response) => {
@@ -42,8 +54,23 @@ export const requestClientLogin = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Dados da loja não encontrados' });
         }
 
+        // Gera código curto e salva no banco com o token JWT
+        const code = generateShortCode();
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString(); // 15 min
+
+        const { error: codeError } = await supabaseAdmin.from('access_codes').insert({
+            code,
+            token,
+            expires_at: expiresAt
+        });
+
+        if (codeError) {
+            console.error('[Auth] Erro ao salvar access_code:', codeError);
+            throw codeError;
+        }
+
         const serverUrl = process.env.SERVER_URL || 'https://www.insightbarber.com.br';
-        const loginUrl = `${serverUrl}/acesso/${token}`;
+        const loginUrl = `${serverUrl}/acesso/${code}`;
         const msg = `Olá ${client.name}!\nAcesse sua conta na ${shop.name} clicando no link abaixo:\n\n${loginUrl}\n\nEste link expira em 15 minutos. 🔐💈`;
         
         console.log(`[Auth] Enviando link de login para ${cleanPhone} (Loja: ${shop.name})`);
@@ -70,14 +97,41 @@ export const validateClientToken = async (req: Request, res: Response) => {
         const secret = getJwtSecret();
         if (!secret) return res.status(500).json({ error: 'Erro de configuração no servidor (JWT_SECRET)' });
 
-        const decoded = jwt.verify(token, secret) as any;
+        let jwtToken = token;
+
+        // Verifica se é um código curto (não começa com "eyJ" que é típico de JWT)
+        if (!token.startsWith('eyJ')) {
+            const { data: accessCode, error: lookupError } = await supabaseAdmin
+                .from('access_codes')
+                .select('token, expires_at')
+                .eq('code', token)
+                .maybeSingle();
+
+            if (lookupError || !accessCode) {
+                return res.status(401).json({ error: 'Código de acesso inválido ou expirado' });
+            }
+
+            // Verifica expiração do código
+            if (new Date(accessCode.expires_at) < new Date()) {
+                // Remove código expirado
+                await supabaseAdmin.from('access_codes').delete().eq('code', token);
+                return res.status(401).json({ error: 'Código de acesso expirado. Solicite um novo link.' });
+            }
+
+            jwtToken = accessCode.token;
+
+            // Remove o código após uso (single-use)
+            await supabaseAdmin.from('access_codes').delete().eq('code', token);
+        }
+
+        const decoded = jwt.verify(jwtToken, secret) as any;
         
         const { data: client } = await supabaseAdmin.from('clients').select('*').eq('id', decoded.clientId).single();
         if (!client) return res.status(404).json({ error: 'Cliente não encontrado' });
 
         const { data: shop } = await supabaseAdmin.from('shops').select('slug').eq('id', decoded.shopId).single();
         
-        res.json({ success: true, client, slug: shop?.slug, session: { token } });
+        res.json({ success: true, client, slug: shop?.slug, session: { token: jwtToken } });
     } catch (e: unknown) {
         res.status(401).json({ error: 'Token inválido ou expirado' });
     }
