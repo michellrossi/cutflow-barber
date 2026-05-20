@@ -70,11 +70,16 @@ export const ServicesPanel: React.FC = () => {
             });
 
             const data = await response.json();
-            if (data.success && data.url) {
-                // O backend retorna uma URL do pollinations.ai. Baixamos a imagem e fazemos upload no Supabase.
-                const imgResponse = await fetch(data.url);
-                if (!imgResponse.ok) throw new Error('Falha ao baixar imagem gerada');
-                const blob = await imgResponse.blob();
+            if (data.success && data.image) {
+                // O backend baixa a imagem e retorna em base64. Convertemos para Blob para upload no Supabase.
+                const base64Data = data.image.split(',')[1];
+                const byteCharacters = atob(base64Data);
+                const byteNumbers = new Array(byteCharacters.length);
+                for (let i = 0; i < byteCharacters.length; i++) {
+                    byteNumbers[i] = byteCharacters.charCodeAt(i);
+                }
+                const byteArray = new Uint8Array(byteNumbers);
+                const blob = new Blob([byteArray], { type: 'image/png' });
                 
                 const fileName = `ai_${Date.now()}.png`;
                 const filePath = `services/${fileName}`;

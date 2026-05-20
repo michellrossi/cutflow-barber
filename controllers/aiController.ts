@@ -31,8 +31,20 @@ export const generateImage = async (req: Request, res: Response) => {
         if (!prompt) return res.status(400).json({ error: 'Prompt é obrigatório' });
 
         const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true`;
-        res.json({ success: true, url });
+        
+        // Baixa a imagem no servidor para evitar bloqueio de CSP no frontend
+        const imageResponse = await fetch(url);
+        if (!imageResponse.ok) {
+            return res.status(502).json({ error: 'Falha ao gerar imagem com o serviço externo' });
+        }
+
+        const arrayBuffer = await imageResponse.arrayBuffer();
+        const base64 = Buffer.from(arrayBuffer).toString('base64');
+        const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+
+        res.json({ success: true, image: `data:${contentType};base64,${base64}` });
     } catch (e: unknown) {
+        console.error('[AI] Error in generateImage:', e);
         const error = e instanceof Error ? e.message : 'Erro desconhecido';
         res.status(500).json({ error });
     }
