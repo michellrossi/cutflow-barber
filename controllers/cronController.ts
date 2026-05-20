@@ -52,14 +52,14 @@ export async function runCronLogic() {
 
     const getServicesNamesForApt = async (shopId: string, serviceIds: string[]) => {
         if (!serviceIds || serviceIds.length === 0) return "serviços";
-        
+
         if (!serviceCache.has(shopId)) {
             const { data } = await supabaseAdmin.from('services').select('id, name').eq('shop_id', shopId);
             const map = new Map<string, string>();
             data?.forEach(s => map.set(s.id, s.name));
             serviceCache.set(shopId, map);
         }
-        
+
         const shopMap = serviceCache.get(shopId)!;
         return serviceIds.map(id => shopMap.get(id) || "serviço").join(', ');
     };
@@ -300,7 +300,7 @@ export async function runCronLogic() {
     if (currentHourSP >= 9) {
         const { data: bdayClients, error: bdayError } = await supabaseAdmin.rpc('get_birthday_clients_today').limit(100);
         if (bdayError) console.error('[Cron] Erro bday RPC:', bdayError.message);
-        
+
         if (bdayClients && (bdayClients as BirthdayClient[]).length > 0) {
             const clients = bdayClients as BirthdayClient[];
             const shopIds = [...new Set(clients.map(c => c.shop_id))];
@@ -308,7 +308,7 @@ export async function runCronLogic() {
                 .from('shops')
                 .select('id, name, whatsapp_instance, whatsapp_connected')
                 .in('id', shopIds);
-            
+
             const shopMap = new Map((shopList || []).map((s: any) => [s.id, s]));
             for (const client of clients) {
                 const shop = shopMap.get(client.shop_id);
@@ -334,7 +334,7 @@ export async function runCronLogic() {
     if (now.day() === 1) {
         const sevenDaysAgo = now.subtract(7, 'day').toISOString();
         await supabaseAdmin.from('whatsapp_chat_sessions').delete().lt('last_message_at', sevenDaysAgo);
-        
+
         const thirtyDaysAgoIso = now.subtract(30, 'day').toISOString();
         await supabaseAdmin.from('webhook_events').delete().lt('created_at', thirtyDaysAgoIso);
 
@@ -347,11 +347,11 @@ export async function runCronLogic() {
                 .gte('date', fourteenDaysAgo)
                 .lte('date', todayStr)
                 .limit(2000); // Maior limite para o relatório semanal, mas ainda protegido
-            
+
             if (allApts && (allApts as unknown as AppointmentData[]).length > 0) {
                 const appointments = allApts as unknown as AppointmentData[];
                 const shopsData = new Map<string, ShopMetrics>();
-                
+
                 appointments.forEach(apt => {
                     if (!shopsData.has(apt.shop_id)) {
                         const shopRow = Array.isArray(apt.shops) ? apt.shops[0] : apt.shops;
@@ -374,7 +374,7 @@ export async function runCronLogic() {
                     .from('settings')
                     .select('shop_id, phone')
                     .in('shop_id', allShopIds);
-                
+
                 const settingsMap = new Map(allSettings?.map(s => [s.shop_id, s.phone]) || []);
 
                 for (const [sId, data] of shopsData.entries()) {
@@ -390,12 +390,12 @@ export async function runCronLogic() {
                     const svcCounts: Record<string, number> = {};
                     data.currentWeek.forEach(a => a.service_ids?.forEach(id => svcCounts[id] = (svcCounts[id] || 0) + 1));
                     const topSvcIds = Object.entries(svcCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(e => e[0]);
-                    
+
                     const { data: svcsNames } = topSvcIds.length ? await supabaseAdmin.from('services').select('name').in('id', topSvcIds) : { data: [] };
                     const topSvcStr = (svcsNames as { name: string }[] | null)?.map(s => s.name).join(', ') || 'N/A';
 
                     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-                    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
+                    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
                     const prompt = `Você é um Consultor de Negócios especializado em barbearias de alto padrão. Analise os dados e escreva um parágrafo motivador (máx 400 caracteres).\n\nBarbearia: ${data.name}\nFaturamento esta semana: R$${curRev.toFixed(2)} (Semana passada: R$${preRev.toFixed(2)})\nAgendamentos: ${curCount} (Semana passada: ${preCount})\nServiços populares: ${topSvcStr}`;
 
                     const result = await model.generateContent(prompt);

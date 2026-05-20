@@ -137,10 +137,10 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
         const serviceEndTime = targetTime + totalDuration;
 
         // Verifica conflito do CLIENTE
-        const clientAppts = appointments.filter(a => 
-            (a.clientPhone === customerInfo.phone || (currentClient && a.clientId === currentClient.id)) && 
-            a.date === selectedDate && 
-            a.status !== 'cancelled' && 
+        const clientAppts = appointments.filter(a =>
+            (a.clientPhone === customerInfo.phone || (currentClient && a.clientId === currentClient.id)) &&
+            a.date === selectedDate &&
+            a.status !== 'cancelled' &&
             a.status !== 'noshow'
         );
 
@@ -188,7 +188,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                 const proBlocks = blockedSlots.filter(b => b.professionalId === pro.id && b.date === selectedDate);
                 let isBlocked = false;
                 for (const block of proBlocks) {
-                    if ((targetTime >= timeToMins(block.startTime) && targetTime < timeToMins(block.endTime)) || 
+                    if ((targetTime >= timeToMins(block.startTime) && targetTime < timeToMins(block.endTime)) ||
                         (serviceEndTime > timeToMins(block.startTime) && serviceEndTime <= timeToMins(block.endTime)) ||
                         (targetTime <= timeToMins(block.startTime) && serviceEndTime >= timeToMins(block.endTime))) {
                         isBlocked = true; break;
@@ -227,7 +227,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
             clientPhone: customerInfo.phone,
             clientBirthDate: customerInfo.birthDate,
             serviceIds: selectedServiceIds,
-            professionalId: finalProId, 
+            professionalId: finalProId,
             date: selectedDate,
             time: selectedTime,
             totalValue: total,
@@ -492,7 +492,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                         onClick={handleAgendarClick}
                         className="px-12 py-5 bg-black text-[#ff6a00] font-black text-sm uppercase tracking-widest rounded-sm hover:bg-slate-900 transition-all shadow-2xl"
                     >
-                        Reservar Agora
+                        Agendar Agora
                     </button>
                     <button
                         onClick={handleHistoryClick}

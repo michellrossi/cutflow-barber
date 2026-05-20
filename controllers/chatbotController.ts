@@ -124,7 +124,7 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
 
     const systemInstruction = `Você é o assistente virtual da barbearia "${shop?.name}". Hoje é: ${dayjs().tz('America/Sao_Paulo').format('dddd, DD/MM/YYYY')}\n\nPROFISSIONAIS:\n${professionalsText}\n\nSERVIÇOS:\n${servicesText}\n\nHORÁRIOS:\n${businessHoursText}`;
 
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite", tools, systemInstruction });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite", tools, systemInstruction });
     const chat = model.startChat({ history: (session.messages || []).slice(-20).map((m: { role: string; content: string }) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })) });
 
     const MAX_RETRIES = 3;
@@ -206,7 +206,7 @@ async function getAvailableSlotsForAI(shopId: string, proId: string, date: strin
 
     const { data: appointments } = await supabaseAdmin.from('appointments').select('time, service_ids').eq('professional_id', proId).eq('date', date).not('status', 'eq', 'cancelled');
     const { data: blocks } = await supabaseAdmin.from('blocked_slots').select('start_time, end_time').eq('professional_id', proId).eq('date', date);
-    
+
     // Cache de serviços para cálculo de fim de agendamentos existentes
     const { data: allServices } = await supabaseAdmin.from('services').select('id, duration').eq('shop_id', shopId);
     const serviceDurationMap = new Map(allServices?.map(s => [s.id, s.duration]) || []);
