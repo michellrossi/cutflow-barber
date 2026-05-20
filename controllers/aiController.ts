@@ -8,7 +8,7 @@ export const generateTemplate = async (req: Request, res: Response) => {
         if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY não configurada' });
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const prompt = `Você é um copywriter especializado em marketing para barbearias. 
         Crie uma mensagem de WhatsApp para o gatilho de automação "${trigger}" de uma barbearia chamada "${shopName}". 
@@ -45,7 +45,7 @@ export const getInsights = async (req: Request, res: Response) => {
         if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY não configurada' });
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash-lite" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const contextStr = JSON.stringify(context).slice(0, 12000);
         const limitedHistory = (history || []).slice(-10);

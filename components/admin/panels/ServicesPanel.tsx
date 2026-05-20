@@ -66,7 +66,7 @@ export const ServicesPanel: React.FC = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${session?.access_token || ''}`
                 },
-                body: JSON.stringify({ serviceName: formData.name })
+                body: JSON.stringify({ prompt: formData.name })
             });
 
             const data = await response.json();
