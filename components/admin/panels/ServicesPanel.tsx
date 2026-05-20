@@ -66,20 +66,15 @@ export const ServicesPanel: React.FC = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${session?.access_token || ''}`
                 },
-                body: JSON.stringify({ prompt: formData.name })
+                body: JSON.stringify({ prompt: `professional barbershop service photo: ${formData.name}, clean modern barbershop interior, high quality, realistic` })
             });
 
             const data = await response.json();
-            if (data.success) {
-                // A imagem vem em base64. Vamos converter para Blob manualmente para evitar erro de CSP com fetch
-                const base64Data = data.image.split(',')[1];
-                const byteCharacters = atob(base64Data);
-                const byteNumbers = new Array(byteCharacters.length);
-                for (let i = 0; i < byteCharacters.length; i++) {
-                    byteNumbers[i] = byteCharacters.charCodeAt(i);
-                }
-                const byteArray = new Uint8Array(byteNumbers);
-                const blob = new Blob([byteArray], { type: 'image/png' });
+            if (data.success && data.url) {
+                // O backend retorna uma URL do pollinations.ai. Baixamos a imagem e fazemos upload no Supabase.
+                const imgResponse = await fetch(data.url);
+                if (!imgResponse.ok) throw new Error('Falha ao baixar imagem gerada');
+                const blob = await imgResponse.blob();
                 
                 const fileName = `ai_${Date.now()}.png`;
                 const filePath = `services/${fileName}`;
@@ -95,7 +90,7 @@ export const ServicesPanel: React.FC = () => {
                 setImageGenCount(prev => prev + 1);
                 showToast('Imagem gerada com IA e salva com sucesso!');
             } else {
-                throw new Error(data.error);
+                throw new Error(data.error || 'Resposta inválida do servidor');
             }
         } catch (error: any) {
             console.error("Erro ao gerar imagem:", error);

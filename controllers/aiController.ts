@@ -45,10 +45,8 @@ export const getInsights = async (req: Request, res: Response) => {
         if (!apiKey) return res.status(500).json({ error: 'GEMINI_API_KEY não configurada' });
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         const contextStr = JSON.stringify(context).slice(0, 12000);
-        const limitedHistory = (history || []).slice(-10);
 
         const systemInstruction = `Você é o "CutFlow Analytics AI", um consultor de inteligência de negócios especializado em barbearias.
         Analise os dados reais fornecidos abaixo e responda às perguntas do dono da barbearia de forma estratégica, objetiva e motivadora.
@@ -61,11 +59,27 @@ export const getInsights = async (req: Request, res: Response) => {
         - Se o usuário pedir para gerar insights, destaque faturamento, conversão e performance dos barbeiros.
         - Seja direto ao ponto.`;
 
-        const chat = model.startChat({
-            history: limitedHistory.map((m: any) => ({
+        const model = genAI.getGenerativeModel({ 
+            model: "gemini-1.5-flash",
+            systemInstruction 
+        });
+
+        // Filtra o histórico para garantir que a primeira mensagem seja do role 'user'
+        const limitedHistory = (history || []).slice(-10);
+        const formattedHistory = limitedHistory
+            .filter((m: any) => m.content && m.content.trim())
+            .map((m: any) => ({
                 role: m.role === 'assistant' ? 'model' : 'user',
                 parts: [{ text: m.content }]
-            }))
+            }));
+
+        // Garante que o histórico começa com 'user' (exigência da API Gemini)
+        const safeHistory = formattedHistory.length > 0 && formattedHistory[0].role === 'model'
+            ? formattedHistory.slice(1)
+            : formattedHistory;
+
+        const chat = model.startChat({
+            history: safeHistory
         });
 
         const result = await chat.sendMessage(prompt);
