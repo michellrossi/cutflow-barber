@@ -76,7 +76,8 @@ export const CatalogProvider: React.FC<{ shopId: string; children: ReactNode }> 
         duration: service.duration,
         price: service.price,
         description: service.description,
-        category: service.category
+        category: service.category,
+        image_url: service.imageUrl || null
       }).select().single();
 
       if (error) throw error;
@@ -97,7 +98,8 @@ export const CatalogProvider: React.FC<{ shopId: string; children: ReactNode }> 
         duration: service.duration,
         price: service.price,
         description: service.description,
-        category: service.category
+        category: service.category,
+        image_url: service.imageUrl || null
       }).eq('id', id).eq('shop_id', sid).select().single();
 
       if (error) throw error;
