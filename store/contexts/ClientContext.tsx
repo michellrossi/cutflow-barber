@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Client, SubscriptionPlan, ClientSubscription, Appointment, ShopSettings } from '../../types';
 import { MutationResult } from '../types';
-import { supabase } from '../../supabaseClient';
+import { supabase, getSupabaseClient } from '../../supabaseClient';
 import { 
     mapClient, mapSubscriptionPlan, mapClientSubscription, 
     type ClientRow, type SubscriptionPlanRow, type ClientSubscriptionRow 
@@ -53,18 +53,22 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
   const loadData = async () => {
     if (!shopId) return;
     try {
+      // Restaurar sessão do cliente se existir
+      const savedClient = sessionStorage.getItem('currentClient');
+      const savedSession = sessionStorage.getItem('clientSession');
+      const token = savedSession ? JSON.parse(savedSession).token : undefined;
+
+      const clientSupabase = getSupabaseClient(token);
+
       // LAZY LOAD: clients NÃO é carregado no boot — apenas via reloadClients ou sob demanda
       const [plansRes, subsRes] = await Promise.all([
-        supabase.from('subscription_plans').select('*').eq('shop_id', shopId).order('name'),
-        supabase.from('client_subscriptions').select('*').eq('shop_id', shopId)
+        clientSupabase.from('subscription_plans').select('*').eq('shop_id', shopId).order('name'),
+        clientSupabase.from('client_subscriptions').select('*').eq('shop_id', shopId)
       ]);
 
       if (plansRes.data) setSubscriptionPlans(plansRes.data.map(mapSubscriptionPlan));
       if (subsRes.data) setClientSubscriptions(subsRes.data.map(mapClientSubscription));
       
-      // Restaurar sessão do cliente se existir
-      const savedClient = sessionStorage.getItem('currentClient');
-      const savedSession = sessionStorage.getItem('clientSession');
       if (savedClient) setCurrentClient(JSON.parse(savedClient));
       if (savedSession) setClientSession(JSON.parse(savedSession));
     } catch (e) {
@@ -81,7 +85,7 @@ export const ClientProvider: React.FC<{ shopId: string; children: ReactNode }> =
       setCurrentClient(null);
       setClientSession(null);
     }
-  }, [shopId]);
+  }, [shopId, clientSession?.token]);
 
   // Sincronização em Tempo Real para Clientes
   useEffect(() => {

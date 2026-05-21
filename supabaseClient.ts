@@ -25,3 +25,19 @@ if (!supabaseUrl || !supabaseKey || supabaseKey === 'undefined' || supabaseKey =
 }
 
 export const supabase = createClient(supabaseUrl || '', supabaseKey || '');
+
+export const getSupabaseClient = (token?: string) => {
+  if (!token) return supabase;
+  return createClient(supabaseUrl || '', supabaseKey || '', {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
+  });
+};
+

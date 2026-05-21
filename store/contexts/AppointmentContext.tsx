@@ -1,9 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Appointment, Client } from '../../types';
 import { MutationResult } from '../types';
-import { supabase } from '../../supabaseClient';
+import { supabase, getSupabaseClient } from '../../supabaseClient';
 import { mapAppointment } from '../mappers';
 import { sanitize } from '../helpers';
+import { useClients } from './ClientContext';
 
 interface AppointmentContextType {
   appointments: Appointment[];
@@ -18,6 +19,7 @@ interface AppointmentContextType {
 const AppointmentContext = createContext<AppointmentContextType | undefined>(undefined);
 
 export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode }> = ({ shopId, children }) => {
+  const { clientSession } = useClients();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const APPT_WINDOW_DAYS = 90;
 
@@ -27,7 +29,9 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
     pastDate.setDate(pastDate.getDate() - APPT_WINDOW_DAYS);
     const dateLimitStr = pastDate.toISOString().split('T')[0];
 
-    const { data: appts } = await supabase
+    const clientSupabase = getSupabaseClient(clientSession?.token || undefined);
+
+    const { data: appts } = await clientSupabase
       .from('appointments')
       .select('*')
       .eq('shop_id', sid)
@@ -59,7 +63,7 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
     } else {
       setAppointments([]);
     }
-  }, [shopId]);
+  }, [shopId, clientSession?.token]);
 
   const ensureClientExists = async (sid: string, name: string, phone: string, birthDate?: string) => {
     await supabase.from('clients').upsert({
