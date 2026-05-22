@@ -625,7 +625,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                         </div>
                         <div>
                             <p className="text-slate-400 text-xs mb-1 font-bold uppercase tracking-wider">Agenda Hoje</p>
-                            <p className="text-3xl font-bold text-slate-900">{todaysWorkload.length}</p>
+                            <p className="text-3xl font-bold text-white">{todaysWorkload.length}</p>
                         </div>
                         <div className="mt-2 text-[10px] text-slate-500">
                             {todaysCompleted.length} finalizados
@@ -653,21 +653,21 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                 {/* GRÁFICO DE DESEMPENHO E AGENDA FUTURA */}
                 <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
                     <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
-                        <h2 className="font-bold text-lg flex items-center gap-2 text-slate-900">
+                        <h2 className="font-bold text-lg flex items-center gap-2 text-white">
                             <BarChart3 size={18} className="text-orange-500"/> Volume & Previsão
                         </h2>
                         
                         {/* Controles de Filtro */}
                         <div className="flex flex-col sm:flex-row gap-2">
-                             <div className="flex bg-slate-100 rounded-lg p-1 border border-slate-200">
-                                <button onClick={() => setChartPreset('thisWeek')} className="px-3 py-1 text-xs text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-sm rounded transition-all">Semana</button>
-                                <button onClick={() => setChartPreset('nextWeek')} className="px-3 py-1 text-xs text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-sm rounded transition-all">Próxima</button>
-                                <button onClick={() => setChartPreset('month')} className="px-3 py-1 text-xs text-slate-600 hover:bg-white hover:text-slate-900 hover:shadow-sm rounded transition-all">Mês</button>
+                             <div className="flex bg-slate-900/50 rounded-lg p-1 border border-slate-700">
+                                <button onClick={() => setChartPreset('thisWeek')} className="px-3 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white hover:shadow-sm rounded transition-all">Semana</button>
+                                <button onClick={() => setChartPreset('nextWeek')} className="px-3 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white hover:shadow-sm rounded transition-all">Próxima</button>
+                                <button onClick={() => setChartPreset('month')} className="px-3 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white hover:shadow-sm rounded transition-all">Mês</button>
                             </div>
-                            <div className="flex items-center gap-2 bg-slate-100 rounded-lg p-1 border border-slate-200">
-                                <input type="date" value={chartStart} onChange={e => setChartStart(e.target.value)} className="bg-transparent border-none text-xs text-slate-700 w-24 focus:outline-none"/>
-                                <span className="text-slate-400">-</span>
-                                <input type="date" value={chartEnd} onChange={e => setChartEnd(e.target.value)} className="bg-transparent border-none text-xs text-slate-700 w-24 focus:outline-none"/>
+                            <div className="flex items-center gap-2 bg-slate-900/50 rounded-lg p-1 border border-slate-700">
+                                <input type="date" value={chartStart} onChange={e => setChartStart(e.target.value)} className="bg-transparent border-none text-xs text-slate-300 w-24 focus:outline-none [color-scheme:dark]"/>
+                                <span className="text-slate-500">-</span>
+                                <input type="date" value={chartEnd} onChange={e => setChartEnd(e.target.value)} className="bg-transparent border-none text-xs text-slate-300 w-24 focus:outline-none [color-scheme:dark]"/>
                             </div>
                         </div>
                     </div>
