@@ -491,7 +491,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                 >
                     <div className="bg-slate-800 w-full max-w-4xl rounded-2xl border border-slate-700 shadow-2xl relative animate-scale-up max-h-[90vh] overflow-y-auto">
                         <div className="sticky top-0 bg-slate-800 p-6 border-b border-slate-700 flex justify-between items-center z-10">
-                            <h2 className="text-xl font-bold text-white">Minha Agenda</h2>
+                            <h2 className="text-xl font-bold text-slate-900">Minha Agenda</h2>
                             <button onClick={() => setIsConfigOpen(false)}><X size={24} className="text-slate-400 hover:text-white"/></button>
                         </div>
                         
@@ -507,7 +507,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                                  <div className="w-24">
                                                      <label className="flex items-center gap-2 cursor-pointer">
                                                          <input type="checkbox" checked={day.active} onChange={() => toggleDay(key as keyof WorkSchedule)} className="rounded border-slate-600 text-orange-500 focus:ring-orange-500 bg-slate-800" />
-                                                         <span className={day.active ? 'text-white' : 'text-slate-400'}>{daysMap[key]}</span>
+                                                         <span className={day.active ? 'text-slate-900 font-bold' : 'text-slate-500'}>{daysMap[key]}</span>
                                                      </label>
                                                  </div>
                                                  {day.active && (
@@ -596,7 +596,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                             <img src="https://i.freeimage.host/qD9Rddv.png" alt="Insight Barber Logo" className="w-full h-full object-cover" />
                         </div>
                         <div>
-                            <h1 className="font-bold leading-tight text-white">INSIGHT BARBER</h1>
+                            <h1 className="font-bold leading-tight text-slate-900">INSIGHT BARBER</h1>
                             <p className="text-xs text-slate-400">Olá, {currentPro.name.split(' ')[0]}</p>
                         </div>
                     </div>
@@ -711,7 +711,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
 
                 {/* Lista de Agenda */}
                 <div>
-                    <h2 className="font-bold text-lg mb-4 flex items-center gap-2 text-white">
+                    <h2 className="font-bold text-lg mb-4 flex items-center gap-2 text-slate-900">
                         <Calendar size={18} className="text-orange-500"/> Minha Agenda
                     </h2>
                     
