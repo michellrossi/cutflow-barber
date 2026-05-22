@@ -547,7 +547,7 @@ const AutomationSettings: React.FC = () => {
                             <Smartphone size={40} className="text-green-500" />
                         </div>
                         <h4 className="text-2xl font-bold text-white mb-2">WhatsApp Conectado!</h4>
-                        <p className="text-slate-400 mb-8">Sua barbearia já está enviando mensagens automáticas.</p>
+                        <p className="text-slate-400 mb-8 text-center">Sua barbearia já está enviando mensagens automáticas.</p>
                         <button 
                             onClick={handleDisconnect}
                             className="px-8 py-3 bg-red-500/10 text-red-500 border border-red-500/20 rounded-md font-bold hover:bg-red-500 hover:text-white transition-all"
@@ -579,7 +579,7 @@ const AutomationSettings: React.FC = () => {
                                     <MessageSquare size={40} className="text-slate-600" />
                                 </div>
                                 <h4 className="text-2xl font-bold text-white mb-2">Conectar WhatsApp</h4>
-                                <p className="text-slate-400 mb-8 max-w-md mx-auto">Habilite o envio de mensagens automáticas de confirmação e lembretes para seus clientes.</p>
+                                <p className="text-slate-400 mb-8 max-w-md mx-auto text-center">Habilite o envio de mensagens automáticas de confirmação e lembretes para seus clientes.</p>
                                 <button 
                                     onClick={handleConnect}
                                     disabled={loading}

@@ -204,7 +204,7 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
                 <div className="w-full border-t border-slate-700" />
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-transparent text-slate-400">
+                <span className="px-2 bg-slate-800 text-slate-400">
                   Já tem conta e senha?
                 </span>
               </div>

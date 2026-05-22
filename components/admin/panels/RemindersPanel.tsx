@@ -367,7 +367,7 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
                                 <Smartphone size={40} className="text-green-500" />
                             </div>
                             <h4 className="text-2xl font-bold text-slate-900 mb-2">WhatsApp Conectado!</h4>
-                            <p className="text-slate-500 mb-8 max-w-md mx-auto">Sua barbearia já está enviando mensagens automáticas de confirmação e lembretes.</p>
+                            <p className="text-slate-500 mb-8 max-w-md mx-auto text-center">Sua barbearia já está enviando mensagens automáticas de confirmação e lembretes.</p>
                             <button
                                 onClick={handleDisconnect}
                                 className="px-8 py-3 bg-red-50 text-red-600 border border-red-100 rounded-md font-bold hover:bg-red-600 hover:text-white transition-all shadow-sm"
@@ -399,7 +399,7 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
                                         <MessageSquare size={40} className="text-slate-400" />
                                     </div>
                                     <h4 className="text-2xl font-bold text-slate-900 mb-2">Conectar WhatsApp</h4>
-                                    <p className="text-slate-500 mb-8 max-w-md mx-auto">Habilite o envio de mensagens automáticas de confirmação e lembretes para seus clientes.</p>
+                                    <p className="text-slate-500 mb-8 max-w-md mx-auto text-center">Habilite o envio de mensagens automáticas de confirmação e lembretes para seus clientes.</p>
                                     <button
                                         onClick={handleConnect}
                                         disabled={wsLoading}
