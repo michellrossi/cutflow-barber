@@ -117,7 +117,7 @@ const CashTab: React.FC = () => {
   const { professionals, cashSessions } = useShop();
   const {
     openSession,
-    sessionEntries: cashEntries,
+    cashEntries,
     totalCashInputs,
     totalCashOutputs,
     expectedClosingBalance: expectedBalance,

@@ -190,6 +190,8 @@ export function useCashSession() {
   return {
     openSession,
     sessionEntries,
+    cashEntries,
+    digitalEntries,
     isCashEntry,
     isDigitalEntry,
     

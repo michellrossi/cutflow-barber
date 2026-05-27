@@ -22,7 +22,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 export const CashControlPanel: React.FC = () => {
   const {
     openSession,
-    sessionEntries: cashEntries,
+    cashEntries,
     totalCashInputs,
     totalCashOutputs,
     expectedClosingBalance: expectedBalance,

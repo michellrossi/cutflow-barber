@@ -693,7 +693,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                             <button
                                 onClick={handleSaveSchedule}
                                 disabled={isSaving}
-                                className="w-full py-3 bg-green-500 hover:bg-orange-600 text-white font-bold rounded-lg flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-lg flex items-center justify-center gap-2"
                             >
                                 {isSaving ? <Loader2 className="animate-spin" /> : 'Salvar Alterações'}
                             </button>
