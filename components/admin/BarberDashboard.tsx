@@ -223,11 +223,14 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
             await processLoyalty(completionTarget, settings);
             await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
 
-            if (method === 'cash') {
-                const openSession = cashSessions.find(s => s.status === 'open');
-                if (openSession) {
-                    await addCashMovement({ type: 'input', category: 'Venda / Serviço', amount: finalTotal, description: `Cliente: ${completionTarget.clientName}` });
-                }
+            const openSession = cashSessions.find(s => s.status === 'open');
+            if (openSession) {
+                await addCashMovement({
+                    type: 'input',
+                    category: 'Venda / Serviço',
+                    amount: finalTotal,
+                    description: `Cliente: ${completionTarget.clientName} | Método: ${method}`
+                });
             }
 
             showToast('Atendimento finalizado com sucesso! ✅');

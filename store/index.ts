@@ -8,6 +8,7 @@ export { useCatalog, CatalogProvider } from './contexts/CatalogContext';
 export { useClients, ClientProvider } from './contexts/ClientContext';
 export { useAppointments, AppointmentProvider } from './contexts/AppointmentContext';
 export { useSettings, SettingsProvider } from './contexts/SettingsContext';
+export { useCashSession } from './useCashSession';
 
 import { useShop as useShopBase } from './ShopContext';
 import { useInventory } from './contexts/InventoryContext';

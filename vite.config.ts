@@ -12,6 +12,17 @@ export default defineConfig(({ mode }) => {
       plugins: [react()],
       build: {
         rollupOptions: {
+          external: [
+            /^(node:)?(fs|path|os|crypto|child_process|util|url|module|worker_threads|tty|buffer)$/,
+            'fsevents',
+            'rollup',
+            'tsx',
+            'get-tsconfig',
+            /node_modules\/rollup/,
+            /node_modules\/tsx/,
+            /node_modules\/get-tsconfig/,
+            /node_modules\/esbuild/
+          ],
           onwarn(warning, defaultHandler) {
             if (warning.code === 'MODULE_LEVEL_DIRECTIVE') {
               return;
@@ -28,11 +39,7 @@ export default defineConfig(({ mode }) => {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
       },
-      resolve: {
-        alias: {
-          '@': path.resolve('.'),
-        }
-      },
+
       test: {
         globals: true,
         environment: 'node',

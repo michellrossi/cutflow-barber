@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useShop } from '../../../store';
+import { useShop, useCashSession } from '../../../store';
 import { useToast } from '../../ui/ToastContext';
 import {
   Wallet, TrendingUp, Users, BarChart3, ArrowUpCircle, ArrowDownCircle,
@@ -114,24 +114,36 @@ const Modal: React.FC<{ title: string; onClose: () => void; children: React.Reac
 // SUB-ABA 1: CAIXA FÍSICO
 // ═══════════════════════════════════════════════════════════════════════════════
 const CashTab: React.FC = () => {
-  const { cashSessions, cashFlowEntries, openCashSession, closeCashSession, addCashMovement, professionals } = useShop();
+  const { professionals } = useShop();
+  const {
+    openSession,
+    sessionEntries: cashEntries,
+    totalCashInputs,
+    totalCashOutputs,
+    expectedClosingBalance: expectedBalance,
+    cashSales,
+    cashAportes: aportes,
+    cashSangrias: sangrias,
+    totalDigitalSales,
+    digitalPix,
+    digitalCredit,
+    digitalDebit,
+    digitalSubscription,
+    openCashSession,
+    addCashMovement,
+    handleCloseCash,
+    formatCurrencyBRL
+  } = useCashSession();
+
   const { showToast } = useToast();
-
-  const openSession = cashSessions.find(s => s.status === 'open');
-  const sessionEntries = useMemo(() => cashFlowEntries.filter(e => e.sessionId === openSession?.id), [cashFlowEntries, openSession]);
-
-  const totalInputs = sessionEntries.filter(e => e.type === 'input').reduce((a, b) => a + b.amount, 0);
-  const totalOutputs = sessionEntries.filter(e => e.type === 'output').reduce((a, b) => a + b.amount, 0);
-  const expectedBalance = openSession ? openSession.openingBalance + totalInputs - totalOutputs : 0;
-
-  const cashSales = sessionEntries.filter(e => e.type === 'input' && e.category === 'Venda / Serviço').reduce((a, b) => a + b.amount, 0);
-  const aportes = sessionEntries.filter(e => e.type === 'input' && e.category !== 'Venda / Serviço').reduce((a, b) => a + b.amount, 0);
-  const sangrias = sessionEntries.filter(e => e.type === 'output').reduce((a, b) => a + b.amount, 0);
 
   const [modal, setModal] = useState<'open' | 'close' | 'aporte' | 'sangria' | null>(null);
   const [form, setForm] = useState({ amount: '', reason: '', obs: '', destination: 'cofre', responsavel: '' });
   const [informedClose, setInformedClose] = useState('');
   const [justif, setJustif] = useState('');
+  
+  const [fundoFixoAtivo, setFundoFixoAtivo] = useState(true);
+  const [fundoFixoValor, setFundoFixoValor] = useState('100.00');
   const [saving, setSaving] = useState(false);
 
   const closeModal = () => { setModal(null); setForm({ amount: '', reason: '', obs: '', destination: 'cofre', responsavel: '' }); setInformedClose(''); setJustif(''); };
@@ -149,10 +161,24 @@ const CashTab: React.FC = () => {
     const diff = Math.abs(Number(informedClose) - expectedBalance);
     if (diff > 0.01 && !justif.trim()) { showToast('Informe a justificativa para a diferença de caixa.', 'error'); return; }
     setSaving(true);
-    const r = await closeCashSession(Number(informedClose));
+    
+    const r = await handleCloseCash(
+      Number(informedClose),
+      fundoFixoAtivo,
+      Number(fundoFixoValor) || 0
+    );
+
     setSaving(false);
-    if (r.success) { showToast('Caixa fechado!', 'success'); closeModal(); }
-    else showToast(r.error || 'Erro', 'error');
+    if (r.success) { 
+      showToast(
+        fundoFixoAtivo && Number(informedClose) > Number(fundoFixoValor)
+          ? `Caixa fechado! Sangria de ${formatCurrencyBRL(Number(informedClose) - Number(fundoFixoValor))} realizada e fundo de ${formatCurrencyBRL(Number(fundoFixoValor))} deixado.`
+          : 'Caixa fechado com sucesso!', 
+        'success'
+      ); 
+      closeModal(); 
+    }
+    else showToast(r.error || 'Erro ao fechar caixa.', 'error');
   };
 
   const handleMovement = (type: 'input' | 'output', category: string) => async (e: React.FormEvent) => {
@@ -179,7 +205,7 @@ const CashTab: React.FC = () => {
       <div className="space-y-2">
         {hoursOpen > 12 && openSession && <AlertBanner type="warning" message={`Caixa aberto há ${hoursOpen}h. Considere realizar o fechamento.`} />}
         {!openSession && <AlertBanner type="danger" message="Nenhum caixa aberto. Inicie uma sessão para registrar movimentos em dinheiro." />}
-        {expectedBalance > 1000 && <AlertBanner type="warning" message={`Saldo elevado na gaveta (${fmtBRL(expectedBalance)}). Considere realizar uma sangria.`} />}
+        {expectedBalance > 1000 && <AlertBanner type="warning" message={`Saldo elevado na gaveta (${formatCurrencyBRL(expectedBalance)}). Considere realizar uma sangria.`} />}
       </div>
 
       {/* Status ao Vivo */}
@@ -190,7 +216,7 @@ const CashTab: React.FC = () => {
           </div>
           <div>
             <p className={`font-black text-lg ${openSession ? 'text-emerald-900' : 'text-red-900'}`}>
-              {openSession ? 'Caixa Aberto' : 'Caixa Fechado'}
+              {openSession ? 'Caixa Aberto (Operação Física)' : 'Caixa Fechado'}
             </p>
             <p className={`text-sm font-medium ${openSession ? 'text-emerald-700' : 'text-red-600'}`}>
               {openSession ? `Desde ${openedAt?.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} • ${hoursOpen}h abertas` : 'Aguardando abertura de sessão'}
@@ -218,66 +244,144 @@ const CashTab: React.FC = () => {
         </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        <KpiCard label="Fundo Inicial" value={fmtBRL(openSession?.openingBalance || 0)} icon={<Wallet />} color="slate" />
-        <KpiCard label="Vendas (Cash)" value={fmtBRL(cashSales)} icon={<Banknote />} color="green" />
-        <KpiCard label="Aportes" value={fmtBRL(aportes)} icon={<ArrowUpCircle />} color="blue" />
-        <KpiCard label="Sangrias" value={fmtBRL(sangrias)} icon={<ArrowDownCircle />} color="red" />
-        <KpiCard label="Entradas Total" value={fmtBRL(totalInputs)} icon={<TrendingUp />} color="green" />
-        <KpiCard label="Saldo Gaveta" value={fmtBRL(expectedBalance)} icon={<DollarSign />} color="indigo" />
-      </div>
+      {openSession ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-8 space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <KpiCard label="Fundo Inicial" value={formatCurrencyBRL(openSession.openingBalance)} icon={<Wallet />} color="slate" />
+              <KpiCard label="Entradas (Gaveta)" value={formatCurrencyBRL(totalCashInputs)} icon={<ArrowUpCircle />} color="green" />
+              <KpiCard label="Saídas (Gaveta)" value={formatCurrencyBRL(totalCashOutputs)} icon={<ArrowDownCircle />} color="red" />
+              <KpiCard label="Vendas (Espécie)" value={formatCurrencyBRL(cashSales)} icon={<Banknote />} color="green" />
+              <KpiCard label="Aportes (Troco)" value={formatCurrencyBRL(aportes)} icon={<Plus />} color="blue" />
+              <KpiCard label="Saldo Físico (Gaveta)" value={formatCurrencyBRL(expectedBalance)} icon={<DollarSign />} color="indigo" />
+            </div>
 
-      {/* Tabela Extrato */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h3 className="font-bold text-slate-900">Extrato da Sessão</h3>
-          <span className="text-xs text-slate-500 font-medium">{sessionEntries.length} movimentos</span>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead className="bg-slate-50 border-b border-slate-100">
-              <tr className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                <th className="px-5 py-3">Hora</th>
-                <th className="px-5 py-3">Tipo / Origem</th>
-                <th className="px-5 py-3">Descrição</th>
-                <th className="px-5 py-3 text-right">Valor</th>
-                <th className="px-5 py-3 text-right">Saldo Após</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {sessionEntries.length === 0 && (
-                <tr><td colSpan={5} className="py-12 text-center text-slate-400 text-sm">Nenhum movimento ainda. Registre vendas ou movimentos manuais.</td></tr>
-              )}
-              {(() => {
-                let runningBalance = openSession?.openingBalance || 0;
-                return [...sessionEntries].reverse().map(e => {
-                  if (e.type === 'input') runningBalance += e.amount;
-                  else runningBalance -= e.amount;
-                  const bal = runningBalance;
-                  return (
-                    <tr key={e.id} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-5 py-3.5 text-sm text-slate-500 font-medium whitespace-nowrap">
-                        {new Date(e.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border uppercase tracking-wide ${ENTRY_COLORS[e.category] || (e.type === 'input' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200')}`}>
-                          {e.category}
-                        </span>
-                      </td>
-                      <td className="px-5 py-3.5 text-sm text-slate-600">{e.description || '—'}</td>
-                      <td className={`px-5 py-3.5 text-right font-bold text-sm ${e.type === 'input' ? 'text-emerald-600' : 'text-red-600'}`}>
-                        {e.type === 'input' ? '+' : '-'}{fmtBRL(e.amount)}
-                      </td>
-                      <td className="px-5 py-3.5 text-right font-bold text-slate-900 text-sm">{fmtBRL(bal)}</td>
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h3 className="font-bold text-slate-900">Extrato da Sessão (Físico)</h3>
+                <span className="text-xs text-slate-500 font-medium">{cashEntries.length} movimentos</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 border-b border-slate-100">
+                    <tr className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <th className="px-5 py-3">Hora</th>
+                      <th className="px-5 py-3">Tipo / Origem</th>
+                      <th className="px-5 py-3">Descrição</th>
+                      <th className="px-5 py-3 text-right">Valor</th>
+                      <th className="px-5 py-3 text-right">Saldo Após</th>
                     </tr>
-                  );
-                });
-              })()}
-            </tbody>
-          </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {cashEntries.length === 0 && (
+                      <tr><td colSpan={5} className="py-12 text-center text-slate-400 text-sm">Nenhum movimento em dinheiro físico lançado.</td></tr>
+                    )}
+                    {(() => {
+                      let runningBalance = openSession.openingBalance;
+                      return [...cashEntries].reverse().map(e => {
+                        if (e.type === 'input') runningBalance += e.amount;
+                        else runningBalance -= e.amount;
+                        const bal = runningBalance;
+                        return (
+                          <tr key={e.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-5 py-3.5 text-sm text-slate-500 font-medium whitespace-nowrap">
+                              {new Date(e.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                            </td>
+                            <td className="px-5 py-3.5">
+                              <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border uppercase tracking-wide ${ENTRY_COLORS[e.category] || (e.type === 'input' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-red-50 text-red-700 border-red-200')}`}>
+                                {e.category}
+                              </span>
+                            </td>
+                            <td className="px-5 py-3.5 text-sm text-slate-600">{e.description || '—'}</td>
+                            <td className={`px-5 py-3.5 text-right font-bold text-sm ${e.type === 'input' ? 'text-emerald-600' : 'text-red-600'}`}>
+                              {e.type === 'input' ? '+' : '-'}{formatCurrencyBRL(e.amount)}
+                            </td>
+                            <td className="px-5 py-3.5 text-right font-bold text-slate-900 text-sm">{formatCurrencyBRL(bal)}</td>
+                          </tr>
+                        );
+                      });
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-4">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6 sticky top-4">
+              <div>
+                <h4 className="font-extrabold text-slate-900 text-base">Vendas Digitais do Turno</h4>
+                <p className="text-slate-400 text-xs mt-1">Conferência rápida para bater maquininhas e PIX sem misturar com o saldo físico.</p>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3.5 bg-teal-50/50 rounded-xl border border-teal-100/50">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center">
+                      <Smartphone size={16} />
+                    </div>
+                    <span className="text-xs font-bold text-slate-700">PIX</span>
+                  </div>
+                  <span className="text-sm font-black text-teal-700">{formatCurrencyBRL(digitalPix)}</span>
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 bg-purple-50/50 rounded-xl border border-purple-100/50">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
+                      <CreditCard size={16} />
+                    </div>
+                    <span className="text-xs font-bold text-slate-700">Cartão Crédito</span>
+                  </div>
+                  <span className="text-sm font-black text-purple-700">{formatCurrencyBRL(digitalCredit)}</span>
+                </div>
+
+                <div className="flex items-center justify-between p-3.5 bg-blue-50/50 rounded-xl border border-blue-100/50">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                      <CreditCard size={16} />
+                    </div>
+                    <span className="text-xs font-bold text-slate-700">Cartão Débito</span>
+                  </div>
+                  <span className="text-sm font-black text-blue-700">{formatCurrencyBRL(digitalDebit)}</span>
+                </div>
+
+                {digitalSubscription > 0 && (
+                  <div className="flex items-center justify-between p-3.5 bg-orange-50/50 rounded-xl border border-orange-100/50">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-600 flex items-center justify-center">
+                        <Award size={16} />
+                      </div>
+                      <span className="text-xs font-bold text-slate-700">Assinaturas</span>
+                    </div>
+                    <span className="text-sm font-black text-orange-700">{formatCurrencyBRL(digitalSubscription)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="h-px bg-slate-100" />
+
+              <div className="flex justify-between items-center bg-slate-900 text-white p-4 rounded-xl shadow-inner">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Vendas Digitais</span>
+                <span className="text-lg font-black text-white">{formatCurrencyBRL(totalDigitalSales)}</span>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="bg-white border-2 border-dashed border-slate-200 rounded-2xl p-12 flex flex-col items-center justify-center text-center max-w-2xl mx-auto shadow-sm">
+          <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+            <Lock size={24} className="text-slate-400" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900 mb-2">Caixa Fechado</h3>
+          <p className="text-[#6b7d99] text-sm mb-6 max-w-md">Para registrar pagamentos em dinheiro e gerenciar sangrias do dia, você precisa iniciar uma nova sessão de caixa.</p>
+          <button 
+            onClick={() => setModal('open')}
+            className="bg-[#ea580c] text-white font-bold px-10 py-4 rounded-[2rem] flex items-center gap-2 transition-all shadow-lg shadow-orange-600/20 hover:scale-105 active:scale-95"
+          >
+            <Plus size={24} className="stroke-[3px]" /> Abrir Caixa Agora
+          </button>
+        </div>
+      )}
 
       {/* Modais */}
       <AnimatePresence>
@@ -390,16 +494,31 @@ const CashTab: React.FC = () => {
           <Modal title="Fechar Caixa" onClose={closeModal} maxW="max-w-sm">
             <form onSubmit={handleClose} className="p-6 space-y-4">
               <div className="bg-slate-50 rounded-xl border border-slate-200 p-4 space-y-2 text-sm">
-                <div className="flex justify-between"><span className="text-slate-500">Fundo Inicial</span><span className="font-bold">{fmtBRL(openSession.openingBalance)}</span></div>
-                <div className="flex justify-between"><span className="text-slate-500">+ Entradas</span><span className="font-bold text-emerald-600">{fmtBRL(totalInputs)}</span></div>
-                <div className="flex justify-between pb-2 border-b border-slate-200"><span className="text-slate-500">- Saídas</span><span className="font-bold text-red-600">{fmtBRL(totalOutputs)}</span></div>
-                <div className="flex justify-between text-base"><span className="font-bold text-slate-700">Sistema Esperado</span><span className="font-black text-slate-900">{fmtBRL(expectedBalance)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">Fundo Inicial</span><span className="font-bold">{formatCurrencyBRL(openSession.openingBalance)}</span></div>
+                <div className="flex justify-between"><span className="text-slate-500">+ Entradas</span><span className="font-bold text-emerald-600">{formatCurrencyBRL(totalCashInputs)}</span></div>
+                <div className="flex justify-between pb-2 border-b border-slate-200"><span className="text-slate-500">- Saídas</span><span className="font-bold text-red-600">{formatCurrencyBRL(totalCashOutputs)}</span></div>
+                <div className="flex justify-between text-base"><span className="font-bold text-slate-700">Sistema Esperado</span><span className="font-black text-slate-900">{formatCurrencyBRL(expectedBalance)}</span></div>
               </div>
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Valor Real Contado na Gaveta (R$)</label>
                 <input type="number" step="0.01" min="0" required value={informedClose} onChange={e => setInformedClose(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-2xl font-black text-center text-slate-900 focus:outline-none focus:border-red-500" placeholder="0,00" />
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-2xl font-black text-center text-slate-900 focus:outline-none focus:border-red-500 text-center" placeholder="0,00" />
               </div>
+              
+              <div className="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={fundoFixoAtivo} onChange={e => setFundoFixoAtivo(e.target.checked)} className="rounded border-slate-300 text-orange-500 focus:ring-orange-500 bg-white" />
+                  <span className="text-xs font-bold text-slate-700">Deixar fundo padrão para o próximo turno</span>
+                </label>
+                {fundoFixoAtivo && (
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Valor do Fundo Fixo (R$)</label>
+                    <input type="number" step="0.01" min="0" required value={fundoFixoValor} onChange={e => setFundoFixoValor(e.target.value)} 
+                      className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-red-500" placeholder="100.00" />
+                  </div>
+                )}
+              </div>
+              
               {Number(informedClose) > 0 && Math.abs(Number(informedClose) - expectedBalance) > 0.01 && (
                 <div className="space-y-3">
                   <div className={`p-3 rounded-xl border flex items-start gap-3 ${Math.abs(Number(informedClose) - expectedBalance) > 50 ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
@@ -408,7 +527,7 @@ const CashTab: React.FC = () => {
                       <p className="text-xs font-bold text-slate-800">Divergência de Caixa</p>
                       <p className="text-xs text-slate-600 mt-0.5">
                         Diferença: <strong className={Number(informedClose) - expectedBalance > 0 ? 'text-emerald-600' : 'text-red-600'}>
-                          {Number(informedClose) > expectedBalance ? '+' : ''}{fmtBRL(Number(informedClose) - expectedBalance)}
+                          {Number(informedClose) > expectedBalance ? '+' : ''}{formatCurrencyBRL(Number(informedClose) - expectedBalance)}
                         </strong>
                       </p>
                     </div>
@@ -420,6 +539,13 @@ const CashTab: React.FC = () => {
                   </div>
                 </div>
               )}
+
+              {fundoFixoAtivo && Number(informedClose) > Number(fundoFixoValor) && (
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-lg text-xs font-medium">
+                  Uma sangria automática de <strong>{formatCurrencyBRL(Number(informedClose) - Number(fundoFixoValor))}</strong> será registrada no fechamento para deixar exatamente o troco de <strong>{formatCurrencyBRL(Number(fundoFixoValor))}</strong>.
+                </div>
+              )}
+
               <button disabled={saving} type="submit" className="w-full bg-red-600 text-white font-bold py-4 rounded-xl hover:bg-red-700 active:scale-95 transition-all flex items-center justify-center gap-2">
                 {saving ? <Loader2 className="animate-spin" size={18} /> : <><Lock size={18} /> Confirmar Fechamento</>}
               </button>
@@ -434,7 +560,7 @@ const CashTab: React.FC = () => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // SUB-ABA 2: FATURAMENTO
 // ═══════════════════════════════════════════════════════════════════════════════
-const BillingTab: React.FC<{ period: string }> = ({ period }) => {
+const BillingTab: React.FC<{ period: string; selectedProId: string }> = ({ period, selectedProId }) => {
   const { appointments, services, professionals, products } = useShop();
 
   const now = new Date();
@@ -442,6 +568,7 @@ const BillingTab: React.FC<{ period: string }> = ({ period }) => {
   const monthStart = thisMonthStart();
 
   const inRange = (apt: typeof appointments[0]) => {
+    if (selectedProId !== 'all' && apt.professionalId !== selectedProId) return false;
     if (period === 'today') return apt.date === todayStr;
     if (period === 'week') {
       const d = new Date(apt.date + 'T12:00:00');
@@ -453,7 +580,7 @@ const BillingTab: React.FC<{ period: string }> = ({ period }) => {
   };
 
   const completed = appointments.filter(a => a.status === 'completed' && inRange(a));
-  const todayCompleted = appointments.filter(a => a.status === 'completed' && a.date === todayStr);
+  const todayCompleted = appointments.filter(a => a.status === 'completed' && a.date === todayStr && (selectedProId === 'all' || a.professionalId === selectedProId));
 
   const totalRevenue = completed.reduce((s, a) => s + a.totalValue, 0);
   const todayRevenue = todayCompleted.reduce((s, a) => s + a.totalValue, 0);
@@ -594,7 +721,7 @@ const BillingTab: React.FC<{ period: string }> = ({ period }) => {
 // ═══════════════════════════════════════════════════════════════════════════════
 // SUB-ABA 3: COMISSÕES
 // ═══════════════════════════════════════════════════════════════════════════════
-const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
+const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ period, selectedProId }) => {
   const { appointments, professionals, addCashMovement } = useShop();
   const { showToast } = useToast();
 
@@ -603,6 +730,7 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
   const now = new Date();
 
   const inRange = (apt: typeof appointments[0]) => {
+    if (selectedProId !== 'all' && apt.professionalId !== selectedProId) return false;
     if (period === 'today') return apt.date === todayStr;
     if (period === 'week') { const d = new Date(apt.date + 'T12:00:00'); const wStart = new Date(); wStart.setDate(now.getDate() - now.getDay()); return d >= wStart; }
     if (period === 'month') return apt.date >= monthStart;
@@ -611,7 +739,12 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
 
   const completed = appointments.filter(a => a.status === 'completed' && inRange(a));
 
-  const proStats = professionals.map(p => {
+  const filteredProfessionals = useMemo(() => {
+    if (selectedProId === 'all') return professionals;
+    return professionals.filter(p => p.id === selectedProId);
+  }, [professionals, selectedProId]);
+
+  const proStats = filteredProfessionals.map(p => {
     const pApts = completed.filter(a => a.professionalId === p.id);
     const revenue = pApts.reduce((s, a) => s + a.totalValue, 0);
     const commPct = p.commissionPercentage ?? 50;
@@ -627,6 +760,10 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
   const [detailPro, setDetailPro] = useState<string | null>(null);
   const [payModal, setPayModal] = useState<{ id: string; name: string; amount: number } | null>(null);
   const [payObs, setPayObs] = useState('');
+  
+  // Novo estado de Origem de Pagamento de Comissão
+  const [origemPagamento, setOrigemPagamento] = useState<'gaveta' | 'banco'>('banco');
+  
   const [paying, setPaying] = useState(false);
 
   const detailData = useMemo(() => {
@@ -638,16 +775,22 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
     e.preventDefault();
     if (!payModal) return;
     setPaying(true);
+    
     // Registra a saída no caixa como repasse de comissão
     const r = await addCashMovement({
       type: 'output',
       category: 'Repasse Comissão',
       amount: payModal.amount,
-      description: `Comissão de ${payModal.name}${payObs ? ' — ' + payObs : ''}`,
+      description: `Comissão de ${payModal.name}${origemPagamento === 'banco' ? ' | Método: bank' : ''}${payObs ? ' — ' + payObs : ''}`,
     });
     setPaying(false);
     if (r.success) {
-      showToast(`Comissão de ${payModal.name} paga e registrada no caixa!`, 'success');
+      showToast(
+        origemPagamento === 'banco'
+          ? `Comissão de ${payModal.name} paga via PIX (banco) e registrada!`
+          : `Comissão de ${payModal.name} paga em dinheiro e deduzida da gaveta!`, 
+        'success'
+      );
       setPayModal(null);
       setPayObs('');
     } else {
@@ -685,7 +828,7 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {proStats.length === 0 && (
-                <tr><td colSpan={7} className="py-12 text-center text-slate-400">Nenhum dado no período</td></tr>
+                <tr><td colSpan={7} className="py-12 text-center text-slate-400">Nenhum barbeiro correspondente aos filtros.</td></tr>
               )}
               {proStats.map(p => (
                 <React.Fragment key={p.id}>
@@ -717,7 +860,7 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
                           <ChevronRight size={12} className={`transition-transform ${detailPro === p.id ? 'rotate-90' : ''}`} />
                           Detalhe
                         </button>
-                        <button onClick={() => setPayModal({ id: p.id, name: p.name, amount: p.commission })}
+                        <button onClick={() => { setPayModal({ id: p.id, name: p.name, amount: p.commission }); setOrigemPagamento('banco'); }}
                           className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-100 transition-colors">
                           Pagar
                         </button>
@@ -784,10 +927,34 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
                   <span className="font-black text-orange-600 text-lg">{fmtBRL(payModal.amount)}</span>
                 </div>
               </div>
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700 font-medium flex items-start gap-2">
-                <AlertTriangle size={14} className="mt-0.5 shrink-0" />
-                O valor será registrado como saída no caixa físico ativo, se houver.
+
+              {/* Seletor de Origem de Pagamento de Comissão */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Origem do Pagamento</label>
+                <div className="flex gap-2">
+                  <button type="button" onClick={() => setOrigemPagamento('gaveta')}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1 ${origemPagamento === 'gaveta' ? 'bg-orange-50 border-orange-400 text-orange-800' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}>
+                    <Banknote size={14} /> Gaveta (Dinheiro)
+                  </button>
+                  <button type="button" onClick={() => setOrigemPagamento('banco')}
+                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1 ${origemPagamento === 'banco' ? 'bg-blue-50 border-blue-400 text-blue-800' : 'bg-slate-50 border-slate-200 text-slate-500 hover:bg-slate-100'}`}>
+                    <Smartphone size={14} /> Conta Bancária (PIX)
+                  </button>
+                </div>
               </div>
+
+              {origemPagamento === 'banco' ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-xs text-blue-700 font-medium flex items-start gap-2">
+                  <CheckCircle size={14} className="mt-0.5 shrink-0" />
+                  Pago via PIX/Banco. A despesa será registrada nos relatórios de lucro, mas <strong>NÃO</strong> deduzirá do saldo físico da gaveta do caixa.
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700 font-medium flex items-start gap-2">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                  Retirada em espécie da gaveta. O valor <strong>será deduzido</strong> do saldo físico do caixa.
+                </div>
+              )}
+
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-2">Observação (Opcional)</label>
                 <input value={payObs} onChange={e => setPayObs(e.target.value)}
@@ -812,10 +979,7 @@ const CommissionsTab: React.FC<{ period: string }> = ({ period }) => {
   );
 };
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// SUB-ABA 4: RELATÓRIOS
-// ═══════════════════════════════════════════════════════════════════════════════
-const ReportsTab: React.FC<{ period: string }> = ({ period }) => {
+const ReportsTab: React.FC<{ period: string; selectedProId: string }> = ({ period, selectedProId }) => {
   const { appointments, professionals, cashSessions, cashFlowEntries, services } = useShop();
 
   const todayStr = today();
@@ -826,6 +990,7 @@ const ReportsTab: React.FC<{ period: string }> = ({ period }) => {
   const lastMonthEnd = (() => { const d = new Date(); d.setDate(0); return d.toISOString().split('T')[0]; })();
 
   const inRange = (apt: typeof appointments[0]) => {
+    if (selectedProId !== 'all' && apt.professionalId !== selectedProId) return false;
     if (period === 'today') return apt.date === todayStr;
     if (period === 'week') { const d = new Date(apt.date + 'T12:00:00'); const wStart = new Date(); wStart.setDate(now.getDate() - now.getDay()); return d >= wStart; }
     if (period === 'month') return apt.date >= monthStart;
@@ -833,10 +998,10 @@ const ReportsTab: React.FC<{ period: string }> = ({ period }) => {
   };
 
   const completed = appointments.filter(a => a.status === 'completed' && inRange(a));
-  const todayCompleted = appointments.filter(a => a.status === 'completed' && a.date === todayStr);
-  const yestCompleted = appointments.filter(a => a.status === 'completed' && a.date === yesterdayStr);
-  const thisMonthCompleted = appointments.filter(a => a.status === 'completed' && a.date >= monthStart);
-  const lastMonthCompleted = appointments.filter(a => a.status === 'completed' && a.date >= lastMonthStart && a.date <= lastMonthEnd);
+  const todayCompleted = appointments.filter(a => a.status === 'completed' && a.date === todayStr && (selectedProId === 'all' || a.professionalId === selectedProId));
+  const yestCompleted = appointments.filter(a => a.status === 'completed' && a.date === yesterdayStr && (selectedProId === 'all' || a.professionalId === selectedProId));
+  const thisMonthCompleted = appointments.filter(a => a.status === 'completed' && a.date >= monthStart && (selectedProId === 'all' || a.professionalId === selectedProId));
+  const lastMonthCompleted = appointments.filter(a => a.status === 'completed' && a.date >= lastMonthStart && a.date <= lastMonthEnd && (selectedProId === 'all' || a.professionalId === selectedProId));
 
   const totalRevenue = completed.reduce((s, a) => s + a.totalValue, 0);
   const todayRevenue = todayCompleted.reduce((s, a) => s + a.totalValue, 0);
@@ -846,10 +1011,12 @@ const ReportsTab: React.FC<{ period: string }> = ({ period }) => {
   const growthVsLastMonth = lastMonthRevenue > 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
   const growthToday = yestRevenue > 0 ? ((todayRevenue - yestRevenue) / yestRevenue) * 100 : 0;
 
-  const totalCommission = professionals.reduce((sTot, p) => {
-    const rev = completed.filter(a => a.professionalId === p.id).reduce((s, a) => s + a.totalValue, 0);
-    return sTot + rev * (p.commissionPercentage ?? 50) / 100;
-  }, 0);
+  const totalCommission = professionals
+    .filter(p => selectedProId === 'all' || p.id === selectedProId)
+    .reduce((sTot, p) => {
+      const rev = completed.filter(a => a.professionalId === p.id).reduce((s, a) => s + a.totalValue, 0);
+      return sTot + rev * (p.commissionPercentage ?? 50) / 100;
+    }, 0);
   const estimatedProfit = totalRevenue - totalCommission;
 
   const cancelled = appointments.filter(a => a.status === 'cancelled' && inRange(a));
@@ -1016,6 +1183,9 @@ const ReportsTab: React.FC<{ period: string }> = ({ period }) => {
 export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initialTab }) => {
   const [activeTab, setActiveTab] = useState<FinancialTab>(initialTab || 'cash');
   const [period, setPeriod] = useState('month');
+  
+  // Novo estado de Filtro por Profissional
+  const [selectedProId, setSelectedProId] = useState<string>('all');
 
   const { cashSessions, refresh, appointments, professionals, cashFlowEntries } = useShop();
   const { showToast } = useToast();
@@ -1045,7 +1215,7 @@ export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initia
       let csvContent = "data:text/csv;charset=utf-8,";
       if (activeTab === 'billing' || activeTab === 'reports' || activeTab === 'commissions') {
           csvContent += "Data;Cliente;Profissional;Valor;Pagamento;Status\n";
-          const filtered = appointments.filter(a => inRangeDate(a.date));
+          const filtered = appointments.filter(a => inRangeDate(a.date) && (selectedProId === 'all' || a.professionalId === selectedProId));
           filtered.forEach(a => {
               csvContent += `${a.date};${a.clientName};${professionals.find(p => p.id === a.professionalId)?.name || '---'};${a.totalValue};${a.paymentMethod};${a.status}\n`;
           });
@@ -1092,6 +1262,16 @@ export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initia
           <p className="text-[#6b7d99] text-sm font-medium">Controle total do dinheiro, vendas, repasses e performance financeira.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+          {/* Seletor de Profissional (só para abas que usam) */}
+          {activeTab !== 'cash' && (
+            <select value={selectedProId} onChange={e => setSelectedProId(e.target.value)}
+              className="bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-xl px-4 py-2.5 focus:outline-none focus:border-orange-500 cursor-pointer shadow-sm">
+              <option value="all">Todos os Barbeiros</option>
+              {professionals.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          )}
           {/* Seletor de Período (só para abas que usam) */}
           {activeTab !== 'cash' && (
             <select value={period} onChange={e => setPeriod(e.target.value)}
@@ -1117,7 +1297,7 @@ export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initia
       {/* ── Sub-menu Tabs (padrão cutflow2) ──────────────────────────── */}
       <div className="flex gap-2 p-1 bg-slate-100 rounded-lg w-fit mb-8 overflow-x-auto no-scrollbar max-w-full">
         {TABS.map(tab => (
-          <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+          <button key={tab.id} onClick={() => { setActiveTab(tab.id); if (tab.id === 'cash') setSelectedProId('all'); }}
             className={`flex items-center gap-2 px-6 py-2.5 rounded-md text-sm font-bold transition-all whitespace-nowrap relative
               ${activeTab === tab.id ? 'bg-white text-orange-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>
             {tab.icon}
@@ -1136,9 +1316,9 @@ export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initia
       <AnimatePresence mode="wait">
         <motion.div key={activeTab} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18 }}>
           {activeTab === 'cash' && <CashTab />}
-          {activeTab === 'billing' && <BillingTab period={period} />}
-          {activeTab === 'commissions' && <CommissionsTab period={period} />}
-          {activeTab === 'reports' && <ReportsTab period={period} />}
+          {activeTab === 'billing' && <BillingTab period={period} selectedProId={selectedProId} />}
+          {activeTab === 'commissions' && <CommissionsTab period={period} selectedProId={selectedProId} />}
+          {activeTab === 'reports' && <ReportsTab period={period} selectedProId={selectedProId} />}
         </motion.div>
       </AnimatePresence>
     </div>

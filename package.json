@@ -38,9 +38,7 @@
     "recharts": "^2.12.2",
     "resend": "^6.12.2",
     "timezone": "^1.0.23",
-    "tsx": "^4.21.0",
-    "utc": "^0.1.0",
-    "vite": "^6.1.0"
+    "utc": "^0.1.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",
@@ -58,7 +56,9 @@
     "playwright": "^1.59.1",
     "sinon": "^21.1.2",
     "supertest": "^7.2.2",
+    "tsx": "^4.21.0",
     "typescript": "~5.8.2",
+    "vite": "^6.1.0",
     "vitest": "^4.1.5"
   }
 }

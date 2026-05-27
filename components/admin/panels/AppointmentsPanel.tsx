@@ -1101,17 +1101,15 @@ export const AppointmentsPanel: React.FC = () => {
                                             await processLoyalty(completionTarget, settings);
                                             await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
 
-                                            // 3. Registrar no Caixa (Dinheiro) se aberto
-                                            if (method === 'cash') {
-                                                const openSession = cashSessions.find(s => s.status === 'open');
-                                                if (openSession) {
-                                                    await addCashMovement({
-                                                        type: 'input',
-                                                        category: 'Venda / Serviço',
-                                                        amount: finalTotal,
-                                                        description: `Cliente: ${completionTarget.clientName}`
-                                                    });
-                                                }
+                                            // 3. Registrar no Caixa se aberto (para qualquer método de pagamento)
+                                            const openSession = cashSessions.find(s => s.status === 'open');
+                                            if (openSession) {
+                                                await addCashMovement({
+                                                    type: 'input',
+                                                    category: 'Venda / Serviço',
+                                                    amount: finalTotal,
+                                                    description: `Cliente: ${completionTarget.clientName} | Método: ${method}`
+                                                });
                                             }
 
                                             showToast('Atendimento finalizado com sucesso!');
