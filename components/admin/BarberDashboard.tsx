@@ -693,7 +693,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                             <button
                                 onClick={handleSaveSchedule}
                                 disabled={isSaving}
-                                className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg flex items-center justify-center gap-2"
+                                className="w-full py-3 bg-green-500 hover:bg-orange-600 text-white font-bold rounded-lg flex items-center justify-center gap-2"
                             >
                                 {isSaving ? <Loader2 className="animate-spin" /> : 'Salvar Alterações'}
                             </button>
@@ -767,7 +767,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                 {/* GRÁFICO DE DESEMPENHO E AGENDA FUTURA */}
                 <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
                     <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
-                        <h2 className="font-bold text-lg flex items-center gap-2 text-white">
+                        <h2 className="font-bold text-lg flex items-center gap-2 text-black">
                             <BarChart3 size={18} className="text-orange-500" /> Volume & Previsão
                         </h2>
 
@@ -779,9 +779,9 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                 <button onClick={() => setChartPreset('month')} className="px-3 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white hover:shadow-sm rounded transition-all">Mês</button>
                             </div>
                             <div className="flex items-center gap-2 bg-slate-900/50 rounded-lg p-1 border border-slate-700">
-                                <input type="date" value={chartStart} onChange={e => setChartStart(e.target.value)} className="bg-transparent border-none text-xs text-slate-300 w-24 focus:outline-none [color-scheme:dark]" />
+                                <input type="date" value={chartStart} onChange={e => setChartStart(e.target.value)} className="bg-transparent border-none text-xs text-slate-300 w-24 focus:outline-none" style={{ colorScheme: 'dark' }} />
                                 <span className="text-slate-500">-</span>
-                                <input type="date" value={chartEnd} onChange={e => setChartEnd(e.target.value)} className="bg-transparent border-none text-xs text-slate-300 w-24 focus:outline-none [color-scheme:dark]" />
+                                <input type="date" value={chartEnd} onChange={e => setChartEnd(e.target.value)} className="bg-transparent border-none text-xs text-slate-300 w-24 focus:outline-none" style={{ colorScheme: 'dark' }} />
                             </div>
                         </div>
                     </div>
