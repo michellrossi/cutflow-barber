@@ -51,6 +51,7 @@ export function useShop() {
     cashSessions: financial.cashSessions || [],
     cashFlowEntries: financial.cashFlowEntries || [],
     coupons: financial.coupons || [],
+    commissionPayments: financial.commissionPayments || [],
     messageTemplates: automation.messageTemplates || [],
     messageCategories: automation.messageCategories || [],
     automationTriggers: automation.automationTriggers || [],

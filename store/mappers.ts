@@ -6,6 +6,7 @@ import type {
     CashSession,
     Client,
     ClientSubscription,
+    CommissionPayment,
     Coupon,
     Goal,
     MessageCategory,
@@ -254,6 +255,22 @@ export interface CashSessionRow {
     opened_at: string;
     closed_at?: string | null;
     opened_by?: string | null;
+    total_inputs?: number | null;
+    total_outputs?: number | null;
+    expected_balance?: number | null;
+    difference?: number | null;
+    justification?: string | null;
+}
+
+export interface CommissionPaymentRow {
+    id: string;
+    shop_id: string;
+    professional_id: string;
+    period_start: string;
+    period_end: string;
+    amount_paid: number;
+    payment_method: 'gaveta' | 'banco';
+    paid_at: string;
 }
 
 export interface CashFlowEntryRow {
@@ -531,6 +548,24 @@ export function mapCashSession(data: CashSessionRow): CashSession {
         openedAt: data.opened_at,
         closedAt: data.closed_at ?? undefined,
         openedBy: data.opened_by ?? undefined,
+        totalInputs: data.total_inputs ?? undefined,
+        totalOutputs: data.total_outputs ?? undefined,
+        expectedBalance: data.expected_balance ?? undefined,
+        difference: data.difference ?? undefined,
+        justification: data.justification ?? undefined,
+    };
+}
+
+export function mapCommissionPayment(data: CommissionPaymentRow): CommissionPayment {
+    return {
+        id: data.id,
+        shopId: data.shop_id,
+        professionalId: data.professional_id,
+        periodStart: data.period_start,
+        periodEnd: data.period_end,
+        amountPaid: Number(data.amount_paid || 0),
+        paymentMethod: data.payment_method,
+        paidAt: data.paid_at,
     };
 }
 

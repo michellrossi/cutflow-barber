@@ -114,7 +114,7 @@ const Modal: React.FC<{ title: string; onClose: () => void; children: React.Reac
 // SUB-ABA 1: CAIXA FÍSICO
 // ═══════════════════════════════════════════════════════════════════════════════
 const CashTab: React.FC = () => {
-  const { professionals } = useShop();
+  const { professionals, cashSessions } = useShop();
   const {
     openSession,
     sessionEntries: cashEntries,
@@ -141,6 +141,11 @@ const CashTab: React.FC = () => {
   const [form, setForm] = useState({ amount: '', reason: '', obs: '', destination: 'cofre', responsavel: '' });
   const [informedClose, setInformedClose] = useState('');
   const [justif, setJustif] = useState('');
+
+  const [showHistory, setShowHistory] = useState(false);
+  const closedSessions = useMemo(() => {
+    return cashSessions.filter(s => s.status === 'closed').slice(0, 10);
+  }, [cashSessions]);
   
   const [fundoFixoAtivo, setFundoFixoAtivo] = useState(true);
   const [fundoFixoValor, setFundoFixoValor] = useState('100.00');
@@ -165,7 +170,8 @@ const CashTab: React.FC = () => {
     const r = await handleCloseCash(
       Number(informedClose),
       fundoFixoAtivo,
-      Number(fundoFixoValor) || 0
+      Number(fundoFixoValor) || 0,
+      justif
     );
 
     setSaving(false);
@@ -553,6 +559,94 @@ const CashTab: React.FC = () => {
           </Modal>
         )}
       </AnimatePresence>
+
+      {/* SEÇÃO: HISTÓRICO DE SESSÕES ANTERIORES */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
+        <button 
+          type="button"
+          onClick={() => setShowHistory(!showHistory)}
+          className="w-full flex items-center justify-between font-extrabold text-slate-800 hover:text-[#ea580c] transition-colors focus:outline-none"
+        >
+          <div className="flex items-center gap-2">
+            <Clock size={20} className="text-slate-500" />
+            <span>Histórico de Caixas Fechados (Últimas 10 Sessões)</span>
+          </div>
+          <ChevronRight size={20} className={`transition-transform duration-300 text-slate-400 ${showHistory ? 'rotate-90' : ''}`} />
+        </button>
+
+        <AnimatePresence>
+          {showHistory && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }} 
+              animate={{ opacity: 1, height: 'auto' }} 
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden pt-2"
+            >
+              {closedSessions.length === 0 ? (
+                <p className="text-center text-slate-400 text-sm py-6">Nenhum caixa fechado registrado até o momento.</p>
+              ) : (
+                <div className="overflow-x-auto border border-slate-100 rounded-xl">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-100 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      <tr>
+                        <th className="px-4 py-3">Abertura / Fechamento</th>
+                        <th className="px-4 py-3 text-right">Fundo Inicial</th>
+                        <th className="px-4 py-3 text-right">Entradas</th>
+                        <th className="px-4 py-3 text-right">Saídas</th>
+                        <th className="px-4 py-3 text-right">Esperado</th>
+                        <th className="px-4 py-3 text-right">Contado</th>
+                        <th className="px-4 py-3 text-right">Diferença</th>
+                        <th className="px-4 py-3">Justificativa</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium text-slate-700">
+                      {closedSessions.map(s => {
+                        return (
+                          <tr key={s.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-4 py-3.5 whitespace-nowrap">
+                              <p className="font-bold text-slate-900">
+                                {new Date(s.openedAt).toLocaleDateString('pt-BR')} {new Date(s.openedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              </p>
+                              {s.closedAt && (
+                                <p className="text-[10px] text-slate-400 mt-0.5">
+                                  Fechado: {new Date(s.closedAt).toLocaleDateString('pt-BR')} {new Date(s.closedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                </p>
+                              )}
+                            </td>
+                            <td className="px-4 py-3.5 text-right font-semibold text-slate-800">{formatCurrencyBRL(s.openingBalance)}</td>
+                            <td className="px-4 py-3.5 text-right text-emerald-600 font-semibold">
+                              {s.totalInputs !== undefined ? formatCurrencyBRL(s.totalInputs) : '—'}
+                            </td>
+                            <td className="px-4 py-3.5 text-right text-red-500 font-semibold">
+                              {s.totalOutputs !== undefined ? formatCurrencyBRL(s.totalOutputs) : '—'}
+                            </td>
+                            <td className="px-4 py-3.5 text-right text-slate-800 font-semibold">
+                              {s.expectedBalance !== undefined ? formatCurrencyBRL(s.expectedBalance) : '—'}
+                            </td>
+                            <td className="px-4 py-3.5 text-right text-slate-950 font-bold">
+                              {s.closingBalance !== undefined ? formatCurrencyBRL(s.closingBalance) : '—'}
+                            </td>
+                            <td className="px-4 py-3.5 text-right whitespace-nowrap">
+                              {s.difference !== undefined ? (
+                                <span className={`font-black text-xs ${s.difference > 0.01 ? 'text-emerald-600' : s.difference < -0.01 ? 'text-red-600' : 'text-slate-500'}`}>
+                                  {s.difference > 0.01 ? '+' : ''}{formatCurrencyBRL(s.difference)}
+                                </span>
+                              ) : '—'}
+                            </td>
+                            <td className="px-4 py-3.5 max-w-[180px] truncate text-[11px] text-slate-500 italic" title={s.justification || ''}>
+                              {s.justification || '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
@@ -722,18 +816,50 @@ const BillingTab: React.FC<{ period: string; selectedProId: string }> = ({ perio
 // SUB-ABA 3: COMISSÕES
 // ═══════════════════════════════════════════════════════════════════════════════
 const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ period, selectedProId }) => {
-  const { appointments, professionals, addCashMovement } = useShop();
+  const { 
+    appointments, professionals, addCashMovement, 
+    commissionPayments, addCommissionPayment 
+  } = useShop();
   const { showToast } = useToast();
 
   const todayStr = today();
   const monthStart = thisMonthStart();
-  const now = new Date();
+
+  const { periodStart, periodEnd } = useMemo(() => {
+    const todayStr = today();
+    if (period === 'today') {
+      return { periodStart: todayStr, periodEnd: todayStr };
+    }
+    if (period === 'week') {
+      const now = new Date();
+      const wStart = new Date(now);
+      wStart.setDate(now.getDate() - now.getDay());
+      const wEnd = new Date(wStart);
+      wEnd.setDate(wStart.getDate() + 6);
+      return { 
+        periodStart: wStart.toISOString().split('T')[0], 
+        periodEnd: wEnd.toISOString().split('T')[0] 
+      };
+    }
+    if (period === 'month') {
+      const now = new Date();
+      const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const mEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      return { 
+        periodStart: mStart.toISOString().split('T')[0], 
+        periodEnd: mEnd.toISOString().split('T')[0] 
+      };
+    }
+    return { periodStart: '2000-01-01', periodEnd: '2099-12-31' };
+  }, [period]);
 
   const inRange = (apt: typeof appointments[0]) => {
     if (selectedProId !== 'all' && apt.professionalId !== selectedProId) return false;
     if (period === 'today') return apt.date === todayStr;
-    if (period === 'week') { const d = new Date(apt.date + 'T12:00:00'); const wStart = new Date(); wStart.setDate(now.getDate() - now.getDay()); return d >= wStart; }
-    if (period === 'month') return apt.date >= monthStart;
+    if (period === 'week') {
+      return apt.date >= periodStart && apt.date <= periodEnd;
+    }
+    if (period === 'month') return apt.date >= periodStart && apt.date <= periodEnd;
     return true;
   };
 
@@ -744,16 +870,40 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
     return professionals.filter(p => p.id === selectedProId);
   }, [professionals, selectedProId]);
 
-  const proStats = filteredProfessionals.map(p => {
-    const pApts = completed.filter(a => a.professionalId === p.id);
-    const revenue = pApts.reduce((s, a) => s + a.totalValue, 0);
-    const commPct = p.commissionPercentage ?? 50;
-    const commission = revenue * commPct / 100;
-    const shopRevenue = revenue - commission;
-    return { ...p, count: pApts.length, revenue, commission, shopRevenue, commPct };
-  }).sort((a, b) => b.revenue - a.revenue);
+  const proStats = useMemo(() => {
+    return filteredProfessionals.map(p => {
+      const pApts = completed.filter(a => a.professionalId === p.id);
+      const revenue = pApts.reduce((s, a) => s + a.totalValue, 0);
+      const commPct = p.commissionPercentage ?? 50;
+      const commission = revenue * commPct / 100;
+      const shopRevenue = revenue - commission;
+
+      // Calcular o total já pago a este barbeiro no período selecionado
+      const paidInPeriod = commissionPayments
+        .filter(cp => {
+          if (cp.professionalId !== p.id) return false;
+          if (period === 'all') return true;
+          return cp.periodStart === periodStart && cp.periodEnd === periodEnd;
+        })
+        .reduce((sum, cp) => sum + cp.amountPaid, 0);
+
+      const pendingPayout = Math.max(0, commission - paidInPeriod);
+
+      return { 
+        ...p, 
+        count: pApts.length, 
+        revenue, 
+        commission, 
+        shopRevenue, 
+        commPct, 
+        paidInPeriod, 
+        pendingPayout 
+      };
+    }).sort((a, b) => b.revenue - a.revenue);
+  }, [filteredProfessionals, completed, commissionPayments, period, periodStart, periodEnd]);
 
   const totalCommission = proStats.reduce((s, p) => s + p.commission, 0);
+  const totalPending = proStats.reduce((s, p) => s + p.pendingPayout, 0);
   const totalRevenue = proStats.reduce((s, p) => s + p.revenue, 0);
   const topEarner = proStats[0];
 
@@ -775,16 +925,33 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
     e.preventDefault();
     if (!payModal) return;
     setPaying(true);
-    
-    // Registra a saída no caixa como repasse de comissão
-    const r = await addCashMovement({
-      type: 'output',
-      category: 'Repasse Comissão',
-      amount: payModal.amount,
-      description: `Comissão de ${payModal.name}${origemPagamento === 'banco' ? ' | Método: bank' : ''}${payObs ? ' — ' + payObs : ''}`,
-    });
-    setPaying(false);
-    if (r.success) {
+
+    try {
+      // 1. Registra a saída no caixa (se for de gaveta) ou apenas registra no extrato de despesas
+      const r = await addCashMovement({
+        type: 'output',
+        category: 'Repasse Comissão',
+        amount: payModal.amount,
+        description: `Comissão de ${payModal.name}${origemPagamento === 'banco' ? ' | Método: bank' : ''}${payObs ? ' — ' + payObs : ''}`,
+      });
+
+      if (!r.success) {
+        throw new Error(r.error || 'Erro ao registrar movimentação no caixa');
+      }
+
+      // 2. Insere na tabela commission_payments
+      const cpRes = await addCommissionPayment({
+        professionalId: payModal.id,
+        periodStart,
+        periodEnd,
+        amountPaid: payModal.amount,
+        paymentMethod: origemPagamento === 'gaveta' ? 'gaveta' : 'banco'
+      });
+
+      if (!cpRes.success) {
+        throw new Error(cpRes.error || 'Erro ao registrar liquidação da comissão no banco de dados');
+      }
+
       showToast(
         origemPagamento === 'banco'
           ? `Comissão de ${payModal.name} paga via PIX (banco) e registrada!`
@@ -793,8 +960,10 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
       );
       setPayModal(null);
       setPayObs('');
-    } else {
-      showToast(r.error || 'Erro ao registrar pagamento', 'error');
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao registrar pagamento', 'error');
+    } finally {
+      setPaying(false);
     }
   };
 
@@ -803,7 +972,7 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
       {/* KPIs */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <KpiCard label="Comissão Total" value={fmtBRL(totalCommission)} icon={<Award />} color="orange" />
-        <KpiCard label="Repasses Pendentes" value={fmtBRL(totalCommission)} icon={<Clock />} color="red" sub="A pagar" />
+        <KpiCard label="Repasses Pendentes" value={fmtBRL(totalPending)} icon={<Clock />} color="red" sub="A pagar" />
         <KpiCard label="Maior Faturador" value={topEarner?.name || '–'} icon={<Star />} color="indigo" sub={topEarner ? fmtBRL(topEarner.revenue) : undefined} />
         <KpiCard label="Receita Loja" value={fmtBRL(totalRevenue - totalCommission)} icon={<TrendingUp />} color="green" />
       </div>
@@ -821,14 +990,15 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
                 <th className="px-5 py-3 text-center">Atendimentos</th>
                 <th className="px-5 py-3 text-right">Receita Gerada</th>
                 <th className="px-5 py-3 text-center">% Comissão</th>
-                <th className="px-5 py-3 text-right">Valor Comissão</th>
-                <th className="px-5 py-3 text-right">Valor Loja</th>
+                <th className="px-5 py-3 text-right">Comissão Total</th>
+                <th className="px-5 py-3 text-right">Comissão Paga</th>
+                <th className="px-5 py-3 text-right">Repasse Pendente</th>
                 <th className="px-5 py-3 text-center">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {proStats.length === 0 && (
-                <tr><td colSpan={7} className="py-12 text-center text-slate-400">Nenhum barbeiro correspondente aos filtros.</td></tr>
+                <tr><td colSpan={8} className="py-12 text-center text-slate-400">Nenhum barbeiro correspondente aos filtros.</td></tr>
               )}
               {proStats.map(p => (
                 <React.Fragment key={p.id}>
@@ -851,8 +1021,9 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
                     <td className="px-5 py-4 text-center">
                       <span className="bg-orange-50 border border-orange-200 text-orange-700 text-xs font-bold px-2.5 py-1 rounded-full">{p.commPct}%</span>
                     </td>
-                    <td className="px-5 py-4 text-right font-bold text-orange-600 text-sm">{fmtBRL(p.commission)}</td>
-                    <td className="px-5 py-4 text-right font-bold text-emerald-700 text-sm">{fmtBRL(p.shopRevenue)}</td>
+                    <td className="px-5 py-4 text-right font-bold text-slate-950 text-sm">{fmtBRL(p.commission)}</td>
+                    <td className="px-5 py-4 text-right font-bold text-emerald-600 text-sm">{fmtBRL(p.paidInPeriod)}</td>
+                    <td className="px-5 py-4 text-right font-bold text-orange-600 text-sm">{fmtBRL(p.pendingPayout)}</td>
                     <td className="px-5 py-4">
                       <div className="flex items-center justify-center gap-2">
                         <button onClick={() => setDetailPro(detailPro === p.id ? null : p.id)}
@@ -860,16 +1031,22 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
                           <ChevronRight size={12} className={`transition-transform ${detailPro === p.id ? 'rotate-90' : ''}`} />
                           Detalhe
                         </button>
-                        <button onClick={() => { setPayModal({ id: p.id, name: p.name, amount: p.commission }); setOrigemPagamento('banco'); }}
-                          className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-100 transition-colors">
-                          Pagar
-                        </button>
+                        {p.pendingPayout > 0 ? (
+                          <button onClick={() => { setPayModal({ id: p.id, name: p.name, amount: p.pendingPayout }); setOrigemPagamento('banco'); }}
+                            className="px-3 py-1.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-lg hover:bg-emerald-100 transition-colors">
+                            Pagar
+                          </button>
+                        ) : (
+                          <span className="px-3 py-1.5 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-lg border border-emerald-200">
+                            Quitado
+                          </span>
+                        )}
                       </div>
                     </td>
                   </tr>
                   {detailPro === p.id && (
                     <tr>
-                      <td colSpan={7} className="px-6 pb-4 pt-0 bg-slate-50">
+                      <td colSpan={8} className="px-6 pb-4 pt-0 bg-slate-50">
                         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mt-2">
                           <div className="px-4 py-2.5 bg-slate-100 border-b border-slate-200">
                             <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Atendimentos de {p.name}</p>
@@ -895,15 +1072,16 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
             </tbody>
             {proStats.length > 0 && (
               <tfoot>
-                <tr className="bg-slate-50 border-t-2 border-slate-200">
-                  <td className="px-5 py-4 text-sm font-black text-slate-900">Total Geral</td>
+                <tr className="bg-slate-50 border-t-2 border-slate-200 font-black text-slate-900 text-sm">
+                  <td className="px-5 py-4">Total Geral</td>
                   <td className="px-5 py-4 text-center">
-                    <span className="text-slate-900 font-black text-sm">{proStats.reduce((s, p) => s + p.count, 0)}</span>
+                    <span className="font-black">{proStats.reduce((s, p) => s + p.count, 0)}</span>
                   </td>
-                  <td className="px-5 py-4 text-right font-black text-slate-900 text-sm">{fmtBRL(totalRevenue)}</td>
+                  <td className="px-5 py-4 text-right">{fmtBRL(totalRevenue)}</td>
                   <td className="px-5 py-4"></td>
-                  <td className="px-5 py-4 text-right font-black text-slate-900 text-sm">{fmtBRL(totalCommission)}</td>
-                  <td className="px-5 py-4 text-right font-black text-slate-900 text-sm">{fmtBRL(totalRevenue - totalCommission)}</td>
+                  <td className="px-5 py-4 text-right">{fmtBRL(totalCommission)}</td>
+                  <td className="px-5 py-4 text-right text-emerald-600">{fmtBRL(proStats.reduce((s, p) => s + p.paidInPeriod, 0))}</td>
+                  <td className="px-5 py-4 text-right text-orange-600">{fmtBRL(totalPending)}</td>
                   <td className="px-5 py-4"></td>
                 </tr>
               </tfoot>

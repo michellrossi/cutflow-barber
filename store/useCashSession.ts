@@ -136,13 +136,16 @@ export function useCashSession() {
   const handleCloseCash = async (
     informedClosingBalance: number,
     fundoFixoAtivo: boolean,
-    fundoFixoValor: number
+    fundoFixoValor: number,
+    justification?: string
   ) => {
     if (!openSession) {
       return { success: false, error: 'Nenhuma sessão de caixa aberta encontrada.' };
     }
 
     try {
+      const diff = informedClosingBalance - expectedClosingBalance;
+
       // Se adotar fundo de troco fixo para o próximo turno e o valor contado for superior
       if (fundoFixoAtivo && informedClosingBalance > fundoFixoValor) {
         const excedente = informedClosingBalance - fundoFixoValor;
@@ -160,11 +163,23 @@ export function useCashSession() {
         }
 
         // Fechar o caixa informando que sobrou exatamente o valor do fundo fixo
-        const closeRes = await closeCashSession(fundoFixoValor);
+        const closeRes = await closeCashSession(fundoFixoValor, {
+          totalInputs: totalCashInputs,
+          totalOutputs: totalCashOutputs + excedente,
+          expectedBalance: fundoFixoValor,
+          difference: diff,
+          justification
+        });
         return closeRes;
       } else {
         // Fechamento normal com o valor informado
-        const closeRes = await closeCashSession(informedClosingBalance);
+        const closeRes = await closeCashSession(informedClosingBalance, {
+          totalInputs: totalCashInputs,
+          totalOutputs: totalCashOutputs,
+          expectedBalance: expectedClosingBalance,
+          difference: diff,
+          justification
+        });
         return closeRes;
       }
     } catch (err: any) {

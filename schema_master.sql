@@ -959,8 +959,41 @@ CREATE TABLE IF NOT EXISTS public.cash_sessions (
     closing_balance NUMERIC(12,2),
     opened_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL,
     closed_at TIMESTAMP WITH TIME ZONE,
-    opened_by UUID REFERENCES auth.users(id) ON DELETE SET NULL
+    opened_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    total_inputs NUMERIC(12,2) DEFAULT 0,
+    total_outputs NUMERIC(12,2) DEFAULT 0,
+    expected_balance NUMERIC(12,2) DEFAULT 0,
+    difference NUMERIC(12,2) DEFAULT 0,
+    justification TEXT
 );
+
+-- Garante as colunas extras mesmo se a tabela já existia
+ALTER TABLE public.cash_sessions
+    ADD COLUMN IF NOT EXISTS total_inputs NUMERIC(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS total_outputs NUMERIC(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS expected_balance NUMERIC(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS difference NUMERIC(12,2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS justification TEXT;
+
+-- Tabela de Pagamentos de Comissão
+CREATE TABLE IF NOT EXISTS public.commission_payments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
+    professional_id UUID NOT NULL REFERENCES public.professionals(id) ON DELETE CASCADE,
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    amount_paid NUMERIC(12,2) NOT NULL,
+    payment_method TEXT NOT NULL CHECK (payment_method IN ('gaveta', 'banco')),
+    paid_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL
+);
+
+ALTER TABLE public.commission_payments ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Dono_Gere_Pagamentos_Comissao" ON public.commission_payments;
+CREATE POLICY "Dono_Gere_Pagamentos_Comissao" ON public.commission_payments FOR ALL USING (
+    EXISTS (SELECT 1 FROM public.shops WHERE id = commission_payments.shop_id AND owner_id = auth.uid())
+);
+
 
 CREATE TABLE IF NOT EXISTS public.cash_flow_entries (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

@@ -268,6 +268,22 @@ export interface CashSession {
   openedAt: string;
   closedAt?: string;
   openedBy?: string;
+  totalInputs?: number;
+  totalOutputs?: number;
+  expectedBalance?: number;
+  difference?: number;
+  justification?: string;
+}
+
+export interface CommissionPayment {
+  id: string;
+  shopId: string;
+  professionalId: string;
+  periodStart: string; // YYYY-MM-DD
+  periodEnd: string;   // YYYY-MM-DD
+  amountPaid: number;
+  paymentMethod: 'gaveta' | 'banco';
+  paidAt: string;
 }
 
 export interface CashFlowEntry {

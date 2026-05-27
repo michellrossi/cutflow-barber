@@ -1,19 +1,32 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { CashSession, CashFlowEntry, Coupon } from '../../types';
+import { CashSession, CashFlowEntry, Coupon, CommissionPayment } from '../../types';
 import { MutationResult } from '../types';
 import { supabase } from '../../supabaseClient';
-import { mapCashSession, mapCashFlowEntry, mapCoupon, mapService, mapAppointment } from '../mappers';
+import { mapCashSession, mapCashFlowEntry, mapCoupon, mapService, mapAppointment, mapCommissionPayment } from '../mappers';
 import { INITIAL_STATE } from '../helpers';
 
 interface FinancialContextType {
   cashSessions: CashSession[];
   cashFlowEntries: CashFlowEntry[];
   coupons: Coupon[];
+  commissionPayments: CommissionPayment[];
   
   // Cash Actions
   openCashSession: (openingBalance: number) => MutationResult<CashSession>;
-  closeCashSession: (closingBalance: number) => MutationResult<CashSession>;
+  closeCashSession: (
+    closingBalance: number,
+    details?: {
+      totalInputs: number;
+      totalOutputs: number;
+      expectedBalance: number;
+      difference: number;
+      justification?: string;
+    }
+  ) => MutationResult<CashSession>;
   addCashMovement: (entry: Omit<CashFlowEntry, 'id' | 'shopId' | 'sessionId' | 'createdAt'>) => MutationResult<CashFlowEntry>;
+  
+  // Commission Actions
+  addCommissionPayment: (payment: Omit<CommissionPayment, 'id' | 'shopId' | 'paidAt'>) => MutationResult<CommissionPayment>;
   
   // Coupon Actions
   addCoupon: (coupon: Omit<Coupon, 'id' | 'usageCount' | 'shopId'>) => MutationResult<Coupon>;
@@ -21,7 +34,7 @@ interface FinancialContextType {
   removeCoupon: (id: string) => MutationResult;
   
   // Reports
-  fetchFinancialReport: (startDate: string, endDate: string) => Promise<{ appointments: Appointment[], movements: CashFlowEntry[] }>;
+  fetchFinancialReport: (startDate: string, endDate: string) => Promise<{ appointments: any[], movements: CashFlowEntry[] }>;
 }
 
 const FinancialContext = createContext<FinancialContextType | undefined>(undefined);
@@ -30,6 +43,7 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
   const [cashSessions, setCashSessions] = useState<CashSession[]>([]);
   const [cashFlowEntries, setCashFlowEntries] = useState<CashFlowEntry[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [commissionPayments, setCommissionPayments] = useState<CommissionPayment[]>([]);
 
   useEffect(() => {
     if (shopId) {
@@ -38,19 +52,22 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
       setCashSessions([]);
       setCashFlowEntries([]);
       setCoupons([]);
+      setCommissionPayments([]);
     }
   }, [shopId]);
 
   const loadInitialData = async () => {
     try {
-      const [sessionsRes, couponsRes] = await Promise.all([
+      const [sessionsRes, couponsRes, commissionPaymentsRes] = await Promise.all([
         supabase.from('cash_sessions').select('*').eq('shop_id', shopId).order('opened_at', { ascending: false }).limit(20),
-        supabase.from('coupons').select('*').eq('shop_id', shopId)
+        supabase.from('coupons').select('*').eq('shop_id', shopId),
+        supabase.from('commission_payments').select('*').eq('shop_id', shopId).order('paid_at', { ascending: false })
       ]);
 
       const mappedSessions = (sessionsRes.data || []).map(mapCashSession);
       setCashSessions(mappedSessions);
       setCoupons((couponsRes.data || []).map(mapCoupon));
+      setCommissionPayments((commissionPaymentsRes.data || []).map(mapCommissionPayment));
 
       // Carrega movimentações da sessão ATIVA (se houver)
       const activeSession = mappedSessions.find(s => s.status === 'open');
@@ -88,7 +105,7 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
 
       if (error) throw error;
       const session = mapCashSession(data);
-      setCashSessions([session]);
+      setCashSessions(prev => [session, ...prev.filter(s => s.status !== 'open')]);
       setCashFlowEntries([]);
       return { success: true, data: session };
     } catch (e: unknown) {
@@ -97,21 +114,41 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
     }
   };
 
-  const closeCashSession = async (closingBalance: number): MutationResult<CashSession> => {
+  const closeCashSession = async (
+    closingBalance: number,
+    details?: {
+      totalInputs: number;
+      totalOutputs: number;
+      expectedBalance: number;
+      difference: number;
+      justification?: string;
+    }
+  ): MutationResult<CashSession> => {
     try {
       const sid = ensureShopId();
       const activeSession = cashSessions.find(s => s.status === 'open');
       if (!activeSession) throw new Error("Nenhuma sessão aberta encontrada.");
 
-      const { data, error } = await supabase.from('cash_sessions').update({
+      const updateData: any = {
         closing_balance: closingBalance,
         status: 'closed',
         closed_at: new Date().toISOString()
-      }).eq('id', activeSession.id).eq('shop_id', sid).select().single();
+      };
+
+      if (details) {
+        updateData.total_inputs = details.totalInputs;
+        updateData.total_outputs = details.totalOutputs;
+        updateData.expected_balance = details.expectedBalance;
+        updateData.difference = details.difference;
+        updateData.justification = details.justification;
+      }
+
+      const { data, error } = await supabase.from('cash_sessions').update(updateData)
+        .eq('id', activeSession.id).eq('shop_id', sid).select().single();
 
       if (error) throw error;
       const session = mapCashSession(data);
-      setCashSessions([]);
+      setCashSessions(prev => prev.map(s => s.id === session.id ? session : s));
       setCashFlowEntries([]);
       return { success: true, data: session };
     } catch (e: unknown) {
@@ -205,6 +242,28 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
     }
   };
 
+  const addCommissionPayment = async (payment: Omit<CommissionPayment, 'id' | 'shopId' | 'paidAt'>): MutationResult<CommissionPayment> => {
+    try {
+      const sid = ensureShopId();
+      const { data, error } = await supabase.from('commission_payments').insert({
+        shop_id: sid,
+        professional_id: payment.professionalId,
+        period_start: payment.periodStart,
+        period_end: payment.periodEnd,
+        amount_paid: payment.amountPaid,
+        payment_method: payment.paymentMethod
+      }).select().single();
+
+      if (error) throw error;
+      const newPayment = mapCommissionPayment(data);
+      setCommissionPayments(prev => [newPayment, ...prev]);
+      return { success: true, data: newPayment };
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Erro ao salvar registro de liquidação de comissão';
+      return { success: false, error: message };
+    }
+  };
+
   // ── Reports ──────────────────────────────────────────────────────────────────
 
   const fetchFinancialReport = async (startDate: string, endDate: string) => {
@@ -237,8 +296,9 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
 
   return (
     <FinancialContext.Provider value={{ 
-      cashSessions, cashFlowEntries, coupons, 
+      cashSessions, cashFlowEntries, coupons, commissionPayments,
       openCashSession, closeCashSession, addCashMovement,
+      addCommissionPayment,
       addCoupon, updateCoupon, removeCoupon,
       fetchFinancialReport
     }}>
