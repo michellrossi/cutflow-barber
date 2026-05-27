@@ -18,6 +18,7 @@ export const AppointmentsPanel: React.FC = () => {
         settings,
         messageTemplates,
         clients,
+        reloadClients,
         clientSubscriptions,
         subscriptionPlans,
         cashSessions,
@@ -26,6 +27,12 @@ export const AppointmentsPanel: React.FC = () => {
         blockedSlots
     } = useShop();
     const { showToast } = useToast();
+
+    useEffect(() => {
+        if (settings?.id && clients.length === 0) {
+            reloadClients(settings.id);
+        }
+    }, [settings?.id, clients.length, reloadClients]);
 
     const [viewMode, setViewMode] = useState<'calendar' | 'list'>('list');
 
