@@ -99,6 +99,20 @@ export const AppointmentsPanel: React.FC = () => {
     const { products, addAppointmentProducts } = useShop();
     const [isFinishing, setIsFinishing] = useState(false);
 
+    const [paymentMode, setPaymentMode] = useState<'single' | 'split'>('single');
+    const [splitMethod1, setSplitMethod1] = useState('cash');
+    const [splitValue1, setSplitValue1] = useState<string>('');
+    const [splitMethod2, setSplitMethod2] = useState('pix');
+
+    useEffect(() => {
+        if (!isCompletionModalOpen) {
+            setPaymentMode('single');
+            setSplitMethod1('cash');
+            setSplitValue1('');
+            setSplitMethod2('pix');
+        }
+    }, [isCompletionModalOpen]);
+
     // --- Lógica de Filtros de Data ---
     const setPreset = (type: 'today' | 'tomorrow' | 'week' | 'month' | 'all') => {
         const today = new Date();
@@ -1049,21 +1063,90 @@ export const AppointmentsPanel: React.FC = () => {
                                 </div>
 
                                 {/* Forma de Pagamento */}
-                                <div className="space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 uppercase">Forma de Pagamento</label>
-                                    <select 
-                                        id="completion-payment-method"
-                                        className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-orange-500 outline-none font-bold text-slate-900"
-                                        defaultValue="pix"
-                                    >
-                                        <option value="pix">PIX</option>
-                                        <option value="credit">Cartão de Crédito</option>
-                                        <option value="debit">Cartão de Débito</option>
-                                        <option value="cash">Dinheiro</option>
-                                        {getClientActiveSubscription(completionTarget.clientPhone, completionTarget.clientName) && (
-                                            <option value="subscription">Assinatura</option>
-                                        )}
-                                    </select>
+                                <div className="space-y-4">
+                                    <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
+                                        <button 
+                                            onClick={() => setPaymentMode('single')}
+                                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${paymentMode === 'single' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:bg-slate-200'}`}
+                                        >
+                                            Pagamento Único
+                                        </button>
+                                        <button 
+                                            onClick={() => setPaymentMode('split')}
+                                            className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${paymentMode === 'split' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:bg-slate-200'}`}
+                                        >
+                                            Dividido (Misto)
+                                        </button>
+                                    </div>
+
+                                    {paymentMode === 'single' ? (
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-slate-500 uppercase">Forma de Pagamento</label>
+                                            <select 
+                                                id="completion-payment-method"
+                                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:border-orange-500 outline-none font-bold text-slate-900"
+                                                defaultValue="pix"
+                                            >
+                                                <option value="pix">PIX</option>
+                                                <option value="credit">Cartão de Crédito</option>
+                                                <option value="debit">Cartão de Débito</option>
+                                                <option value="cash">Dinheiro</option>
+                                                {getClientActiveSubscription(completionTarget.clientPhone, completionTarget.clientName) && (
+                                                    <option value="subscription">Assinatura</option>
+                                                )}
+                                            </select>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                            <div className="flex gap-3 items-center">
+                                                <div className="flex-1">
+                                                    <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Parte 1</label>
+                                                    <select 
+                                                        value={splitMethod1} 
+                                                        onChange={e => setSplitMethod1(e.target.value)}
+                                                        className="w-full p-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-900"
+                                                    >
+                                                        <option value="cash">Dinheiro</option>
+                                                        <option value="pix">PIX</option>
+                                                        <option value="credit">Cartão de Crédito</option>
+                                                        <option value="debit">Cartão de Débito</option>
+                                                    </select>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Valor 1 (R$)</label>
+                                                    <input 
+                                                        type="number" 
+                                                        step="0.01"
+                                                        value={splitValue1}
+                                                        onChange={e => setSplitValue1(e.target.value)}
+                                                        className="w-full p-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-900 font-bold focus:border-orange-500 outline-none"
+                                                        placeholder="0.00"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-3 items-center">
+                                                <div className="flex-1">
+                                                    <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Parte 2</label>
+                                                    <select 
+                                                        value={splitMethod2} 
+                                                        onChange={e => setSplitMethod2(e.target.value)}
+                                                        className="w-full p-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-900"
+                                                    >
+                                                        <option value="pix">PIX</option>
+                                                        <option value="cash">Dinheiro</option>
+                                                        <option value="credit">Cartão de Crédito</option>
+                                                        <option value="debit">Cartão de Débito</option>
+                                                    </select>
+                                                </div>
+                                                <div className="flex-1">
+                                                    <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Valor 2 (R$)</label>
+                                                    <div className="w-full p-2 bg-slate-100 border border-slate-200 rounded-lg text-sm text-slate-600 font-bold flex items-center h-[38px]">
+                                                        R$ {Math.max(0, (completionTarget.totalValue + selectedProductsForCompletion.reduce((acc, sp) => acc + (sp.quantity * sp.unitPrice), 0)) - (parseFloat(splitValue1) || 0)).toFixed(2)}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1079,7 +1162,9 @@ export const AppointmentsPanel: React.FC = () => {
                                         if (isFinishing) return;
                                         setIsFinishing(true);
                                         try {
-                                            const method = (document.getElementById('completion-payment-method') as HTMLSelectElement).value;
+                                            const method = paymentMode === 'single'
+                                                ? (document.getElementById('completion-payment-method') as HTMLSelectElement).value
+                                                : 'split';
                                             let subId = undefined;
                                             if (method === 'subscription') {
                                                 const sub = getClientActiveSubscription(completionTarget.clientPhone, completionTarget.clientName);
@@ -1089,6 +1174,19 @@ export const AppointmentsPanel: React.FC = () => {
                                             // 1. Adicionar produtos se houver (deve vir ANTES do status 'completed' para o Trigger funcionar)
                                             // Proteção: não adiciona se já foi finalizado (estoque já baixou)
                                             const productsTotal = selectedProductsForCompletion.reduce((acc, sp) => acc + (sp.quantity * sp.unitPrice), 0);
+                                            const finalTotal = completionTarget.totalValue + productsTotal;
+
+                                            // Validação para split
+                                            if (paymentMode === 'split') {
+                                                const v1 = parseFloat(splitValue1) || 0;
+                                                const v2 = finalTotal - v1;
+                                                if (v1 <= 0 || v2 <= 0) {
+                                                    showToast('Para pagamento dividido, ambos os valores devem ser maiores que zero.', 'error');
+                                                    setIsFinishing(false);
+                                                    return;
+                                                }
+                                            }
+
                                             const alreadyCompleted = completionTarget.status === 'completed';
 
                                             if (selectedProductsForCompletion.length > 0 && !alreadyCompleted) {
@@ -1097,7 +1195,6 @@ export const AppointmentsPanel: React.FC = () => {
 
                                             // 1.5. Atualizar o totalValue do agendamento para incluir os produtos
                                             // Isso é crucial para que Faturamento, Comissões e Relatórios reflitam o valor real
-                                            const finalTotal = completionTarget.totalValue + productsTotal;
                                             if (productsTotal > 0) {
                                                 await updateAppointmentTotalValue(completionTarget.id, finalTotal);
                                             }
@@ -1111,12 +1208,29 @@ export const AppointmentsPanel: React.FC = () => {
                                             // 3. Registrar no Caixa se aberto (para qualquer método de pagamento)
                                             const openSession = cashSessions.find(s => s.status === 'open');
                                             if (openSession) {
-                                                await addCashMovement({
-                                                    type: 'input',
-                                                    category: 'Venda / Serviço',
-                                                    amount: finalTotal,
-                                                    description: `Cliente: ${completionTarget.clientName} | Método: ${method}`
-                                                });
+                                                if (paymentMode === 'split') {
+                                                    const v1 = parseFloat(splitValue1) || 0;
+                                                    const v2 = finalTotal - v1;
+                                                    await addCashMovement({
+                                                        type: 'input',
+                                                        category: 'Venda / Serviço',
+                                                        amount: v1,
+                                                        description: `Cliente: ${completionTarget.clientName} | Método: ${splitMethod1} (Parte 1/2)`
+                                                    });
+                                                    await addCashMovement({
+                                                        type: 'input',
+                                                        category: 'Venda / Serviço',
+                                                        amount: v2,
+                                                        description: `Cliente: ${completionTarget.clientName} | Método: ${splitMethod2} (Parte 2/2)`
+                                                    });
+                                                } else {
+                                                    await addCashMovement({
+                                                        type: 'input',
+                                                        category: 'Venda / Serviço',
+                                                        amount: finalTotal,
+                                                        description: `Cliente: ${completionTarget.clientName} | Método: ${method}`
+                                                    });
+                                                }
                                             }
 
                                             showToast('Atendimento finalizado com sucesso!');
