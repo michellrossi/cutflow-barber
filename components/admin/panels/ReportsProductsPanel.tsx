@@ -174,13 +174,14 @@ export const ReportsProductsPanel: React.FC<Props> = ({ dateRange }) => {
       .sort((a, b) => a.currentStock - b.currentStock),
     [productsList]);
 
-  // ── Produtos sem giro (estoque > 0 e zero vendas no período) ─────────────────
   const produtosSemGiro = useMemo(() => {
     const soldProductIds = new Set(productSales.map(sale => sale.product_id));
     return productsList
       .filter(p => p.currentStock > 0 && !soldProductIds.has(p.id))
       .sort((a, b) => b.currentStock - a.currentStock)
       .slice(0, 5);
+  }, [productsList, productSales]);
+
   return (
     <div className="space-y-8">
       {/* ── Topo: 3 Cards KPI ──────────────────────────────────────────────── */}
