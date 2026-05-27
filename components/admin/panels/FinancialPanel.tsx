@@ -44,7 +44,7 @@ const KpiCard: React.FC<{
         </div>
         <p className="text-sm font-bold text-slate-500 uppercase tracking-wider">{label}</p>
       </div>
-      
+
       <div className="space-y-1">
         <p className="text-3xl font-black text-slate-900">{value}</p>
         {(sub || trend) && (
@@ -146,7 +146,7 @@ const CashTab: React.FC = () => {
   const closedSessions = useMemo(() => {
     return cashSessions.filter(s => s.status === 'closed').slice(0, 10);
   }, [cashSessions]);
-  
+
   const [fundoFixoAtivo, setFundoFixoAtivo] = useState(true);
   const [fundoFixoValor, setFundoFixoValor] = useState('100.00');
   const [saving, setSaving] = useState(false);
@@ -166,7 +166,7 @@ const CashTab: React.FC = () => {
     const diff = Math.abs(Number(informedClose) - expectedBalance);
     if (diff > 0.01 && !justif.trim()) { showToast('Informe a justificativa para a diferença de caixa.', 'error'); return; }
     setSaving(true);
-    
+
     const r = await handleCloseCash(
       Number(informedClose),
       fundoFixoAtivo,
@@ -175,14 +175,14 @@ const CashTab: React.FC = () => {
     );
 
     setSaving(false);
-    if (r.success) { 
+    if (r.success) {
       showToast(
         fundoFixoAtivo && Number(informedClose) > Number(fundoFixoValor)
           ? `Caixa fechado! Sangria de ${formatCurrencyBRL(Number(informedClose) - Number(fundoFixoValor))} realizada e fundo de ${formatCurrencyBRL(Number(fundoFixoValor))} deixado.`
-          : 'Caixa fechado com sucesso!', 
+          : 'Caixa fechado com sucesso!',
         'success'
-      ); 
-      closeModal(); 
+      );
+      closeModal();
     }
     else showToast(r.error || 'Erro ao fechar caixa.', 'error');
   };
@@ -368,7 +368,7 @@ const CashTab: React.FC = () => {
 
               <div className="flex justify-between items-center bg-slate-900 text-white p-4 rounded-xl shadow-inner">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Vendas Digitais</span>
-                <span className="text-lg font-black text-white">{formatCurrencyBRL(totalDigitalSales)}</span>
+                <span className="text-lg font-black text-black">{formatCurrencyBRL(totalDigitalSales)}</span>
               </div>
             </div>
           </div>
@@ -380,7 +380,7 @@ const CashTab: React.FC = () => {
           </div>
           <h3 className="text-lg font-bold text-slate-900 mb-2">Caixa Fechado</h3>
           <p className="text-[#6b7d99] text-sm mb-6 max-w-md">Para registrar pagamentos em dinheiro e gerenciar sangrias do dia, você precisa iniciar uma nova sessão de caixa.</p>
-          <button 
+          <button
             onClick={() => setModal('open')}
             className="bg-[#ea580c] text-white font-bold px-10 py-4 rounded-[2rem] flex items-center gap-2 transition-all shadow-lg shadow-orange-600/20 hover:scale-105 active:scale-95"
           >
@@ -510,7 +510,7 @@ const CashTab: React.FC = () => {
                 <input type="number" step="0.01" min="0" required value={informedClose} onChange={e => setInformedClose(e.target.value)}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-2xl font-black text-center text-slate-900 focus:outline-none focus:border-red-500 text-center" placeholder="0,00" />
               </div>
-              
+
               <div className="border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-3">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={fundoFixoAtivo} onChange={e => setFundoFixoAtivo(e.target.checked)} className="rounded border-slate-300 text-orange-500 focus:ring-orange-500 bg-white" />
@@ -519,12 +519,12 @@ const CashTab: React.FC = () => {
                 {fundoFixoAtivo && (
                   <div>
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Valor do Fundo Fixo (R$)</label>
-                    <input type="number" step="0.01" min="0" required value={fundoFixoValor} onChange={e => setFundoFixoValor(e.target.value)} 
+                    <input type="number" step="0.01" min="0" required value={fundoFixoValor} onChange={e => setFundoFixoValor(e.target.value)}
                       className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm font-bold text-slate-900 focus:outline-none focus:border-red-500" placeholder="100.00" />
                   </div>
                 )}
               </div>
-              
+
               {Number(informedClose) > 0 && Math.abs(Number(informedClose) - expectedBalance) > 0.01 && (
                 <div className="space-y-3">
                   <div className={`p-3 rounded-xl border flex items-start gap-3 ${Math.abs(Number(informedClose) - expectedBalance) > 50 ? 'bg-red-50 border-red-200' : 'bg-amber-50 border-amber-200'}`}>
@@ -562,7 +562,7 @@ const CashTab: React.FC = () => {
 
       {/* SEÇÃO: HISTÓRICO DE SESSÕES ANTERIORES */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-        <button 
+        <button
           type="button"
           onClick={() => setShowHistory(!showHistory)}
           className="w-full flex items-center justify-between font-extrabold text-slate-800 hover:text-[#ea580c] transition-colors focus:outline-none"
@@ -576,9 +576,9 @@ const CashTab: React.FC = () => {
 
         <AnimatePresence>
           {showHistory && (
-            <motion.div 
-              initial={{ opacity: 0, height: 0 }} 
-              animate={{ opacity: 1, height: 'auto' }} 
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden pt-2"
             >
@@ -816,9 +816,9 @@ const BillingTab: React.FC<{ period: string; selectedProId: string }> = ({ perio
 // SUB-ABA 3: COMISSÕES
 // ═══════════════════════════════════════════════════════════════════════════════
 const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ period, selectedProId }) => {
-  const { 
-    appointments, professionals, addCashMovement, 
-    commissionPayments, addCommissionPayment 
+  const {
+    appointments, professionals, addCashMovement,
+    commissionPayments, addCommissionPayment
   } = useShop();
   const { showToast } = useToast();
 
@@ -836,18 +836,18 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
       wStart.setDate(now.getDate() - now.getDay());
       const wEnd = new Date(wStart);
       wEnd.setDate(wStart.getDate() + 6);
-      return { 
-        periodStart: wStart.toISOString().split('T')[0], 
-        periodEnd: wEnd.toISOString().split('T')[0] 
+      return {
+        periodStart: wStart.toISOString().split('T')[0],
+        periodEnd: wEnd.toISOString().split('T')[0]
       };
     }
     if (period === 'month') {
       const now = new Date();
       const mStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const mEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-      return { 
-        periodStart: mStart.toISOString().split('T')[0], 
-        periodEnd: mEnd.toISOString().split('T')[0] 
+      return {
+        periodStart: mStart.toISOString().split('T')[0],
+        periodEnd: mEnd.toISOString().split('T')[0]
       };
     }
     return { periodStart: '2000-01-01', periodEnd: '2099-12-31' };
@@ -889,15 +889,15 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
 
       const pendingPayout = Math.max(0, commission - paidInPeriod);
 
-      return { 
-        ...p, 
-        count: pApts.length, 
-        revenue, 
-        commission, 
-        shopRevenue, 
-        commPct, 
-        paidInPeriod, 
-        pendingPayout 
+      return {
+        ...p,
+        count: pApts.length,
+        revenue,
+        commission,
+        shopRevenue,
+        commPct,
+        paidInPeriod,
+        pendingPayout
       };
     }).sort((a, b) => b.revenue - a.revenue);
   }, [filteredProfessionals, completed, commissionPayments, period, periodStart, periodEnd]);
@@ -910,10 +910,10 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
   const [detailPro, setDetailPro] = useState<string | null>(null);
   const [payModal, setPayModal] = useState<{ id: string; name: string; amount: number } | null>(null);
   const [payObs, setPayObs] = useState('');
-  
+
   // Novo estado de Origem de Pagamento de Comissão
   const [origemPagamento, setOrigemPagamento] = useState<'gaveta' | 'banco'>('banco');
-  
+
   const [paying, setPaying] = useState(false);
 
   const detailData = useMemo(() => {
@@ -955,7 +955,7 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
       showToast(
         origemPagamento === 'banco'
           ? `Comissão de ${payModal.name} paga via PIX (banco) e registrada!`
-          : `Comissão de ${payModal.name} paga em dinheiro e deduzida da gaveta!`, 
+          : `Comissão de ${payModal.name} paga em dinheiro e deduzida da gaveta!`,
         'success'
       );
       setPayModal(null);
@@ -1361,7 +1361,7 @@ const ReportsTab: React.FC<{ period: string; selectedProId: string }> = ({ perio
 export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initialTab }) => {
   const [activeTab, setActiveTab] = useState<FinancialTab>(initialTab || 'cash');
   const [period, setPeriod] = useState('month');
-  
+
   // Novo estado de Filtro por Profissional
   const [selectedProId, setSelectedProId] = useState<string>('all');
 
@@ -1382,7 +1382,7 @@ export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initia
         if (period === 'today') return dateStr === todayStr;
         if (period === 'week') return new Date(dateStr + 'T12:00:00') >= wStart;
         if (period === 'month') return dateStr >= monthStart;
-        return true; 
+        return true;
       };
 
       const inRangeDateTime = (isoStr: string) => {
@@ -1392,17 +1392,17 @@ export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initia
 
       let csvContent = "data:text/csv;charset=utf-8,";
       if (activeTab === 'billing' || activeTab === 'reports' || activeTab === 'commissions') {
-          csvContent += "Data;Cliente;Profissional;Valor;Pagamento;Status\n";
-          const filtered = appointments.filter(a => inRangeDate(a.date) && (selectedProId === 'all' || a.professionalId === selectedProId));
-          filtered.forEach(a => {
-              csvContent += `${a.date};${a.clientName};${professionals.find(p => p.id === a.professionalId)?.name || '---'};${a.totalValue};${a.paymentMethod};${a.status}\n`;
-          });
+        csvContent += "Data;Cliente;Profissional;Valor;Pagamento;Status\n";
+        const filtered = appointments.filter(a => inRangeDate(a.date) && (selectedProId === 'all' || a.professionalId === selectedProId));
+        filtered.forEach(a => {
+          csvContent += `${a.date};${a.clientName};${professionals.find(p => p.id === a.professionalId)?.name || '---'};${a.totalValue};${a.paymentMethod};${a.status}\n`;
+        });
       } else {
-          csvContent += "Data;Tipo;Categoria;Valor;Descricao\n";
-          const filtered = cashFlowEntries.filter(e => inRangeDateTime(e.createdAt));
-          filtered.forEach(e => {
-              csvContent += `${new Date(e.createdAt).toLocaleDateString('pt-BR')};${e.type};${e.category};${e.amount};${e.description}\n`;
-          });
+        csvContent += "Data;Tipo;Categoria;Valor;Descricao\n";
+        const filtered = cashFlowEntries.filter(e => inRangeDateTime(e.createdAt));
+        filtered.forEach(e => {
+          csvContent += `${new Date(e.createdAt).toLocaleDateString('pt-BR')};${e.type};${e.category};${e.amount};${e.description}\n`;
+        });
       }
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
@@ -1457,13 +1457,13 @@ export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initia
               {PERIOD_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           )}
-          <button 
+          <button
             onClick={handleExport}
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
           >
             <Download size={16} /> Exportar
           </button>
-          <button 
+          <button
             onClick={() => { refresh(); showToast("Dados atualizados!"); }}
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
           >
