@@ -12,7 +12,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         return (
             <div className="bg-slate-900 border border-slate-700 p-3 rounded-lg shadow-xl text-xs z-50">
                 <p className="text-slate-400 font-bold mb-2 text-center border-b border-slate-700 pb-1">{label}</p>
-                
+
                 {data.completed > 0 && (
                     <div className="flex items-center gap-2 mb-1">
                         <div className="w-2 h-2 rounded-full bg-green-500"></div>
@@ -20,7 +20,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                         <span className="text-white font-bold">{data.completed}</span>
                     </div>
                 )}
-                
+
                 {data.scheduled > 0 && (
                     <div className="flex items-center gap-2 mb-1">
                         <div className="w-2 h-2 rounded-full bg-orange-500"></div>
@@ -71,7 +71,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
     const [schedule, setSchedule] = useState<WorkSchedule | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [isRefreshing, setIsRefreshing] = useState(false);
-    
+
     // State para ações em agendamentos
     const [updatingAptId, setUpdatingAptId] = useState<string | null>(null);
 
@@ -95,7 +95,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
             setSplitMethod2('pix');
         }
     }, [isCompletionModalOpen]);
-    
+
     // States para Bloqueios
     const [blockDate, setBlockDate] = useState('');
     const [blockStart, setBlockStart] = useState('08:00');
@@ -305,14 +305,14 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
 
         if (type === 'thisWeek') {
             const day = today.getDay(); // 0 (Sun) - 6 (Sat)
-            const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1); 
+            const diffToMonday = today.getDate() - day + (day === 0 ? -6 : 1);
             start.setDate(diffToMonday);
             end.setDate(start.getDate() + 6);
         } else if (type === 'nextWeek') {
-             const day = today.getDay();
-             const diffToNextMonday = today.getDate() - day + (day === 0 ? 1 : 8);
-             start.setDate(diffToNextMonday);
-             end.setDate(start.getDate() + 6);
+            const day = today.getDay();
+            const diffToNextMonday = today.getDate() - day + (day === 0 ? 1 : 8);
+            start.setDate(diffToNextMonday);
+            end.setDate(start.getDate() + 6);
         } else if (type === 'month') {
             start = new Date(today.getFullYear(), today.getMonth(), 1);
             end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
@@ -344,10 +344,10 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
 
     // Agendamentos de hoje (exclui cancelados e faltas para contagem de volume)
     const todaysWorkload = myAppointments.filter(a => a.date === todayStr && a.status !== 'cancelled' && a.status !== 'noshow');
-    
+
     // Apenas finalizados para comissão realizada
     const todaysCompleted = todaysWorkload.filter(a => a.status === 'completed');
-    
+
     const commissionRate = currentPro?.commissionPercentage ?? 50;
 
     // Valores Cards
@@ -360,7 +360,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
     // 4. Preparar dados para o Gráfico (Intervalo Dinâmico)
     const chartData = useMemo(() => {
         if (!currentPro) return [];
-        
+
         const data = [];
         const start = new Date(chartStart + 'T00:00:00');
         const end = new Date(chartEnd + 'T23:59:59');
@@ -371,8 +371,8 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
 
         // Limite de 60 dias para não quebrar a UI
         const diffTime = Math.abs(end.getTime() - start.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-        if(diffDays > 60) {
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays > 60) {
             end.setDate(start.getDate() + 60);
         }
 
@@ -385,10 +385,10 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
             const completed = dayAppts.filter(a => a.status === 'completed');
             // Agendados considera 'scheduled' e 'confirmed'
             const scheduled = dayAppts.filter(a => ['scheduled', 'confirmed'].includes(a.status));
-            
+
             const dailyRevenue = completed.reduce((acc, curr) => acc + curr.totalValue, 0);
             const potentialRevenue = scheduled.reduce((acc, curr) => acc + curr.totalValue, 0);
-            
+
             const dailyCommission = dailyRevenue * (commissionRate / 100);
             const potentialCommission = potentialRevenue * (commissionRate / 100);
 
@@ -422,7 +422,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
         noshow: 'text-slate-500',
     };
 
-    const daysMap: {[key: string]: string} = {
+    const daysMap: { [key: string]: string } = {
         monday: 'Segunda', tuesday: 'Terça', wednesday: 'Quarta', thursday: 'Quinta',
         friday: 'Sexta', saturday: 'Sábado', sunday: 'Domingo'
     };
@@ -431,9 +431,9 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
         return (
             <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white p-4 text-center">
                 <div>
-                    <AlertCircle size={48} className="mx-auto mb-4 text-orange-500"/>
+                    <AlertCircle size={48} className="mx-auto mb-4 text-orange-500" />
                     <h2 className="text-xl font-bold">Perfil não vinculado</h2>
-                    <p className="text-slate-400 mb-6">Seu usuário não está associado a nenhum barbeiro desta loja.<br/>Peça ao dono para cadastrar seu email: {session?.user.email}</p>
+                    <p className="text-slate-400 mb-6">Seu usuário não está associado a nenhum barbeiro desta loja.<br />Peça ao dono para cadastrar seu email: {session?.user.email}</p>
                     <button onClick={onLogout} className="px-6 py-2 bg-slate-800 rounded-lg">Sair</button>
                 </div>
             </div>
@@ -492,30 +492,30 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                         </p>
                                     </div>
                                 )}
-                                
+
                                 <div className="space-y-4">
-                                <div className="flex justify-between text-sm text-slate-500">
-                                    <span>Serviços</span><span className="font-bold text-slate-900">R$ {completionTarget.totalValue.toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm text-slate-500">
-                                    <span>Produtos</span><span className="font-bold text-emerald-600">+ R$ {selectedProductsForCompletion.reduce((acc, sp) => acc + sp.quantity * sp.unitPrice, 0).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-xl font-black text-slate-900 pt-2 border-t border-slate-100">
-                                    <span>Total Final</span>
-                                    <span className="text-orange-600">R$ {(completionTarget.totalValue + selectedProductsForCompletion.reduce((acc, sp) => acc + sp.quantity * sp.unitPrice, 0)).toFixed(2)}</span>
+                                    <div className="flex justify-between text-sm text-slate-500">
+                                        <span>Serviços</span><span className="font-bold text-slate-900">R$ {completionTarget.totalValue.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-sm text-slate-500">
+                                        <span>Produtos</span><span className="font-bold text-emerald-600">+ R$ {selectedProductsForCompletion.reduce((acc, sp) => acc + sp.quantity * sp.unitPrice, 0).toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xl font-black text-slate-900 pt-2 border-t border-slate-100">
+                                        <span>Total Final</span>
+                                        <span className="text-orange-600">R$ {(completionTarget.totalValue + selectedProductsForCompletion.reduce((acc, sp) => acc + sp.quantity * sp.unitPrice, 0)).toFixed(2)}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
                             {/* Forma de Pagamento */}
                             <div className="space-y-4">
                                 <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
-                                    <button 
+                                    <button
                                         onClick={() => setPaymentMode('single')}
                                         className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${paymentMode === 'single' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:bg-slate-200'}`}
                                     >
                                         Pagamento Único
                                     </button>
-                                    <button 
+                                    <button
                                         onClick={() => setPaymentMode('split')}
                                         className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${paymentMode === 'split' ? 'bg-white shadow-sm text-slate-900' : 'text-slate-500 hover:bg-slate-200'}`}
                                     >
@@ -539,8 +539,8 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                         <div className="flex gap-3 items-center">
                                             <div className="flex-1">
                                                 <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Parte 1</label>
-                                                <select 
-                                                    value={splitMethod1} 
+                                                <select
+                                                    value={splitMethod1}
                                                     onChange={e => setSplitMethod1(e.target.value)}
                                                     className="w-full p-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-900"
                                                 >
@@ -552,8 +552,8 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                             </div>
                                             <div className="flex-1">
                                                 <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Valor 1 (R$)</label>
-                                                <input 
-                                                    type="number" 
+                                                <input
+                                                    type="number"
                                                     step="0.01"
                                                     value={splitValue1}
                                                     onChange={e => setSplitValue1(e.target.value)}
@@ -565,8 +565,8 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                         <div className="flex gap-3 items-center">
                                             <div className="flex-1">
                                                 <label className="text-[10px] font-bold text-slate-500 uppercase mb-1 block">Parte 2</label>
-                                                <select 
-                                                    value={splitMethod2} 
+                                                <select
+                                                    value={splitMethod2}
                                                     onChange={e => setSplitMethod2(e.target.value)}
                                                     className="w-full p-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-900"
                                                 >
@@ -591,7 +591,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                             <button onClick={() => setIsCompletionModalOpen(false)} className="flex-1 py-3 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition-all">Cancelar</button>
                             <button onClick={handleFinishAppointment} disabled={isFinishing}
                                 className="flex-1 py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
-                                {isFinishing ? <Loader2 className="animate-spin" size={18}/> : 'Finalizar e Salvar'}
+                                {isFinishing ? <Loader2 className="animate-spin" size={18} /> : 'Finalizar e Salvar'}
                             </button>
                         </div>
                     </div>
@@ -599,32 +599,32 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
             )}
             {/* Modal de Configuração */}
             {isConfigOpen && schedule && (
-                <div 
+                <div
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fade-in"
                     onClick={(e) => e.target === e.currentTarget && setIsConfigOpen(false)}
                 >
                     <div className="bg-slate-800 w-full max-w-4xl rounded-2xl border border-slate-700 shadow-2xl relative animate-scale-up max-h-[90vh] overflow-y-auto">
                         <div className="sticky top-0 bg-slate-800 p-6 border-b border-slate-700 flex justify-between items-center z-10">
                             <h2 className="text-xl font-bold text-slate-900">Minha Agenda</h2>
-                            <button onClick={() => setIsConfigOpen(false)}><X size={24} className="text-slate-400 hover:text-white"/></button>
+                            <button onClick={() => setIsConfigOpen(false)}><X size={24} className="text-slate-400 hover:text-white" /></button>
                         </div>
-                        
+
                         <div className="p-6 space-y-8">
                             {/* Horários de Trabalho */}
                             <div className="space-y-4">
-                                <h3 className="text-lg font-bold text-orange-500 flex items-center gap-2"><Clock size={18}/> Horários de Trabalho</h3>
+                                <h3 className="text-lg font-bold text-orange-500 flex items-center gap-2"><Clock size={18} /> Horários de Trabalho</h3>
                                 <div className="space-y-3 bg-slate-900/50 p-4 rounded-xl border border-slate-700">
-                                     {Object.entries(schedule).map(([key, val]) => {
-                                         const day = val as DaySchedule;
-                                         return (
-                                             <div key={key} className="flex flex-col md:flex-row md:items-center gap-3 pb-3 border-b border-slate-700/50 last:border-0">
-                                                 <div className="w-24">
-                                                     <label className="flex items-center gap-2 cursor-pointer">
-                                                         <input type="checkbox" checked={day.active} onChange={() => toggleDay(key as keyof WorkSchedule)} className="rounded border-slate-600 text-orange-500 focus:ring-orange-500 bg-slate-800" />
-                                                         <span className={day.active ? 'text-slate-900 font-bold' : 'text-slate-500'}>{daysMap[key]}</span>
-                                                     </label>
-                                                 </div>
-                                                 {day.active && (
+                                    {Object.entries(schedule).map(([key, val]) => {
+                                        const day = val as DaySchedule;
+                                        return (
+                                            <div key={key} className="flex flex-col md:flex-row md:items-center gap-3 pb-3 border-b border-slate-700/50 last:border-0">
+                                                <div className="w-24">
+                                                    <label className="flex items-center gap-2 cursor-pointer">
+                                                        <input type="checkbox" checked={day.active} onChange={() => toggleDay(key as keyof WorkSchedule)} className="rounded border-slate-600 text-orange-500 focus:ring-orange-500 bg-slate-800" />
+                                                        <span className={day.active ? 'text-slate-900 font-bold' : 'text-slate-500'}>{daysMap[key]}</span>
+                                                    </label>
+                                                </div>
+                                                {day.active && (
                                                     <div className="flex flex-wrap items-center gap-2 text-sm">
                                                         <input type="time" value={day.start} onChange={e => updateDayTime(key as keyof WorkSchedule, 'start', e.target.value)} className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white" />
                                                         <span className="text-slate-500">até</span>
@@ -634,17 +634,17 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                                         <span className="text-slate-500">-</span>
                                                         <input type="time" value={day.lunchEnd} onChange={e => updateDayTime(key as keyof WorkSchedule, 'lunchEnd', e.target.value)} className="bg-slate-800 border border-slate-600 rounded px-2 py-1 text-white" />
                                                     </div>
-                                                 )}
-                                             </div>
-                                         );
-                                     })}
+                                                )}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
 
                             {/* Gerenciar Bloqueios */}
                             <div className="space-y-4">
-                                <h3 className="text-lg font-bold text-orange-500 flex items-center gap-2"><Calendar size={18}/> Bloqueios e Folgas</h3>
-                                
+                                <h3 className="text-lg font-bold text-orange-500 flex items-center gap-2"><Calendar size={18} /> Bloqueios e Folgas</h3>
+
                                 <div className="bg-slate-900/50 p-4 rounded-xl border border-slate-700">
                                     <h4 className="text-sm font-bold text-slate-400 uppercase mb-3">Novo Bloqueio</h4>
                                     <form onSubmit={handleAddBlock} className="space-y-3">
@@ -659,7 +659,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                         <div className="flex gap-3">
                                             <input required type="text" value={blockReason} onChange={e => setBlockReason(e.target.value)} placeholder="Motivo" className="flex-1 bg-slate-800 border border-slate-600 rounded p-2 text-white text-sm" />
                                             <button type="submit" className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-2">
-                                                <Plus size={16}/> Adicionar
+                                                <Plus size={16} /> Adicionar
                                             </button>
                                         </div>
                                     </form>
@@ -672,16 +672,16 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                             ) : (
                                                 blockedSlots
                                                     .filter(b => b.professionalId === currentPro.id)
-                                                    .sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+                                                    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
                                                     .map(b => (
-                                                    <div key={b.id} className="flex justify-between items-center bg-slate-800 p-3 rounded border border-slate-600">
-                                                        <div>
-                                                            <div className="text-sm text-white font-medium">{new Date(b.date + 'T12:00:00').toLocaleDateString('pt-BR')}</div>
-                                                            <div className="text-xs text-slate-400">{b.startTime} - {b.endTime} • {b.reason}</div>
+                                                        <div key={b.id} className="flex justify-between items-center bg-slate-800 p-3 rounded border border-slate-600">
+                                                            <div>
+                                                                <div className="text-sm text-white font-medium">{new Date(b.date + 'T12:00:00').toLocaleDateString('pt-BR')}</div>
+                                                                <div className="text-xs text-slate-400">{b.startTime} - {b.endTime} • {b.reason}</div>
+                                                            </div>
+                                                            <button onClick={() => handleRemoveBlock(b.id)} className="text-red-500 hover:text-red-400 p-1"><Trash2 size={16} /></button>
                                                         </div>
-                                                        <button onClick={() => handleRemoveBlock(b.id)} className="text-red-500 hover:text-red-400 p-1"><Trash2 size={16}/></button>
-                                                    </div>
-                                                ))
+                                                    ))
                                             )}
                                         </div>
                                     </div>
@@ -690,12 +690,12 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                         </div>
 
                         <div className="p-6 border-t border-slate-700 bg-slate-800 sticky bottom-0 z-10">
-                            <button 
+                            <button
                                 onClick={handleSaveSchedule}
                                 disabled={isSaving}
                                 className="w-full py-3 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg flex items-center justify-center gap-2"
                             >
-                                {isSaving ? <Loader2 className="animate-spin"/> : 'Salvar Alterações'}
+                                {isSaving ? <Loader2 className="animate-spin" /> : 'Salvar Alterações'}
                             </button>
                         </div>
                     </div>
@@ -717,20 +717,20 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                     <div className="flex gap-2">
 
                         <button onClick={handleRefresh} className={`p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white border border-slate-700 ${isRefreshing ? 'animate-spin text-orange-500' : ''}`} title="Atualizar dados">
-                            <RefreshCw size={18}/>
+                            <RefreshCw size={18} />
                         </button>
-                         <button onClick={openConfig} className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white border border-slate-700" title="Configurações">
-                            <Settings size={18}/>
+                        <button onClick={openConfig} className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white border border-slate-700" title="Configurações">
+                            <Settings size={18} />
                         </button>
                         <button onClick={onLogout} className="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white border border-slate-700" title="Sair">
-                            <LogOut size={18}/>
+                            <LogOut size={18} />
                         </button>
                     </div>
                 </div>
             </header>
 
             <div className="max-w-4xl mx-auto p-4 space-y-6">
-                
+
                 {/* Cards de Resumo Hoje */}
                 <div className="grid grid-cols-2 gap-4">
                     <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 flex flex-col justify-between relative overflow-hidden">
@@ -739,7 +739,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                         </div>
                         <div>
                             <p className="text-slate-400 text-xs mb-1 font-bold uppercase tracking-wider">Agenda Hoje</p>
-                            <p className="text-3xl font-bold text-white">{todaysWorkload.length}</p>
+                            <p className="text-3xl font-bold text-black">{todaysWorkload.length}</p>
                         </div>
                         <div className="mt-2 text-[10px] text-slate-500">
                             {todaysCompleted.length} finalizados
@@ -768,24 +768,24 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                 <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
                     <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
                         <h2 className="font-bold text-lg flex items-center gap-2 text-white">
-                            <BarChart3 size={18} className="text-orange-500"/> Volume & Previsão
+                            <BarChart3 size={18} className="text-orange-500" /> Volume & Previsão
                         </h2>
-                        
+
                         {/* Controles de Filtro */}
                         <div className="flex flex-col sm:flex-row gap-2">
-                             <div className="flex bg-slate-900/50 rounded-lg p-1 border border-slate-700">
+                            <div className="flex bg-slate-900/50 rounded-lg p-1 border border-slate-700">
                                 <button onClick={() => setChartPreset('thisWeek')} className="px-3 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white hover:shadow-sm rounded transition-all">Semana</button>
                                 <button onClick={() => setChartPreset('nextWeek')} className="px-3 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white hover:shadow-sm rounded transition-all">Próxima</button>
                                 <button onClick={() => setChartPreset('month')} className="px-3 py-1 text-xs text-slate-400 hover:bg-slate-800 hover:text-white hover:shadow-sm rounded transition-all">Mês</button>
                             </div>
                             <div className="flex items-center gap-2 bg-slate-900/50 rounded-lg p-1 border border-slate-700">
-                                <input type="date" value={chartStart} onChange={e => setChartStart(e.target.value)} className="bg-transparent border-none text-xs text-slate-300 w-24 focus:outline-none [color-scheme:dark]"/>
+                                <input type="date" value={chartStart} onChange={e => setChartStart(e.target.value)} className="bg-transparent border-none text-xs text-slate-300 w-24 focus:outline-none [color-scheme:dark]" />
                                 <span className="text-slate-500">-</span>
-                                <input type="date" value={chartEnd} onChange={e => setChartEnd(e.target.value)} className="bg-transparent border-none text-xs text-slate-300 w-24 focus:outline-none [color-scheme:dark]"/>
+                                <input type="date" value={chartEnd} onChange={e => setChartEnd(e.target.value)} className="bg-transparent border-none text-xs text-slate-300 w-24 focus:outline-none [color-scheme:dark]" />
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="h-64 w-full">
                         {chartData.length === 0 ? (
                             <div className="flex h-full items-center justify-center text-slate-400 border border-dashed border-slate-700/50 rounded-xl bg-slate-900/50">
@@ -795,26 +795,26 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                             <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.3} vertical={false} />
-                                    <XAxis 
-                                        dataKey="name" 
-                                        stroke="#94a3b8" 
-                                        fontSize={10} 
-                                        tickLine={false} 
+                                    <XAxis
+                                        dataKey="name"
+                                        stroke="#94a3b8"
+                                        fontSize={10}
+                                        tickLine={false}
                                         axisLine={false}
                                         interval="preserveStartEnd"
                                     />
-                                    <YAxis 
-                                        stroke="#94a3b8" 
-                                        fontSize={10} 
-                                        tickLine={false} 
-                                        axisLine={false} 
+                                    <YAxis
+                                        stroke="#94a3b8"
+                                        fontSize={10}
+                                        tickLine={false}
+                                        axisLine={false}
                                         allowDecimals={false}
                                     />
-                                    <Tooltip content={<CustomTooltip />} cursor={{fill: '#334155', opacity: 0.2}} />
+                                    <Tooltip content={<CustomTooltip />} cursor={{ fill: '#334155', opacity: 0.2 }} />
                                     <Legend wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }} />
                                     {/* Linha de Referência para HOJE */}
                                     <ReferenceLine x={new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} stroke="rgba(249, 115, 22, 0.5)" strokeDasharray="3 3" label={{ position: 'top', value: 'Hoje', fill: '#f97316', fontSize: 10 }} />
-                                    
+
                                     <Bar name="Finalizados" dataKey="completed" stackId="a" fill="#22c55e" radius={[0, 0, 4, 4]} />
                                     <Bar name="Agendados" dataKey="scheduled" stackId="a" fill={settings.primaryColor || "#f97316"} radius={[4, 4, 0, 0]} />
                                 </BarChart>
@@ -826,12 +826,12 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                 {/* Lista de Agenda */}
                 <div>
                     <h2 className="font-bold text-lg mb-4 flex items-center gap-2 text-slate-900">
-                        <Calendar size={18} className="text-orange-500"/> Minha Agenda
+                        <Calendar size={18} className="text-orange-500" /> Minha Agenda
                     </h2>
-                    
+
                     {myAppointments.length === 0 ? (
                         <div className="text-center py-12 text-slate-500 bg-slate-800/50 rounded-xl border border-slate-800 flex flex-col items-center">
-                            <Calendar size={32} className="mb-2 opacity-50"/>
+                            <Calendar size={32} className="mb-2 opacity-50" />
                             <p>Nenhum agendamento encontrado.</p>
                         </div>
                     ) : (
@@ -861,7 +861,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                                                 <div className="text-right">
                                                     <div className="text-xl font-bold text-slate-900">{apt.time}</div>
                                                     <div className={`text-xs uppercase font-bold ${isToday ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                                        {isToday ? 'HOJE' : new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: 'short'})}
+                                                        {isToday ? 'HOJE' : new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                                                     </div>
                                                 </div>
                                             </div>

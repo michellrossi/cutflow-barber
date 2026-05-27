@@ -1047,22 +1047,74 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
                   {detailPro === p.id && (
                     <tr>
                       <td colSpan={8} className="px-6 pb-4 pt-0 bg-slate-50">
-                        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mt-2">
-                          <div className="px-4 py-2.5 bg-slate-100 border-b border-slate-200">
-                            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Atendimentos de {p.name}</p>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-2">
+                          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+                            <div className="px-4 py-2.5 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
+                              <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Atendimentos de {p.name}</p>
+                              <span className="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">{detailData.length} registros</span>
+                            </div>
+                            <div className="max-h-64 overflow-y-auto">
+                              <table className="w-full text-left text-xs">
+                                <tbody className="divide-y divide-slate-100">
+                                  {detailData.map(apt => (
+                                    <tr key={apt.id} className="hover:bg-slate-50">
+                                      <td className="px-4 py-2.5 text-slate-500">{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR')} {apt.time?.substring(0, 5)}</td>
+                                      <td className="px-4 py-2.5 font-medium text-slate-800">{apt.clientName}</td>
+                                      <td className="px-4 py-2.5 text-right font-bold text-slate-900">{fmtBRL(apt.totalValue)}</td>
+                                      <td className="px-4 py-2.5 text-right font-bold text-orange-600">{fmtBRL(apt.totalValue * p.commPct / 100)}</td>
+                                    </tr>
+                                  ))}
+                                  {detailData.length === 0 && (
+                                    <tr><td colSpan={4} className="px-4 py-4 text-center text-slate-400">Nenhum atendimento no período.</td></tr>
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
-                          <table className="w-full text-left text-xs">
-                            <tbody className="divide-y divide-slate-100">
-                              {detailData.map(apt => (
-                                <tr key={apt.id} className="hover:bg-slate-50">
-                                  <td className="px-4 py-2.5 text-slate-500">{new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR')} {apt.time?.substring(0, 5)}</td>
-                                  <td className="px-4 py-2.5 font-medium text-slate-800">{apt.clientName}</td>
-                                  <td className="px-4 py-2.5 text-right font-bold text-slate-900">{fmtBRL(apt.totalValue)}</td>
-                                  <td className="px-4 py-2.5 text-right font-bold text-orange-600">{fmtBRL(apt.totalValue * p.commPct / 100)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
+
+                          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                            <div className="px-4 py-2.5 bg-slate-100 border-b border-slate-200 flex items-center justify-between">
+                              <p className="text-xs font-bold text-slate-600 uppercase tracking-wider">Histórico de Pagamentos</p>
+                              <span className="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-full border border-slate-200">{commissionPayments.filter(cp => cp.professionalId === p.id).length} registros</span>
+                            </div>
+                            <div className="max-h-64 overflow-y-auto">
+                              <table className="w-full text-left text-xs">
+                                <thead className="bg-white border-b border-slate-100 text-[10px] uppercase text-slate-400 font-bold sticky top-0 z-10">
+                                  <tr>
+                                    <th className="px-4 py-2">Data do Pgto</th>
+                                    <th className="px-4 py-2">Período Referência</th>
+                                    <th className="px-4 py-2">Método</th>
+                                    <th className="px-4 py-2 text-right">Valor Pago</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                  {commissionPayments.filter(cp => cp.professionalId === p.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(cp => (
+                                    <tr key={cp.id} className="hover:bg-slate-50">
+                                      <td className="px-4 py-2.5 text-slate-600 font-medium whitespace-nowrap">
+                                        {new Date(cp.createdAt).toLocaleDateString('pt-BR')} {new Date(cp.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                      </td>
+                                      <td className="px-4 py-2.5 text-slate-500 whitespace-nowrap">
+                                        {cp.periodStart && cp.periodEnd ? `${new Date(cp.periodStart + 'T12:00:00').toLocaleDateString('pt-BR')} até ${new Date(cp.periodEnd + 'T12:00:00').toLocaleDateString('pt-BR')}` : '—'}
+                                      </td>
+                                      <td className="px-4 py-2.5">
+                                        {cp.paymentMethod === 'banco' ? (
+                                          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded text-[10px] font-bold flex items-center gap-1 w-max"><Smartphone size={10} /> Banco</span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 bg-orange-50 text-orange-700 border border-orange-200 rounded text-[10px] font-bold flex items-center gap-1 w-max"><Banknote size={10} /> Gaveta</span>
+                                        )}
+                                      </td>
+                                      <td className="px-4 py-2.5 text-right font-black text-emerald-600">{fmtBRL(cp.amountPaid)}</td>
+                                    </tr>
+                                  ))}
+                                  {commissionPayments.filter(cp => cp.professionalId === p.id).length === 0 && (
+                                    <tr>
+                                      <td colSpan={4} className="px-4 py-6 text-center text-slate-400">Nenhum pagamento registrado.</td>
+                                    </tr>
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
                         </div>
                       </td>
                     </tr>
