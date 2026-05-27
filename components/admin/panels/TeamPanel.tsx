@@ -313,28 +313,6 @@ export const TeamPanel: React.FC<TeamPanelProps> = ({ initialTab = 'list', onTab
                                             >
                                                 <Edit2 size={14}/>
                                             </button>
-                                            <button 
-                                                onClick={() => { 
-                                                    setSelectedProId(pro.id);
-                                                    setSchedule(pro.workSchedule || DEFAULT_SCHEDULE);
-                                                    handleSubTabChange('schedules');
-                                                }} 
-                                                className="p-2 bg-slate-100 rounded-md text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors"
-                                                title="Ver Horários"
-                                            >
-                                                <Clock size={14}/>
-                                            </button>
-                                            <button 
-                                                onClick={() => {
-                                                    setSelectedProId(pro.id);
-                                                    setBlockDate(new Date().toISOString().split('T')[0]);
-                                                    handleSubTabChange('blocks');
-                                                }} 
-                                                className="p-2 bg-slate-100 rounded-md text-slate-600 hover:bg-slate-200 hover:text-slate-900 transition-colors"
-                                                title="Bloquear Horário"
-                                            >
-                                                <CalendarX size={14}/>
-                                            </button>
                                             <button onClick={(e) => { e.stopPropagation(); setDeleteId(pro.id); }} className="p-2 bg-red-500/10 text-red-500 rounded-md hover:bg-red-500/20 transition-colors" title="Remover">
                                                 <Trash2 size={14}/>
                                             </button>

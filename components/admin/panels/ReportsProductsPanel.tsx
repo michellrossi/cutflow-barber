@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useShop } from '../../../store';
+import { supabase } from '../../../supabaseClient';
 import { 
   Package, DollarSign, TrendingUp, AlertTriangle, ShoppingBag,
   BarChart3, Award, Zap, Clock, ArrowUp, ArrowDown
@@ -15,46 +16,6 @@ const BADGE_COLOR = (i: number) =>
   i === 0 ? 'bg-yellow-400 text-yellow-900' :
   i === 1 ? 'bg-slate-400 text-white' :
   i === 2 ? 'bg-[#cd6133] text-white' : 'bg-slate-200 text-slate-700';
-
-// ── RankingCard (padrão /cutflow4) ────────────────────────────────────────────
-const RankingCard: React.FC<{
-  title: string; icon: React.ReactNode;
-  items: { label: string; value: number; sub?: string; valueFmt?: string }[];
-  emptyText?: string;
-  mono?: boolean; // se true: valor é número puro (sem R$)
-}> = ({ title, icon, items, emptyText = 'Sem dados', mono }) => {
-  const maxVal = Math.max(...items.map(i => i.value), 1);
-  return (
-    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)]">
-      <h3 className="text-base font-bold text-[#1E293B] mb-4 flex items-center gap-2">
-        {icon} {title}
-      </h3>
-      <div className="flex flex-col divide-y divide-slate-100">
-        {items.length === 0 ? (
-          <div className="py-10 text-center text-slate-400 text-sm">{emptyText}</div>
-        ) : items.map((item, i) => (
-          <div key={i} className="py-3.5 flex items-center gap-3 pr-1">
-            <div className={`w-8 h-8 rounded-lg shrink-0 flex items-center justify-center font-bold text-sm ${BADGE_COLOR(i)}`}>
-              {i + 1}º
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex justify-between items-start mb-1">
-                <span className="font-medium text-[#1E293B] truncate text-sm">{item.label}</span>
-                <span className="font-bold text-[#F16A1B] whitespace-nowrap ml-2 text-sm">
-                  {item.valueFmt ?? (mono ? item.value : fmt(item.value))}
-                </span>
-              </div>
-              <div className="w-full bg-[#F1F5F9] h-1.5 rounded-full overflow-hidden">
-                <div className="bg-[#F16A1B] h-full rounded-full transition-all" style={{ width: `${(item.value / maxVal) * 100}%` }} />
-              </div>
-              {item.sub && <div className="text-[10px] text-slate-400 mt-1 text-right font-medium">{item.sub}</div>}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
 
 // ── KPI Card ──────────────────────────────────────────────────────────────────
 const KPI: React.FC<{
@@ -87,8 +48,9 @@ const AlertRow: React.FC<{
 
 // ── Main Panel ────────────────────────────────────────────────────────────────
 export const ReportsProductsPanel: React.FC<Props> = ({ dateRange }) => {
-  const { products, appointments, fetchFinancialReport } = useShop();
+  const { products, fetchFinancialReport } = useShop();
   const [apptData, setApptData] = useState<any[]>([]);
+  const [productSales, setProductSales] = useState<any[]>([]);
 
   useEffect(() => {
     const load = async () => {
@@ -103,41 +65,108 @@ export const ReportsProductsPanel: React.FC<Props> = ({ dateRange }) => {
         end.setDate(0);
       } else if (dateRange === 'Semestre') start.setMonth(start.getMonth() - 6);
       else if (dateRange === 'Todo o período') start = new Date(2000, 0, 1);
+      
       const data = await fetchFinancialReport(start.toISOString().split('T')[0], end.toISOString().split('T')[0]);
-      setApptData(data?.appointments || []);
+      const appointmentsList = data?.appointments || [];
+      setApptData(appointmentsList);
+
+      const completedAppts = appointmentsList.filter((a: any) => a.status === 'completed');
+      if (completedAppts.length > 0) {
+        const apptIds = completedAppts.map((a: any) => a.id);
+        const { data: salesData, error } = await supabase
+          .from('appointment_products')
+          .select(`
+            id,
+            appointment_id,
+            product_id,
+            quantity,
+            unit_price,
+            products (
+              name,
+              category,
+              cost_price
+            )
+          `)
+          .in('appointment_id', apptIds);
+
+        if (!error && salesData) {
+          setProductSales(salesData);
+        } else {
+          console.error("Erro ao buscar vendas de produtos:", error);
+          setProductSales([]);
+        }
+      } else {
+        setProductSales([]);
+      }
     };
     load();
   }, [dateRange, fetchFinancialReport]);
 
   // ── Derivações ──────────────────────────────────────────────────────────────
-  const apptsList = Array.isArray(apptData) ? apptData : [];
   const productsList = Array.isArray(products) ? products : [];
 
-  const completedAppts = useMemo(() => apptsList.filter(a => a.status === 'completed'), [apptsList]);
+  // 1. Capital Parado em Estoque (Card 3)
+  const capitalParadoEstoque = useMemo(() => 
+    productsList.reduce((s, p) => s + (p.costPrice || 0) * (p.currentStock || 0), 0), 
+    [productsList]
+  );
 
-  // appointment_products aggregation (usa products embutidos nos appointments)
-  // Como a store carrega appointments sem products embutidos, vamos aproximar
-  // usando os produtos e seus dados de estoque
+  // 2. Faturamento Realizado em Produtos (Card 1)
+  const fatRealizadoProdutos = useMemo(() => 
+    productSales.reduce((s, sale) => s + (sale.quantity || 0) * (sale.unit_price || 0), 0), 
+    [productSales]
+  );
 
-  const valorEstoque  = useMemo(() => productsList.reduce((s, p) => s + p.costPrice  * p.currentStock, 0), [productsList]);
-  const fatPotencial  = useMemo(() => productsList.reduce((s, p) => s + p.salePrice  * p.currentStock, 0), [productsList]);
-  const lucroEstimado = useMemo(() => fatPotencial - valorEstoque, [fatPotencial, valorEstoque]);
+  // 3. Lucro Real em Produtos (Card 2)
+  const lucroRealProdutos = useMemo(() => 
+    productSales.reduce((s, sale) => {
+      const cost = sale.products?.cost_price || 0;
+      const price = sale.unit_price || 0;
+      const qty = sale.quantity || 0;
+      return s + qty * (price - cost);
+    }, 0), 
+    [productSales]
+  );
 
-  // Faturamento realizado de produtos: sum(ap.quantity * ap.unit_price)
-  // sem endpoint separado, usamos o totalValue dos agendamentos como proxy
-  const fatRealizado = useMemo(() => completedAppts.reduce((s, a) => s + (a.totalValue || 0), 0), [completedAppts]);
+  // 4. Faturamento por Categoria
+  const categoryChartData = useMemo(() => {
+    const categoriesMap: { [cat: string]: number } = {};
+    productSales.forEach(sale => {
+      const cat = sale.products?.category || 'Geral';
+      const saleVal = (sale.quantity || 0) * (sale.unit_price || 0);
+      categoriesMap[cat] = (categoriesMap[cat] || 0) + saleVal;
+    });
+    
+    return Object.entries(categoriesMap)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [productSales]);
 
-  // Ticket médio de produtos (faturamento / agendamentos com conclusão)
-  const ticketMedio = useMemo(() =>
-    completedAppts.length > 0 ? fatRealizado / completedAppts.length : 0,
-    [fatRealizado, completedAppts]);
-
-  // Margem média ponderada dos produtos
-  const margemMedia = useMemo(() => {
-    const valid = productsList.filter(p => p.salePrice > 0);
-    if (valid.length === 0) return 0;
-    return valid.reduce((s, p) => s + ((p.salePrice - p.costPrice) / p.salePrice) * 100, 0) / valid.length;
-  }, [productsList]);
+  // 5. Top 5 Produtos mais Vendidos (por quantidade)
+  const topProductsChartData = useMemo(() => {
+    const productsMap: { [prodId: string]: { name: string, qty: number, revenue: number } } = {};
+    productSales.forEach(sale => {
+      const prodId = sale.product_id;
+      const name = sale.products?.name || 'Produto Removido';
+      const qty = sale.quantity || 0;
+      const revenue = (sale.quantity || 0) * (sale.unit_price || 0);
+      
+      if (!productsMap[prodId]) {
+        productsMap[prodId] = { name, qty: 0, revenue: 0 };
+      }
+      productsMap[prodId].qty += qty;
+      productsMap[prodId].revenue += revenue;
+    });
+    
+    return Object.values(productsMap)
+      .sort((a, b) => b.qty - a.qty)
+      .slice(0, 5)
+      .map(p => ({
+        name: p.name.length > 15 ? p.name.slice(0, 15) + '…' : p.name,
+        Quantidade: p.qty,
+        Faturamento: p.revenue
+      }));
+  }, [productSales]);
 
   // ── Alertas de estoque ──────────────────────────────────────────────────────
   const criticos = useMemo(() =>
@@ -145,114 +174,52 @@ export const ReportsProductsPanel: React.FC<Props> = ({ dateRange }) => {
       .sort((a, b) => a.currentStock - b.currentStock),
     [productsList]);
 
-  // ── Produtos sem giro (estoque alto, 0 vendas na simulação) ─────────────────
-  const semGiro = useMemo(() =>
-    productsList
-      .filter(p => p.currentStock > p.minStock)
+  // ── Produtos sem giro (estoque > 0 e zero vendas no período) ─────────────────
+  const produtosSemGiro = useMemo(() => {
+    const soldProductIds = new Set(productSales.map(sale => sale.product_id));
+    return productsList
+      .filter(p => p.currentStock > 0 && !soldProductIds.has(p.id))
       .sort((a, b) => b.currentStock - a.currentStock)
-      .slice(0, 8),
-    [productsList]);
-
-  // ── Ranking de produtos por estoque vendável (faturamento potencial) ─────────
-  const rankingPotencial = useMemo(() =>
-    [...productsList]
-      .map(p => ({ label: p.name, value: p.salePrice * p.currentStock, sub: `${p.currentStock} un. × ${fmt(p.salePrice)}` }))
-      .filter(p => p.value > 0)
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8),
-    [productsList]);
-
-  // ── Ranking mais rentáveis (maior margem %) ─────────────────────────────────
-  const rankingMargem = useMemo(() =>
-    [...productsList]
-      .filter(p => p.salePrice > 0)
-      .map(p => {
-        const margem = ((p.salePrice - p.costPrice) / p.salePrice) * 100;
-        return { label: p.name, value: margem, sub: `Custo ${fmt(p.costPrice)} • Venda ${fmt(p.salePrice)}`, valueFmt: `${margem.toFixed(1)}%` };
-      })
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8),
-    [productsList]);
-
-  // ── Curva ABC ───────────────────────────────────────────────────────────────
-  const abcData = useMemo(() => {
-    if (rankingPotencial.length === 0) return [];
-    const total = rankingPotencial.reduce((s, p) => s + p.value, 0);
-    let acc = 0;
-    return rankingPotencial.map(p => {
-      acc += p.value;
-      const pct = total > 0 ? (acc / total) * 100 : 0;
-      const curve = pct <= 80 ? 'A' : pct <= 95 ? 'B' : 'C';
-      return { name: p.label.length > 12 ? p.label.slice(0, 12) + '…' : p.label, value: p.value, curve };
-    });
-  }, [rankingPotencial]);
-
-  const ABC_COLOR = { A: '#ea580c', B: '#f59e0b', C: '#94a3b8' };
-
+      .slice(0, 5);
   return (
     <div className="space-y-8">
-      {/* ── Valoração do Estoque ─────────────────────────────────────────────── */}
+      {/* ── Topo: 3 Cards KPI ──────────────────────────────────────────────── */}
       <section>
-        <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Package size={16} className="text-orange-500" /> Valoração do Estoque
-        </h3>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
-          <KPI icon={<DollarSign size={18} className="text-slate-600" />}
-               label="Capital em Estoque" value={fmt(valorEstoque)} sub="Custo × Qtd atual"
-               accent="text-slate-800" bg="bg-slate-50" />
-          <KPI icon={<TrendingUp size={18} className="text-blue-600" />}
-               label="Fat. Potencial" value={fmt(fatPotencial)} sub="Preço venda × Qtd"
-               accent="text-blue-700" bg="bg-blue-50" />
-          <KPI icon={<BarChart3 size={18} className="text-[#F16A1B]" />}
-               label="Fat. Realizado (período)" value={fmt(fatRealizado)} sub="Agendamentos concluídos" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <KPI icon={<ShoppingBag size={18} className="text-[#F16A1B]" />}
+               label="Faturamento Real em Produtos" value={fmt(fatRealizadoProdutos)} sub="Vendas reais no período"
+               accent="text-[#F16A1B]" bg="bg-orange-50" />
           <KPI icon={<Award size={18} className="text-emerald-600" />}
-               label="Lucro Estimado" value={fmt(lucroEstimado)} sub="Potencial − Capital"
+               label="Lucro Real em Produtos" value={fmt(lucroRealProdutos)} sub="Faturamento real - Custo"
                accent="text-emerald-700" bg="bg-emerald-50" />
+          <KPI icon={<Package size={18} className="text-slate-600" />}
+               label="Capital Parado em Estoque" value={fmt(capitalParadoEstoque)} sub="Custo x Estoque atual"
+               accent="text-slate-800" bg="bg-slate-50" />
         </div>
       </section>
 
-      {/* ── Desempenho de Vendas ─────────────────────────────────────────────── */}
-      <section>
-        <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <Zap size={16} className="text-orange-500" /> Desempenho de Vendas
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-5">
-          <KPI icon={<ShoppingBag size={18} className="text-slate-600" />}
-               label="Ticket Médio por Agendamento" value={fmt(ticketMedio)} sub={`Baseado em ${completedAppts.length} agendamentos concluídos`} />
-          <KPI icon={<TrendingUp size={18} className="text-slate-600" />}
-               label="Margem Média" value={`${margemMedia.toFixed(1)}%`} sub="Média ponderada dos produtos cadastrados" />
-        </div>
-
-        {/* Curva ABC */}
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm mb-5">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-bold text-[#1E293B] flex items-center gap-2">
-              <BarChart3 size={18} className="text-orange-500" /> Curva ABC — Potencial de Faturamento
-            </h4>
-            <div className="flex gap-3 text-[11px] font-black">
-              {(['A','B','C'] as const).map(c => (
-                <span key={c} className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-sm inline-block" style={{ background: ABC_COLOR[c] }} />
-                  Classe {c}
-                </span>
-              ))}
-            </div>
-          </div>
-          {abcData.length === 0 ? (
-            <div className="h-48 flex items-center justify-center text-slate-400 text-sm border border-dashed border-slate-200 rounded-lg">
-              Sem dados disponíveis
+      {/* ── Meio: Gráficos de Vendas ─────────────────────────────────────────── */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Gráfico 1: Faturamento por Categoria */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h4 className="font-bold text-[#1E293B] flex items-center gap-2 mb-4">
+            <BarChart3 size={18} className="text-[#F16A1B]" /> Faturamento por Categoria
+          </h4>
+          {categoryChartData.length === 0 ? (
+            <div className="h-60 flex items-center justify-center text-slate-400 text-sm border border-dashed border-slate-200 rounded-lg">
+              Sem dados de vendas disponíveis no período
             </div>
           ) : (
-            <div className="h-52">
+            <div className="h-60">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={abcData} margin={{ left: -10 }}>
+                <BarChart data={categoryChartData} margin={{ left: -10, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                  <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 10 }} tickFormatter={v => fmt(v)} width={70} />
-                  <Tooltip formatter={(v: any) => fmt(Number(v))} />
-                  <Bar dataKey="value" radius={[4,4,0,0]}>
-                    {abcData.map((entry, i) => (
-                      <Cell key={i} fill={ABC_COLOR[entry.curve as keyof typeof ABC_COLOR]} />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} />
+                  <YAxis tick={{ fontSize: 10, fill: '#64748b' }} tickFormatter={v => fmt(v)} width={70} />
+                  <Tooltip formatter={(v: any) => [fmt(Number(v)), 'Faturamento']} labelClassName="font-bold" />
+                  <Bar dataKey="value" fill="#F16A1B" radius={[4, 4, 0, 0]}>
+                    {categoryChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index === 0 ? '#F16A1B' : '#ea580c'} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -261,51 +228,69 @@ export const ReportsProductsPanel: React.FC<Props> = ({ dateRange }) => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <RankingCard title="Top Produtos — Faturamento Potencial"
-            icon={<TrendingUp size={18} className="text-[#1E293B]" />}
-            items={rankingPotencial.slice(0, 5)} />
-          <RankingCard title="Top Produtos — Maior Margem"
-            icon={<Award size={18} className="text-[#1E293B]" />}
-            items={rankingMargem.slice(0, 5)} mono />
+        {/* Gráfico 2: Top 5 Produtos mais vendidos */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h4 className="font-bold text-[#1E293B] flex items-center gap-2 mb-4">
+            <TrendingUp size={18} className="text-[#F16A1B]" /> Top 5 Produtos Mais Vendidos
+          </h4>
+          {topProductsChartData.length === 0 ? (
+            <div className="h-60 flex items-center justify-center text-slate-400 text-sm border border-dashed border-slate-200 rounded-lg">
+              Sem dados de vendas disponíveis no período
+            </div>
+          ) : (
+            <div className="h-60">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topProductsChartData} margin={{ left: -10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#64748b', fontWeight: 600 }} />
+                  <YAxis tick={{ fontSize: 10, fill: '#64748b' }} width={30} />
+                  <Tooltip formatter={(v: any, name: string) => [v, name]} labelClassName="font-bold" />
+                  <Bar dataKey="Quantidade" fill="#3b82f6" radius={[4, 4, 0, 0]}>
+                    {topProductsChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={index === 0 ? '#3b82f6' : '#1d4ed8'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* ── Gestão de Reposição ──────────────────────────────────────────────── */}
-      <section>
-        <h3 className="text-base font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center gap-2">
-          <AlertTriangle size={16} className="text-orange-500" /> Gestão de Reposição
-        </h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {/* Estoque Crítico */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)]">
-            <h4 className="font-bold text-[#1E293B] mb-4 flex items-center gap-2">
-              <AlertTriangle size={16} className="text-red-500" /> Alerta de Estoque Crítico
-            </h4>
+      {/* ── Base: Duas Colunas de Ação ────────────────────────────────────────── */}
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Estoque Crítico */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h4 className="font-bold text-[#1E293B] mb-4 flex items-center gap-2">
+            <AlertTriangle size={18} className="text-red-500" /> Alerta de Estoque Crítico (Comprar)
+          </h4>
+          <div className="space-y-1">
             {criticos.length === 0 ? (
               <div className="py-10 text-center text-slate-400 text-sm">✅ Todos os produtos estão dentro do estoque mínimo</div>
             ) : criticos.map(p => (
               <AlertRow key={p.id}
                 icon={<Package size={16} className="text-red-500" />}
                 label={p.name}
-                sub={`Categoria: ${p.category}`}
+                sub={`Categoria: ${p.category} • Estoque Mín: ${p.minStock}`}
                 chip={p.currentStock === 0 ? 'SEM ESTOQUE' : `${p.currentStock} un.`}
                 chipColor={p.currentStock === 0 ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'} />
             ))}
           </div>
+        </div>
 
-          {/* Produtos sem giro */}
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)]">
-            <h4 className="font-bold text-[#1E293B] mb-4 flex items-center gap-2">
-              <Clock size={16} className="text-slate-500" /> Produtos Sem Giro (alto estoque)
-            </h4>
-            {semGiro.length === 0 ? (
-              <div className="py-10 text-center text-slate-400 text-sm">Sem produtos em excesso de estoque</div>
-            ) : semGiro.map(p => (
+        {/* Produtos sem giro */}
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+          <h4 className="font-bold text-[#1E293B] mb-4 flex items-center gap-2">
+            <Clock size={18} className="text-slate-500" /> Produtos Sem Giro (Promover)
+          </h4>
+          <div className="space-y-1">
+            {produtosSemGiro.length === 0 ? (
+              <div className="py-10 text-center text-slate-400 text-sm">Nenhum produto parado no estoque</div>
+            ) : produtosSemGiro.map(p => (
               <AlertRow key={p.id}
                 icon={<Package size={16} className="text-slate-400" />}
                 label={p.name}
-                sub={`${p.currentStock} un. em estoque • Mín: ${p.minStock}`}
+                sub={`Categoria: ${p.category} • Preço de Venda: ${fmt(p.salePrice)}`}
                 chip={`${p.currentStock} un.`}
                 chipColor="bg-slate-100 text-slate-600" />
             ))}

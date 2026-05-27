@@ -15,7 +15,7 @@ export const ReportsServicesPanel: React.FC<ReportsServicesPanelProps> = ({ date
         const loadData = async () => {
             const now = new Date();
             let startDate = new Date();
-            
+
             if (dateRange && dateRange.includes('|')) {
                 const [startStr, endStr] = dateRange.split('|');
                 startDate = new Date(startStr + 'T00:00:00');
@@ -60,7 +60,7 @@ export const ReportsServicesPanel: React.FC<ReportsServicesPanelProps> = ({ date
             const date = new Date(apt.date + 'T12:00:00');
             const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
             const monthLabel = date.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', '');
-            
+
             if (!dataMap[monthKey]) {
                 dataMap[monthKey] = { total: 0, label: monthLabel };
             }
@@ -113,7 +113,7 @@ export const ReportsServicesPanel: React.FC<ReportsServicesPanelProps> = ({ date
                                 return <div className="py-10 text-center text-slate-400 text-sm">Sem dados disponíveis</div>;
                             }
                             const maxVal = Math.max(...sorted.map(s => s.realizados), 1);
-                            
+
                             return sorted.filter(s => s.realizados > 0).map((s, index) => {
                                 let badgeColor = 'bg-slate-200 text-slate-700'; // 4º+
                                 if (index === 0) badgeColor = 'bg-yellow-400 text-yellow-900'; // 1º
@@ -150,7 +150,7 @@ export const ReportsServicesPanel: React.FC<ReportsServicesPanelProps> = ({ date
                 <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)]">
                     <h3 className="text-lg font-bold text-[#1E293B] mb-4 flex items-center gap-2">
                         <DollarSign size={20} className="text-[#1E293B]" />
-                        Serviços Mais Lucrativos
+                        Serviços que mais Faturam
                     </h3>
                     <div className="flex flex-col divide-y divide-slate-100 max-h-96 overflow-y-auto no-scrollbar">
                         {(() => {
@@ -159,7 +159,7 @@ export const ReportsServicesPanel: React.FC<ReportsServicesPanelProps> = ({ date
                                 return <div className="py-10 text-center text-slate-400 text-sm">Sem dados disponíveis</div>;
                             }
                             const maxVal = Math.max(...sorted.map(s => s.lucrativos), 1);
-                            
+
                             return sorted.filter(s => s.lucrativos > 0).map((s, index) => {
                                 let badgeColor = 'bg-slate-200 text-slate-700'; // 4º+
                                 if (index === 0) badgeColor = 'bg-yellow-400 text-yellow-900'; // 1º

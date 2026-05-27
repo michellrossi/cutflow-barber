@@ -407,12 +407,7 @@ export const AppointmentsPanel: React.FC = () => {
                                                             </div>
                                                         </div>
                                                     ))}
-                                                    <div 
-                                                        onClick={() => setShowClientSuggestions(false)}
-                                                        className="p-3 bg-slate-50 hover:bg-orange-100 cursor-pointer transition-colors flex items-center gap-2 text-orange-600 font-bold justify-center sticky bottom-0 border-t border-slate-200"
-                                                    >
-                                                        <Plus size={16} /> Novo Cliente (Digitar Manualmente)
-                                                    </div>
+                                                    {/* Remoção do botão de Novo Cliente Manual na lista de sugestões */}
                                                 </div>
                                             </div>
                                         )}
