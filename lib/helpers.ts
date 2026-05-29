@@ -143,7 +143,11 @@ export async function sendWhatsApp(phone: string, message: string, instanceName?
     const apiUrl = process.env.WHATSAPP_API_URL;
     const apiKey = process.env.WHATSAPP_API_KEY;
     const instance = instanceName || process.env.WHATSAPP_INSTANCE || 'insightbarber';
-    if (!apiUrl || !apiKey) return false;
+    
+    if (!apiUrl || !apiKey) {
+        console.error("[WhatsApp] API URL ou Key não configurada!");
+        return false;
+    }
 
     let cleanPhone = phone.replace(/\D/g, '');
     if (!cleanPhone.startsWith('55')) cleanPhone = `55${cleanPhone}`;
@@ -152,14 +156,32 @@ export async function sendWhatsApp(phone: string, message: string, instanceName?
         if (!baseUrl.startsWith('http')) baseUrl = `https://${baseUrl}`;
         baseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
         const url = `${baseUrl}/message/sendText/${instance}`;
+        
+        const payload = {
+            number: cleanPhone,
+            textMessage: { text: message }, // Evolution API usually prefers this structure in newer versions
+            text: message, // keeping for backwards compatibility
+            options: {
+                delay: 1200,
+                linkPreview: false
+            }
+        };
+
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'apikey': apiKey },
-            body: JSON.stringify({ number: cleanPhone, text: message, delay: 1200, linkPreview: false })
+            body: JSON.stringify(payload)
         });
-        return response.ok;
+        
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error(`[WhatsApp] Evolution API Error: Status ${response.status} - ${errText}`);
+            return false;
+        }
+        
+        return true;
     } catch (error) {
-        console.error("Erro na Evolution API:", error);
+        console.error("[WhatsApp] Erro de rede ou ao conectar na Evolution API:", error);
         return false;
     }
 }
