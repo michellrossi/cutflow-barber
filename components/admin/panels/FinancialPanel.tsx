@@ -1442,23 +1442,70 @@ export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initia
         return inRangeDate(dateStr);
       };
 
-      let csvContent = "data:text/csv;charset=utf-8,";
+      const formatCurrencyBRL = (value: number) => {
+        return `R$ ${Number(value || 0).toFixed(2).replace('.', ',')}`;
+      };
+
+      const formatDateBRL = (dateStr: string) => {
+        if (!dateStr) return '';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        return dateStr;
+      };
+
+      const paymentLabels: Record<string, string> = {
+        pix: 'PIX',
+        credit: 'Cartão de Crédito',
+        debit: 'Cartão de Débito',
+        cash: 'Dinheiro',
+        subscription: 'Assinatura'
+      };
+
+      const statusLabels: Record<string, string> = {
+        completed: 'Concluído',
+        confirmed: 'Confirmado',
+        cancelled: 'Cancelado',
+        noshow: 'Falta (No-show)',
+        pending: 'Pendente'
+      };
+
+      let csvLines: string[] = [];
+      const escape = (val: string) => `"${val.replace(/"/g, '""')}"`;
+
       if (activeTab === 'billing' || activeTab === 'reports' || activeTab === 'commissions') {
-        csvContent += "Data;Cliente;Profissional;Valor;Pagamento;Status\n";
+        csvLines.push("Data;Cliente;Profissional;Valor;Pagamento;Status");
         const filtered = appointments.filter(a => inRangeDate(a.date) && (selectedProId === 'all' || a.professionalId === selectedProId));
         filtered.forEach(a => {
-          csvContent += `${a.date};${a.clientName};${professionals.find(p => p.id === a.professionalId)?.name || '---'};${a.totalValue};${a.paymentMethod};${a.status}\n`;
+          const formattedDate = formatDateBRL(a.date);
+          const client = a.clientName || '---';
+          const proName = professionals.find(p => p.id === a.professionalId)?.name || '---';
+          const value = formatCurrencyBRL(a.totalValue);
+          const payment = paymentLabels[a.paymentMethod || ''] || a.paymentMethod || '---';
+          const status = statusLabels[a.status || ''] || a.status || '---';
+          
+          csvLines.push(`${escape(formattedDate)};${escape(client)};${escape(proName)};${escape(value)};${escape(payment)};${escape(status)}`);
         });
       } else {
-        csvContent += "Data;Tipo;Categoria;Valor;Descricao\n";
+        csvLines.push("Data;Tipo;Categoria;Valor;Descrição");
         const filtered = cashFlowEntries.filter(e => inRangeDateTime(e.createdAt));
         filtered.forEach(e => {
-          csvContent += `${new Date(e.createdAt).toLocaleDateString('pt-BR')};${e.type};${e.category};${e.amount};${e.description}\n`;
+          const formattedDate = new Date(e.createdAt).toLocaleDateString('pt-BR');
+          const type = e.type === 'input' ? 'Entrada' : e.type === 'output' ? 'Saída' : e.type;
+          const category = e.category || '---';
+          const value = formatCurrencyBRL(e.amount);
+          const description = e.description || '---';
+
+          csvLines.push(`${escape(formattedDate)};${escape(type)};${escape(category)};${escape(value)};${escape(description)}`);
         });
       }
-      const encodedUri = encodeURI(csvContent);
+
+      const csvContent = "\uFEFF" + csvLines.join("\n");
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.setAttribute("href", encodedUri);
+      link.setAttribute("href", url);
       link.setAttribute("download", `cutflow_financeiro_${activeTab}_${period}.csv`);
       document.body.appendChild(link);
       link.click();

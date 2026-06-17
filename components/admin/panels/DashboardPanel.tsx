@@ -60,11 +60,33 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
         return (products || []).filter(p => p.currentStock <= p.minStock).length;
     }, [products]);
 
-    // 3. Saldo do Caixa Aberto
+    // 3. Saldo do Caixa Aberto (Físico - Gaveta)
     const cashBalance = useMemo(() => {
         const openSession = (cashSessions || []).find(s => s.status === 'open');
         if (!openSession) return null;
-        const entries = (cashFlowEntries || []).filter(e => e.sessionId === openSession.id);
+        
+        const isCashEntry = (entry: any) => {
+            if (entry.type === 'output') {
+                const desc = (entry.description || '').toLowerCase();
+                return !(
+                    desc.includes('método: bank') || 
+                    desc.includes('método: pix') || 
+                    desc.includes('método: digital') || 
+                    desc.includes('método: credit') || 
+                    desc.includes('método: debit')
+                );
+            }
+            if (entry.category !== 'Venda / Serviço') {
+                return true;
+            }
+            const desc = (entry.description || '').toLowerCase();
+            if (desc.includes('| método:')) {
+                return desc.includes('método: cash') || desc.includes('método: dinheiro');
+            }
+            return true;
+        };
+
+        const entries = (cashFlowEntries || []).filter(e => e.sessionId === openSession.id && isCashEntry(e));
         return entries.reduce((acc, e) => e.type === 'input' ? acc + e.amount : acc - e.amount, openSession.openingBalance);
     }, [cashSessions, cashFlowEntries]);
 

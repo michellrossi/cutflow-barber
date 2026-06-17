@@ -49,6 +49,27 @@ export const ReportsPanel: React.FC<{ initialTab?: ReportSubTab }> = ({ initialT
         const noShows = filteredAppts.filter(a => a.status === 'noshow').length;
         const ocupacao = totalAgendamentos > 0 ? ((filteredAppts.filter(a => a.status === 'completed').length / totalAgendamentos) * 100).toFixed(1) : 0;
 
+        const formatCurrencyBRL = (value: number) => {
+            return `R$ ${Number(value || 0).toFixed(2).replace('.', ',')}`;
+        };
+
+        const formatDateBRL = (dateStr: string) => {
+            if (!dateStr) return '';
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                return `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            return dateStr;
+        };
+
+        const statusLabels: Record<string, string> = {
+            completed: 'Concluído',
+            confirmed: 'Confirmado',
+            cancelled: 'Cancelado',
+            noshow: 'Falta (No-show)',
+            pending: 'Pendente'
+        };
+
         // Serviços mais realizados
         const serviceCounts: Record<string, number> = {};
         filteredAppts.forEach(a => {
@@ -67,36 +88,41 @@ export const ReportsPanel: React.FC<{ initialTab?: ReportSubTab }> = ({ initialT
             const pName = professionalsList.find(p => p.id === a.professionalId)?.name || 'Outro';
             proCounts[pName] = (proCounts[pName] || 0) + a.totalValue;
         });
-        const topPros = Object.entries(proCounts).sort((a,b) => b[1] - a[1]).slice(0, 5).map(([n, v]) => `${n} (R$ ${v.toFixed(2)})`).join('; ');
+        const topPros = Object.entries(proCounts).sort((a,b) => b[1] - a[1]).slice(0, 5).map(([n, v]) => `${n} (${formatCurrencyBRL(v)})`).join('; ');
+
+        const escape = (val: any) => {
+            const str = val?.toString() || '';
+            return `"${str.replace(/"/g, '""')}"`;
+        };
 
         const csvContent = [
-            ['Relatorio Consolidado Insight Barber', `Periodo: ${startStr} ate ${endStr}`],
+            ['Relatório Consolidado Insight Barber', `Período: ${formatDateBRL(startStr)} até ${formatDateBRL(endStr)}`],
             [''],
-            ['METRICAS GERAIS'],
-            ['Faturamento Total', `R$ ${faturamento.toFixed(2)}`],
+            ['MÉTRICAS GERAIS'],
+            ['Faturamento Total', formatCurrencyBRL(faturamento)],
             ['Total de Agendamentos', totalAgendamentos],
             ['Total de Faltas (No-show)', noShows],
-            ['Taxa de Conclusao', `${ocupacao}%`],
-            ['Novos Clientes no Periodo', filteredClients.length],
+            ['Taxa de Conclusão', `${ocupacao.toString().replace('.', ',')}%`],
+            ['Novos Clientes no Período', filteredClients.length],
             [''],
-            ['RANKING DE SERVICOS (Volume)'],
+            ['RANKING DE SERVIÇOS (Volume)'],
             [topServices],
             [''],
             ['RANKING DE PROFISSIONAIS (Faturamento)'],
             [topPros],
             [''],
             ['DADOS DETALHADOS DOS AGENDAMENTOS'],
-            ['Data', 'Hora', 'Cliente', 'Servicos', 'Profissional', 'Valor', 'Status'],
+            ['Data', 'Hora', 'Cliente', 'Serviços', 'Profissional', 'Valor', 'Status'],
             ...filteredAppts.map(a => [
-                a.date, 
+                formatDateBRL(a.date), 
                 a.time, 
-                a.clientName, 
+                a.clientName || '---', 
                 (Array.isArray(a.serviceIds) ? a.serviceIds : []).map(sid => servicesList.find(s => s.id === sid)?.name).filter(Boolean).join(' | '),
                 professionalsList.find(p => p.id === a.professionalId)?.name || '---',
-                a.totalValue,
-                a.status
+                formatCurrencyBRL(a.totalValue),
+                statusLabels[a.status || ''] || a.status || '---'
             ])
-        ].map(e => e.join(',')).join('\n');
+        ].map(e => e.map(escape).join(';')).join('\n');
 
         const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
