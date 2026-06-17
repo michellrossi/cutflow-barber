@@ -655,7 +655,7 @@ const CashTab: React.FC = () => {
 // SUB-ABA 2: FATURAMENTO
 // ═══════════════════════════════════════════════════════════════════════════════
 const BillingTab: React.FC<{ period: string; selectedProId: string }> = ({ period, selectedProId }) => {
-  const { appointments, services, professionals, products } = useShop();
+  const { appointments, services, professionals, products, subscriptionPlans, clientSubscriptions } = useShop();
 
   const now = new Date();
   const todayStr = today();
@@ -673,11 +673,48 @@ const BillingTab: React.FC<{ period: string; selectedProId: string }> = ({ perio
     return true;
   };
 
+  const inRangeDateStr = (dateStr: string) => {
+    if (period === 'today') return dateStr === todayStr;
+    if (period === 'week') {
+      const d = new Date(dateStr + 'T12:00:00');
+      const wStart = new Date(); wStart.setDate(now.getDate() - now.getDay());
+      wStart.setHours(0, 0, 0, 0);
+      return d >= wStart;
+    }
+    if (period === 'month') return dateStr >= monthStart;
+    return true;
+  };
+
   const completed = appointments.filter(a => a.status === 'completed' && inRange(a));
   const todayCompleted = appointments.filter(a => a.status === 'completed' && a.date === todayStr && (selectedProId === 'all' || a.professionalId === selectedProId));
 
-  const totalRevenue = completed.reduce((s, a) => s + a.totalValue, 0);
-  const todayRevenue = todayCompleted.reduce((s, a) => s + a.totalValue, 0);
+  // Excluir agendamentos pagos por assinatura
+  const appointmentsRevenue = completed.filter(a => a.paymentMethod !== 'subscription').reduce((s, a) => s + a.totalValue, 0);
+  const todayAppointmentsRevenue = todayCompleted.filter(a => a.paymentMethod !== 'subscription').reduce((s, a) => s + a.totalValue, 0);
+
+  // Somar receita de assinaturas criadas no período
+  const subscriptionRevenue = clientSubscriptions
+    .filter(sub => {
+      const dateStr = sub.startDate ? sub.startDate.split('T')[0] : '';
+      return dateStr && inRangeDateStr(dateStr) && sub.status === 'active';
+    })
+    .reduce((sum, sub) => {
+      const plan = subscriptionPlans.find(p => p.id === sub.planId);
+      return sum + (plan ? plan.price : 0);
+    }, 0);
+
+  const todaySubscriptionRevenue = clientSubscriptions
+    .filter(sub => {
+      const dateStr = sub.startDate ? sub.startDate.split('T')[0] : '';
+      return dateStr === todayStr && sub.status === 'active';
+    })
+    .reduce((sum, sub) => {
+      const plan = subscriptionPlans.find(p => p.id === sub.planId);
+      return sum + (plan ? plan.price : 0);
+    }, 0);
+
+  const totalRevenue = appointmentsRevenue + subscriptionRevenue;
+  const todayRevenue = todayAppointmentsRevenue + todaySubscriptionRevenue;
   const avgTicket = completed.length > 0 ? totalRevenue / completed.length : 0;
   const pixTotal = completed.filter(a => a.paymentMethod === 'pix').reduce((s, a) => s + a.totalValue, 0);
   const cardTotal = completed.filter(a => a.paymentMethod === 'credit').reduce((s, a) => s + a.totalValue, 0);
@@ -729,9 +766,9 @@ const BillingTab: React.FC<{ period: string; selectedProId: string }> = ({ perio
           <h4 className="font-bold text-slate-900 mb-4">Mix de Pagamento</h4>
           {totalRevenue > 0 ? (
             <div className="space-y-3">
-              {Object.entries({ pix: pixTotal, credit: cardTotal, debit: debitTotal, cash: cashTotal }).map(([key, val]) => (
+              {Object.entries({ pix: pixTotal, credit: cardTotal, debit: debitTotal, cash: cashTotal, subscription: subscriptionRevenue }).map(([key, val]) => (
                 <SimpleBar key={key} label={PAYMENT_CONFIG[key]?.label || key} value={val} max={totalRevenue}
-                  valueLabel={fmtBRL(val)} color={key === 'pix' ? 'bg-teal-500' : key === 'credit' ? 'bg-purple-500' : key === 'debit' ? 'bg-blue-500' : 'bg-emerald-500'} />
+                  valueLabel={fmtBRL(val)} color={key === 'pix' ? 'bg-teal-500' : key === 'credit' ? 'bg-purple-500' : key === 'debit' ? 'bg-blue-500' : key === 'cash' ? 'bg-emerald-500' : 'bg-orange-500'} />
               ))}
             </div>
           ) : <p className="text-slate-400 text-sm text-center py-4">Sem dados no período</p>}
@@ -1216,7 +1253,7 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
 };
 
 const ReportsTab: React.FC<{ period: string; selectedProId: string }> = ({ period, selectedProId }) => {
-  const { appointments, professionals, cashSessions, cashFlowEntries, services } = useShop();
+  const { appointments, professionals, cashSessions, cashFlowEntries, services, subscriptionPlans, clientSubscriptions } = useShop();
 
   const todayStr = today();
   const yesterdayStr = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().split('T')[0]; })();
@@ -1233,17 +1270,55 @@ const ReportsTab: React.FC<{ period: string; selectedProId: string }> = ({ perio
     return true;
   };
 
+  const inRangeDateStr = (dateStr: string) => {
+    if (period === 'today') return dateStr === todayStr;
+    if (period === 'week') {
+      const d = new Date(dateStr + 'T12:00:00');
+      const wStart = new Date(); wStart.setDate(now.getDate() - now.getDay());
+      wStart.setHours(0, 0, 0, 0);
+      return d >= wStart;
+    }
+    if (period === 'month') return dateStr >= monthStart;
+    return true;
+  };
+
   const completed = appointments.filter(a => a.status === 'completed' && inRange(a));
   const todayCompleted = appointments.filter(a => a.status === 'completed' && a.date === todayStr && (selectedProId === 'all' || a.professionalId === selectedProId));
   const yestCompleted = appointments.filter(a => a.status === 'completed' && a.date === yesterdayStr && (selectedProId === 'all' || a.professionalId === selectedProId));
   const thisMonthCompleted = appointments.filter(a => a.status === 'completed' && a.date >= monthStart && (selectedProId === 'all' || a.professionalId === selectedProId));
   const lastMonthCompleted = appointments.filter(a => a.status === 'completed' && a.date >= lastMonthStart && a.date <= lastMonthEnd && (selectedProId === 'all' || a.professionalId === selectedProId));
 
-  const totalRevenue = completed.reduce((s, a) => s + a.totalValue, 0);
-  const todayRevenue = todayCompleted.reduce((s, a) => s + a.totalValue, 0);
-  const yestRevenue = yestCompleted.reduce((s, a) => s + a.totalValue, 0);
-  const thisMonthRevenue = thisMonthCompleted.reduce((s, a) => s + a.totalValue, 0);
-  const lastMonthRevenue = lastMonthCompleted.reduce((s, a) => s + a.totalValue, 0);
+  // Excluir agendamentos pagos por assinatura
+  const appointmentsRevenue = completed.filter(a => a.paymentMethod !== 'subscription').reduce((s, a) => s + a.totalValue, 0);
+  const todayAppointmentsRevenue = todayCompleted.filter(a => a.paymentMethod !== 'subscription').reduce((s, a) => s + a.totalValue, 0);
+  const yestAppointmentsRevenue = yestCompleted.filter(a => a.paymentMethod !== 'subscription').reduce((s, a) => s + a.totalValue, 0);
+  const thisMonthAppointmentsRevenue = thisMonthCompleted.filter(a => a.paymentMethod !== 'subscription').reduce((s, a) => s + a.totalValue, 0);
+  const lastMonthAppointmentsRevenue = lastMonthCompleted.filter(a => a.paymentMethod !== 'subscription').reduce((s, a) => s + a.totalValue, 0);
+
+  // Somar receita de assinaturas criadas no período
+  const getSubRevenue = (filterFn: (subDateStr: string) => boolean) => {
+    return clientSubscriptions
+      .filter(sub => {
+        const dateStr = sub.startDate ? sub.startDate.split('T')[0] : '';
+        return dateStr && filterFn(dateStr) && sub.status === 'active';
+      })
+      .reduce((sum, sub) => {
+        const plan = subscriptionPlans.find(p => p.id === sub.planId);
+        return sum + (plan ? plan.price : 0);
+      }, 0);
+  };
+
+  const subscriptionRevenue = getSubRevenue(inRangeDateStr);
+  const todaySubscriptionRevenue = getSubRevenue(dateStr => dateStr === todayStr);
+  const yestSubscriptionRevenue = getSubRevenue(dateStr => dateStr === yesterdayStr);
+  const thisMonthSubscriptionRevenue = getSubRevenue(dateStr => dateStr >= monthStart);
+  const lastMonthSubscriptionRevenue = getSubRevenue(dateStr => dateStr >= lastMonthStart && dateStr <= lastMonthEnd);
+
+  const totalRevenue = appointmentsRevenue + subscriptionRevenue;
+  const todayRevenue = todayAppointmentsRevenue + todaySubscriptionRevenue;
+  const yestRevenue = yestAppointmentsRevenue + yestSubscriptionRevenue;
+  const thisMonthRevenue = thisMonthAppointmentsRevenue + thisMonthSubscriptionRevenue;
+  const lastMonthRevenue = lastMonthAppointmentsRevenue + lastMonthSubscriptionRevenue;
   const growthVsLastMonth = lastMonthRevenue > 0 ? ((thisMonthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0;
   const growthToday = yestRevenue > 0 ? ((todayRevenue - yestRevenue) / yestRevenue) * 100 : 0;
 
