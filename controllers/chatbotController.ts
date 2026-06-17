@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../lib/supabase';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
@@ -117,10 +117,10 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
         functionDeclarations: [
             { name: "list_services", description: "Retorna a lista de serviços" },
             { name: "list_professionals", description: "Retorna a lista de barbeiros" },
-            { name: "check_availability", description: "Verifica horários livres", parameters: { type: "OBJECT", properties: { professional_id: { type: "STRING" }, date: { type: "STRING" }, service_ids: { type: "ARRAY", items: { type: "STRING" } } }, required: ["professional_id", "date"] } },
-            { name: "book_appointment", description: "Efetiva o agendamento", parameters: { type: "OBJECT", properties: { service_ids: { type: "ARRAY", items: { type: "STRING" } }, professional_id: { type: "STRING" }, date: { type: "STRING" }, time: { type: "STRING" } }, required: ["service_ids", "professional_id", "date", "time"] } }
+            { name: "check_availability", description: "Verifica horários livres", parameters: { type: SchemaType.OBJECT, properties: { professional_id: { type: SchemaType.STRING }, date: { type: SchemaType.STRING }, service_ids: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } } }, required: ["professional_id", "date"] } },
+            { name: "book_appointment", description: "Efetiva o agendamento", parameters: { type: SchemaType.OBJECT, properties: { service_ids: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }, professional_id: { type: SchemaType.STRING }, date: { type: SchemaType.STRING }, time: { type: SchemaType.STRING } }, required: ["service_ids", "professional_id", "date", "time"] } }
         ]
-    }];
+    }] as any;
 
     const systemInstruction = `Você é o assistente virtual da barbearia "${shop?.name}". Hoje é: ${dayjs().tz('America/Sao_Paulo').format('dddd, DD/MM/YYYY')}\n\nPROFISSIONAIS:\n${professionalsText}\n\nSERVIÇOS:\n${servicesText}\n\nHORÁRIOS:\n${businessHoursText}`;
 

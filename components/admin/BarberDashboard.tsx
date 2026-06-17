@@ -2,7 +2,7 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { useShop } from '../../store';
 import { Calendar, Clock, LogOut, CheckCircle, XCircle, AlertCircle, AlertTriangle, Settings, X, Loader2, Trash2, Plus, RefreshCw, Wallet, TrendingUp, BarChart3, ChevronLeft, ChevronRight, Filter, Sun, Moon } from 'lucide-react';
 import { useToast } from '../ui/ToastContext';
-import { WorkSchedule, DaySchedule, Professional } from '../../types';
+import { WorkSchedule, DaySchedule, Professional, Appointment } from '../../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell, ReferenceLine } from 'recharts';
 
 // Tooltip customizado para o gráfico
@@ -182,7 +182,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
         }
         setUpdatingAptId(id);
         try {
-            const { success, error } = await updateAppointmentStatus(id, newStatus);
+            const { success, error } = await updateAppointmentStatus(id, newStatus as Appointment['status']);
             if (success) {
                 const mapLabels: Record<string, string> = {
                     'confirmed': 'Atendimento confirmado!',

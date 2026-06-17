@@ -104,10 +104,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             // Lojas que ele é profissional
             const { data: proShopsRecords } = await supabase
                 .from('professionals')
-                .select('shop_id, shops(*)')
+                .select('shop_id, user_id, shops(*)')
                 .eq('email', currentSession.user.email);
 
-            const proShops = proShopsRecords?.map(r => r.shops).filter(Boolean) || [];
+            const proShops = proShopsRecords?.map(r => Array.isArray(r.shops) ? r.shops[0] : r.shops).filter(Boolean) || [];
             
             // Consolidar myShops (evitando duplicatas)
             const allShopsMap = new Map();
@@ -463,7 +463,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 return { error: null };
             } else {
                 // Rollback (Not easy in client-side, but effectively the user is created but has no access)
-                return { error: { message: 'Este email não consta na lista de profissionais de nenhuma barbearia.' } };
+                return { error: new Error('Este email não consta na lista de profissionais de nenhuma barbearia.') };
             }
         }
 

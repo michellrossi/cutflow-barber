@@ -20,8 +20,15 @@ export const createCustomer = async (req: Request, res: Response) => {
 
 export const createSubscription = async (req: Request, res: Response) => {
     try {
-        const { customerId, value, cycle, description } = req.body;
-        const sub = await createAsaasSubscription({ customerId, value, cycle, description });
+        const { customerId, value, cycle, description, billingType, nextDueDate } = req.body;
+        const sub = await createAsaasSubscription({ 
+            customer: customerId, 
+            value, 
+            cycle, 
+            description,
+            billingType: billingType || 'PIX',
+            nextDueDate: nextDueDate || new Date().toISOString()
+        });
         res.json(sub);
     } catch (e: unknown) {
         const error = e as Error;

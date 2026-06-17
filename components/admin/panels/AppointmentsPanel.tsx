@@ -5,6 +5,7 @@ import { useToast } from '../../ui/ToastContext';
 import { WeeklyCalendar } from './WeeklyCalendar';
 import { formatMessage, getWhatsAppLink } from '../../../utils/messageFormatter';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Appointment } from '../../../types';
 
 export const AppointmentsPanel: React.FC = () => {
     const {
@@ -796,7 +797,7 @@ export const AppointmentsPanel: React.FC = () => {
                                                                     setIsCompletionModalOpen(true);
                                                                 } else {
                                                                     const client = clients.find(c => c.id === apt.clientId || c.phone === apt.clientPhone);
-                                                                    updateAppointmentStatus(apt.id, newStatus, client);
+                                                                    updateAppointmentStatus(apt.id, newStatus as Appointment['status'], client);
                                                                 }
                                                             }}
                                                             className="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-lg p-2 focus:outline-none focus:border-orange-500 cursor-pointer hover:bg-slate-100 transition-colors"
@@ -925,7 +926,7 @@ export const AppointmentsPanel: React.FC = () => {
                                                             setIsCompletionModalOpen(true);
                                                         } else {
                                                             const client = clients.find(c => c.id === apt.clientId || c.phone === apt.clientPhone);
-                                                            updateAppointmentStatus(apt.id, newStatus, client);
+                                                            updateAppointmentStatus(apt.id, newStatus as Appointment['status'], client);
                                                         }
                                                     }}
                                                     className="bg-slate-50 border border-slate-200 text-slate-700 text-[10px] rounded-lg p-1.5 focus:outline-none focus:border-orange-500"

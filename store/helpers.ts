@@ -1,5 +1,5 @@
 import DOMPurify from 'dompurify';
-import type { Shop, ShopState, WorkSchedule } from '../types';
+import type { Shop, ShopState, WorkSchedule, ShopSettings } from '../types';
 
 export const DEFAULT_SCHEDULE: WorkSchedule = {
     monday: { start: '09:00', end: '19:00', lunchStart: '12:00', lunchEnd: '13:00', active: true },

@@ -1088,10 +1088,10 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
                                   </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100">
-                                  {commissionPayments.filter(cp => cp.professionalId === p.id).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).map(cp => (
+                                  {commissionPayments.filter(cp => cp.professionalId === p.id).sort((a, b) => new Date(b.paidAt).getTime() - new Date(a.paidAt).getTime()).map(cp => (
                                     <tr key={cp.id} className="hover:bg-slate-50">
                                       <td className="px-4 py-2.5 text-slate-600 font-medium whitespace-nowrap">
-                                        {new Date(cp.createdAt).toLocaleDateString('pt-BR')} {new Date(cp.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                        {new Date(cp.paidAt).toLocaleDateString('pt-BR')} {new Date(cp.paidAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                       </td>
                                       <td className="px-4 py-2.5 text-slate-500 whitespace-nowrap">
                                         {cp.periodStart && cp.periodEnd ? `${new Date(cp.periodStart + 'T12:00:00').toLocaleDateString('pt-BR')} até ${new Date(cp.periodEnd + 'T12:00:00').toLocaleDateString('pt-BR')}` : '—'}
