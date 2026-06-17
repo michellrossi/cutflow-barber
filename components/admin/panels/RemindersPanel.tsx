@@ -533,58 +533,84 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             onClick={() => { setEditingTemplate(template); setIsModalOpen(true); }}
-                            className="bg-white rounded-lg border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col cursor-pointer"
+                            className="group relative bg-white rounded-2xl border border-slate-100 p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1.5 transition-all duration-300 flex flex-col cursor-pointer min-h-[380px] overflow-hidden"
                         >
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="p-3 bg-orange-50 text-orange-600 rounded-md">
-                                    <MessageSquare size={24} />
+                            {/* Linha decorativa de gradiente no topo */}
+                            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-500 to-amber-400 opacity-90" />
+
+                            {/* Topo do Card: Ícone e Status */}
+                            <div className="flex justify-between items-center mb-6 mt-1">
+                                <div className="p-2.5 bg-orange-50/70 text-orange-600 rounded-xl border border-orange-100/50 shadow-inner">
+                                    <MessageSquare size={20} className="stroke-[2.5px]" />
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleTest(template.id); }}
-                                        disabled={isTesting}
-                                        className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-md transition-colors"
-                                        title="Enviar Teste"
-                                    >
-                                        <Copy size={18} />
-                                    </button>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); setEditingTemplate(template); setIsModalOpen(true); }}
-                                        className="p-2 text-slate-400 hover:text-orange-500 hover:bg-orange-50 rounded-md transition-colors"
-                                    >
-                                        <Eye size={18} />
-                                    </button>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); removeMessageTemplate(template.id); }}
-                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
+                                <div className="flex items-center gap-1">
+                                    <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full ${
+                                        template.active 
+                                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                                            : 'bg-slate-50 text-slate-400 border border-slate-200/60'
+                                    }`}>
+                                        {template.active ? 'Ativo' : 'Inativo'}
+                                    </span>
                                 </div>
                             </div>
 
-                            <h3 className="font-bold text-slate-900 text-lg mb-1">{template.title}</h3>
-                            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-slate-500 mb-4">
-                                <span className="px-2 py-0.5 bg-slate-100 rounded-md truncate max-w-[120px]">{getTriggerName(template.triggerId)}</span>
-                                {template.category && (
-                                    <span className="px-2 py-0.5 bg-orange-50 text-orange-600 rounded-md border border-orange-100 truncate max-w-[100px]">{template.category}</span>
-                                )}
+                            {/* Informações Principais (Título e Tags) */}
+                            <div className="mb-4 text-left">
+                                <h3 className="font-extrabold text-slate-800 text-lg leading-tight mb-2 group-hover:text-orange-600 transition-colors line-clamp-2 h-14" title={template.title}>
+                                    {template.title}
+                                </h3>
+                                <div className="flex flex-wrap gap-1.5">
+                                    <span className="px-2.5 py-0.5 bg-slate-50 text-slate-500 rounded-md text-[10px] font-bold border border-slate-100 max-w-[120px] truncate">
+                                        {getTriggerName(template.triggerId)}
+                                    </span>
+                                    {template.category && (
+                                        <span className="px-2.5 py-0.5 bg-orange-50/50 text-orange-600 rounded-md text-[10px] font-bold border border-orange-100/30 max-w-[100px] truncate">
+                                            {template.category}
+                                        </span>
+                                    )}
+                                </div>
                             </div>
 
-                            <div className="bg-slate-50 rounded-md p-4 text-sm text-slate-600 line-clamp-4 flex-grow mb-4 italic">
-                                "{template.content}"
+                            {/* Balão de Mensagem Estilo WhatsApp (Em pé/Estilizado) */}
+                            <div className="relative flex-grow bg-slate-50/70 border border-slate-100/80 rounded-xl p-4 mb-6 text-slate-600 text-xs leading-relaxed italic select-none overflow-hidden text-left before:content-[''] before:absolute before:top-3 before:-left-1.5 before:w-3 before:h-3 before:bg-slate-50/70 before:border-l before:border-b before:border-slate-100/80 before:rotate-45">
+                                <div className="line-clamp-5">
+                                    "{template.content}"
+                                </div>
                             </div>
 
-                            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                                <span className={`text-xs font-bold px-2 py-1 rounded-md ${template.active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-                                    {template.active ? 'Ativo' : 'Inativo'}
-                                </span>
+                            {/* Rodapé do Card: Ações do Sistema */}
+                            <div className="flex items-center justify-between pt-4 border-t border-slate-100/80 mt-auto">
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); updateMessageTemplate(template.id, { active: !template.active }); }}
-                                    className="text-xs font-medium text-orange-600 hover:underline"
+                                    onClick={(e) => { 
+                                        e.stopPropagation(); 
+                                        updateMessageTemplate(template.id, { active: !template.active }); 
+                                    }}
+                                    className={`text-[10px] font-black uppercase tracking-wider px-3.5 py-1.5 rounded-lg border transition-all ${
+                                        template.active 
+                                            ? 'text-slate-500 border-slate-200 hover:bg-slate-50' 
+                                            : 'text-orange-600 border-orange-200 hover:bg-orange-50'
+                                    }`}
                                 >
                                     {template.active ? 'Desativar' : 'Ativar'}
                                 </button>
+                                
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleTest(template.id); }}
+                                        disabled={isTesting}
+                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                        title="Enviar Mensagem de Teste"
+                                    >
+                                        <Copy size={16} />
+                                    </button>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); removeMessageTemplate(template.id); }}
+                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50/70 rounded-lg transition-all"
+                                        title="Excluir Modelo"
+                                    >
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
                             </div>
                         </motion.div>
                     ))}
