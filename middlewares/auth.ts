@@ -22,11 +22,23 @@ export const requirePlan = (minTier: 'essencial' | 'profissional' | 'premium') =
 
             const { data: shop } = await supabaseAdmin
                 .from('shops')
-                .select('plan, plan_tier')
+                .select('plan, plan_tier, trial_ends_at')
                 .eq('owner_id', user.id)
                 .single();
 
-            if (!shop || shop.plan !== 'active') {
+            if (!shop) {
+                return res.status(403).json({ error: 'Assinatura inativa ou não encontrada.', code: 'PLAN_REQUIRED' });
+            }
+
+            // Permite 'active' e 'trial'. Se for 'trial', valida se a data expirou
+            if (shop.plan === 'trial') {
+                if (shop.trial_ends_at) {
+                    const trialEnd = new Date(shop.trial_ends_at);
+                    if (trialEnd < new Date()) {
+                        return res.status(403).json({ error: 'Período de teste expirado.', code: 'TRIAL_EXPIRED' });
+                    }
+                }
+            } else if (shop.plan !== 'active') {
                 return res.status(403).json({ error: 'Assinatura inativa ou não encontrada.', code: 'PLAN_REQUIRED' });
             }
 
