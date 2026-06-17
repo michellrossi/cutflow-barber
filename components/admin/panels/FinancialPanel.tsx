@@ -818,7 +818,7 @@ const BillingTab: React.FC<{ period: string; selectedProId: string }> = ({ perio
 const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ period, selectedProId }) => {
   const {
     appointments, professionals, addCashMovement,
-    commissionPayments, addCommissionPayment
+    commissionPayments, addCommissionPayment, cashSessions
   } = useShop();
   const { showToast } = useToast();
 
@@ -927,16 +927,22 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
     setPaying(true);
 
     try {
-      // 1. Registra a saída no caixa (se for de gaveta) ou apenas registra no extrato de despesas
-      const r = await addCashMovement({
-        type: 'output',
-        category: 'Repasse Comissão',
-        amount: payModal.amount,
-        description: `Comissão de ${payModal.name}${origemPagamento === 'banco' ? ' | Método: bank' : ''}${payObs ? ' — ' + payObs : ''}`,
-      });
+      const hasOpenSession = cashSessions.some(s => s.status === 'open');
 
-      if (!r.success) {
-        throw new Error(r.error || 'Erro ao registrar movimentação no caixa');
+      // 1. Só passa pelo caixa físico se a origem for a gaveta (aí sim precisa de sessão aberta),
+      // ou se for via banco mas houver uma sessão aberta (mantém o registro no extrato do turno).
+      // Pagamento via banco nunca deve EXIGIR caixa físico aberto — ele não toca na gaveta.
+      if (origemPagamento === 'gaveta' || hasOpenSession) {
+        const r = await addCashMovement({
+          type: 'output',
+          category: 'Repasse Comissão',
+          amount: payModal.amount,
+          description: `Comissão de ${payModal.name}${origemPagamento === 'banco' ? ' | Método: bank' : ''}${payObs ? ' — ' + payObs : ''}`,
+        });
+
+        if (!r.success) {
+          throw new Error(r.error || 'Erro ao registrar movimentação no caixa');
+        }
       }
 
       // 2. Insere na tabela commission_payments
@@ -1417,7 +1423,7 @@ export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initia
   // Novo estado de Filtro por Profissional
   const [selectedProId, setSelectedProId] = useState<string>('all');
 
-  const { cashSessions, refresh, appointments, professionals, cashFlowEntries } = useShop();
+  const { cashSessions, refresh, appointments, professionals, cashFlowEntries, reloadFinancialData } = useShop();
   const { showToast } = useToast();
   const openSession = cashSessions.find(s => s.status === 'open');
 
@@ -1563,7 +1569,7 @@ export const FinancialPanel: React.FC<{ initialTab?: FinancialTab }> = ({ initia
             <Download size={16} /> Exportar
           </button>
           <button
-            onClick={() => { refresh(); showToast("Dados atualizados!"); }}
+            onClick={async () => { refresh(); await reloadFinancialData(); showToast("Dados atualizados!"); }}
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-slate-200 text-slate-600 text-sm font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm"
           >
             <RefreshCw size={16} /> Atualizar

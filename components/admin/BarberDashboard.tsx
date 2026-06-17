@@ -253,19 +253,23 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                 if (paymentMode === 'split') {
                     const v1 = parseFloat(splitValue1) || 0;
                     const v2 = finalTotal - v1;
-                    await addCashMovement({
-                        type: 'input',
-                        category: 'Venda / Serviço',
-                        amount: v1,
-                        description: `Cliente: ${completionTarget.clientName} | Método: ${splitMethod1} (Parte 1/2)`
-                    });
-                    await addCashMovement({
-                        type: 'input',
-                        category: 'Venda / Serviço',
-                        amount: v2,
-                        description: `Cliente: ${completionTarget.clientName} | Método: ${splitMethod2} (Parte 2/2)`
-                    });
-                } else {
+                    if (splitMethod1 !== 'subscription') {
+                        await addCashMovement({
+                            type: 'input',
+                            category: 'Venda / Serviço',
+                            amount: v1,
+                            description: `Cliente: ${completionTarget.clientName} | Método: ${splitMethod1} (Parte 1/2)`
+                        });
+                    }
+                    if (splitMethod2 !== 'subscription') {
+                        await addCashMovement({
+                            type: 'input',
+                            category: 'Venda / Serviço',
+                            amount: v2,
+                            description: `Cliente: ${completionTarget.clientName} | Método: ${splitMethod2} (Parte 2/2)`
+                        });
+                    }
+                } else if (method !== 'subscription') {
                     await addCashMovement({
                         type: 'input',
                         category: 'Venda / Serviço',

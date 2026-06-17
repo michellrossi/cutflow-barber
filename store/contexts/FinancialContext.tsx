@@ -24,6 +24,7 @@ interface FinancialContextType {
     }
   ) => MutationResult<CashSession>;
   addCashMovement: (entry: Omit<CashFlowEntry, 'id' | 'shopId' | 'sessionId' | 'createdAt'>) => MutationResult<CashFlowEntry>;
+  reloadFinancialData: () => Promise<void>;
   
   // Commission Actions
   addCommissionPayment: (payment: Omit<CommissionPayment, 'id' | 'shopId' | 'paidAt'>) => MutationResult<CommissionPayment>;
@@ -54,6 +55,20 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
       setCoupons([]);
       setCommissionPayments([]);
     }
+  }, [shopId]);
+
+  // Realtime — Caixa Físico (sessões e movimentações)
+  // Sem isso, uma sangria/aporte feita em outro dispositivo (ex: tablet do balcão)
+  // só aparecia no celular do dono depois de um reload manual da página.
+  useEffect(() => {
+    if (!shopId) return;
+    const ch = supabase.channel(`financial_${shopId}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_sessions', filter: `shop_id=eq.${shopId}` },
+        () => { loadInitialData(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_flow_entries', filter: `shop_id=eq.${shopId}` },
+        () => { loadInitialData(); })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, [shopId]);
 
   const loadInitialData = async () => {
@@ -298,6 +313,7 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
     <FinancialContext.Provider value={{ 
       cashSessions, cashFlowEntries, coupons, commissionPayments,
       openCashSession, closeCashSession, addCashMovement,
+      reloadFinancialData: loadInitialData,
       addCommissionPayment,
       addCoupon, updateCoupon, removeCoupon,
       fetchFinancialReport

@@ -1206,25 +1206,31 @@ export const AppointmentsPanel: React.FC = () => {
                                             await processLoyalty(completionTarget, settings);
                                             await updateAppointmentPaymentMethod(completionTarget.id, method, subId);
 
-                                            // 3. Registrar no Caixa se aberto (para qualquer método de pagamento)
+                                            // 3. Registrar no Caixa se aberto (exceto para "Assinatura": o cliente já pagou
+                                            // adiantado pelo plano, então finalizar o atendimento hoje não deve gerar
+                                            // nenhuma entrada de caixa — senão é dinheiro fantasma inflando o turno).
                                             const openSession = cashSessions.find(s => s.status === 'open');
                                             if (openSession) {
                                                 if (paymentMode === 'split') {
                                                     const v1 = parseFloat(splitValue1) || 0;
                                                     const v2 = finalTotal - v1;
-                                                    await addCashMovement({
-                                                        type: 'input',
-                                                        category: 'Venda / Serviço',
-                                                        amount: v1,
-                                                        description: `Cliente: ${completionTarget.clientName} | Método: ${splitMethod1} (Parte 1/2)`
-                                                    });
-                                                    await addCashMovement({
-                                                        type: 'input',
-                                                        category: 'Venda / Serviço',
-                                                        amount: v2,
-                                                        description: `Cliente: ${completionTarget.clientName} | Método: ${splitMethod2} (Parte 2/2)`
-                                                    });
-                                                } else {
+                                                    if (splitMethod1 !== 'subscription') {
+                                                        await addCashMovement({
+                                                            type: 'input',
+                                                            category: 'Venda / Serviço',
+                                                            amount: v1,
+                                                            description: `Cliente: ${completionTarget.clientName} | Método: ${splitMethod1} (Parte 1/2)`
+                                                        });
+                                                    }
+                                                    if (splitMethod2 !== 'subscription') {
+                                                        await addCashMovement({
+                                                            type: 'input',
+                                                            category: 'Venda / Serviço',
+                                                            amount: v2,
+                                                            description: `Cliente: ${completionTarget.clientName} | Método: ${splitMethod2} (Parte 2/2)`
+                                                        });
+                                                    }
+                                                } else if (method !== 'subscription') {
                                                     await addCashMovement({
                                                         type: 'input',
                                                         category: 'Venda / Serviço',
