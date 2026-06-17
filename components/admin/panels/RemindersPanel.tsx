@@ -525,7 +525,7 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
             ) : activeTab === 'logs' ? (
                 <MessageLogPanel />
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
                     {filteredTemplates.map((template) => (
                         <motion.div
                             key={template.id}
@@ -533,7 +533,7 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             onClick={() => { setEditingTemplate(template); setIsModalOpen(true); }}
-                            className="group relative bg-white rounded-2xl border border-slate-100 p-6 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1.5 transition-all duration-300 flex flex-col cursor-pointer min-h-[380px] overflow-hidden"
+                            className="group relative bg-white rounded-2xl border border-slate-100 p-5 shadow-[0_8px_30px_rgba(0,0,0,0.04)] hover:shadow-[0_15px_40px_rgba(0,0,0,0.08)] hover:-translate-y-1.5 transition-all duration-300 flex flex-col cursor-pointer min-h-[370px] overflow-hidden"
                         >
                             {/* Linha decorativa de gradiente no topo */}
                             <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-orange-500 to-amber-400 opacity-90" />
