@@ -1,5 +1,5 @@
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useShop } from '../../../store';
 import { Send, Bot, User, Loader2, Sparkles, TrendingUp, Users, Scissors, DollarSign } from 'lucide-react';
 
@@ -30,13 +30,25 @@ interface Message {
 }
 
 export const InsightPanel: React.FC = () => {
-    const { appointments, professionals, clients, services, settings, shop, session } = useShop();
+    const { appointments, professionals, clients, services, settings, shop, session, clientSubscriptions, subscriptionPlans } = useShop();
     const [messages, setMessages] = useState<Message[]>([
         { role: 'assistant', content: `Olá! Sou seu assistente de inteligência de negócios. Posso analisar os dados da sua barbearia (${settings.name}) e te dar insights sobre performance, finanças e clientes. O que gostaria de saber hoje?` }
     ]);
     const [input] = useState('Por favor, faça uma análise gerencial e estratégica da minha barbearia com base nos meus dados reais. Destaque pontos fortes, pontos de atenção e sugira ações práticas (em no máximo 3 tópicos curtos). Nunca inicie com "Claro", vá direto ao ponto.');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Receita real: atendimentos pagos via "Assinatura" não contam (já pagos no plano);
+    // a receita das assinaturas é contada quando elas são criadas.
+    const totalRevenue = useMemo(() => {
+        const apptRevenue = appointments
+            .filter(a => a.status === 'completed' && a.paymentMethod !== 'subscription')
+            .reduce((acc, curr) => acc + curr.totalValue, 0);
+        const subscriptionRevenue = (clientSubscriptions || [])
+            .filter(s => s.status !== 'pending')
+            .reduce((acc, s) => acc + ((subscriptionPlans || []).find(p => p.id === s.planId)?.price || 0), 0);
+        return apptRevenue + subscriptionRevenue;
+    }, [appointments, clientSubscriptions, subscriptionPlans]);
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -76,7 +88,7 @@ export const InsightPanel: React.FC = () => {
                     name: p.name,
                     appointments: appointments.filter(a => a.professionalId === p.id).length
                 })).sort((a, b) => b.appointments - a.appointments),
-                revenue: appointments.filter(a => a.status === 'completed').reduce((acc, curr) => acc + curr.totalValue, 0),
+                revenue: totalRevenue,
                 appointmentsByStatus: {
                     completed: appointments.filter(a => a.status === 'completed').length,
                     cancelled: appointments.filter(a => a.status === 'cancelled').length,
@@ -128,7 +140,7 @@ export const InsightPanel: React.FC = () => {
                         const diff = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
                         return diff <= 15;
                     }).length} />
-                    <StatBadge icon={<DollarSign size={14}/>} label="Receita Total" value={`R$ ${appointments.filter(a => a.status === 'completed').reduce((acc, curr) => acc + curr.totalValue, 0).toFixed(0)}`} />
+                    <StatBadge icon={<DollarSign size={14}/>} label="Receita Total" value={`R$ ${totalRevenue.toFixed(0)}`} />
                     <StatBadge icon={<Users size={14}/>} label="Clientes" value={clients.length} />
                 </div>
             </div>

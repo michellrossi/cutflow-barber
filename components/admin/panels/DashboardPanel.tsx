@@ -8,6 +8,7 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
     const { 
         appointments, clients, professionals, services, settings, 
         products, cashSessions, cashFlowEntries,
+        clientSubscriptions, subscriptionPlans,
         getWhatsAppStatus, formatCurrencyBRL 
     } = useShop();
     const [today, setToday] = useState<string>('');
@@ -191,8 +192,12 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
         let monthVal = 0;
         let yearVal = 0;
 
+        // Atendimentos pagos com "Assinatura" não geram faturamento novo: o cliente já pagou
+        // adiantado pelo plano. Essa receita é contabilizada abaixo, no momento em que a
+        // assinatura é criada — não quando ela é usada num atendimento.
         appointments.forEach(apt => {
             if (apt.status !== 'completed') return;
+            if (apt.paymentMethod === 'subscription') return;
             const aptDate = dayjs(apt.date);
             const value = apt.totalValue;
 
@@ -202,8 +207,21 @@ export const DashboardPanel: React.FC<{ onNavigate: (tab: any, filter?: string) 
             if (aptDate.isSame(startOfYear, 'day') || aptDate.isAfter(startOfYear)) yearVal += value;
         });
 
+        (clientSubscriptions || []).forEach(sub => {
+            if (sub.status === 'pending' || !sub.createdAt) return;
+            const plan = (subscriptionPlans || []).find(p => p.id === sub.planId);
+            if (!plan) return;
+            const createdAt = dayjs(sub.createdAt);
+            const value = plan.price;
+
+            if (createdAt.isSame(startOfToday, 'day') || createdAt.isAfter(startOfToday)) todayVal += value;
+            if (createdAt.isSame(startOfWeek, 'day') || createdAt.isAfter(startOfWeek)) weekVal += value;
+            if (createdAt.isSame(startOfMonth, 'day') || createdAt.isAfter(startOfMonth)) monthVal += value;
+            if (createdAt.isSame(startOfYear, 'day') || createdAt.isAfter(startOfYear)) yearVal += value;
+        });
+
         return { today: todayVal, week: weekVal, month: monthVal, year: yearVal };
-    }, [appointments]);
+    }, [appointments, clientSubscriptions, subscriptionPlans]);
 
     const todayAgenda = useMemo(() => {
         return [...todayAppointments].sort((a, b) => a.time.localeCompare(b.time));

@@ -8,8 +8,9 @@ interface ReportsFinancePanelProps {
 }
 
 export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRange }) => {
-    const { appointments, fetchFinancialReport, settings, professionals, clients } = useShop();
+    const { appointments, fetchFinancialReport, settings, professionals, clients, clientSubscriptions, subscriptionPlans } = useShop();
     const [filteredAppointments, setFilteredAppointments] = useState(appointments);
+    const [reportWindow, setReportWindow] = useState<{ start: Date; end: Date }>({ start: new Date(0), end: new Date() });
 
     useEffect(() => {
         const loadData = async () => {
@@ -31,6 +32,7 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
             else if (dateRange === 'Todo o período') startDate = new Date(2000, 0, 1);
             else startDate = new Date(0);
 
+            setReportWindow({ start: startDate, end: now });
             const data = await fetchFinancialReport(startDate.toISOString().split('T')[0], now.toISOString().split('T')[0]);
             setFilteredAppointments(data?.appointments || []);
         };
@@ -40,16 +42,26 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
     const stats = useMemo(() => {
         const appointmentsList = Array.isArray(filteredAppointments) ? filteredAppointments : [];
         const completed = appointmentsList.filter(a => a.status === 'completed');
+        // Atendimentos pagos com "Assinatura" não geram faturamento novo: o cliente já pagou
+        // adiantado pelo plano. A receita desses planos é contabilizada separadamente, no
+        // momento em que a assinatura é criada (ver subscriptionRevenue mais abaixo).
+        const paidAppointments = completed.filter(a => a.paymentMethod !== 'subscription');
         const professionalsList = Array.isArray(professionals) ? professionals : [];
         const clientsList = Array.isArray(clients) ? clients : [];
+        const subscriptionsList = Array.isArray(clientSubscriptions) ? clientSubscriptions : [];
+        const plansList = Array.isArray(subscriptionPlans) ? subscriptionPlans : [];
         
         // CÁLCULO REAL BASEADO NOS PROFISSIONAIS
         let totalRevenue = 0;
         let totalCommissions = 0;
 
-        completed.forEach(app => {
+        paidAppointments.forEach(app => {
             totalRevenue += app.totalValue;
-            
+        });
+
+        // Comissão é devida pelo serviço prestado independentemente da forma de pagamento
+        // (inclusive quando pago via assinatura), por isso continua somando sobre `completed`.
+        completed.forEach(app => {
             if (app.professionalId) {
                 const pro = professionalsList.find(p => p.id === app.professionalId);
                 const rate = pro?.commissionPercentage ?? 50;
@@ -58,14 +70,30 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
             }
         });
 
-        const profit = totalRevenue - totalCommissions;
-        const avgTicket = completed.length > 0 ? totalRevenue / completed.length : 0;
-
-        // Agrupamento por Data (Gráfico de Evolução)
+        // Receita de novas assinaturas: reconhecida no momento em que a assinatura é
+        // criada (createdAt), já que é quando o valor de fato entra para a barbearia.
+        // Assinaturas "pendentes" ainda não têm pagamento confirmado, por isso são ignoradas.
         const revenueByDate: Record<string, number> = {};
-        completed.forEach(app => {
+        paidAppointments.forEach(app => {
             revenueByDate[app.date] = (revenueByDate[app.date] || 0) + app.totalValue;
         });
+
+        subscriptionsList.forEach(sub => {
+            if (sub.status === 'pending') return;
+            if (!sub.createdAt) return;
+            const createdAt = new Date(sub.createdAt);
+            if (createdAt < reportWindow.start || createdAt > reportWindow.end) return;
+            const plan = plansList.find(p => p.id === sub.planId);
+            if (!plan) return;
+            totalRevenue += plan.price;
+            const dateStr = sub.createdAt.split('T')[0];
+            revenueByDate[dateStr] = (revenueByDate[dateStr] || 0) + plan.price;
+        });
+
+        const profit = totalRevenue - totalCommissions;
+        const avgTicket = paidAppointments.length > 0
+            ? paidAppointments.reduce((acc, app) => acc + app.totalValue, 0) / paidAppointments.length
+            : 0;
 
         const sortedDates = Object.keys(revenueByDate).sort();
         const chartData = sortedDates.map(date => ({
@@ -143,7 +171,7 @@ export const ReportsFinancePanel: React.FC<ReportsFinancePanelProps> = ({ dateRa
         });
 
         return { totalRevenue, totalCommissions, profit, avgTicket, chartData, paymentData, combinedDailyData };
-    }, [filteredAppointments, professionals, clients, settings]);
+    }, [filteredAppointments, professionals, clients, settings, clientSubscriptions, subscriptionPlans, reportWindow]);
 
     return (
   <div className="space-y-6">

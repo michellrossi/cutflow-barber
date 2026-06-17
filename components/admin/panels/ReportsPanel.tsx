@@ -12,7 +12,7 @@ import { DateRangeFilter } from '../ui/DateRangeFilter';
 type ReportSubTab = 'finance' | 'clients' | 'team' | 'services' | 'products' | 'goals';
 
 export const ReportsPanel: React.FC<{ initialTab?: ReportSubTab }> = ({ initialTab }) => {
-    const { appointments, clients, services, professionals } = useShop();
+    const { appointments, clients, services, professionals, clientSubscriptions, subscriptionPlans } = useShop();
     const [activeTab, setActiveTab] = useState<ReportSubTab>(initialTab || 'finance');
     const [dateRange, setDateRange] = useState('30 dias');
 
@@ -44,7 +44,18 @@ export const ReportsPanel: React.FC<{ initialTab?: ReportSubTab }> = ({ initialT
             return created >= start && created <= end;
         });
 
-        const faturamento = filteredAppts.filter(a => a.status === 'completed').reduce((acc, a) => acc + a.totalValue, 0);
+        const subscriptionsList = Array.isArray(clientSubscriptions) ? clientSubscriptions : [];
+        const plansList = Array.isArray(subscriptionPlans) ? subscriptionPlans : [];
+
+        // Atendimentos pagos via "Assinatura" não geram faturamento novo (já pago no plano).
+        // A receita da assinatura é contada no momento em que ela é criada (createdAt).
+        const apptFaturamento = filteredAppts
+            .filter(a => a.status === 'completed' && a.paymentMethod !== 'subscription')
+            .reduce((acc, a) => acc + a.totalValue, 0);
+        const subscriptionFaturamento = subscriptionsList
+            .filter(s => s.status !== 'pending' && s.createdAt && new Date(s.createdAt) >= start && new Date(s.createdAt) <= end)
+            .reduce((acc, s) => acc + (plansList.find(p => p.id === s.planId)?.price || 0), 0);
+        const faturamento = apptFaturamento + subscriptionFaturamento;
         const totalAgendamentos = filteredAppts.length;
         const noShows = filteredAppts.filter(a => a.status === 'noshow').length;
         const ocupacao = totalAgendamentos > 0 ? ((filteredAppts.filter(a => a.status === 'completed').length / totalAgendamentos) * 100).toFixed(1) : 0;
