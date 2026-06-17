@@ -51,7 +51,12 @@ export const InventoryProvider: React.FC<{ shopId: string; children: ReactNode }
           if (payload.eventType === 'DELETE') {
               setProducts(prev => prev.filter(p => p.id !== (payload.old as { id: string }).id));
           } else if (payload.eventType === 'INSERT') {
-              setProducts(prev => [...prev, mapProduct(payload.new as ProductRow)].sort((a, b) => a.name.localeCompare(b.name)));
+              setProducts(prev => {
+                const newProd = mapProduct(payload.new as ProductRow);
+                const exists = prev.some(p => p.id === newProd.id);
+                if (exists) return prev;
+                return [...prev, newProd].sort((a, b) => a.name.localeCompare(b.name));
+              });
           } else if (payload.eventType === 'UPDATE') {
               setProducts(prev => prev.map(p => p.id === (payload.new as ProductRow).id ? mapProduct(payload.new as ProductRow) : p));
           }

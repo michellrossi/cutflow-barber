@@ -572,7 +572,7 @@ export const RemindersPanel: React.FC<{ initialTab?: string }> = ({ initialTab =
                             </div>
 
                             {/* Balão de Mensagem Estilo WhatsApp (Em pé/Estilizado) */}
-                            <div className="relative flex-grow bg-slate-50/70 border border-slate-100/80 rounded-xl p-4 mb-6 text-slate-600 text-xs leading-relaxed italic select-none overflow-hidden text-left before:content-[''] before:absolute before:top-3 before:-left-1.5 before:w-3 before:h-3 before:bg-slate-50/70 before:border-l before:border-b before:border-slate-100/80 before:rotate-45">
+                            <div className="relative flex-grow bg-slate-50/70 border border-slate-100/80 rounded-xl p-4 mb-6 text-slate-600 text-xs leading-relaxed select-none overflow-hidden text-left before:content-[''] before:absolute before:top-3 before:-left-1.5 before:w-3 before:h-3 before:bg-slate-50/70 before:border-l before:border-b before:border-slate-100/80 before:rotate-45">
                                 <div className="line-clamp-5">
                                     "{template.content}"
                                 </div>
