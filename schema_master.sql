@@ -276,7 +276,7 @@ CREATE TABLE IF NOT EXISTS public.client_subscriptions (
     shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
     client_id UUID NOT NULL REFERENCES public.clients(id) ON DELETE CASCADE,
     plan_id UUID NOT NULL REFERENCES public.subscription_plans(id) ON DELETE CASCADE,
-    status TEXT NOT NULL CHECK (status IN ('active', 'canceled', 'past_due')),
+    status TEXT NOT NULL CHECK (status IN ('active', 'pending', 'inactive', 'cancelled')),
     start_date DATE NOT NULL DEFAULT CURRENT_DATE,
     next_billing_date DATE,
     services_used_this_month INTEGER DEFAULT 0,
