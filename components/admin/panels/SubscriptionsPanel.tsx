@@ -32,7 +32,9 @@ export const SubscriptionsPanel: React.FC = () => {
     updateClientSubscription,
     removeClientSubscription,
     appointments,
-    settings
+    settings,
+    addCashMovement,
+    cashSessions
   } = useShop();
 
   const [activeTab, setActiveTab] = useState<'subscribers' | 'plans'>('subscribers');
@@ -107,7 +109,25 @@ export const SubscriptionsPanel: React.FC = () => {
     if (editingSub) {
       await updateClientSubscription(editingSub.id, subData);
     } else {
-      await addClientSubscription(subData);
+      const res = await addClientSubscription(subData);
+      // Se o cadastro funcionou e há caixa aberto, registrar a entrada financeira
+      if (res.success) {
+        const openSession = (cashSessions || []).find(s => s.status === 'open');
+        if (openSession) {
+          const plan = subscriptionPlans.find(p => p.id === subData.planId);
+          const client = clients.find(c => c.id === subData.clientId);
+          const paymentMethod = formData.get('paymentMethod') as string || 'pix';
+          const price = plan ? plan.price : 0;
+          if (price > 0) {
+            await addCashMovement({
+              type: 'input',
+              category: 'Venda / Serviço',
+              amount: price,
+              description: `Assinatura Plano: ${plan?.name || ''} | Cliente: ${client?.name || ''} | Método: ${paymentMethod}`
+            });
+          }
+        }
+      }
     }
     setIsSubModalOpen(false);
     setEditingSub(null);
@@ -521,6 +541,26 @@ export const SubscriptionsPanel: React.FC = () => {
                     ))}
                   </select>
                 </div>
+
+                {/* Forma de Pagamento: apenas ao criar nova assinatura */}
+                {!editingSub && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-400">
+                      Forma de Pagamento
+                      <span className="ml-1 text-xs text-slate-500">(como o cliente pagou o plano)</span>
+                    </label>
+                    <select
+                      name="paymentMethod"
+                      required
+                      className="w-full px-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500/50 outline-none transition-all"
+                    >
+                      <option value="pix">PIX</option>
+                      <option value="credit">Cartão de Crédito</option>
+                      <option value="debit">Cartão de Débito</option>
+                      <option value="cash">Dinheiro</option>
+                    </select>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-400">Plano</label>
                   <select
