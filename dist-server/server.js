@@ -104,14 +104,19 @@ var createCustomer = async (req, res) => {
 };
 var createSubscription = async (req, res) => {
   try {
-    const { customerId, value, cycle, description, billingType, nextDueDate } = req.body;
+    const { customerId, value, cycle, description, billingType, nextDueDate, planTier, shopId } = req.body;
+    let externalReference = void 0;
+    if (planTier || shopId) {
+      externalReference = JSON.stringify({ planTier, shopId });
+    }
     const sub = await createAsaasSubscription({
       customer: customerId,
       value,
       cycle,
       description,
       billingType: billingType || "PIX",
-      nextDueDate: nextDueDate || (/* @__PURE__ */ new Date()).toISOString()
+      nextDueDate: nextDueDate || (/* @__PURE__ */ new Date()).toISOString(),
+      externalReference
     });
     res.json(sub);
   } catch (e) {
@@ -121,8 +126,17 @@ var createSubscription = async (req, res) => {
 };
 var checkout = async (req, res) => {
   try {
-    const { value, description, customerId } = req.body;
-    const payment = await createAsaasPayment({ value, description, customerId });
+    const { value, description, customerId, planTier, shopId } = req.body;
+    let externalReference = void 0;
+    if (planTier || shopId) {
+      externalReference = JSON.stringify({ planTier, shopId });
+    }
+    const payment = await createAsaasPayment({
+      value,
+      description,
+      customerId,
+      externalReference
+    });
     if (payment.billingType === "PIX") {
       const qrCode = await getAsaasPixQrCode(payment.id);
       return res.json({ payment, qrCode });
@@ -167,14 +181,41 @@ var handleWebhook = async (req, res) => {
       console.error("[Asaas Webhook] Erro ao registrar idempot\xEAncia do evento:", dbError);
       return res.status(500).json({ error: "Erro ao processar verifica\xE7\xE3o de duplicidade de webhook" });
     }
+    const paymentDate = payment?.dateCreated ? new Date(payment.dateCreated) : null;
+    if (paymentDate) {
+      const ageMs = Date.now() - paymentDate.getTime();
+      const ONE_DAY = 24 * 60 * 60 * 1e3;
+      if (ageMs > ONE_DAY) {
+        console.warn(`[Asaas Webhook] Recebido webhook para pagamento antigo (mais de 24 horas): ${payment.id}, idade: ${Math.round(ageMs / 36e5)}h`);
+      }
+    }
     if (event === "PAYMENT_CONFIRMED" || event === "PAYMENT_RECEIVED") {
       const { data: shop } = await supabaseAdmin.from("shops").select("id, name").eq("asaas_customer_id", payment.customer).maybeSingle();
       if (shop) {
-        const description = (payment.description || "").toLowerCase();
-        let planTier = "trial";
-        if (description.includes("premium")) planTier = "premium";
-        else if (description.includes("profissional")) planTier = "profissional";
-        else if (description.includes("basico")) planTier = "basico";
+        let planTier = "essencial";
+        try {
+          const ref = JSON.parse(payment?.externalReference || "{}");
+          const validTiers = ["essencial", "profissional", "premium"];
+          if (ref.planTier && validTiers.includes(ref.planTier)) {
+            planTier = ref.planTier;
+          } else {
+            const description = (payment?.description || "").toLowerCase().trim();
+            if (description.includes("premium")) planTier = "premium";
+            else if (description.includes("profissional")) planTier = "profissional";
+            else if (description.includes("basico") || description.includes("essencial")) planTier = "essencial";
+            else {
+              console.warn(`[Asaas Webhook] planTier n\xE3o reconhecido na descri\xE7\xE3o: "${payment?.description}", usando 'essencial'`);
+            }
+          }
+        } catch {
+          const description = (payment?.description || "").toLowerCase().trim();
+          if (description.includes("premium")) planTier = "premium";
+          else if (description.includes("profissional")) planTier = "profissional";
+          else if (description.includes("basico") || description.includes("essencial")) planTier = "essencial";
+          else {
+            console.warn(`[Asaas Webhook] Falha ao parsear externalReference, fallback para descri\xE7\xE3o falhou. Usando 'essencial'`);
+          }
+        }
         await supabaseAdmin.from("shops").update({
           plan: "active",
           plan_tier: planTier,

@@ -48,18 +48,35 @@ export const AppointmentProvider: React.FC<{ shopId: string; children: ReactNode
     if (shopId) {
       reloadAppointments(shopId);
       
+      let debounceTimer: NodeJS.Timeout;
+
       const channel = supabase.channel(`appts_${shopId}`)
         .on('postgres_changes', { 
           event: '*', 
           schema: 'public', 
           table: 'appointments',
           filter: `shop_id=eq.${shopId}` 
-        }, () => { 
-          reloadAppointments(shopId); 
+        }, (payload: any) => {
+          // Patch otimista: atualiza localmente sem refetch completo
+          if (payload.eventType === 'UPDATE' && payload.new) {
+            setAppointments(prev => prev.map(a => 
+              a.id === payload.new.id ? { ...a, ...mapAppointment(payload.new) } : a
+            ));
+            return; // Evita reload completo para UPDATEs simples
+          }
+          
+          // Para INSERT/DELETE, debounce de 400ms antes do reload completo
+          clearTimeout(debounceTimer);
+          debounceTimer = setTimeout(() => {
+            reloadAppointments(shopId);
+          }, 400);
         })
         .subscribe();
       
-      return () => { supabase.removeChannel(channel); };
+      return () => { 
+        clearTimeout(debounceTimer);
+        supabase.removeChannel(channel); 
+      };
     } else {
       setAppointments([]);
     }

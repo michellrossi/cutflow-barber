@@ -20,14 +20,21 @@ export const createCustomer = async (req: Request, res: Response) => {
 
 export const createSubscription = async (req: Request, res: Response) => {
     try {
-        const { customerId, value, cycle, description, billingType, nextDueDate } = req.body;
+        const { customerId, value, cycle, description, billingType, nextDueDate, planTier, shopId } = req.body;
+        
+        let externalReference: string | undefined = undefined;
+        if (planTier || shopId) {
+            externalReference = JSON.stringify({ planTier, shopId });
+        }
+
         const sub = await createAsaasSubscription({ 
             customer: customerId, 
             value, 
             cycle, 
             description,
             billingType: billingType || 'PIX',
-            nextDueDate: nextDueDate || new Date().toISOString()
+            nextDueDate: nextDueDate || new Date().toISOString(),
+            externalReference
         });
         res.json(sub);
     } catch (e: unknown) {
@@ -38,8 +45,19 @@ export const createSubscription = async (req: Request, res: Response) => {
 
 export const checkout = async (req: Request, res: Response) => {
     try {
-        const { value, description, customerId } = req.body;
-        const payment = await createAsaasPayment({ value, description, customerId });
+        const { value, description, customerId, planTier, shopId } = req.body;
+
+        let externalReference: string | undefined = undefined;
+        if (planTier || shopId) {
+            externalReference = JSON.stringify({ planTier, shopId });
+        }
+
+        const payment = await createAsaasPayment({ 
+            value, 
+            description, 
+            customerId,
+            externalReference
+        });
         if (payment.billingType === 'PIX') {
             const qrCode = await getAsaasPixQrCode(payment.id);
             return res.json({ payment, qrCode });
@@ -94,15 +112,47 @@ export const handleWebhook = async (req: Request, res: Response) => {
             return res.status(500).json({ error: 'Erro ao processar verificação de duplicidade de webhook' });
         }
 
+        // Proteção contra transações muito antigas / auditoria de tempo
+        const paymentDate = payment?.dateCreated ? new Date(payment.dateCreated) : null;
+        if (paymentDate) {
+            const ageMs = Date.now() - paymentDate.getTime();
+            const ONE_DAY = 24 * 60 * 60 * 1000;
+            if (ageMs > ONE_DAY) {
+                console.warn(`[Asaas Webhook] Recebido webhook para pagamento antigo (mais de 24 horas): ${payment.id}, idade: ${Math.round(ageMs / 3600000)}h`);
+            }
+        }
+
         if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
             const { data: shop } = await supabaseAdmin.from('shops').select('id, name').eq('asaas_customer_id', payment.customer).maybeSingle();
             if (shop) {
-                // Extrai o tier da descrição ou externalReference (ex: "Plano Profissional")
-                const description = (payment.description || '').toLowerCase();
-                let planTier = 'trial';
-                if (description.includes('premium')) planTier = 'premium';
-                else if (description.includes('profissional')) planTier = 'profissional';
-                else if (description.includes('basico')) planTier = 'basico';
+                let planTier: string = 'essencial'; // Tier padrão seguro
+                
+                try {
+                    // Tenta ler o externalReference estruturado em JSON
+                    const ref = JSON.parse(payment?.externalReference || '{}');
+                    const validTiers = ['essencial', 'profissional', 'premium'] as const;
+                    if (ref.planTier && validTiers.includes(ref.planTier)) {
+                        planTier = ref.planTier;
+                    } else {
+                        // Fallback para descrição legado
+                        const description = (payment?.description || '').toLowerCase().trim();
+                        if (description.includes('premium')) planTier = 'premium';
+                        else if (description.includes('profissional')) planTier = 'profissional';
+                        else if (description.includes('basico') || description.includes('essencial')) planTier = 'essencial';
+                        else {
+                            console.warn(`[Asaas Webhook] planTier não reconhecido na descrição: "${payment?.description}", usando 'essencial'`);
+                        }
+                    }
+                } catch {
+                    // Fallback para descrição legado caso o JSON seja inválido
+                    const description = (payment?.description || '').toLowerCase().trim();
+                    if (description.includes('premium')) planTier = 'premium';
+                    else if (description.includes('profissional')) planTier = 'profissional';
+                    else if (description.includes('basico') || description.includes('essencial')) planTier = 'essencial';
+                    else {
+                        console.warn(`[Asaas Webhook] Falha ao parsear externalReference, fallback para descrição falhou. Usando 'essencial'`);
+                    }
+                }
 
                 await supabaseAdmin.from('shops').update({ 
                     plan: 'active', 

@@ -450,7 +450,7 @@ BEGIN
             RETURN json_build_object('status', 'error', 'message', SQLERRM);
     END;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 GRANT EXECUTE ON FUNCTION public.book_appointment TO anon, authenticated, service_role;
 
@@ -644,7 +644,7 @@ BEGIN
         'validityDays', COALESCE(v_settings.loyalty_reward_validity_days, 90)
     );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 GRANT EXECUTE ON FUNCTION public.award_loyalty_reward(UUID, UUID) TO service_role;
 
@@ -679,7 +679,7 @@ BEGIN
         OR c.birthday_last_sent_year != EXTRACT(YEAR FROM NOW())::INTEGER
       );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 GRANT EXECUTE ON FUNCTION public.get_birthday_clients_today() TO service_role;
 
@@ -734,7 +734,7 @@ BEGIN
 
     RETURN v_total;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 -- Trigger que inicializa current_value ao criar uma meta (calcula backfill)
 CREATE OR REPLACE FUNCTION public.sync_goal_initial_value()
@@ -1090,7 +1090,7 @@ BEGIN
     ) INTO result;
     RETURN result;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 -- 3. Tabela de logs de mensagens automatizadas
 CREATE TABLE IF NOT EXISTS public.automated_messages_log (
@@ -1214,7 +1214,7 @@ BEGIN
         'amountPaid', v_commission_amount
     );
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, pg_temp;
 
 GRANT EXECUTE ON FUNCTION public.pay_commission TO authenticated, service_role;
 

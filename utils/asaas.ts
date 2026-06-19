@@ -23,7 +23,7 @@ export async function createAsaasCustomer(data: { name: string; cpfCnpj: string;
 }
 
 // 2 - Configurar Assinatura Recorrente no Asaas
-export async function createAsaasSubscription(data: { customer: string; billingType: 'BOLETO' | 'CREDIT_CARD' | 'PIX'; value: number; nextDueDate: string; description: string; cycle: 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'SEMIANNUALLY' | 'YEARLY' }) {
+export async function createAsaasSubscription(data: { customer: string; billingType: 'BOLETO' | 'CREDIT_CARD' | 'PIX'; value: number; nextDueDate: string; description: string; cycle: 'WEEKLY' | 'BIWEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'SEMIANNUALLY' | 'YEARLY'; externalReference?: string }) {
     const response = await fetch(`${getApiUrl()}/subscriptions`, {
         method: 'POST',
         headers: getHeaders(),
@@ -68,6 +68,7 @@ export interface AsaasPaymentData {
         addressNumber: string;
         phone: string;
     };
+    externalReference?: string;
     [key: string]: unknown;
 }
 

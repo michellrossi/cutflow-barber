@@ -50,6 +50,39 @@ export const InsightPanel: React.FC = () => {
         return apptRevenue + subscriptionRevenue;
     }, [appointments, clientSubscriptions, subscriptionPlans]);
 
+    const contextData = useMemo(() => {
+        return {
+            shopName: settings.name,
+            totalAppointments: appointments.length,
+            totalClients: clients.length,
+            totalProfessionals: professionals.length,
+            totalServices: services.length,
+            last15Days: appointments.filter(a => {
+                const date = new Date(a.date);
+                const now = new Date();
+                const diff = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
+                return diff <= 15;
+            }).length,
+            last30Days: appointments.filter(a => {
+                const date = new Date(a.date);
+                const now = new Date();
+                const diff = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
+                return diff <= 30;
+            }).length,
+            barberRanking: professionals.map(p => ({
+                name: p.name,
+                appointments: appointments.filter(a => a.professionalId === p.id).length
+            })).sort((a, b) => b.appointments - a.appointments),
+            revenue: totalRevenue,
+            appointmentsByStatus: {
+                completed: appointments.filter(a => a.status === 'completed').length,
+                cancelled: appointments.filter(a => a.status === 'cancelled').length,
+                noshow: appointments.filter(a => a.status === 'noshow').length,
+                scheduled: appointments.filter(a => a.status === 'scheduled' || a.status === 'confirmed').length,
+            }
+        };
+    }, [appointments, professionals, clients, services, settings.name, totalRevenue]);
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -65,37 +98,7 @@ export const InsightPanel: React.FC = () => {
         setIsLoading(true);
 
         try {
-            // Prepara os dados para o contexto da IA
-            const contextData = {
-                shopName: settings.name,
-                totalAppointments: appointments.length,
-                totalClients: clients.length,
-                totalProfessionals: professionals.length,
-                totalServices: services.length,
-                last15Days: appointments.filter(a => {
-                    const date = new Date(a.date);
-                    const now = new Date();
-                    const diff = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
-                    return diff <= 15;
-                }).length,
-                last30Days: appointments.filter(a => {
-                    const date = new Date(a.date);
-                    const now = new Date();
-                    const diff = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
-                    return diff <= 30;
-                }).length,
-                barberRanking: professionals.map(p => ({
-                    name: p.name,
-                    appointments: appointments.filter(a => a.professionalId === p.id).length
-                })).sort((a, b) => b.appointments - a.appointments),
-                revenue: totalRevenue,
-                appointmentsByStatus: {
-                    completed: appointments.filter(a => a.status === 'completed').length,
-                    cancelled: appointments.filter(a => a.status === 'cancelled').length,
-                    noshow: appointments.filter(a => a.status === 'noshow').length,
-                    scheduled: appointments.filter(a => a.status === 'scheduled' || a.status === 'confirmed').length,
-                }
-            };
+            // Prepara os dados para o contexto da IA usando o contextData memoizado
 
             const response = await fetch('/api/admin/insights', {
                 method: 'POST',
@@ -134,12 +137,7 @@ export const InsightPanel: React.FC = () => {
                     <span className="font-bold">Business Intelligence AI</span>
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-2 md:pb-0">
-                    <StatBadge icon={<CalendarCheck size={14}/>} label="Cortes (15d)" value={appointments.filter(a => {
-                        const date = new Date(a.date);
-                        const now = new Date();
-                        const diff = (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24);
-                        return diff <= 15;
-                    }).length} />
+                    <StatBadge icon={<CalendarCheck size={14}/>} label="Cortes (15d)" value={contextData.last15Days} />
                     <StatBadge icon={<DollarSign size={14}/>} label="Receita Total" value={`R$ ${totalRevenue.toFixed(0)}`} />
                     <StatBadge icon={<Users size={14}/>} label="Clientes" value={clients.length} />
                 </div>
