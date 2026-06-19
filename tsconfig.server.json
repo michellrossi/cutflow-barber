@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "outDir": "dist-server",
+    "rootDir": "./",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowJs": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "server.ts",
+    "app.ts",
+    "controllers/**/*",
+    "routes/**/*",
+    "middlewares/**/*",
+    "lib/**/*",
+    "utils/**/*",
+    "types.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-server",
+    "tests",
+    "App.tsx",
+    "index.tsx",
+    "components",
+    "store",
+    "playwright"
+  ]
+}
