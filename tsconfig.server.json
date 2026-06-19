@@ -19,7 +19,8 @@
     "middlewares/**/*",
     "lib/**/*",
     "utils/**/*",
-    "types.ts"
+    "types.ts",
+    "types/**/*"
   ],
   "exclude": [
     "node_modules",

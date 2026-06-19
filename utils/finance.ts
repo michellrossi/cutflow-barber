@@ -1,4 +1,4 @@
-import { Professional, Appointment, CommissionPayment } from '../types';
+import { Professional, Appointment, CommissionPayment } from '../types.js';
 
 export function calculateCommissions(
   professionals: Professional[],

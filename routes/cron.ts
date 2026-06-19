@@ -1,5 +1,5 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { runCronLogic } from '../controllers/cronController';
+import { runCronLogic } from '../controllers/cronController.js';
 import crypto from 'crypto';
 import rateLimit from 'express-rate-limit';
 

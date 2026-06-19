@@ -1,9 +1,9 @@
-import { supabaseAdmin } from '../lib/supabase';
+import { supabaseAdmin } from '../lib/supabase.js';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { isInstanceConnected, generateWhatsAppMessage, sendWhatsApp, logAutomatedMessage } from '../lib/helpers';
+import { isInstanceConnected, generateWhatsAppMessage, sendWhatsApp, logAutomatedMessage } from '../lib/helpers.js';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -56,7 +56,7 @@ export async function runCronLogic() {
         if (!serviceCache.has(shopId)) {
             const { data } = await supabaseAdmin.from('services').select('id, name').eq('shop_id', shopId);
             const map = new Map<string, string>();
-            data?.forEach(s => map.set(s.id, s.name));
+            data?.forEach((s: any) => map.set(s.id, s.name));
             serviceCache.set(shopId, map);
         }
 
@@ -309,7 +309,7 @@ export async function runCronLogic() {
                 .select('id, name, whatsapp_instance, whatsapp_connected')
                 .in('id', shopIds);
 
-            const shopMap = new Map((shopList || []).map((s: { id: string; name: string; whatsapp_instance: string; whatsapp_connected: boolean }) => [s.id, s]));
+            const shopMap = new Map<string, { id: string; name: string; whatsapp_instance: string; whatsapp_connected: boolean }>((shopList || []).map((s: any) => [s.id, s]));
             for (const client of clients) {
                 const shop = shopMap.get(client.shop_id);
                 if (!shop?.whatsapp_connected) continue;
@@ -375,7 +375,7 @@ export async function runCronLogic() {
                     .select('shop_id, phone')
                     .in('shop_id', allShopIds);
 
-                const settingsMap = new Map(allSettings?.map(s => [s.shop_id, s.phone]) || []);
+                const settingsMap = new Map<string, string>(allSettings?.map((s: any) => [s.shop_id, s.phone]) || []);
 
                 for (const [sId, data] of shopsData.entries()) {
                     if (!data.connected) continue;

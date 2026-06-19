@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { supabaseAdmin } from '../lib/supabase';
+import { supabaseAdmin } from '../lib/supabase.js';
 import { createAsaasCustomer, createAsaasSubscription, createAsaasPayment, getAsaasPixQrCode } from '../utils/asaas.js';
 import crypto from 'crypto';
 

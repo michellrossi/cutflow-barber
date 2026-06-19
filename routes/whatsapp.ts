@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import * as whatsappController from '../controllers/whatsappController';
-import { authenticate, requirePlan } from '../middlewares/auth';
+import * as whatsappController from '../controllers/whatsappController.js';
+import { authenticate, requirePlan } from '../middlewares/auth.js';
 
 const router = Router();
 

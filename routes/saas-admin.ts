@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import * as saasController from '../controllers/saasController';
+import * as saasController from '../controllers/saasController.js';
 
 const router = Router();
 

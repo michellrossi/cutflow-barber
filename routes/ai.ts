@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import * as aiController from '../controllers/aiController';
+import * as aiController from '../controllers/aiController.js';
 const router = Router();
 
 // Geração de templates e imagens exige plano profissional

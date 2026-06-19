@@ -1,4 +1,4 @@
-import { WorkSchedule } from '../types';
+import { WorkSchedule } from '../types.js';
 
 export const timeToMinutes = (time: string) => {
     const [h, m] = time.split(':').map(Number);

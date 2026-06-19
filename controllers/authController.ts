@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { supabaseAdmin } from '../lib/supabase';
-import { sendWhatsApp } from '../lib/helpers';
-import { sendWelcomeEmail } from '../lib/email';
+import { supabaseAdmin } from '../lib/supabase.js';
+import { sendWhatsApp } from '../lib/helpers.js';
+import { sendWelcomeEmail } from '../lib/email.js';
 import jwt from 'jsonwebtoken';
 
 import crypto from 'crypto';

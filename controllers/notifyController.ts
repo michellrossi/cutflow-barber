@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { supabaseAdmin } from '../lib/supabase';
-import { generateWhatsAppMessage, sendWhatsApp, logAutomatedMessage } from '../lib/helpers';
+import { supabaseAdmin } from '../lib/supabase.js';
+import { generateWhatsAppMessage, sendWhatsApp, logAutomatedMessage } from '../lib/helpers.js';
 
 export const sendAppointmentConfirmation = async (req: Request, res: Response) => {
     try {
@@ -20,7 +20,7 @@ export const sendAppointmentConfirmation = async (req: Request, res: Response) =
 
         // Busca nomes dos serviços
         const { data: svcs } = await supabaseAdmin.from('services').select('name').in('id', apt.service_ids || []);
-        const servicesNames = svcs?.map(s => s.name).join(', ') || 'serviços';
+        const servicesNames = svcs?.map((s: any) => s.name).join(', ') || 'serviços';
 
         const formattedDate = new Date(apt.date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' });
         const formattedTime = apt.time.substring(0, 5);

@@ -1,4 +1,4 @@
-import { Appointment, Client, Professional, Service } from '../types';
+import { Appointment, Client, Professional, Service } from '../types.js';
 
 export const formatMessage = (
   template: string,

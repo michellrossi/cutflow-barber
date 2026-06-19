@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
-import { runCronLogic } from '../controllers/cronController';
-import * as notifyController from '../controllers/notifyController';
-import { authenticate } from '../middlewares/auth';
+import { runCronLogic } from '../controllers/cronController.js';
+import * as notifyController from '../controllers/notifyController.js';
+import { authenticate } from '../middlewares/auth.js';
 
 const router = Router();
 

@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import * as asaasController from '../controllers/asaasController';
-import { authenticate } from '../middlewares/auth';
+import * as asaasController from '../controllers/asaasController.js';
+import { authenticate } from '../middlewares/auth.js';
 
 const router = Router();
 

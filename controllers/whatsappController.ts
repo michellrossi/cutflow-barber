@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { supabaseAdmin } from '../lib/supabase';
-import { handleChatbotAI } from './chatbotController';
-import { isRateLimited } from '../lib/helpers';
+import { supabaseAdmin } from '../lib/supabase.js';
+import { handleChatbotAI } from './chatbotController.js';
+import { isRateLimited } from '../lib/helpers.js';
 
 export const getQRCode = async (req: Request, res: Response) => {
     try {

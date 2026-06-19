@@ -1,4 +1,4 @@
-import { supabaseAdmin } from './supabase';
+import { supabaseAdmin } from './supabase.js';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
@@ -62,7 +62,7 @@ export async function generateWhatsAppMessage(triggerId: string, data: WhatsAppM
             .eq('shop_id', shopId)
             .eq('active', true);
         if (relatedTriggers) {
-            const match = relatedTriggers.find(t => {
+            const match = relatedTriggers.find((t: any) => {
                 const name = t.name.toLowerCase();
                 if (triggerId === 'appointment_reminder_24h') return name.includes('lembrete') && (name.includes('24h') || name.includes('24 h') || name.includes('dia'));
                 if (triggerId === 'appointment_reminder_1h') return name.includes('lembrete') && (name.includes('1h') || name.includes('1 h') || name.includes('hora'));

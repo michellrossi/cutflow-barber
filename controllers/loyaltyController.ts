@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { supabaseAdmin } from '../lib/supabase';
-import { sendWhatsApp, generateWhatsAppMessage, logAutomatedMessage } from '../lib/helpers';
+import { supabaseAdmin } from '../lib/supabase.js';
+import { sendWhatsApp, generateWhatsAppMessage, logAutomatedMessage } from '../lib/helpers.js';
 
 export const generateReward = async (req: Request, res: Response) => {
     try {

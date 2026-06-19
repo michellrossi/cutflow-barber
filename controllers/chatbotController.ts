@@ -1,9 +1,9 @@
-import { supabaseAdmin } from '../lib/supabase';
+import { supabaseAdmin } from '../lib/supabase.js';
 import { GoogleGenerativeAI, SchemaType, Tool } from '@google/generative-ai';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
-import { sendWhatsApp, detectsHandoff } from '../lib/helpers';
+import { sendWhatsApp, detectsHandoff } from '../lib/helpers.js';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -173,7 +173,7 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
                         let totalValue = 0;
                         if (args.service_ids?.length) {
                             const { data: sd } = await supabaseAdmin.from('services').select('id, price').in('id', args.service_ids).eq('shop_id', shopId);
-                            totalValue = sd?.reduce((s, x) => s + Number(x.price), 0) || 0;
+                            totalValue = sd?.reduce((s: number, x: any) => s + Number(x.price), 0) || 0;
                         }
                         const { data: rpcR, error: rpcE } = await supabaseAdmin.rpc('book_appointment', { p_shop_id: shopId, p_client_name: clientName, p_client_phone: phone, p_service_ids: args.service_ids, p_professional_id: args.professional_id, p_date: args.date, p_time: args.time, p_total_value: totalValue });
                         data = rpcE ? { success: false, error: rpcE.message } : (rpcR.status === 'success' ? { success: true, appointmentId: rpcR.id } : { success: false, error: rpcR.message });
@@ -216,7 +216,7 @@ async function getAvailableSlotsForAI(shopId: string, proId: string, date: strin
     let totalDuration = 30; // padrão
     if (serviceIds && serviceIds.length > 0) {
         const { data: svcs } = await supabaseAdmin.from('services').select('duration').in('id', serviceIds);
-        totalDuration = svcs?.reduce((acc, s) => acc + (s.duration || 30), 0) || 30;
+        totalDuration = svcs?.reduce((acc: number, s: any) => acc + (s.duration || 30), 0) || 30;
     }
 
     const { data: appointments } = await supabaseAdmin.from('appointments').select('time, service_ids').eq('professional_id', proId).eq('date', date).not('status', 'eq', 'cancelled');
@@ -224,7 +224,7 @@ async function getAvailableSlotsForAI(shopId: string, proId: string, date: strin
 
     // Cache de serviços para cálculo de fim de agendamentos existentes
     const { data: allServices } = await supabaseAdmin.from('services').select('id, duration').eq('shop_id', shopId);
-    const serviceDurationMap = new Map(allServices?.map(s => [s.id, s.duration]) || []);
+    const serviceDurationMap = new Map<string, number>(allServices?.map((s: any) => [s.id, s.duration as number]) || []);
 
     const slots: string[] = [];
     let current = dayjs(`${date}T${hours.start}`);

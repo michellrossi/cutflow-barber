@@ -13,17 +13,17 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 // Rotas
-import asaasRouter from './routes/asaas';
-import whatsappRouter from './routes/whatsapp';
-import saasRouter from './routes/saas-admin';
-import cronRouter from './routes/cron';
-import notifyRouter from './routes/notify';
-import authRouter from './routes/auth';
-import loyaltyRouter from './routes/loyalty';
-import aiRouter from './routes/ai';
-import insightsRouter from './routes/insights';
-import { authenticate, requirePlan } from './middlewares/auth';
-import { requireAdmin } from './middlewares/requireAdmin';
+import asaasRouter from './routes/asaas.js';
+import whatsappRouter from './routes/whatsapp.js';
+import saasRouter from './routes/saas-admin.js';
+import cronRouter from './routes/cron.js';
+import notifyRouter from './routes/notify.js';
+import authRouter from './routes/auth.js';
+import loyaltyRouter from './routes/loyalty.js';
+import aiRouter from './routes/ai.js';
+import insightsRouter from './routes/insights.js';
+import { authenticate, requirePlan } from './middlewares/auth.js';
+import { requireAdmin } from './middlewares/requireAdmin.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
