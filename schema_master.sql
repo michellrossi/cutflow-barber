@@ -353,6 +353,9 @@ CREATE OR REPLACE FUNCTION public.book_appointment(
 DECLARE
     v_appointment_id UUID;
     v_daily_count INTEGER;
+    v_calculated_total NUMERIC := 0;
+    v_coupon_type TEXT;
+    v_coupon_value NUMERIC;
 BEGIN
     -- 1. Verifica limite diário
     SELECT COUNT(*) INTO v_daily_count FROM public.appointments
@@ -376,10 +379,16 @@ BEGIN
         RETURN json_build_object('status', 'error', 'message', 'Você já possui um agendamento neste horário.');
     END IF;
 
-    -- 3. Validação e Consumo de Cupom
+    -- 3. Calcular valor dos serviços de forma confiável no banco de dados
+    SELECT COALESCE(SUM(price), 0) INTO v_calculated_total
+    FROM public.services
+    WHERE id = ANY(p_service_ids::uuid[]) AND shop_id = p_shop_id;
+
+    -- 4. Validação e Consumo de Cupom
     IF p_coupon_code IS NOT NULL AND p_coupon_code <> '' THEN
-        UPDATE public.coupons 
-        SET usage_count = usage_count + 1
+        -- Primeiro busca os dados do cupom para aplicar o desconto
+        SELECT type, value INTO v_coupon_type, v_coupon_value
+        FROM public.coupons
         WHERE code = p_coupon_code 
           AND shop_id = p_shop_id 
           AND active = true 
@@ -389,6 +398,19 @@ BEGIN
         IF NOT FOUND THEN
             -- Se não atualizou, é porque o cupom é inválido, expirado ou atingiu o limite
             RETURN json_build_object('status', 'error', 'message', 'Cupom inválido, expirado ou limite de uso atingido.');
+        END IF;
+
+        -- Consome o cupom incrementando usage_count
+        UPDATE public.coupons 
+        SET usage_count = usage_count + 1
+        WHERE code = p_coupon_code 
+          AND shop_id = p_shop_id;
+
+        -- Aplica o desconto ao total calculado
+        IF v_coupon_type = 'percentage' THEN
+            v_calculated_total := v_calculated_total * (1.0 - (v_coupon_value / 100.0));
+        ELSIF v_coupon_type = 'value' THEN
+            v_calculated_total := GREATEST(0, v_calculated_total - v_coupon_value);
         END IF;
     END IF;
 
@@ -414,7 +436,7 @@ BEGIN
             p_professional_id, 
             p_date, 
             p_time, 
-            p_total_value, 
+            v_calculated_total, -- Usar o valor total calculado com segurança no banco
             p_coupon_code, 
             'scheduled'
         ) RETURNING id INTO v_appointment_id;
@@ -1041,13 +1063,21 @@ ALTER TABLE public.instance_status_cache ENABLE ROW LEVEL SECURITY;
 -- 2. Tabela de eventos para garantir idempotência em Webhooks (ex: Asaas)
 CREATE TABLE IF NOT EXISTS public.webhook_events (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID REFERENCES public.shops(id) ON DELETE CASCADE,
     provider TEXT NOT NULL,
     event_type TEXT NOT NULL,
     external_id TEXT UNIQUE NOT NULL,
-    payload JSONB NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+    payload JSONB,
+    processed BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc', now()) NOT NULL
 );
+
+-- Garante as colunas extras se a tabela já existia da versão anterior do schema
+ALTER TABLE public.webhook_events ADD COLUMN IF NOT EXISTS shop_id UUID REFERENCES public.shops(id) ON DELETE CASCADE;
+ALTER TABLE public.webhook_events ADD COLUMN IF NOT EXISTS processed BOOLEAN DEFAULT false;
+
 ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
+COMMENT ON TABLE public.webhook_events IS 'Somente SERVICE_ROLE (backend). Sem policies de cliente intencionalmente.';
 
 -- Índice para busca de idempotência e limpeza
 CREATE INDEX IF NOT EXISTS idx_webhook_events_created_at ON public.webhook_events (created_at);
@@ -1091,16 +1121,7 @@ COMMENT ON TABLE public.automated_messages_log IS 'Logs de mensagens automática
 -- RLS ativo sem policies = bloqueio total para clients públicos. Intencional.
 -- ==============================================================================
 
-CREATE TABLE IF NOT EXISTS public.webhook_events (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    shop_id UUID REFERENCES public.shops(id) ON DELETE CASCADE,
-    event_type TEXT NOT NULL,
-    payload JSONB,
-    processed BOOLEAN DEFAULT false,
-    created_at TIMESTAMPTZ DEFAULT timezone('utc', now()) NOT NULL
-);
-ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
-COMMENT ON TABLE public.webhook_events IS 'Somente SERVICE_ROLE (backend). Sem policies de cliente intencionalmente.';
+
 
 CREATE TABLE IF NOT EXISTS public.instance_status_cache (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -1158,6 +1179,14 @@ BEGIN
     FROM public.professionals WHERE id = p_professional_id;
     IF NOT FOUND THEN
         RETURN json_build_object('success', false, 'message', 'Profissional não encontrado');
+    END IF;
+
+    -- Proteção de Tenant: Apenas service_role ou o dono da barbearia podem liquidar comissão
+    IF auth.role() <> 'service_role' AND NOT EXISTS (
+        SELECT 1 FROM public.shops 
+        WHERE id = v_shop_id AND owner_id = auth.uid()
+    ) THEN
+        RETURN json_build_object('success', false, 'message', 'Não autorizado. Apenas o proprietário da barbearia pode pagar comissões.');
     END IF;
 
     -- Calcula faturamento do período (appointments completados)

@@ -16,7 +16,7 @@ export const generateTemplate = async (req: Request, res: Response) => {
         Use obrigatoriamente as variáveis entre colchetes quando apropriado: [CLIENTE], [SERVICO], [DATA], [HORA], [BARBEIRO], [BARBEARIA]. 
         Retorne APENAS o texto final da mensagem, sem explicações ou aspas.`;
 
-        const result = await model.generateContent(prompt);
+        const result = await model.generateContent(prompt, { timeout: 15000 });
         res.json({ success: true, text: result.response.text().trim() });
     } catch (e: unknown) {
         console.error('[AI] Error in generateTemplate:', e);
@@ -32,8 +32,8 @@ export const generateImage = async (req: Request, res: Response) => {
 
         const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}?width=1024&height=1024&nologo=true`;
         
-        // Baixa a imagem no servidor para evitar bloqueio de CSP no frontend
-        const imageResponse = await fetch(url);
+        // Baixa a imagem no servidor para evitar bloqueio de CSP no frontend (timeout de 10s)
+        const imageResponse = await fetch(url, { signal: AbortSignal.timeout(10000) });
         if (!imageResponse.ok) {
             return res.status(502).json({ error: 'Falha ao gerar imagem com o serviço externo' });
         }
@@ -99,7 +99,7 @@ export const getInsights = async (req: Request, res: Response) => {
             history: safeHistory
         });
 
-        const result = await chat.sendMessage(prompt);
+        const result = await chat.sendMessage(prompt, { timeout: 15000 });
         res.json({ success: true, answer: result.response.text().trim() });
     } catch (e: unknown) {
         console.error('[AI] Error in getInsights:', e);

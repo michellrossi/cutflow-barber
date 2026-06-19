@@ -7,9 +7,9 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
 const getJwtSecret = () => {
-    const secret = process.env.JWT_SECRET;
+    const secret = process.env.SUPABASE_JWT_SECRET || process.env.JWT_SECRET;
     if (!secret) {
-        console.error('FATAL: JWT_SECRET não configurado no .env');
+        console.error('FATAL: SUPABASE_JWT_SECRET ou JWT_SECRET não configurado no .env');
         return null;
     }
     return secret;
@@ -58,7 +58,16 @@ export const requestClientLogin = async (req: Request, res: Response) => {
             }
         }
 
-        const token = jwt.sign({ clientId: client.id, shopId, phone: cleanPhone }, secret, { expiresIn: '15m' });
+        const token = jwt.sign(
+            { 
+                role: 'authenticated', 
+                clientId: client.id, 
+                shopId, 
+                phone: cleanPhone 
+            }, 
+            secret, 
+            { expiresIn: '15m' }
+        );
         const { data: shop, error: shopError } = await supabaseAdmin.from('shops').select('name, slug, whatsapp_instance').eq('id', shopId).single();
         
         if (shopError || !shop) {

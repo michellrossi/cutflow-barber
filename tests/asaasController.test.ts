@@ -26,18 +26,23 @@ describe('asaasController.handleWebhook', () => {
   });
 
   it('ignora evento duplicado (idempotência)', async () => {
-    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { id: 'exists' } });
+    // Sobrescreve temporariamente a propriedade .then para simular erro de chave única (23505) no insert
+    const originalThen = (mockSupabase as any).then;
+    (mockSupabase as any).then = (resolve: any) => Promise.resolve({ error: { code: '23505' } }).then(resolve);
+
     const req = makeReq({ id: 'evt-123', event: 'PAYMENT_RECEIVED', payment: { customer: 'c1' } });
     const res = makeRes();
     await handleWebhook(req, res);
+
+    // Restaura o comportamento padrão
+    (mockSupabase as any).then = originalThen;
+
     expect(res.send).toHaveBeenCalledWith('OK (duplicate)');
     expect(mockSupabase.update).not.toHaveBeenCalled();
   });
 
   it('ativa plano ao receber PAYMENT_CONFIRMED', async () => {
-    // 1. Verifica idempotência (não existe)
-    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null });
-    // 2. Busca barbearia pelo customer ID
+    // Busca barbearia pelo customer ID
     mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { id: 'shop-1', name: 'Barbearia X' } });
     
     const req = makeReq({ 
@@ -56,7 +61,6 @@ describe('asaasController.handleWebhook', () => {
   });
 
   it('suspende plano ao receber PAYMENT_OVERDUE', async () => {
-    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null }); // idempotencia
     mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { id: 'shop-1', name: 'Barbearia X' } }); // shop
     
     const req = makeReq({ 

@@ -63,6 +63,15 @@ export async function createApp() {
         message: { error: 'Muitas requisições. Aguarde 1 minuto.' }
     });
 
+    // Limite específico para chamadas de IA (Controle de faturamento e abuso)
+    const aiLimiter = rateLimit({
+        windowMs: 5 * 60 * 1000, // 5 minutos
+        max: 15, // máximo de 15 chamadas a cada 5 minutos por IP/usuário
+        standardHeaders: true,
+        legacyHeaders: false,
+        message: { error: 'Muitas requisições de IA. Tente novamente em 5 minutos.' }
+    });
+
     app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
     // Registro das Rotas
@@ -73,7 +82,7 @@ export async function createApp() {
     app.use('/api/notify', notifyLimiter, notifyRouter);
     app.use('/api/auth', notifyLimiter, authRouter);
     app.use('/api/loyalty', authenticate, loyaltyRouter);
-    app.use('/api/ai', authenticate, requirePlan('profissional'), aiRouter);
+    app.use('/api/ai', authenticate, requirePlan('profissional'), aiLimiter, aiRouter);
     app.use('/api/admin', authenticate, requirePlan('profissional'), insightsRouter);
 
     // Configuração de Ambiente (Vite vs Produção)
@@ -88,6 +97,15 @@ export async function createApp() {
         const vite = await createViteServer({ server: { middlewareMode: true }, appType: 'spa' });
         app.use(vite.middlewares);
     }
+
+    // Middleware global de tratamento de erros (Garante retorno JSON consistente)
+    app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+        console.error('[Global Error Handler]', err);
+        const statusCode = err.status || err.statusCode || 500;
+        res.status(statusCode).json({
+            error: err.message || 'Erro interno no servidor'
+        });
+    });
 
     return app;
 }

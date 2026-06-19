@@ -57,18 +57,31 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
     }
   }, [shopId]);
 
-  // Realtime — Caixa Físico (sessões e movimentações)
-  // Sem isso, uma sangria/aporte feita em outro dispositivo (ex: tablet do balcão)
-  // só aparecia no celular do dono depois de um reload manual da página.
+  // Realtime — Caixa Físico (sessões e movimentações) com Debounce
+  // Evita múltiplas requisições paralelas de rede em rajadas de eventos simultâneos
   useEffect(() => {
     if (!shopId) return;
+
+    let timeoutId: NodeJS.Timeout;
+
+    const debouncedLoad = () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        loadInitialData();
+      }, 300);
+    };
+
     const ch = supabase.channel(`financial_${shopId}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_sessions', filter: `shop_id=eq.${shopId}` },
-        () => { loadInitialData(); })
+        () => { debouncedLoad(); })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cash_flow_entries', filter: `shop_id=eq.${shopId}` },
-        () => { loadInitialData(); })
+        () => { debouncedLoad(); })
       .subscribe();
-    return () => { supabase.removeChannel(ch); };
+
+    return () => { 
+      clearTimeout(timeoutId);
+      supabase.removeChannel(ch); 
+    };
   }, [shopId]);
 
   const loadInitialData = async () => {

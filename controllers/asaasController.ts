@@ -68,9 +68,31 @@ export const handleWebhook = async (req: Request, res: Response) => {
         const event = req.body.event;
         const payment = req.body.payment;
 
-        // Idempotência
-        const { data: existingEvent } = await supabaseAdmin.from('webhook_events').select('id').eq('external_id', req.body.id || payment?.id).maybeSingle();
-        if (existingEvent) return res.status(200).send('OK (duplicate)');
+        // Idempotência preventiva no início
+        const eventId = req.body.id || payment?.id;
+        if (!eventId) {
+            return res.status(400).json({ error: 'ID de evento do webhook não fornecido' });
+        }
+
+        try {
+            const { error: insertError } = await supabaseAdmin.from('webhook_events').insert({ 
+                provider: 'asaas', 
+                event_type: event, 
+                external_id: eventId, 
+                payload: req.body 
+            });
+
+            if (insertError) {
+                if (insertError.code === '23505') {
+                    console.log(`[Asaas Webhook] Evento duplicado detectado via restrição UNIQUE: ${eventId}`);
+                    return res.status(200).send('OK (duplicate)');
+                }
+                throw insertError;
+            }
+        } catch (dbError) {
+            console.error('[Asaas Webhook] Erro ao registrar idempotência do evento:', dbError);
+            return res.status(500).json({ error: 'Erro ao processar verificação de duplicidade de webhook' });
+        }
 
         if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
             const { data: shop } = await supabaseAdmin.from('shops').select('id, name').eq('asaas_customer_id', payment.customer).maybeSingle();
@@ -99,13 +121,6 @@ export const handleWebhook = async (req: Request, res: Response) => {
                 }
             }
         }
-
-        await supabaseAdmin.from('webhook_events').insert({ 
-            provider: 'asaas', 
-            event_type: event, 
-            external_id: req.body.id || payment?.id, 
-            payload: req.body 
-        });
 
         res.status(200).send('OK');
     } catch (e: unknown) {

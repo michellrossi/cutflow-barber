@@ -45,14 +45,12 @@ describe('Asaas Webhook Integration', () => {
             description: 'Assinatura Plano Profissional'
         };
 
-        // Mock busca evento (não existe duplicata)
-        mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+        // Mock insert do log do evento (idempotência preventiva - sem erro)
+        mockSupabase.insert.mockResolvedValueOnce({ error: null });
         // Mock busca loja pelo customer id
         mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { id: 'shop_123', name: 'Barbearia Teste' }, error: null });
         // Mock update da loja
         mockSupabase.update.mockReturnThis();
-        // Mock insert do log do evento
-        mockSupabase.insert.mockResolvedValueOnce({ error: null });
 
         const response = await request(app)
             .post('/api/asaas/webhook')
@@ -74,8 +72,8 @@ describe('Asaas Webhook Integration', () => {
     });
 
     it('deve retornar 200 (duplicate) se o evento já foi processado', async () => {
-        // Mock busca evento (já existe)
-        mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { id: 'existing' }, error: null });
+        // Mock insert do log do evento simulando conflito de chave única (código 23505)
+        mockSupabase.insert.mockResolvedValueOnce({ error: { code: '23505', message: 'duplicate key' } });
 
         const response = await request(app)
             .post('/api/asaas/webhook')
