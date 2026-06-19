@@ -158,3 +158,35 @@ export const triggerWelcomeEmail = async (req: Request, res: Response) => {
         res.status(500).json({ error });
     }
 };
+
+export const logout = async (req: Request, res: Response) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) return res.status(400).json({ error: 'Token não fornecido' });
+
+        const token = authHeader.split(' ')[1];
+
+        // Decodifica a expiração do token (exp) sem validar assinatura (apenas leitura de metadados exp)
+        const decoded = jwt.decode(token) as { exp?: number } | null;
+        const expiresAt = decoded?.exp 
+            ? new Date(decoded.exp * 1000).toISOString() 
+            : new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // fallback 24h
+
+        // Insere na lista negra de tokens revogados
+        const { error } = await supabaseAdmin.from('revoked_tokens').insert({
+            token,
+            expires_at: expiresAt
+        });
+
+        if (error && error.code !== '23505') { // ignora se o token já constar como revogado
+            throw error;
+        }
+
+        res.json({ success: true, message: 'Sessão encerrada com sucesso' });
+    } catch (e: unknown) {
+        console.error('[Auth] Erro no logout:', e);
+        const error = e instanceof Error ? e.message : 'Erro interno';
+        res.status(500).json({ error });
+    }
+};
+

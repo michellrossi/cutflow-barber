@@ -1194,3 +1194,15 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION public.pay_commission TO authenticated, service_role;
+
+-- ==============================================================================
+-- SEÇÃO: TOKENS REVOGADOS (revoked_tokens)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.revoked_tokens (
+    token TEXT PRIMARY KEY,
+    revoked_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL
+);
+ALTER TABLE public.revoked_tokens ENABLE ROW LEVEL SECURITY;
+COMMENT ON TABLE public.revoked_tokens IS 'Tokens JWT revogados do lado do servidor. Acesso exclusivo via SERVICE_ROLE.';
+

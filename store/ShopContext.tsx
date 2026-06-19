@@ -478,6 +478,23 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
 
     const logout = () => {
+        try {
+            const token = session?.access_token;
+            if (token) {
+                const serverUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+                    ? 'http://localhost:3000'
+                    : `https://${window.location.hostname}`;
+                
+                fetch(`${serverUrl}/api/auth/logout`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                }).catch(err => console.error('[Logout] Falha de rede ao invalidar token no backend:', err));
+            }
+        } catch (e) {
+            console.error('[Logout] Erro ao disparar logout no backend:', e);
+        }
         supabase.auth.signOut();
         setState(INITIAL_STATE);
         setSession(null);

@@ -6,6 +6,16 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
     if (!authHeader) return res.status(401).json({ error: 'No token provided' });
 
     const token = authHeader.split(' ')[1];
+
+    // Verifica se o token foi revogado no backend
+    const { data: isRevoked } = await supabaseAdmin
+        .from('revoked_tokens')
+        .select('token')
+        .eq('token', token)
+        .maybeSingle();
+
+    if (isRevoked) return res.status(401).json({ error: 'Token revogado. Faça login novamente.' });
+
     const { data: { user }, error } = await supabaseAdmin.auth.getUser(token);
 
     if (error || !user) return res.status(401).json({ error: 'Invalid token' });
