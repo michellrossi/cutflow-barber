@@ -46,7 +46,7 @@ export const ProfessionalStep: React.FC<ProfessionalStepProps> = ({ professional
                         <div
                             key={pro.id ?? 'none'}
                             onClick={() => setSelectedProId(pro.id)}
-                            className={`rounded-2xl border cursor-pointer transition-all flex flex-col items-center text-center gap-4 p-4 ${isSelected ? 'ring-2' : 'hover:brightness-110 shadow-lg'}`}
+                            className={`professional-card rounded-2xl border cursor-pointer transition-all flex flex-col items-center text-center gap-4 p-4 ${isSelected ? 'ring-2' : 'hover:brightness-110 shadow-lg'}`}
                             style={{
                                 backgroundColor: cardBg,
                                 borderColor: isSelected ? accent : border,

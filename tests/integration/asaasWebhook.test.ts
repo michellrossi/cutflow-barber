@@ -1,12 +1,22 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import request from 'supertest';
 import { createApp } from '../../app';
-import { mockSupabase } from '../mocks/supabase';
+import { mockSupabase, resetSupabaseMocks } from '../mocks/supabase';
+
+(globalThis as any).mockSupabase = mockSupabase;
 
 // Mock do supabaseAdmin
-vi.mock('../../lib/supabase', () => ({
-    supabaseAdmin: mockSupabase
-}));
+vi.mock('../../lib/supabase', () => {
+    const supabaseAdminProxy = new Proxy({}, {
+        get(target, prop, receiver) {
+            const actualMock = (globalThis as any).mockSupabase;
+            return actualMock ? Reflect.get(actualMock, prop, receiver) : undefined;
+        }
+    });
+    return {
+        supabaseAdmin: supabaseAdminProxy
+    };
+});
 
 describe('Asaas Webhook Integration', () => {
     let app: any;
@@ -16,7 +26,7 @@ describe('Asaas Webhook Integration', () => {
         process.env.ASAAS_WEBHOOK_TOKEN = webhookToken;
         process.env.NODE_ENV = 'test';
         app = await createApp();
-        vi.clearAllMocks();
+        resetSupabaseMocks();
     });
 
     it('deve retornar 401 se o token for inválido', async () => {
@@ -41,7 +51,6 @@ describe('Asaas Webhook Integration', () => {
         mockSupabase.maybeSingle.mockResolvedValueOnce({ data: { id: 'shop_123', name: 'Barbearia Teste' }, error: null });
         // Mock update da loja
         mockSupabase.update.mockReturnThis();
-        mockSupabase.eq.mockResolvedValueOnce({ error: null });
         // Mock insert do log do evento
         mockSupabase.insert.mockResolvedValueOnce({ error: null });
 

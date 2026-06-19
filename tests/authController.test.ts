@@ -30,7 +30,7 @@ describe('authController', () => {
 
   it('validateClientToken deve retornar 401 para token expirado ou inválido', async () => {
     const { validateClientToken } = await import('../controllers/authController');
-    const req = { body: { token: 'invalid.token.here' } } as any;
+    const req = { body: { token: 'eyJinvalid.token.here' } } as any;
     const res = makeRes();
 
     await validateClientToken(req, res);

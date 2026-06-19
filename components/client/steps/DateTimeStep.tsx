@@ -185,7 +185,7 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
                             <div 
                                 key={date.full}
                                 onClick={() => setSelectedDate(date.full)}
-                                className={`p-3 rounded-lg border text-center cursor-pointer transition-all ${isSelected ? 'text-white' : 'hover:brightness-110'}`}
+                                className={`day-selector p-3 rounded-lg border text-center cursor-pointer transition-all ${isSelected ? 'text-white' : 'hover:brightness-110'}`}
                                 style={{ 
                                     backgroundColor: isSelected ? (settings.accentColor || settings.primaryColor) : (settings.cardBackgroundColor || 'rgba(30, 41, 59, 0.3)'), 
                                     borderColor: isSelected ? (settings.accentColor || settings.primaryColor) : (settings.borderColor || '#334155'),
@@ -213,7 +213,7 @@ export const DateTimeStep: React.FC<DateTimeStepProps> = ({
                                     <div 
                                         key={time}
                                         onClick={() => setSelectedTime(time)}
-                                        className={`p-3 rounded-lg border text-center cursor-pointer transition-all ${isSelected ? 'font-bold' : 'hover:brightness-110'}`}
+                                        className={`time-slot p-3 rounded-lg border text-center cursor-pointer transition-all ${isSelected ? 'font-bold' : 'hover:brightness-110'}`}
                                         style={{ 
                                             backgroundColor: isSelected ? (settings.accentColor || settings.primaryColor) : (settings.cardBackgroundColor || 'rgba(30, 41, 59, 0.3)'), 
                                             borderColor: isSelected ? (settings.accentColor || settings.primaryColor) : (settings.borderColor || '#334155'),

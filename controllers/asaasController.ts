@@ -52,59 +52,65 @@ export const checkout = async (req: Request, res: Response) => {
 };
 
 export const handleWebhook = async (req: Request, res: Response) => {
-    const receivedToken = req.headers['asaas-access-token'];
-    const expectedToken = process.env.ASAAS_WEBHOOK_TOKEN;
+    try {
+        const receivedToken = req.headers['asaas-access-token'];
+        const expectedToken = process.env.ASAAS_WEBHOOK_TOKEN;
 
-    if (!receivedToken || !expectedToken) return res.status(401).json({ error: 'Unauthorized' });
+        if (!receivedToken || !expectedToken) return res.status(401).json({ error: 'Unauthorized' });
 
-    const receivedBuffer = Buffer.from(receivedToken as string);
-    const expectedBuffer = Buffer.from(expectedToken);
+        const receivedBuffer = Buffer.from(receivedToken as string);
+        const expectedBuffer = Buffer.from(expectedToken);
 
-    if (receivedBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(receivedBuffer, expectedBuffer)) {
-        return res.status(401).json({ error: 'Unauthorized' });
-    }
-
-    const event = req.body.event;
-    const payment = req.body.payment;
-
-    // Idempotência
-    const { data: existingEvent } = await supabaseAdmin.from('webhook_events').select('id').eq('external_id', req.body.id || payment?.id).maybeSingle();
-    if (existingEvent) return res.status(200).send('OK (duplicate)');
-
-    if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
-        const { data: shop } = await supabaseAdmin.from('shops').select('id, name').eq('asaas_customer_id', payment.customer).maybeSingle();
-        if (shop) {
-            // Extrai o tier da descrição ou externalReference (ex: "Plano Profissional")
-            const description = (payment.description || '').toLowerCase();
-            let planTier = 'trial';
-            if (description.includes('premium')) planTier = 'premium';
-            else if (description.includes('profissional')) planTier = 'profissional';
-            else if (description.includes('basico')) planTier = 'basico';
-
-            await supabaseAdmin.from('shops').update({ 
-                plan: 'active', 
-                plan_tier: planTier,
-                payment_confirmed_at: new Date().toISOString() 
-            }).eq('id', shop.id);
-            console.log(`[Asaas] Plano ${planTier} da barbearia ${shop.name} ATIVADO.`);
+        if (receivedBuffer.length !== expectedBuffer.length || !crypto.timingSafeEqual(receivedBuffer, expectedBuffer)) {
+            return res.status(401).json({ error: 'Unauthorized' });
         }
-    } else if (event === 'PAYMENT_OVERDUE' || event === 'SUBSCRIPTION_DELETED') {
-        const customerId = payment?.customer || req.body.subscription?.customer;
-        if (customerId) {
-            const { data: shop } = await supabaseAdmin.from('shops').select('id, name').eq('asaas_customer_id', customerId).maybeSingle();
+
+        const event = req.body.event;
+        const payment = req.body.payment;
+
+        // Idempotência
+        const { data: existingEvent } = await supabaseAdmin.from('webhook_events').select('id').eq('external_id', req.body.id || payment?.id).maybeSingle();
+        if (existingEvent) return res.status(200).send('OK (duplicate)');
+
+        if (event === 'PAYMENT_CONFIRMED' || event === 'PAYMENT_RECEIVED') {
+            const { data: shop } = await supabaseAdmin.from('shops').select('id, name').eq('asaas_customer_id', payment.customer).maybeSingle();
             if (shop) {
-                await supabaseAdmin.from('shops').update({ plan: 'suspended' }).eq('id', shop.id);
-                console.warn(`[Asaas] Plano da barbearia ${shop.name} SUSPENSO por inadimplência/cancelamento.`);
+                // Extrai o tier da descrição ou externalReference (ex: "Plano Profissional")
+                const description = (payment.description || '').toLowerCase();
+                let planTier = 'trial';
+                if (description.includes('premium')) planTier = 'premium';
+                else if (description.includes('profissional')) planTier = 'profissional';
+                else if (description.includes('basico')) planTier = 'basico';
+
+                await supabaseAdmin.from('shops').update({ 
+                    plan: 'active', 
+                    plan_tier: planTier,
+                    payment_confirmed_at: new Date().toISOString() 
+                }).eq('id', shop.id);
+                console.log(`[Asaas] Plano ${planTier} da barbearia ${shop.name} ATIVADO.`);
+            }
+        } else if (event === 'PAYMENT_OVERDUE' || event === 'SUBSCRIPTION_DELETED') {
+            const customerId = payment?.customer || req.body.subscription?.customer;
+            if (customerId) {
+                const { data: shop } = await supabaseAdmin.from('shops').select('id, name').eq('asaas_customer_id', customerId).maybeSingle();
+                if (shop) {
+                    await supabaseAdmin.from('shops').update({ plan: 'suspended' }).eq('id', shop.id);
+                    console.warn(`[Asaas] Plano da barbearia ${shop.name} SUSPENSO por inadimplência/cancelamento.`);
+                }
             }
         }
+
+        await supabaseAdmin.from('webhook_events').insert({ 
+            provider: 'asaas', 
+            event_type: event, 
+            external_id: req.body.id || payment?.id, 
+            payload: req.body 
+        });
+
+        res.status(200).send('OK');
+    } catch (e: unknown) {
+        console.error('[Asaas Webhook Error]', e);
+        const error = e instanceof Error ? e.message : 'Erro interno';
+        res.status(500).json({ error });
     }
-
-    await supabaseAdmin.from('webhook_events').insert({ 
-        provider: 'asaas', 
-        event_type: event, 
-        external_id: req.body.id || payment?.id, 
-        payload: req.body 
-    });
-
-    res.status(200).send('OK');
 };

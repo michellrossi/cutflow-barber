@@ -87,7 +87,7 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
                         <div
                             key={service.id}
                             onClick={() => toggleService(service.id)}
-                            className={`rounded-[2rem] border flex flex-col overflow-hidden group transition-all shadow-xl cursor-pointer relative ${isSelected ? 'ring-2' : 'hover:brightness-110'}`}
+                            className={`service-card rounded-[2rem] border flex flex-col overflow-hidden group transition-all shadow-xl cursor-pointer relative ${isSelected ? 'ring-2' : 'hover:brightness-110'}`}
                             style={{
                                 backgroundColor: cardBg,
                                 borderColor: isSelected ? accent : border,

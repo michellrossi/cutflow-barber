@@ -57,7 +57,15 @@ describe('aiController', () => {
   });
 
   describe('generateImage', () => {
-    it('deve retornar URL do Pollinations AI', async () => {
+    it('deve retornar a imagem em base64 baixada do Pollinations AI', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+        ok: true,
+        headers: {
+          get: () => 'image/jpeg'
+        },
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(8))
+      }));
+
       const req = { body: { prompt: 'uma barbearia' } } as any;
       const res = makeRes();
 
@@ -65,8 +73,10 @@ describe('aiController', () => {
 
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
         success: true,
-        url: expect.stringContaining('pollinations.ai')
+        image: expect.stringContaining('data:image/jpeg;base64,')
       }));
+
+      vi.unstubAllGlobals();
     });
   });
 });

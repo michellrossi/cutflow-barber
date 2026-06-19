@@ -63,7 +63,7 @@ describe('cronController', () => {
         vi.setSystemTime(mockNow);
 
         const mockApts = [{ 
-            id: '1', shop_id: 'shop1', total_value: 100, date: '2026-05-04', status: 'completed', service_ids: ['s1'],
+            id: '1', shop_id: 'shop1', total_value: 100, date: '2026-05-04', time: '10:00:00', status: 'completed', service_ids: ['s1'],
             shops: { name: 'Shop 1', whatsapp_instance: 'inst1', whatsapp_connected: true }
         }];
         

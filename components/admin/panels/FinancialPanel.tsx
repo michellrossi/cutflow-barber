@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useShop, useCashSession } from '../../../store';
 import { useToast } from '../../ui/ToastContext';
+import { calculateCommissions } from '../../../utils/finance';
 import {
   Wallet, TrendingUp, Users, BarChart3, ArrowUpCircle, ArrowDownCircle,
   Plus, Lock, Unlock, AlertTriangle, X, Loader2, RefreshCw, Download,
@@ -908,35 +909,7 @@ const CommissionsTab: React.FC<{ period: string; selectedProId: string }> = ({ p
   }, [professionals, selectedProId]);
 
   const proStats = useMemo(() => {
-    return filteredProfessionals.map(p => {
-      const pApts = completed.filter(a => a.professionalId === p.id);
-      const revenue = pApts.reduce((s, a) => s + a.totalValue, 0);
-      const commPct = p.commissionPercentage ?? 50;
-      const commission = revenue * commPct / 100;
-      const shopRevenue = revenue - commission;
-
-      // Calcular o total já pago a este barbeiro no período selecionado
-      const paidInPeriod = commissionPayments
-        .filter(cp => {
-          if (cp.professionalId !== p.id) return false;
-          if (period === 'all') return true;
-          return cp.periodStart === periodStart && cp.periodEnd === periodEnd;
-        })
-        .reduce((sum, cp) => sum + cp.amountPaid, 0);
-
-      const pendingPayout = Math.max(0, commission - paidInPeriod);
-
-      return {
-        ...p,
-        count: pApts.length,
-        revenue,
-        commission,
-        shopRevenue,
-        commPct,
-        paidInPeriod,
-        pendingPayout
-      };
-    }).sort((a, b) => b.revenue - a.revenue);
+    return calculateCommissions(filteredProfessionals, completed, commissionPayments, period, periodStart, periodEnd);
   }, [filteredProfessionals, completed, commissionPayments, period, periodStart, periodEnd]);
 
   const totalCommission = proStats.reduce((s, p) => s + p.commission, 0);

@@ -19,7 +19,10 @@ describe('saasController', () => {
   });
 
   it('getShops retorna lista de lojas ordenadas por criação', async () => {
-    const mockShops = [{ id: '1', name: 'Barber A' }, { id: '2', name: 'Barber B' }];
+    const mockShops = [
+      { id: '1', name: 'Barber A', plan: 'active', monthly_price: 97, whatsapp_connected: true, created_at: '2026-06-19T00:00:00Z', users: { email: 'ownerA@test.com' } },
+      { id: '2', name: 'Barber B', plan: 'trial', monthly_price: 97, whatsapp_connected: false, created_at: '2026-06-18T00:00:00Z', users: null }
+    ];
     mockSupabase.select.mockReturnThis();
     mockSupabase.order.mockResolvedValueOnce({ data: mockShops });
 
@@ -30,6 +33,11 @@ describe('saasController', () => {
 
     expect(mockSupabase.from).toHaveBeenCalledWith('shops');
     expect(mockSupabase.order).toHaveBeenCalledWith('created_at', { ascending: false });
-    expect(res.json).toHaveBeenCalledWith(mockShops);
+    expect(res.json).toHaveBeenCalledWith({
+      shops: [
+        { id: '1', name: 'Barber A', owner_email: 'ownerA@test.com', plan: 'active', monthly_price: 97, whatsapp_connected: true, created_at: '2026-06-19T00:00:00Z' },
+        { id: '2', name: 'Barber B', owner_email: undefined, plan: 'trial', monthly_price: 97, whatsapp_connected: false, created_at: '2026-06-18T00:00:00Z' }
+      ]
+    });
   });
 });

@@ -5,6 +5,7 @@ export const mockSupabase = {
   select: vi.fn().mockReturnThis(),
   insert: vi.fn().mockReturnThis(),
   update: vi.fn().mockReturnThis(),
+  upsert: vi.fn().mockReturnThis(),
   delete: vi.fn().mockReturnThis(),
   eq: vi.fn().mockReturnThis(),
   neq: vi.fn().mockReturnThis(),
@@ -29,7 +30,7 @@ export const resetSupabaseMocks = () => {
   vi.clearAllMocks();
   
   const chainableMethods = [
-    'from', 'select', 'insert', 'update', 'delete', 
+    'from', 'select', 'insert', 'update', 'upsert', 'delete', 
     'eq', 'neq', 'gte', 'lte', 'lt', 'in', 'not', 'limit', 'order', 'rpc'
   ];
 
