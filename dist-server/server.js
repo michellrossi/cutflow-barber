@@ -623,7 +623,7 @@ ${servicesText}
 
 HOR\xC1RIOS:
 ${businessHoursText}`;
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash", tools, systemInstruction });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash", tools, systemInstruction });
   const chat = model.startChat({ history: (session.messages || []).slice(-20).map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })) });
   const MAX_RETRIES = 3;
   const RETRY_DELAYS_MS = [1e3, 3e3, 7e3];
@@ -1173,7 +1173,7 @@ _Responda apenas com o n\xFAmero. Sua opini\xE3o nos ajuda a melhorar!_ \u270F\u
           const { data: svcsNames } = topSvcIds.length ? await supabaseAdmin.from("services").select("name").in("id", topSvcIds) : { data: [] };
           const topSvcStr = svcsNames?.map((s) => s.name).join(", ") || "N/A";
           const genAI = new GoogleGenerativeAI2(process.env.GEMINI_API_KEY || "");
-          const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
           const prompt = `Voc\xEA \xE9 um Consultor de Neg\xF3cios especializado em barbearias de alto padr\xE3o. Analise os dados e escreva um par\xE1grafo motivador (m\xE1x 400 caracteres).
 
 Barbearia: ${data.name}
@@ -1645,7 +1645,7 @@ var generateTemplate = async (req, res) => {
   try {
     const { trigger, shopName, tone } = req.body;
     const genAI = getGenAI();
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const prompt = `Voc\xEA \xE9 um copywriter especializado em marketing para barbearias. 
         Crie uma mensagem de WhatsApp para o gatilho de automa\xE7\xE3o "${trigger}" de uma barbearia chamada "${shopName}". 
         O tom de voz deve ser ${tone || "amig\xE1vel e profissional"}. 
@@ -1709,7 +1709,7 @@ var getInsights = async (req, res) => {
         - Se o usu\xE1rio pedir para gerar insights, destaque faturamento, convers\xE3o e performance dos barbeiros.
         - Seja direto ao ponto.`;
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       systemInstruction
     });
     const limitedHistory = (history || []).slice(-10);

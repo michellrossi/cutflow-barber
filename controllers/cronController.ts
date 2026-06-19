@@ -395,7 +395,7 @@ export async function runCronLogic() {
                     const topSvcStr = (svcsNames as { name: string }[] | null)?.map(s => s.name).join(', ') || 'N/A';
 
                     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-                    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
                     const prompt = `Você é um Consultor de Negócios especializado em barbearias de alto padrão. Analise os dados e escreva um parágrafo motivador (máx 400 caracteres).\n\nBarbearia: ${data.name}\nFaturamento esta semana: R$${curRev.toFixed(2)} (Semana passada: R$${preRev.toFixed(2)})\nAgendamentos: ${curCount} (Semana passada: ${preCount})\nServiços populares: ${topSvcStr}`;
 
                     const result = await model.generateContent(prompt);

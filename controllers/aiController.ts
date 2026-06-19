@@ -20,7 +20,7 @@ export const generateTemplate = async (req: Request, res: Response) => {
         const { trigger, shopName, tone } = req.body;
         
         const genAI = getGenAI();
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const prompt = `Você é um copywriter especializado em marketing para barbearias. 
         Crie uma mensagem de WhatsApp para o gatilho de automação "${trigger}" de uma barbearia chamada "${shopName}". 
@@ -100,7 +100,7 @@ export const getInsights = async (req: Request, res: Response) => {
         - Seja direto ao ponto.`;
 
         const model = genAI.getGenerativeModel({ 
-            model: "gemini-1.5-flash",
+            model: "gemini-2.5-flash",
             systemInstruction 
         });
 
