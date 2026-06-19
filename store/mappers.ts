@@ -271,6 +271,8 @@ export interface CommissionPaymentRow {
     amount_paid: number;
     payment_method: 'gaveta' | 'banco';
     paid_at: string;
+    approved_by?: string | null;
+    approved_at?: string | null;
 }
 
 export interface CashFlowEntryRow {
@@ -566,6 +568,8 @@ export function mapCommissionPayment(data: CommissionPaymentRow): CommissionPaym
         amountPaid: Number(data.amount_paid || 0),
         paymentMethod: data.payment_method,
         paidAt: data.paid_at,
+        approvedBy: data.approved_by ?? undefined,
+        approvedAt: data.approved_at ?? undefined,
     };
 }
 

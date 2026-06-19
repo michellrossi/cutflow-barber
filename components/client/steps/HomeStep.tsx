@@ -1,9 +1,10 @@
 import React from 'react';
 import { Scissors, User, Calendar, MapPin, Instagram, Clock, Facebook, MessageCircle, CreditCard, Banknote, Landmark, Smartphone, Info } from 'lucide-react';
+import { ShopSettings } from '../../../types';
 
 interface HomeStepProps {
-    settings: any;
-    setStep: (s: any) => void;
+    settings: ShopSettings;
+    setStep: (s: string) => void;
     onAdminClick: () => void;
     onProfileClick: () => void;
 }

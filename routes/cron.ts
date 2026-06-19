@@ -16,8 +16,9 @@ router.get('/run', cronGuard, async (req, res) => {
     try {
         await runCronLogic();
         res.json({ success: true });
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
+    } catch (e) {
+        const message = e instanceof Error ? e.message : 'Erro interno';
+        res.status(500).json({ error: message });
     }
 });
 

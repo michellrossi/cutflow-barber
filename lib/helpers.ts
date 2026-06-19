@@ -40,7 +40,20 @@ export function detectsHandoff(message: string): boolean {
     });
 }
 
-export async function generateWhatsAppMessage(triggerId: string, data: any, shopId: string, target: string = 'client') {
+export interface WhatsAppMessageData {
+    clientName?: string;
+    services?: string;
+    date?: string;
+    time?: string;
+    proName?: string;
+    shopName?: string;
+    url?: string;
+    discount?: string;
+    code?: string;
+    validity?: string;
+}
+
+export async function generateWhatsAppMessage(triggerId: string, data: WhatsAppMessageData, shopId: string, target: string = 'client') {
     let effectiveTriggerId = triggerId;
     if (triggerId.length < 30) {
         const { data: relatedTriggers } = await supabaseAdmin

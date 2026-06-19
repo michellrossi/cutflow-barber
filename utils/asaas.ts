@@ -47,8 +47,32 @@ export async function getAsaasSubscriptions(customerId: string) {
     return result;
 }
 
+export interface AsaasPaymentData {
+    customer?: string;
+    billingType?: 'BOLETO' | 'CREDIT_CARD' | 'PIX';
+    value: number;
+    dueDate?: string;
+    description?: string;
+    creditCard?: {
+        holderName: string;
+        number: string;
+        expiryMonth: string;
+        expiryYear: string;
+        ccv: string;
+    };
+    creditCardHolderInfo?: {
+        name: string;
+        email: string;
+        cpfCnpj: string;
+        postalCode: string;
+        addressNumber: string;
+        phone: string;
+    };
+    [key: string]: unknown;
+}
+
 // 3 - Criar Pagamento Transparente
-export async function createAsaasPayment(data: any) {
+export async function createAsaasPayment(data: AsaasPaymentData) {
     const response = await fetch(`${getApiUrl()}/payments`, {
         method: 'POST',
         headers: getHeaders(),

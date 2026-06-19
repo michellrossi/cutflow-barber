@@ -36,8 +36,33 @@ export const getStats = async (req: Request, res: Response) => {
 
 export const getShops = async (req: Request, res: Response) => {
     try {
-        const { data } = await supabaseAdmin.from('shops').select('*').order('created_at', { ascending: false });
-        res.json(data);
+        const { data, error } = await supabaseAdmin
+            .from('shops')
+            .select(`
+                id,
+                name,
+                plan,
+                monthly_price,
+                whatsapp_connected,
+                created_at,
+                owner_id,
+                users:owner_id ( email )
+            `)
+            .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const shops = data?.map((shop: any) => ({
+            id: shop.id,
+            name: shop.name,
+            owner_email: shop.users?.email || undefined,
+            plan: shop.plan,
+            monthly_price: shop.monthly_price,
+            whatsapp_connected: shop.whatsapp_connected,
+            created_at: shop.created_at
+        })) || [];
+
+        res.json({ shops });
     } catch (e: unknown) {
         const error = e instanceof Error ? e.message : 'Erro desconhecido';
         res.status(500).json({ error });

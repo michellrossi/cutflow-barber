@@ -59,8 +59,9 @@ export const Login: React.FC<{ onComplete: () => void, onBack: () => void }> = (
                     redirectTo: window.location.origin + '/dashboard'
                 }
             });
-        } catch (err: any) {
-            setErrorMsg(err.message || 'Erro no login com Google');
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Erro no login com Google';
+            setErrorMsg(message);
             setIsLoading(false);
         }
     };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useShop } from '../../../store';
-import { Professional, Appointment, Service } from '../../../types';
+import { Professional, Appointment, Service, ShopSettings } from '../../../types';
 import { ArrowLeft, Calendar, Clock } from 'lucide-react';
 import { StickyFooter } from '../StickyFooter';
 import { timeToMinutes, minutesToTime, getDayName } from '../../../utils/dateHelpers';
@@ -10,8 +10,8 @@ interface DateTimeStepProps {
     setSelectedDate: (d: string) => void;
     selectedTime: string;
     setSelectedTime: (t: string) => void;
-    setStep: (s: any) => void;
-    settings: any;
+    setStep: (s: string) => void;
+    settings: ShopSettings;
     total: number;
     selectedProId: string | null;
     professionals: Professional[];

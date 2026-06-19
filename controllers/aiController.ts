@@ -77,10 +77,15 @@ export const getInsights = async (req: Request, res: Response) => {
         });
 
         // Filtra o histórico para garantir que a primeira mensagem seja do role 'user'
-        const limitedHistory = (history || []).slice(-10);
+        interface ChatMessage {
+            role: 'user' | 'assistant';
+            content: string;
+        }
+
+        const limitedHistory = (history || []).slice(-10) as ChatMessage[];
         const formattedHistory = limitedHistory
-            .filter((m: any) => m.content && m.content.trim())
-            .map((m: any) => ({
+            .filter((m: ChatMessage) => m.content && m.content.trim())
+            .map((m: ChatMessage) => ({
                 role: m.role === 'assistant' ? 'model' : 'user',
                 parts: [{ text: m.content }]
             }));

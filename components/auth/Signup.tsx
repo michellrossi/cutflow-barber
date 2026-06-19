@@ -48,8 +48,9 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
       } else {
         onComplete();
       }
-    } catch (err: any) {
-      setError(err.message || 'Erro ao criar conta.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro ao criar conta.';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -65,8 +66,9 @@ export const Signup: React.FC<{ onComplete: () => void, onBack: () => void }> = 
           redirectTo: window.location.origin + '/dashboard'
         }
       });
-    } catch (err: any) {
-      setError(err.message || 'Erro no login com Google');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Erro no login com Google';
+      setError(message);
       setLoading(false);
     }
   };

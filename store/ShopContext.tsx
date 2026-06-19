@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, Shop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger, Product, Goal, CashSession, CashFlowEntry } from '../types';
+import { ShopState, Service, Professional, Coupon, Appointment, ShopSettings, Shop, GlobalShop, BlockedSlot, Client, MessageTemplate, SubscriptionPlan, ClientSubscription, MessageCategory, AutomationTrigger, Product, Goal, CashSession, CashFlowEntry } from '../types';
 import { supabase } from '../supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import {
@@ -51,7 +51,7 @@ interface ShopContextType extends ShopState {
     // reloadClients moved to ClientContext
 
     // [NOVO] SAAS ADMIN
-    fetchGlobalShops: () => Promise<{ success: boolean; data?: Shop[]; error?: string }>;
+    fetchGlobalShops: () => Promise<{ success: boolean; data?: GlobalShop[]; error?: string }>;
 }
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -201,7 +201,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const result = await res.json();
 
             if (!res.ok) throw new Error(result.error);
-            return { success: true, data: result.shops.map(mapShop) };
+            return { success: true, data: result.shops };
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Erro ao carregar lojas';
             console.error("Error fetching global shops:", error);

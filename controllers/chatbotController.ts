@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '../lib/supabase';
-import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType, Tool } from '@google/generative-ai';
 import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone.js';
 import utc from 'dayjs/plugin/utc.js';
@@ -25,6 +25,13 @@ interface AvailabilityArgs {
     professional_id: string;
     date: string;
     service_ids?: string[];
+}
+interface BusinessHoursSetting {
+    [key: string]: {
+        active: boolean;
+        start: string;
+        end: string;
+    };
 }
 
 export async function handleChatbotAI(shopId: string, remoteJid: string, clientName: string, message: string, instance: string) {
@@ -110,17 +117,17 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
     const professionalsText = professionals?.map(p => `- ${p.name} (ID: ${p.id})`).join('\n') || '(nenhum)';
     const servicesText = services?.map(s => `- ${s.name} | R$${Number(s.price).toFixed(2)} | ${s.duration}min (ID: ${s.id})`).join('\n') || '(nenhum)';
     const daysMap: Record<string, string> = { sunday: 'Domingo', monday: 'Segunda', tuesday: 'Terça', wednesday: 'Quarta', thursday: 'Quinta', friday: 'Sexta', saturday: 'Sábado' };
-    const businessHoursText = settings?.business_hours ? Object.entries(settings.business_hours).map(([day, h]: [string, any]) => `- ${daysMap[day] || day}: ${h.active ? `${h.start} às ${h.end}` : 'FECHADO'}`).join('\n') : '(não configurado)';
+    const businessHoursText = settings?.business_hours ? Object.entries(settings.business_hours as BusinessHoursSetting).map(([day, h]) => `- ${daysMap[day] || day}: ${h.active ? `${h.start} às ${h.end}` : 'FECHADO'}`).join('\n') : '(não configurado)';
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-    const tools = [{
+    const tools: Tool[] = [{
         functionDeclarations: [
             { name: "list_services", description: "Retorna a lista de serviços" },
             { name: "list_professionals", description: "Retorna a lista de barbeiros" },
             { name: "check_availability", description: "Verifica horários livres", parameters: { type: SchemaType.OBJECT, properties: { professional_id: { type: SchemaType.STRING }, date: { type: SchemaType.STRING }, service_ids: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } } }, required: ["professional_id", "date"] } },
             { name: "book_appointment", description: "Efetiva o agendamento", parameters: { type: SchemaType.OBJECT, properties: { service_ids: { type: SchemaType.ARRAY, items: { type: SchemaType.STRING } }, professional_id: { type: SchemaType.STRING }, date: { type: SchemaType.STRING }, time: { type: SchemaType.STRING } }, required: ["service_ids", "professional_id", "date", "time"] } }
         ]
-    }] as any;
+    }];
 
     const systemInstruction = `Você é o assistente virtual da barbearia "${shop?.name}". Hoje é: ${dayjs().tz('America/Sao_Paulo').format('dddd, DD/MM/YYYY')}\n\nPROFISSIONAIS:\n${professionalsText}\n\nSERVIÇOS:\n${servicesText}\n\nHORÁRIOS:\n${businessHoursText}`;
 
@@ -137,8 +144,16 @@ export async function handleChatbotAI(shopId: string, remoteJid: string, clientN
             let response = result.response;
             let call = response.functionCalls();
 
+            interface ToolResponse {
+                functionResponse: {
+                    name: string;
+                    response: {
+                        content: unknown;
+                    };
+                };
+            }
             while (call && call.length > 0) {
-                const toolResults: any[] = [];
+                const toolResults: ToolResponse[] = [];
                 for (const fn of call) {
                     let data: unknown;
                     if (fn.name === "list_services") data = services;

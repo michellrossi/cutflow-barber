@@ -1083,3 +1083,114 @@ DROP POLICY IF EXISTS "Dono_Ve_Proprios_Logs" ON public.automated_messages_log;
 CREATE POLICY "Dono_Ve_Proprios_Logs" ON public.automated_messages_log 
 FOR SELECT USING (EXISTS (SELECT 1 FROM public.shops WHERE id = automated_messages_log.shop_id AND owner_id = auth.uid()));
 
+-- Documentação: somente leitura pública pelo dono (policy acima). Escrita via SERVICE_ROLE.
+COMMENT ON TABLE public.automated_messages_log IS 'Logs de mensagens automáticas. Leitura pelo dono via RLS, escrita exclusiva via SERVICE_ROLE (backend).';
+
+-- ==============================================================================
+-- SEÇÃO: TABELAS SERVER-ONLY (webhook_events, instance_status_cache)
+-- RLS ativo sem policies = bloqueio total para clients públicos. Intencional.
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.webhook_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID REFERENCES public.shops(id) ON DELETE CASCADE,
+    event_type TEXT NOT NULL,
+    payload JSONB,
+    processed BOOLEAN DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT timezone('utc', now()) NOT NULL
+);
+ALTER TABLE public.webhook_events ENABLE ROW LEVEL SECURITY;
+COMMENT ON TABLE public.webhook_events IS 'Somente SERVICE_ROLE (backend). Sem policies de cliente intencionalmente.';
+
+CREATE TABLE IF NOT EXISTS public.instance_status_cache (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID REFERENCES public.shops(id) ON DELETE CASCADE,
+    instance_name TEXT NOT NULL,
+    status TEXT DEFAULT 'disconnected',
+    updated_at TIMESTAMPTZ DEFAULT timezone('utc', now()) NOT NULL
+);
+ALTER TABLE public.instance_status_cache ENABLE ROW LEVEL SECURITY;
+COMMENT ON TABLE public.instance_status_cache IS 'Somente SERVICE_ROLE (backend). Sem policies de cliente intencionalmente.';
+
+-- ==============================================================================
+-- SEÇÃO: COMISSÕES — Tabela + Auditoria + RPC Atômica
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.commission_payments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shop_id UUID NOT NULL REFERENCES public.shops(id) ON DELETE CASCADE,
+    professional_id UUID NOT NULL REFERENCES public.professionals(id) ON DELETE CASCADE,
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    amount_paid NUMERIC(10,2) NOT NULL,
+    payment_method TEXT NOT NULL DEFAULT 'gaveta' CHECK (payment_method IN ('gaveta', 'banco')),
+    paid_at TIMESTAMPTZ DEFAULT timezone('utc', now()) NOT NULL,
+    approved_by UUID REFERENCES auth.users(id),
+    approved_at TIMESTAMPTZ DEFAULT timezone('utc', now())
+);
+ALTER TABLE public.commission_payments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Dono_Gerencia_Comissoes" ON public.commission_payments;
+CREATE POLICY "Dono_Gerencia_Comissoes" ON public.commission_payments
+FOR ALL USING (EXISTS (SELECT 1 FROM public.shops WHERE id = commission_payments.shop_id AND owner_id = auth.uid()));
+
+-- Se a tabela já existir sem as colunas de auditoria, adicioná-las:
+ALTER TABLE public.commission_payments
+    ADD COLUMN IF NOT EXISTS approved_by UUID REFERENCES auth.users(id),
+    ADD COLUMN IF NOT EXISTS approved_at TIMESTAMPTZ DEFAULT timezone('utc', now());
+
+-- RPC pay_commission: cálculo + inserção atômica com auditoria
+CREATE OR REPLACE FUNCTION public.pay_commission(
+    p_professional_id UUID,
+    p_period_start DATE,
+    p_period_end DATE,
+    p_approved_by UUID,
+    p_payment_method TEXT DEFAULT 'gaveta'
+) RETURNS JSON AS $$
+DECLARE
+    v_shop_id UUID;
+    v_commission_pct INTEGER;
+    v_total_revenue NUMERIC;
+    v_commission_amount NUMERIC;
+    v_payment_id UUID;
+BEGIN
+    -- Busca dados do profissional
+    SELECT shop_id, commission_percentage INTO v_shop_id, v_commission_pct
+    FROM public.professionals WHERE id = p_professional_id;
+    IF NOT FOUND THEN
+        RETURN json_build_object('success', false, 'message', 'Profissional não encontrado');
+    END IF;
+
+    -- Calcula faturamento do período (appointments completados)
+    SELECT COALESCE(SUM(total_value), 0) INTO v_total_revenue
+    FROM public.appointments
+    WHERE professional_id = p_professional_id
+      AND shop_id = v_shop_id
+      AND status = 'completed'
+      AND date::DATE BETWEEN p_period_start AND p_period_end;
+
+    v_commission_amount := v_total_revenue * (COALESCE(v_commission_pct, 50) / 100.0);
+
+    IF v_commission_amount <= 0 THEN
+        RETURN json_build_object('success', false, 'message', 'Sem faturamento no período');
+    END IF;
+
+    -- Insere atomicamente com auditoria
+    INSERT INTO public.commission_payments (
+        shop_id, professional_id, period_start, period_end,
+        amount_paid, payment_method, approved_by, approved_at
+    ) VALUES (
+        v_shop_id, p_professional_id, p_period_start, p_period_end,
+        v_commission_amount, p_payment_method, p_approved_by, NOW()
+    ) RETURNING id INTO v_payment_id;
+
+    RETURN json_build_object(
+        'success', true,
+        'paymentId', v_payment_id,
+        'totalRevenue', v_total_revenue,
+        'commissionRate', v_commission_pct,
+        'amountPaid', v_commission_amount
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+GRANT EXECUTE ON FUNCTION public.pay_commission TO authenticated, service_role;

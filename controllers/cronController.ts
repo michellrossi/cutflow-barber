@@ -309,7 +309,7 @@ export async function runCronLogic() {
                 .select('id, name, whatsapp_instance, whatsapp_connected')
                 .in('id', shopIds);
 
-            const shopMap = new Map((shopList || []).map((s: any) => [s.id, s]));
+            const shopMap = new Map((shopList || []).map((s: { id: string; name: string; whatsapp_instance: string; whatsapp_connected: boolean }) => [s.id, s]));
             for (const client of clients) {
                 const shop = shopMap.get(client.shop_id);
                 if (!shop?.whatsapp_connected) continue;

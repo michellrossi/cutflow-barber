@@ -101,8 +101,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
             } else {
                 throw new Error(data.error || "Erro ao gerar PIX");
             }
-        } catch (error: any) {
-            showToast(error.message, 'error');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : "Erro ao gerar PIX";
+            showToast(message, 'error');
         } finally {
             setLoading(false);
         }
@@ -166,8 +167,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose }) =
             } else {
                 throw new Error(data.error || "Erro ao processar cartão.");
             }
-        } catch (error: any) {
-             showToast(error.message, 'error');
+        } catch (error) {
+             const message = error instanceof Error ? error.message : "Erro ao processar cartão.";
+             showToast(message, 'error');
         } finally {
             setLoading(false);
         }

@@ -21,8 +21,9 @@ router.get('/cron', cronGuard, async (req, res) => {
         console.log('[API] Trigger manual do Cron via /api/notify/cron');
         await runCronLogic();
         res.json({ success: true, message: 'Cron executado com sucesso' });
-    } catch (e: any) {
-        res.status(500).json({ error: e.message });
+    } catch (e) {
+        const message = e instanceof Error ? e.message : 'Erro interno';
+        res.status(500).json({ error: message });
     }
 });
 

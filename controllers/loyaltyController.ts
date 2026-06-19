@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { supabaseAdmin } from '../lib/supabase';
+import { sendWhatsApp, generateWhatsAppMessage, logAutomatedMessage } from '../lib/helpers';
 
 export const generateReward = async (req: Request, res: Response) => {
     try {
@@ -43,6 +44,32 @@ export const generateReward = async (req: Request, res: Response) => {
         });
 
         if (couponError) throw couponError;
+
+        // Enviar WhatsApp de Recompensa
+        try {
+            const { data: shop } = await supabaseAdmin
+                .from('shops')
+                .select('name, whatsapp_instance, whatsapp_connected')
+                .eq('id', shopId)
+                .single();
+
+            if (shop?.whatsapp_connected && client.phone) {
+                const msg = await generateWhatsAppMessage('loyalty_reward', {
+                    clientName: client.name,
+                    shopName: shop.name,
+                    discount: `${settings.loyaltyRewardValue}${settings.loyaltyRewardType === 'percentage' ? '%' : ' reais'}`,
+                    code: code,
+                    validity: String(expiryDays)
+                }, shopId);
+
+                if (msg) {
+                    const sent = await sendWhatsApp(client.phone, msg, shop.whatsapp_instance);
+                    await logAutomatedMessage(shopId, client.name, client.phone, 'Recompensa Fidelidade', sent ? 'sent' : 'failed');
+                }
+            }
+        } catch (wsErr) {
+            console.error('[Loyalty] Erro ao enviar WhatsApp:', wsErr);
+        }
 
         res.json({ success: true, code });
     } catch (e: unknown) {

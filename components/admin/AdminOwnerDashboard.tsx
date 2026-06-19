@@ -3,10 +3,11 @@ import { useShop } from '../../store';
 import { supabase } from '../../supabaseClient';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, DollarSign, TrendingUp, Activity, Smartphone, Calendar, Search, Filter, ShieldCheck, CreditCard, ChevronDown, CheckCircle, XCircle } from 'lucide-react';
+import { GlobalShop } from '../../types';
 
 export const AdminOwnerDashboard: React.FC = () => {
     const { fetchGlobalShops, formatCurrencyBRL } = useShop();
-    const [shops, setShops] = useState<any[]>([]);
+    const [shops, setShops] = useState<GlobalShop[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterPlan, setFilterPlan] = useState<string>('all');
@@ -64,7 +65,7 @@ export const AdminOwnerDashboard: React.FC = () => {
         return chartData;
     }, [shops, chartPlanFilter]);
 
-    const maxChartValue = Math.max(...last7DaysChart.map((d: any) => d.count), 1);
+    const maxChartValue = Math.max(...last7DaysChart.map(d => d.count), 1);
 
     const filteredShops = useMemo(() => {
         let filtered = shops;
@@ -103,9 +104,10 @@ export const AdminOwnerDashboard: React.FC = () => {
             
             if (!res.ok) throw new Error(result.error || 'Erro na API');
             
-            setShops(prev => prev.map((s: any) => s.id === shopId ? { ...s, plan: newPlan } : s));
-        } catch (error: any) {
-            alert('Erro ao atualizar plano: ' + error.message);
+            setShops(prev => prev.map((s: GlobalShop) => s.id === shopId ? { ...s, plan: newPlan } : s));
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Erro desconhecido';
+            alert('Erro ao atualizar plano: ' + message);
         } finally {
             setActionLoadingId(null);
         }
@@ -132,8 +134,8 @@ export const AdminOwnerDashboard: React.FC = () => {
             
             if (!res.ok) throw new Error(result.error || 'Erro na API');
             
-            setShops(prev => prev.map((s: any) => s.id === shopId ? { ...s, monthly_price: newPrice } : s));
-        } catch (error: any) {
+            setShops(prev => prev.map((s: GlobalShop) => s.id === shopId ? { ...s, monthly_price: newPrice } : s));
+        } catch (error) {
             console.error('Erro ao atualizar preço:', error);
         } finally {
             setActionLoadingId(null);
@@ -230,13 +232,13 @@ export const AdminOwnerDashboard: React.FC = () => {
                                     type="text" 
                                     placeholder="Buscar loja ou e-mail..."
                                     value={searchTerm}
-                                    onChange={(e: any) => setSearchTerm(e.target.value)}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
                                     className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
                                 />
                             </div>
                             <select 
                                 value={filterPlan} 
-                                onChange={(e: any) => setFilterPlan(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilterPlan(e.target.value)}
                                 className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium focus:outline-none"
                             >
                                 <option value="all">Todos</option>
@@ -259,7 +261,7 @@ export const AdminOwnerDashboard: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
-                                {filteredShops.map((shop: any, i: number) => (
+                                {filteredShops.map((shop: GlobalShop, i: number) => (
                                     <motion.tr 
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
@@ -373,7 +375,7 @@ export const AdminOwnerDashboard: React.FC = () => {
                     </div>
                     
                     <div className="flex-1 p-6 flex items-end justify-between gap-2">
-                        {last7DaysChart.map((d: any, i: number) => {
+                        {last7DaysChart.map((d: { date: string; count: number }, i: number) => {
                             const barHeight = Math.max((d.count / maxChartValue) * 100, 5); // min 5% height
                             return (
                                 <div key={i} className="flex flex-col items-center gap-3 w-full group">

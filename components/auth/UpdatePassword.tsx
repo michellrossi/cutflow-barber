@@ -42,8 +42,9 @@ export const UpdatePassword = () => {
                 navigate('/dashboard');
             }, 2000);
 
-        } catch (error: any) {
-            setMessage({ type: 'error', text: error.message || 'Erro ao atualizar senha.' });
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Erro ao atualizar senha.';
+            setMessage({ type: 'error', text: message });
         } finally {
             setLoading(false);
         }

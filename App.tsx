@@ -49,7 +49,7 @@ const SaasAdminGuard: React.FC = () => {
                     const data = await res.json();
                     setError(data.error || 'Acesso negado. Apenas o administrador pode acessar este painel.');
                 }
-            } catch (err: any) {
+            } catch (err) {
                 setError('Erro ao validar credenciais.');
             } finally {
                 setLoading(false);
@@ -197,13 +197,14 @@ const DashboardRouter = () => {
             ]).select();
 
             await supabase.from('message_templates').insert([
-                { shop_id: shopData.id, title: 'Confirmação', trigger_id: insertedTriggers?.find((t: any) => t.name === 'Confirmação Imediata')?.id, content: 'Sua reserva está confirmada na [BARBEARIA].', active: true },
-                { shop_id: shopData.id, title: 'Lembrete', trigger_id: insertedTriggers?.find((t: any) => t.name === 'Lembrete de Agendamento')?.id, content: 'Lembrete de horário na [BARBEARIA].', active: true }
+                { shop_id: shopData.id, title: 'Confirmação', trigger_id: insertedTriggers?.find((t: { name: string; id: string }) => t.name === 'Confirmação Imediata')?.id, content: 'Sua reserva está confirmada na [BARBEARIA].', active: true },
+                { shop_id: shopData.id, title: 'Lembrete', trigger_id: insertedTriggers?.find((t: { name: string; id: string }) => t.name === 'Lembrete de Agendamento')?.id, content: 'Lembrete de horário na [BARBEARIA].', active: true }
             ]);
 
             window.location.reload(); // Recarrega para aplicar a role
-        } catch (err: any) {
-            setSetupError(err.message || 'Erro ao criar barbearia');
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Erro ao criar barbearia';
+            setSetupError(message);
             setSetupLoading(false);
         }
     };

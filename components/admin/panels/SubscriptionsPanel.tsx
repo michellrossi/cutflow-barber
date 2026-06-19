@@ -647,18 +647,13 @@ export const SubscriptionsPanel: React.FC = () => {
 };
 
 interface StatCardProps {
-  icon: React.ReactNode;
   label: string;
   value: string | number;
-  color: 'blue' | 'amber' | 'red' | 'emerald';
+  icon: React.ReactNode;
+  color: 'orange' | 'blue' | 'emerald' | 'purple' | 'amber' | 'red';
 }
 
-const StatCard: React.FC<{
-  label: string,
-  value: string | number,
-  icon: React.ReactNode,
-  color: 'orange' | 'blue' | 'emerald' | 'purple' | 'amber' | 'red'
-}> = ({ label, value, icon, color }) => {
+const StatCard: React.FC<StatCardProps> = ({ label, value, icon, color }) => {
   // Mapeamento de cores para o padrão de ícones com fundo suave
   const colorStyles = {
     orange: "bg-orange-50 text-orange-600",

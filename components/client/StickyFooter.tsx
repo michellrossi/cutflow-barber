@@ -1,11 +1,12 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { ShopSettings } from '../../types';
 
 interface StickyFooterProps {
     total: number;
     onContinue: () => void;
     disabled: boolean;
-    settings: any;
+    settings: ShopSettings;
     loading?: boolean;
 }
 

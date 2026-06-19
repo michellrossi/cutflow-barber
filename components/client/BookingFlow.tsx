@@ -22,6 +22,7 @@ type Step = 'home' | 'services' | 'professional' | 'datetime' | 'summary' | 'suc
 
 export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick }) => {
     const [step, setStep] = useState<Step>('home');
+    const handleSetStep = (s: string) => setStep(s as Step);
     const {
         services, professionals, settings, coupons,
         addAppointment, appointments, blockedSlots,
@@ -221,7 +222,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
             return;
         }
 
-        const appointment: any = {
+        const appointment: Omit<Appointment, 'id' | 'shopId' | 'createdAt'> = {
             clientId: currentClient?.id,
             clientName: customerInfo.name,
             clientPhone: customerInfo.phone,
@@ -535,8 +536,8 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                     <div>
                         <h4 className="text-white font-black text-sm uppercase tracking-[0.2em] mb-6">Horários</h4>
                         <ul className="space-y-3 text-slate-500 text-sm font-medium">
-                            {settings.businessHours ? Object.entries(settings.businessHours).map(([day, info]: [string, any]) => {
-                                const daysMap: any = { monday: 'Seg', tuesday: 'Ter', wednesday: 'Qua', thursday: 'Qui', friday: 'Sex', saturday: 'Sáb', sunday: 'Dom' };
+                            {settings.businessHours ? Object.entries(settings.businessHours).map(([day, info]: [string, { active: boolean; start: string; end: string }]) => {
+                                const daysMap: Record<string, string> = { monday: 'Seg', tuesday: 'Ter', wednesday: 'Qua', thursday: 'Qui', friday: 'Sex', saturday: 'Sáb', sunday: 'Dom' };
                                 return (
                                     <li key={day} className="flex justify-between">
                                         <span>{daysMap[day] || day}</span>
@@ -612,7 +613,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                                                 services={services}
                                                 selectedServiceIds={selectedServiceIds}
                                                 setSelectedServiceIds={setSelectedServiceIds}
-                                                setStep={setStep}
+                                                setStep={handleSetStep}
                                                 settings={premiumTheme}
                                                 total={total}
                                             />
@@ -625,7 +626,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                                                 professionals={professionals}
                                                 selectedProId={selectedProId}
                                                 setSelectedProId={setSelectedProId}
-                                                setStep={setStep}
+                                                setStep={handleSetStep}
                                                 settings={premiumTheme}
                                                 total={total}
                                             />
@@ -639,7 +640,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                                                 setSelectedDate={setSelectedDate}
                                                 selectedTime={selectedTime}
                                                 setSelectedTime={setSelectedTime}
-                                                setStep={setStep}
+                                                setStep={handleSetStep}
                                                 settings={premiumTheme}
                                                 total={total}
                                                 selectedProId={selectedProId}
@@ -670,7 +671,7 @@ export const BookingFlow: React.FC<{ onAdminClick: () => void }> = ({ onAdminCli
                                                 discountAmount={discountAmount}
                                                 total={total}
                                                 handleFinish={handleFinish}
-                                                setStep={setStep}
+                                                setStep={handleSetStep}
                                                 handleRemoveCoupon={handleRemoveCoupon}
                                                 loading={loading}
                                                 error={error}

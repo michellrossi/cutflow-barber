@@ -1,5 +1,5 @@
 import React from 'react';
-import { Service, Professional } from '../../../types';
+import { Service, Professional, ShopSettings } from '../../../types';
 import { ArrowLeft, Check, AlertCircle } from 'lucide-react';
 
 interface SummaryStepProps {
@@ -9,7 +9,7 @@ interface SummaryStepProps {
     setCouponCode: (c: string) => void;
     appliedCoupon: string | null;
     handleApplyCoupon: () => void;
-    settings: any;
+    settings: ShopSettings;
     selectedServices: Service[];
     selectedProId: string | null;
     professionals: Professional[];
@@ -19,7 +19,7 @@ interface SummaryStepProps {
     discountAmount: number;
     total: number;
     handleFinish: (e: React.MouseEvent) => void;
-    setStep: (s: any) => void;
+    setStep: (s: string) => void;
     handleRemoveCoupon: () => void;
     loading: boolean;
     error: string | null;

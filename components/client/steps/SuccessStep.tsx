@@ -1,5 +1,5 @@
 import React from 'react';
-import { Professional } from '../../../types';
+import { Professional, ShopSettings } from '../../../types';
 import { Check, Calendar, User } from 'lucide-react';
 
 interface SuccessStepProps {
@@ -9,7 +9,7 @@ interface SuccessStepProps {
     selectedProId: string | null;
     professionals: Professional[];
     onReset: () => void;
-    settings: any;
+    settings: ShopSettings;
 }
 
 export const SuccessStep: React.FC<SuccessStepProps> = ({ customerInfo, selectedDate, selectedTime, selectedProId, professionals, onReset, settings }) => (

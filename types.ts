@@ -16,6 +16,18 @@ export interface Shop {
   monthly_price?: number;
 }
 
+export interface GlobalShop {
+  id: string;
+  name: string;
+  owner_email?: string;
+  plan?: string;
+  monthly_price?: number;
+  phone?: string;
+  whatsapp_connected?: boolean;
+  created_at: string;
+}
+
+
 export interface Client {
   id: string;
   shopId: string;
@@ -284,6 +296,8 @@ export interface CommissionPayment {
   amountPaid: number;
   paymentMethod: 'gaveta' | 'banco';
   paidAt: string;
+  approvedBy?: string;
+  approvedAt?: string;
 }
 
 export interface CashFlowEntry {

@@ -236,7 +236,7 @@ export const ClientsPanel: React.FC<{ initialFilter?: 'all' | 'high_risk' | 'med
     setIsViewModalOpen(true);
   };
 
-  const downloadCSV = (headers: string[], rows: any[][], fileName: string) => {
+  const downloadCSV = (headers: string[], rows: (string | number | boolean | null | undefined)[][], fileName: string) => {
     const csvContent = [
       headers.join(','),
       ...rows.map(row => row.map(cell => {

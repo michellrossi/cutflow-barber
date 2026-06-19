@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Service } from '../../../types';
+import { Service, ShopSettings } from '../../../types';
 import { ArrowLeft, Check, Clock, Scissors } from 'lucide-react';
 import { StickyFooter } from '../StickyFooter';
 
@@ -7,8 +7,8 @@ interface ServicesStepProps {
     services: Service[];
     selectedServiceIds: string[];
     setSelectedServiceIds: React.Dispatch<React.SetStateAction<string[]>>;
-    setStep: (s: any) => void;
-    settings: any;
+    setStep: (s: string) => void;
+    settings: ShopSettings;
     total: number;
 }
 
@@ -91,8 +91,8 @@ export const ServicesStep: React.FC<ServicesStepProps> = ({ services, selectedSe
                             style={{
                                 backgroundColor: cardBg,
                                 borderColor: isSelected ? accent : border,
-                                ['--tw-ring-color' as any]: isSelected ? `${accent}33` : 'transparent',
-                            }}
+                                '--tw-ring-color': isSelected ? `${accent}33` : 'transparent',
+                            } as React.CSSProperties}
                         >
                             {/* Imagem */}
                             <div className="h-40 w-full relative overflow-hidden">

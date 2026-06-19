@@ -1,5 +1,5 @@
 import React from 'react';
-import { Professional } from '../../../types';
+import { Professional, ShopSettings } from '../../../types';
 import { ArrowLeft, User } from 'lucide-react';
 import { StickyFooter } from '../StickyFooter';
 
@@ -7,8 +7,8 @@ interface ProfessionalStepProps {
     professionals: Professional[];
     selectedProId: string | null;
     setSelectedProId: (id: string | null) => void;
-    setStep: (s: any) => void;
-    settings: any;
+    setStep: (s: string) => void;
+    settings: ShopSettings;
     total: number;
 }
 
@@ -50,8 +50,8 @@ export const ProfessionalStep: React.FC<ProfessionalStepProps> = ({ professional
                             style={{
                                 backgroundColor: cardBg,
                                 borderColor: isSelected ? accent : border,
-                                ['--tw-ring-color' as any]: isSelected ? `${accent}33` : 'transparent',
-                            }}
+                                '--tw-ring-color': isSelected ? `${accent}33` : 'transparent',
+                            } as React.CSSProperties}
                         >
                             {/* Foto maior */}
                             <div

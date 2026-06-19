@@ -144,7 +144,16 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
       const activeSession = cashSessions.find(s => s.status === 'open');
       if (!activeSession) throw new Error("Nenhuma sessão aberta encontrada.");
 
-      const updateData: any = {
+      const updateData: {
+        closing_balance: number;
+        status: 'open' | 'closed';
+        closed_at: string;
+        total_inputs?: number;
+        total_outputs?: number;
+        expected_balance?: number;
+        difference?: number;
+        justification?: string;
+      } = {
         closing_balance: closingBalance,
         status: 'closed',
         closed_at: new Date().toISOString()
@@ -260,17 +269,39 @@ export const FinancialProvider: React.FC<{ shopId: string; children: ReactNode }
   const addCommissionPayment = async (payment: Omit<CommissionPayment, 'id' | 'shopId' | 'paidAt'>): MutationResult<CommissionPayment> => {
     try {
       const sid = ensureShopId();
-      const { data, error } = await supabase.from('commission_payments').insert({
-        shop_id: sid,
-        professional_id: payment.professionalId,
-        period_start: payment.periodStart,
-        period_end: payment.periodEnd,
-        amount_paid: payment.amountPaid,
-        payment_method: payment.paymentMethod
-      }).select().single();
+      const { data: { session } } = await supabase.auth.getSession();
+      const approvedBy = session?.user?.id;
+      if (!approvedBy) throw new Error("Usuário não autenticado para aprovar pagamento.");
+
+      const { data, error } = await supabase.rpc('pay_commission', {
+        p_professional_id: payment.professionalId,
+        p_period_start: payment.periodStart,
+        p_period_end: payment.periodEnd,
+        p_approved_by: approvedBy,
+        p_payment_method: payment.paymentMethod
+      });
 
       if (error) throw error;
-      const newPayment = mapCommissionPayment(data);
+      
+      const rpcResult = data as { success: boolean; message?: string; paymentId?: string };
+      if (rpcResult && !rpcResult.success) {
+        throw new Error(rpcResult.message || 'Erro ao realizar transação de comissão no servidor');
+      }
+
+      const paymentId = rpcResult.paymentId;
+      if (!paymentId) throw new Error("ID do pagamento não retornado do servidor.");
+
+      const { data: insertedPayment, error: fetchError } = await supabase
+        .from('commission_payments')
+        .select('*')
+        .eq('id', paymentId)
+        .single();
+
+      if (fetchError || !insertedPayment) {
+        throw new Error(fetchError?.message || 'Pagamento inserido com sucesso, mas erro ao recuperar registro');
+      }
+
+      const newPayment = mapCommissionPayment(insertedPayment);
       setCommissionPayments(prev => [newPayment, ...prev]);
       return { success: true, data: newPayment };
     } catch (e: unknown) {

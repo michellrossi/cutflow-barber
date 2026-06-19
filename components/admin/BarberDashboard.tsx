@@ -1,12 +1,13 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { useShop } from '../../store';
+import { useAppointments, useCatalog, useClients, useFinancial, useInventory, useSettings } from '../../store';
+import { useShop as useShopBase } from '../../store/ShopContext';
 import { Calendar, Clock, LogOut, CheckCircle, XCircle, AlertCircle, AlertTriangle, Settings, X, Loader2, Trash2, Plus, RefreshCw, Wallet, TrendingUp, BarChart3, ChevronLeft, ChevronRight, Filter, Sun, Moon } from 'lucide-react';
 import { useToast } from '../ui/ToastContext';
 import { WorkSchedule, DaySchedule, Professional, Appointment } from '../../types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell, ReferenceLine } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Cell, ReferenceLine, TooltipProps } from 'recharts';
 
 // Tooltip customizado para o gráfico
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
     if (active && payload && payload.length) {
         const data = payload[0].payload;
         return (
@@ -52,7 +53,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }) => {
-    const { appointments, professionals, session, updateAppointmentStatus, updateAppointmentPaymentMethod, updateAppointmentTotalValue, settings, updateProfessional, blockedSlots, addBlockedSlot, removeBlockedSlot, refresh, products, addAppointmentProducts, cashSessions, addCashMovement, clientSubscriptions, subscriptionPlans, processLoyalty, clients } = useShop();
+    const { session, refresh } = useShopBase();
+    const { appointments, updateAppointmentStatus, updateAppointmentPaymentMethod, updateAppointmentTotalValue } = useAppointments();
+    const { professionals, blockedSlots, addBlockedSlot, removeBlockedSlot, updateProfessional } = useCatalog();
+    const { settings } = useSettings();
+    const { products, addAppointmentProducts } = useInventory();
+    const { cashSessions, addCashMovement } = useFinancial();
+    const { clientSubscriptions, subscriptionPlans, processLoyalty, clients } = useClients();
     const { showToast } = useToast();
 
     // 1. Identificar qual profissional é o usuário logado
@@ -77,7 +84,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
 
     // States para o Modal de Conclusão (igual ao AppointmentsPanel)
     const [isCompletionModalOpen, setIsCompletionModalOpen] = useState(false);
-    const [completionTarget, setCompletionTarget] = useState<any>(null);
+    const [completionTarget, setCompletionTarget] = useState<Appointment | null>(null);
     const [selectedProductsForCompletion, setSelectedProductsForCompletion] = useState<{ productId: string, quantity: number, unitPrice: number }[]>([]);
     const [completionPaymentMethod, setCompletionPaymentMethod] = useState('pix');
     const [isFinishing, setIsFinishing] = useState(false);
@@ -171,7 +178,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
         }
     }
 
-    const handleStatusChange = async (id: string, newStatus: string, apt?: any) => {
+    const handleStatusChange = async (id: string, newStatus: string, apt?: Appointment) => {
         // Se está finalizando, abrir o modal de conclusão
         if (newStatus === 'completed' && apt) {
             setCompletionTarget(apt);
@@ -221,7 +228,7 @@ export const BarberDashboard: React.FC<{ onLogout: () => void }> = ({ onLogout }
                 subId = sub?.id;
             }
 
-            const productsTotal = selectedProductsForCompletion.reduce((acc: number, sp: any) => acc + (sp.quantity * sp.unitPrice), 0);
+            const productsTotal = selectedProductsForCompletion.reduce((acc: number, sp: { quantity: number; unitPrice: number }) => acc + (sp.quantity * sp.unitPrice), 0);
             const finalTotal = completionTarget.totalValue + productsTotal;
 
             if (paymentMode === 'split') {
