@@ -585,9 +585,10 @@ export const ReportsGoalsPanel: React.FC<Props> = ({ dateRange }) => {
                     </div>
                   </div>
                 )}
+              </div>
                 
-                {/* Seção Adicional: Gráfico de Tendência e Margem Real */}
-                <div className="border-t border-slate-100 my-6" />
+              {/* Seção Adicional: Gráfico de Tendência e Margem Real */}
+              <div className="border-t border-slate-100 my-6" />
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   
                   {/* Gráfico de Tendência Diária Acumulada */}
@@ -744,7 +745,6 @@ export const ReportsGoalsPanel: React.FC<Props> = ({ dateRange }) => {
                     </div>
                   </div>
                 )}
-              </div>
             </div>
           </section>
         );
