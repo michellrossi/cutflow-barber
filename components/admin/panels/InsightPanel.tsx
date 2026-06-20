@@ -152,9 +152,37 @@ export const InsightPanel: React.FC = () => {
                                 {msg.role === 'user' ? <User size={16} className="text-white" /> : <Bot size={16} className="text-orange-600" />}
                             </div>
                             <div className={`p-4 rounded-lg text-sm leading-relaxed ${msg.role === 'user' ? 'bg-orange-500 text-white rounded-tr-none' : 'bg-slate-50 text-slate-700 border border-slate-200 rounded-tl-none shadow-sm'}`}>
-                                {msg.content.split('\n').map((line, j) => (
-                                    <p key={j} className={line.trim() === '' ? 'h-2' : 'mb-1'}>{line}</p>
-                                ))}
+                                {msg.content.split('\n').map((line, j) => {
+                                    const trimmed = line.trim();
+                                    if (trimmed === '') return <p key={j} className="h-2" />;
+
+                                    let isBullet = false;
+                                    let content = line;
+
+                                    if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
+                                        isBullet = true;
+                                        content = trimmed.substring(2);
+                                    }
+
+                                    const parts = content.split(/(\*\*[^*]+\*\*)/g);
+                                    const formatted = parts.map((part, i) => {
+                                        if (part.startsWith('**') && part.endsWith('**')) {
+                                            return <strong key={i} className={`font-extrabold ${msg.role === 'user' ? 'text-white' : 'text-slate-900'}`}>{part.slice(2, -2)}</strong>;
+                                        }
+                                        return part;
+                                    });
+
+                                    if (isBullet) {
+                                        return (
+                                            <div key={j} className="flex items-start gap-2 ml-2 mb-1.5 leading-relaxed">
+                                                <span className={`${msg.role === 'user' ? 'text-white' : 'text-orange-500'} shrink-0 select-none mt-1.5 text-[8px]`}>●</span>
+                                                <span className="flex-1">{formatted}</span>
+                                            </div>
+                                        );
+                                    }
+
+                                    return <p key={j} className="mb-1.5 leading-relaxed">{formatted}</p>;
+                                })}
                             </div>
                         </div>
                     </div>

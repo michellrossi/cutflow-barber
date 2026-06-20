@@ -97,7 +97,8 @@ export const getInsights = async (req: Request, res: Response) => {
         REGRAS:
         - Nunca invente dados. Use apenas o que foi fornecido no contexto.
         - Se o usuário pedir para gerar insights, destaque faturamento, conversão e performance dos barbeiros.
-        - Seja direto ao ponto.`;
+        - Seja direto ao ponto.
+        - Estruture a resposta usando quebras de linha e tópicos marcados com "- " para listas, e use negrito com "**" com moderação (apenas para termos-chave), de modo a manter a leitura leve e limpa.`;
 
         const model = genAI.getGenerativeModel({ 
             model: "gemini-2.5-flash",
